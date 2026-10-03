@@ -437,12 +437,15 @@ func planInvocations(engineID string, inputProfile string) ([]invocation, error)
 func verifyEngineInputs(engineID string, inputProfile string, workspace string) error {
 	switch engineID {
 	case "semgrep":
-		return verifySemgrepRulePack(
+		if err := verifySemgrepRulePack(
 			semgrepRulePackPath,
 			semgrepRuleManifestPath,
 			semgrepRuleManifestSHA256,
 			semgrepRuleFileCount,
-		)
+		); err != nil {
+			return err
+		}
+		return verifyFile(semgrepRuleProvenancePath, semgrepRuleProvenanceSHA256, 2*1024*1024)
 	case "trivy":
 		if err := verifyFile("/opt/ai-security-scanner/trivy-cache/db/trivy.db", trivyDBSHA256, maxImmutableBytes); err != nil {
 			return err
@@ -900,18 +903,20 @@ func requireJSONEOF(decoder *json.Decoder) error {
 // These release constants are verified before any scanner starts. They are
 // updated together with the corresponding Dockerfile and packaging plan.
 const (
-	semgrepRulePackPath       = "/opt/ai-security-scanner/semgrep/rules"
-	semgrepRuleManifestPath   = "/opt/ai-security-scanner/semgrep/RULES.sha256"
-	semgrepRuleManifestSHA256 = "ace912dd7a12516d60f0b37bf28b51a7c7c5384cdc79bb290892b0345f153ec8"
-	semgrepRuleFileCount      = 1603
-	trivyDBSHA256             = "e58db9fad4ce26f9ad77f4116f7a3b52527eb3a75718484903d930d110dee431"
-	trivyMetadataSHA256       = "b253a6f5e90d91bf0e0e4b6f07a6f26cb9169155d0af68309728d9d853ded143"
-	trivyJavaDBSHA256         = "7eaa54234967d2dc36f5c60d51c614bdd40997ddadcd13b3815eb8baeb7dc5cb"
-	trivyJavaMetadataSHA256   = "856f573fa061b68555b24a06cdd24ab99f9d6a0cd3129a10a620236ffa507d58"
-	grypeDBSHA256             = "db6f590412955f6b58cec12bfa4b712b2626eef9a030bffd8f32b9ebce074ff8"
-	kubescapeNSASHA256        = "7f7d7bbc6908b9872fd71751dc8d5dd5f543cdd6a684a24d1fb15b686e8344db"
-	kubescapeControlsSHA256   = "df4e2431e8f560961ce56aa06e022caf9b2f82f98752de78df1cd0706b42cf3a"
-	kubescapeExceptionsSHA256 = "bf44e01e6b212c8e8c0ca0686d1bd84488e3f9ce5375cd36511c8faef3a44e7b"
+	semgrepRulePackPath         = "/opt/ai-security-scanner/semgrep/rules"
+	semgrepRuleManifestPath     = "/opt/ai-security-scanner/semgrep/RULES.sha256"
+	semgrepRuleManifestSHA256   = "63678fc6790ebdeca2961080095611030b8e51f8b19ac228ee7e2c6862083040"
+	semgrepRuleFileCount        = 1478
+	semgrepRuleProvenancePath   = "/opt/ai-security-scanner/semgrep/RULE-PROVENANCE.json"
+	semgrepRuleProvenanceSHA256 = "a5f8961abe75a57da4c752f39272baa64ac95ca4181e507c070772c54f5c09bf"
+	trivyDBSHA256               = "e58db9fad4ce26f9ad77f4116f7a3b52527eb3a75718484903d930d110dee431"
+	trivyMetadataSHA256         = "b253a6f5e90d91bf0e0e4b6f07a6f26cb9169155d0af68309728d9d853ded143"
+	trivyJavaDBSHA256           = "7eaa54234967d2dc36f5c60d51c614bdd40997ddadcd13b3815eb8baeb7dc5cb"
+	trivyJavaMetadataSHA256     = "856f573fa061b68555b24a06cdd24ab99f9d6a0cd3129a10a620236ffa507d58"
+	grypeDBSHA256               = "db6f590412955f6b58cec12bfa4b712b2626eef9a030bffd8f32b9ebce074ff8"
+	kubescapeNSASHA256          = "7f7d7bbc6908b9872fd71751dc8d5dd5f543cdd6a684a24d1fb15b686e8344db"
+	kubescapeControlsSHA256     = "df4e2431e8f560961ce56aa06e022caf9b2f82f98752de78df1cd0706b42cf3a"
+	kubescapeExceptionsSHA256   = "bf44e01e6b212c8e8c0ca0686d1bd84488e3f9ce5375cd36511c8faef3a44e7b"
 )
 
 // Keep deterministic ordering available to tests without exposing dynamic

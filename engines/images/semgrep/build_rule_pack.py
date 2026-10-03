@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Build the pinned, offline Semgrep Community security rule pack."""
+"""Build the local candidate legacy + product Semgrep rule pack."""
 
 from __future__ import annotations
 
@@ -15,9 +15,9 @@ from pathlib import Path, PurePosixPath
 
 
 RULE_SOURCE_PATH = "tests/semgrep-rules"
-RULE_SOURCE_REPOSITORY = "https://github.com/returntocorp/semgrep-rules"
-EXPECTED_CONFIG_FILE_COUNT = 1603
-EXPECTED_RULE_COUNT = 1620
+RULE_SOURCE_REPOSITORY = "https://github.com/semgrep/semgrep-rules"
+EXPECTED_CONFIG_FILE_COUNT = 1478
+EXPECTED_RULE_COUNT = 1497
 MAX_RULE_FILE_BYTES = 1024 * 1024
 MAX_RULE_PACK_BYTES = 16 * 1024 * 1024
 TEST_FILE_ENDINGS = (
@@ -135,113 +135,154 @@ def safe_relative_member(name: str, expected_root: str) -> PurePosixPath | None:
     return relative
 
 
+REVISION = "0f5a85ceab1b82b193d0eaa418784c932d237d68"
+ARCHIVE_SHA256 = "a6bb2ee1a261da82a1263c1b32ad6f4535628742192c0bb1f68f13343c31bbcc"
+ARCHIVE_BYTES = 1148011
+LICENSE_SHA256 = "9600f388f17cb800a7a0ba8b55bc15c5b0ed047de8517f2d5e533becee9d0a18"
+EXCLUDED = "java/lang/security/audit/xss/no-direct-response-writer.yaml"
+EXCLUDED_SHA256 = "44f00a2b33815116facd15a58b4d360418c7940c2cbdde671856f042d4f5498f"
+PRODUCT_SHA256 = "2081a62359682db1ddd15eda7eed1f3931975870cef8f8dab7120ba86fe2e5f3"
+PRODUCT_LICENSE_SHA256 = "2c932015241407e23ce7b557b89d284ea7d5f13fa056f480e91184f27e87bdc8"
+PRODUCT_IDS = {
+    "ai-security-scanner.python.dynamic-code-execution",
+    "ai-security-scanner.python.shell-true",
+    "ai-security-scanner.javascript.child-process-exec",
+    "ai-security-scanner.generic.private-key",
+}
+ID_LINE = re.compile(r"(?m)^([ \t]*(?:-[ \t]+)?id:[ \t]*)([A-Za-z0-9_.-]+)([ \t]*\r?)$")
+NOTICE = (
+    "# Modified by ai-security-scanner on 2026-10-02: file-qualified rule IDs\n"
+    "# prevent collisions; detector, severity, message and remediation unchanged.\n"
+    "# Original bytes and IDs: source/ and RULE-PROVENANCE.json beside rules/.\n"
+)
+
+
+
+sha = sha256_bytes
+
+
+def build_combined_rule_pack(archive: Path, product: Path, output: Path) -> dict:
+    if output.exists():
+        raise ValueError("output already exists")
+    if archive.stat().st_size != ARCHIVE_BYTES or sha256_file(archive) != ARCHIVE_SHA256:
+        raise ValueError("archive does not match the exact reviewed revision")
+    selected, sources, records, ids, excluded = {}, {}, {}, set(), []
+    license_bytes = readme_bytes = None
+    upstream_rules = 0
+    with tarfile.open(archive, "r:gz") as tar:
+        for member in tar:
+            relative = safe_relative_member(member.name, f"semgrep-rules-{REVISION}")
+            if relative is None or member.isdir():
+                continue
+            if not member.isfile():
+                raise ValueError("non-regular archive member")
+            path = relative.as_posix()
+            if path not in {"LICENSE", "README.md"} and not is_selected_rule_path(relative):
+                continue
+            if member.size > 1024 * 1024:
+                raise ValueError("oversized source member")
+            raw = tar.extractfile(member).read()
+            if path == "LICENSE":
+                license_bytes = raw
+                continue
+            if path == "README.md":
+                readme_bytes = raw
+                continue
+            count = validate_rule_text(relative, raw)
+            if not count:
+                continue
+            text = raw.decode("utf-8")
+            if path == EXCLUDED:
+                if sha(raw) != EXCLUDED_SHA256 or "license: proprietary license" not in text:
+                    raise ValueError("excluded rule no longer matches the reviewed exception")
+                excluded.append({"path": path, "sha256": sha(raw), "reason": "explicit proprietary license", "rules": count})
+                continue
+            licenses = [value.strip() for value in re.findall(r"(?m)^\s+license:\s*(.+)$", text)]
+            if any(value != "Commons Clause License Condition v1.0[LGPL-2.1-only]" for value in licenses):
+                raise ValueError(f"unreviewed per-file license: {path}")
+            matches = list(ID_LINE.finditer(text))
+            if len(matches) != count:
+                raise ValueError(f"ID count differs from validated rule count: {path}")
+            namespace = relative.with_suffix("").as_posix().replace("/", ".")
+            def qualify(match):
+                original = match.group(2)
+                qualified = f"{namespace}.{original}"
+                if qualified in ids or not re.fullmatch(r"[A-Za-z0-9_.-]+", qualified):
+                    raise ValueError(f"ambiguous qualified ID: {qualified}")
+                ids.add(qualified)
+                records[qualified] = {"kind": "upstream", "repository": "https://github.com/semgrep/semgrep-rules", "revision": REVISION, "path": path, "original_id": original, "source_sha256": sha(raw)}
+                return match.group(1) + qualified + match.group(3)
+            qualified_text = ID_LINE.sub(qualify, text)
+            # Round-trip proves all upstream detector and metadata bytes survive.
+            restored = ID_LINE.sub(lambda m: m.group(1) + records[m.group(2)]["original_id"] + m.group(3), qualified_text)
+            if restored.encode("utf-8") != raw:
+                raise ValueError("upstream bytes changed beyond rule IDs")
+            selected[f"upstream/{path}"] = (NOTICE + qualified_text).encode("utf-8")
+            sources[path] = raw
+            upstream_rules += count
+    if license_bytes is None or sha(license_bytes) != LICENSE_SHA256 or readme_bytes is None:
+        raise ValueError("reviewed license or README missing/changed")
+    if len(sources) != 1477 or upstream_rules != 1493 or len(excluded) != 1:
+        raise ValueError("legacy selection differs from the reviewed inventory")
+    product_bytes = product.read_bytes()
+    if sha(product_bytes) != PRODUCT_SHA256:
+        raise ValueError("product rules differ from the published four-rule source")
+    product_license = (product.parent / "product-LICENSE").read_bytes()
+    if sha(product_license) != PRODUCT_LICENSE_SHA256:
+        raise ValueError("product license differs from the reviewed Apache license")
+    if validate_rule_text(PurePosixPath("product/rules.yml"), product_bytes) != 4:
+        raise ValueError("product pack must contain the four existing rules")
+    product_matches = list(ID_LINE.finditer(product_bytes.decode("utf-8")))
+    if len(product_matches) != 4 or {m.group(2) for m in product_matches} != PRODUCT_IDS:
+        raise ValueError("unexpected or duplicated product rule ID")
+    for match in product_matches:
+        rule_id = match.group(2)
+        if rule_id in ids:
+            raise ValueError("product/upstream ID collision")
+        ids.add(rule_id)
+        records[rule_id] = {"kind": "product", "original_id": rule_id, "path": "product/rules.yml", "source_revision": "2641850", "source_sha256": sha(product_bytes), "license": "Apache-2.0"}
+    selected["product/rules.yml"] = product_bytes
+    if sum(map(len, selected.values())) > 16 * 1024 * 1024:
+        raise ValueError("combined pack exceeds resource bound")
+    for base, files in ((output / "rules", selected), (output / "source", sources)):
+        for path, raw in sorted(files.items()):
+            destination = base / path
+            destination.parent.mkdir(parents=True, exist_ok=True)
+            destination.write_bytes(raw)
+    manifest = "".join(f"{sha(raw)}  {path}\n" for path, raw in sorted(selected.items())).encode()
+    (output / "RULES.sha256").write_bytes(manifest)
+    (output / "LICENSE.upstream").write_bytes(license_bytes)
+    (output / "LICENSE.product").write_bytes(product_license)
+    (output / "UPSTREAM-README.md").write_bytes(readme_bytes)
+    (output / "RULE-PROVENANCE.json").write_text(json.dumps(records, indent=2, sort_keys=True) + "\n")
+    metadata = {"schema_version": "ai-security-scanner.semgrep-rule-pack/v2", "local_experiment_only": True, "upstream_revision": REVISION, "archive_sha256": ARCHIVE_SHA256, "upstream_files": len(sources), "upstream_rules": upstream_rules, "product_rules": 4, "combined_files": len(selected), "combined_rules": len(ids), "manifest_sha256": sha(manifest), "excluded": excluded, "license_note": "LGPL plus Commons Clause remains applicable to upstream rules; this experiment does not approve publication or commercial use."}
+    metadata["upstream"] = {"repository": RULE_SOURCE_REPOSITORY, "revision": REVISION, "archive_sha256": f"sha256:{ARCHIVE_SHA256}"}
+    metadata["selection"] = {"rule_files": len(selected), "validated_rules": len(ids), "upstream_rule_files": len(sources), "upstream_rules": upstream_rules, "product_rules": 4, "excluded_path_prefixes": ["apex/"], "required_metadata_category": "security"}
+    metadata["provenance_sha256"] = sha((output / "RULE-PROVENANCE.json").read_bytes())
+    (output / "PACK-METADATA.json").write_text(json.dumps(metadata, indent=2, sort_keys=True) + "\n")
+    return metadata
+
+
+
 def build_rule_pack(
     archive_path: Path,
     lock_path: Path,
     output_path: Path,
     source_date_epoch: int,
+    product_path: Path | None = None,
 ) -> dict[str, object]:
     if source_date_epoch < 0:
         raise ValueError("source date epoch must be non-negative")
     locked = load_locked_source(lock_path)
-    archive_size = archive_path.stat().st_size
-    archive_digest = sha256_file(archive_path)
-    if archive_size != locked.size or f"sha256:{archive_digest}" != locked.digest:
-        raise ValueError("semgrep-rules archive does not match the pinned lock")
-    if output_path.exists():
-        raise ValueError("rule-pack output path already exists")
-
-    expected_root = f"semgrep-rules-{locked.revision}"
-    selected: dict[str, bytes] = {}
-    selected_rule_count = 0
-    license_bytes: bytes | None = None
-    readme_bytes: bytes | None = None
-    total_bytes = 0
-    with tarfile.open(archive_path, mode="r:gz") as archive:
-        for member in archive:
-            relative = safe_relative_member(member.name, expected_root)
-            if relative is None or member.isdir():
-                continue
-            if not member.isfile():
-                raise ValueError(f"non-regular archive member is not accepted: {member.name}")
-            if relative.as_posix() in {"LICENSE", "README.md"}:
-                extracted = archive.extractfile(member)
-                if extracted is None:
-                    raise ValueError(f"could not read source record: {relative}")
-                value = extracted.read(MAX_RULE_FILE_BYTES + 1)
-                if len(value) > MAX_RULE_FILE_BYTES:
-                    raise ValueError(f"source record is too large: {relative}")
-                if relative.as_posix() == "LICENSE":
-                    license_bytes = value
-                else:
-                    readme_bytes = value
-                continue
-            if not is_selected_rule_path(relative):
-                continue
-            extracted = archive.extractfile(member)
-            if extracted is None:
-                raise ValueError(f"could not read selected rule: {relative}")
-            value = extracted.read(MAX_RULE_FILE_BYTES + 1)
-            rule_count = validate_rule_text(relative, value)
-            if rule_count == 0:
-                continue
-            key = relative.as_posix()
-            if key in selected:
-                raise ValueError(f"duplicate selected rule path: {key}")
-            selected[key] = value
-            selected_rule_count += rule_count
-            total_bytes += len(value)
-            if total_bytes > MAX_RULE_PACK_BYTES:
-                raise ValueError("selected Semgrep rule pack exceeds its size bound")
-
-    if len(selected) != EXPECTED_CONFIG_FILE_COUNT:
-        raise ValueError(
-            f"expected {EXPECTED_CONFIG_FILE_COUNT} selected rule files, found {len(selected)}"
-        )
-    if selected_rule_count != EXPECTED_RULE_COUNT:
-        raise ValueError(
-            f"expected {EXPECTED_RULE_COUNT} selected rules, found {selected_rule_count}"
-        )
-    if license_bytes is None or readme_bytes is None:
-        raise ValueError("semgrep-rules license or README is missing")
-
-    rules_path = output_path / "rules"
-    rules_path.mkdir(parents=True)
-    manifest_lines: list[str] = []
-    for relative_text in sorted(selected):
-        value = selected[relative_text]
-        destination = rules_path.joinpath(*PurePosixPath(relative_text).parts)
-        destination.parent.mkdir(parents=True, exist_ok=True)
-        destination.write_bytes(value)
-        manifest_lines.append(f"{sha256_bytes(value)}  {relative_text}\n")
-
-    manifest = "".join(manifest_lines).encode("utf-8")
-    (output_path / "RULES.sha256").write_bytes(manifest)
-    (output_path / "LICENSE").write_bytes(license_bytes)
-    (output_path / "UPSTREAM-README.md").write_bytes(readme_bytes)
-    metadata: dict[str, object] = {
-        "schema_version": "ai-security-scanner.semgrep-rule-pack/v1",
-        "upstream": {
-            "repository": locked.repository,
-            "revision": locked.revision,
-            "archive": locked.archive,
-            "archive_sha256": f"sha256:{archive_digest}",
-        },
-        "selection": {
-            "included_path_components": ["security", "secrets"],
-            "included_path_prefixes": ["ai/ai-best-practices/"],
-            "required_metadata_category": "security",
-            "excluded_filename_markers": [".test.", ".fixed.test."],
-            "excluded_path_prefixes": ["apex/"],
-            "rule_files": len(selected),
-            "validated_rules": selected_rule_count,
-            "rule_bytes": total_bytes,
-        },
-        "rules_manifest_sha256": f"sha256:{sha256_bytes(manifest)}",
-    }
-    (output_path / "PACK-METADATA.json").write_text(
-        json.dumps(metadata, indent=2, sort_keys=True) + "\n", encoding="utf-8"
+    if (locked.revision, locked.digest, locked.size) != (
+        REVISION, f"sha256:{ARCHIVE_SHA256}", ARCHIVE_BYTES
+    ):
+        raise ValueError("lock does not match the reviewed legacy rules source")
+    metadata = build_combined_rule_pack(
+        archive_path, product_path or Path(__file__).with_name("product-rules.yml"), output_path
     )
+    # Retain the existing license location consumed by image-source checks.
+    (output_path / "LICENSE").write_bytes((output_path / "LICENSE.upstream").read_bytes())
     for path in sorted(output_path.rglob("*"), reverse=True):
         os.chmod(path, 0o755 if path.is_dir() else 0o644)
         os.utime(path, (source_date_epoch, source_date_epoch), follow_symlinks=False)
@@ -255,6 +296,7 @@ def parse_args(argv: list[str]) -> argparse.Namespace:
     parser.add_argument("--archive", required=True, type=Path)
     parser.add_argument("--lock", required=True, type=Path)
     parser.add_argument("--output", required=True, type=Path)
+    parser.add_argument("--product", type=Path)
     parser.add_argument("--source-date-epoch", required=True, type=int)
     return parser.parse_args(argv)
 
@@ -263,7 +305,7 @@ def main(argv: list[str]) -> int:
     args = parse_args(argv)
     try:
         metadata = build_rule_pack(
-            args.archive, args.lock, args.output, args.source_date_epoch
+            args.archive, args.lock, args.output, args.source_date_epoch, args.product
         )
     except (OSError, ValueError, tarfile.TarError) as error:
         print(f"could not build Semgrep rule pack: {error}", file=sys.stderr)
@@ -271,7 +313,7 @@ def main(argv: list[str]) -> int:
     selection = metadata["selection"]
     assert isinstance(selection, dict)
     print(
-        f"Built {selection['rule_files']} upstream Semgrep configs "
+        f"Built {selection['rule_files']} combined Semgrep configs "
         f"({selection['validated_rules']} rules)."
     )
     return 0

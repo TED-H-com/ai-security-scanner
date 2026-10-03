@@ -45,22 +45,23 @@ class RulePackTests(unittest.TestCase):
             first_manifest = (first / "RULES.sha256").read_bytes()
             second_manifest = (second / "RULES.sha256").read_bytes()
             self.assertEqual(first_manifest, second_manifest)
-            self.assertEqual(len(first_manifest.splitlines()), 1603)
+            self.assertEqual(len(first_manifest.splitlines()), 1478)
             self.assertEqual(
                 hashlib.sha256(first_manifest).hexdigest(),
-                "ace912dd7a12516d60f0b37bf28b51a7c7c5384cdc79bb290892b0345f153ec8",
+                "63678fc6790ebdeca2961080095611030b8e51f8b19ac228ee7e2c6862083040",
             )
             metadata = json.loads((first / "PACK-METADATA.json").read_text())
-            self.assertEqual(metadata["selection"]["validated_rules"], 1620)
+            self.assertEqual(metadata["selection"]["validated_rules"], 1497)
             self.assertEqual(
                 metadata["upstream"]["revision"],
-                "947bf05744d4c95153173a24879f30b3ba1a65aa",
+                "0f5a85ceab1b82b193d0eaa418784c932d237d68",
             )
-            self.assertEqual(
-                (first / "LICENSE").read_text(encoding="utf-8"),
-                "Semgrep Rules License v1.0. For more details, visit "
-                "https://semgrep.dev/legal/rules-license\n",
-            )
+            self.assertIn("Commons Clause", (first / "LICENSE").read_text())
+            self.assertIn("LGPL 2.1", (first / "LICENSE").read_text())
+            self.assertEqual(metadata["upstream_files"], 1477)
+            self.assertEqual(metadata["upstream_rules"], 1493)
+            self.assertEqual(metadata["product_rules"], 4)
+            self.assertEqual((first / "RULES.sha256").stat().st_mtime, 1787250577)
             self.assertIn("# semgrep-rules", (first / "UPSTREAM-README.md").read_text())
             for line in first_manifest.decode("utf-8").splitlines():
                 digest, relative = line.split("  ", 1)
@@ -93,16 +94,12 @@ class RulePackTests(unittest.TestCase):
                 "dockerfile",
                 "missing-user",
             ),
-            "ai/ai-best-practices/mcp-command-injection/mcp-command-injection.yaml": (
-                "python",
-                "mcp-command-injection-python",
-            ),
         }
         with tempfile.TemporaryDirectory() as temp:
             pack = self.build(Path(temp)) / "rules"
             for relative, (language, rule_id) in expected.items():
-                text = (pack / relative).read_text(encoding="utf-8")
-                self.assertRegex(text, rf"(?m)^\s*-\s+id:\s*{rule_id}\s*$")
+                text = (pack / "upstream" / relative).read_text(encoding="utf-8")
+                self.assertRegex(text, rf"(?m)^\s*-\s+id:\s*{relative.rsplit('.', 1)[0].replace('/', '.')}.{rule_id}\s*$")
                 self.assertIn(language, text)
                 self.assertRegex(text, r"(?m)^\s+category:\s*security\s*$")
 
@@ -112,7 +109,7 @@ class RulePackTests(unittest.TestCase):
             relative_paths = [path.relative_to(rules).as_posix() for path in rules.rglob("*")]
             self.assertFalse(any(".test." in path for path in relative_paths))
             self.assertFalse(any(path.startswith(".github/") for path in relative_paths))
-            self.assertFalse(any(path.startswith("apex/") for path in relative_paths))
+            self.assertFalse(any(path.startswith("upstream/apex/") for path in relative_paths))
             self.assertFalse(any(path.startswith("stats/") for path in relative_paths))
             self.assertFalse((rules / "template.yaml").exists())
 
