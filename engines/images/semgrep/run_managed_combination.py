@@ -7,15 +7,20 @@ import hashlib
 import json
 import os
 from pathlib import Path
+import platform
 import subprocess
 
 from build_rule_pack import build_rule_pack
 
 HERE = Path(__file__).resolve().parent
 IMAGE = "aiss-local/semgrep-combined:review"
+ARM64_IMAGE = "aiss-local/semgrep-combined-arm64:review"
+LAUNCHER = "/usr/local/bin/ai-security-scanner-engine-entrypoint"
 
 
-def verify(archive: Path, output: Path) -> dict:
+def verify(archive: Path, output: Path, image_tag: str = IMAGE) -> dict:
+    if image_tag not in (IMAGE, ARM64_IMAGE):
+        raise ValueError("only the two local review tags are allowed")
     if output.exists():
         raise ValueError("verification output already exists")
     output.mkdir(parents=True)
@@ -23,7 +28,15 @@ def verify(archive: Path, output: Path) -> dict:
     anonymous.mkdir()
     (anonymous / "config.json").write_text("{}\n")
     environment = dict(os.environ, DOCKER_CONFIG=str(anonymous))
-    inspected = json.loads(subprocess.check_output(["docker", "image", "inspect", IMAGE], env=environment))[0]
+    inspected = json.loads(subprocess.check_output(["docker", "image", "inspect", image_tag], env=environment))[0]
+    architecture = "arm64" if image_tag == ARM64_IMAGE else "amd64"
+    if inspected["Os"] != "linux" or inspected["Architecture"] != architecture:
+        raise ValueError("local candidate architecture does not match its review tag")
+    host_architecture = {"x86_64": "amd64", "aarch64": "arm64"}.get(platform.machine(), platform.machine())
+    if host_architecture != architecture:
+        raise ValueError("managed verification requires a native host for the image architecture")
+    if inspected["Config"]["Entrypoint"] != [LAUNCHER]:
+        raise ValueError("candidate entrypoint differs from the managed launcher")
     labels = inspected["Config"]["Labels"]
     if labels.get("io.ai-security-scanner.local-candidate-only") != "true":
         raise ValueError("image does not declare the local candidate boundary")
@@ -32,7 +45,9 @@ def verify(archive: Path, output: Path) -> dict:
     metadata = build_rule_pack(archive, HERE / "submodules.lock", pack, 1787250577)
     if labels.get("io.ai-security-scanner.rules-manifest-sha256") != metadata["manifest_sha256"]:
         raise ValueError("candidate image and local pack disagree")
-    base = ["nice", "-n", "10", "docker", "run", "--rm", "--network", "none", "--read-only", "--user", f"{os.getuid()}:{os.getgid()}", "--cap-drop", "ALL", "--security-opt", "no-new-privileges", "--cpus", "2", "--memory", "2g", "--pids-limit", "256", "--tmpfs", "/tmp:rw,nosuid,nodev,size=512m", "--mount", f"type=bind,source={HERE / 'testdata/combination-review'},target=/workspace,readonly"]
+    base = ["nice", "-n", "10", "docker", "run", "--rm", "--pull", "never", "--platform", f"linux/{architecture}", "--network", "none", "--read-only", "--user", f"{os.getuid()}:{os.getgid()}", "--cap-drop", "ALL", "--security-opt", "no-new-privileges", "--cpus", "2", "--memory", "2g", "--pids-limit", "256", "--ulimit", "fsize=536870912:536870912", "--tmpfs", "/tmp:rw,nosuid,nodev,noexec,mode=1777,size=512m", "--mount", f"type=bind,source={HERE / 'testdata/combination-review'},target=/workspace,readonly"]
+    def command(binary, *arguments):
+        return ["--entrypoint", binary, image, *arguments]
 
     def run(name, command, mounts=(), success=True):
         directory = output / name
@@ -61,8 +76,8 @@ def verify(archive: Path, output: Path) -> dict:
 
     scans = {}
     for name, config in (("product", "/opt/ai-security-scanner/semgrep/rules/product"), ("upstream", "/opt/ai-security-scanner/semgrep/rules/upstream"), ("combined", "/opt/ai-security-scanner/semgrep/rules")):
-        scans[name] = run(name, ["--entrypoint", "/opt/semgrep/bin/semgrep", image, "scan", "--json", "--output", "/output/semgrep.json", "--config", config, "--metrics=off", "--disable-version-check", "--no-rewrite-rule-ids", "--oss-only", "--jobs", "2", "--max-memory", "2048", "--timeout", "10", "--timeout-threshold", "3", "--max-target-bytes", "10000000", "/workspace"])
-    launcher = [image, "--engine", "semgrep", "--workspace", "/workspace", "--output", "/output"]
+        scans[name] = run(name, command("/opt/semgrep/bin/semgrep", "scan", "--json", "--output", "/output/semgrep.json", "--config", config, "--metrics=off", "--disable-version-check", "--no-rewrite-rule-ids", "--oss-only", "--jobs", "2", "--max-memory", "2048", "--timeout", "10", "--timeout-threshold", "3", "--max-target-bytes", "10000000", "/workspace"))
+    launcher = command(LAUNCHER, "--engine", "semgrep", "--workspace", "/workspace", "--output", "/output")
     scans["managed"] = run("managed", launcher)
     canonical = lambda rows: collections.Counter(json.dumps(row, sort_keys=True, separators=(",", ":")) for row in rows)
     expected = canonical(scans["product"] + scans["upstream"])
@@ -85,7 +100,8 @@ def verify(archive: Path, output: Path) -> dict:
         ("extra-rule", extra, "/opt/ai-security-scanner/semgrep/rules/extra.yaml"),
     ):
         rejections[name] = run(name, launcher, [(source, target)], success=False)
-    summary = {"local_candidate_only": True, "image_id": image, "image_tag": IMAGE, "pack": metadata, "native_matches": {name: len(rows) for name, rows in scans.items()}, "exact_full_result_union": True, "rejections_before_output": rejections, "managed_artifact_sha256": hashlib.sha256((output / "managed/semgrep.json").read_bytes()).hexdigest()}
+    execution = {"mode": "native", "host_architecture": host_architecture, "image_architecture": architecture}
+    summary = {"local_candidate_only": True, "image_id": image, "image_tag": image_tag, "execution": execution, "pack": metadata, "native_matches": {name: len(rows) for name, rows in scans.items()}, "exact_full_result_union": True, "rejections_before_output": rejections, "managed_artifact_sha256": hashlib.sha256((output / "managed/semgrep.json").read_bytes()).hexdigest()}
     (output / "verification.json").write_text(json.dumps(summary, indent=2, sort_keys=True) + "\n")
     return summary
 
@@ -94,5 +110,6 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--archive", required=True, type=Path)
     parser.add_argument("--output", required=True, type=Path)
+    parser.add_argument("--image", choices=(IMAGE, ARM64_IMAGE), default=IMAGE)
     args = parser.parse_args()
-    print(json.dumps(verify(args.archive.resolve(), args.output.resolve()), indent=2))
+    print(json.dumps(verify(args.archive.resolve(), args.output.resolve(), args.image), indent=2))
