@@ -1,0 +1,45 @@
+rules:
+  - id: ai-security-scanner.python.dynamic-code-execution
+    languages: [python]
+    severity: ERROR
+    message: Dynamic code execution can turn untrusted input into arbitrary code.
+    metadata:
+      category: security
+      confidence: HIGH
+      cwe: CWE-95
+    patterns:
+      - pattern-either:
+          - pattern: eval(...)
+          - pattern: exec(...)
+  - id: ai-security-scanner.python.shell-true
+    languages: [python]
+    severity: ERROR
+    message: A subprocess launched through a shell can allow command injection.
+    metadata:
+      category: security
+      confidence: HIGH
+      cwe: CWE-78
+    patterns:
+      - pattern-either:
+          - pattern: subprocess.$FUNC(..., shell=True, ...)
+          - pattern: os.system(...)
+  - id: ai-security-scanner.javascript.child-process-exec
+    languages: [javascript, typescript]
+    severity: WARNING
+    message: Prefer an argument-vector API over shell command execution.
+    metadata:
+      category: security
+      confidence: MEDIUM
+      cwe: CWE-78
+    pattern-either:
+      - pattern: child_process.exec(...)
+      - pattern: require('child_process').exec(...)
+  - id: ai-security-scanner.generic.private-key
+    languages: [generic]
+    severity: ERROR
+    message: A private-key block is present in the selected source snapshot.
+    metadata:
+      category: security
+      confidence: HIGH
+      cwe: CWE-798
+    pattern-regex: "-----BEGIN (?:RSA |EC |OPENSSH |DSA )?PRIVATE KEY-----"
