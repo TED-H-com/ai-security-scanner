@@ -67,6 +67,14 @@ const CONSEQUENCE_ENGLISH: Record<FindingFamily, string> = {
   mcp_configuration: "An MCP server process or tool may receive broader local capabilities than its purpose requires",
 };
 
+/** The secret family's full next step, including the period the report prints. */
+export const EXPOSED_CREDENTIAL_NEXT_STEP_ENGLISH =
+  "Revoke and rotate the exposed credential, then remove it from the source and every retained history entry.";
+
+/** The Traditional Chinese form of {@link EXPOSED_CREDENTIAL_NEXT_STEP_ENGLISH}. */
+export const EXPOSED_CREDENTIAL_NEXT_STEP_ZH_HANT =
+  "先撤銷並輪替這組已外洩的憑證，再從原始碼以及仍保留它的歷史紀錄中移除。";
+
 /**
  * The direct recommended action for each finding family.
  *
@@ -85,8 +93,7 @@ const REMEDY: Record<FindingFamily, string> = {
   // reads this clause.
   network_exposure: "調整這項檢查所指出的服務或設定",
   source_code: "修改程式碼以移除回報的不安全寫法",
-  secret:
-    "先撤銷並輪替這組已外洩的憑證，再從原始碼以及仍保留它的歷史紀錄中移除",
+  secret: EXPOSED_CREDENTIAL_NEXT_STEP_ZH_HANT.slice(0, -1),
   infrastructure_as_code:
     "修改基礎架構即程式碼的範本，讓重新部署不會再還原這個設定",
   vulnerable_component:
@@ -106,7 +113,7 @@ const REMEDY_ENGLISH: Record<FindingFamily, string> = {
   microsoft365: "Correct the Microsoft 365 tenant setting named by this control",
   network_exposure: "Correct the service or configuration named by this check",
   source_code: "Change the code to remove the reported unsafe pattern",
-  secret: "Revoke and rotate the exposed credential, then remove it from the source and every retained history entry",
+  secret: EXPOSED_CREDENTIAL_NEXT_STEP_ENGLISH.slice(0, -1),
   infrastructure_as_code: "Correct the infrastructure-as-code template so redeployment does not restore the insecure setting",
   vulnerable_component: "Upgrade the affected component to a fixed version; if none is available, record the blocker and track the fix",
   kubernetes: "Correct the workload or cluster setting named by this check",
@@ -117,6 +124,10 @@ const REMEDY_ENGLISH: Record<FindingFamily, string> = {
   mcp_configuration:
     "Remove unnecessary permissions and dangerous command flags from the MCP configuration, leaving only the capabilities the server's purpose requires",
 };
+
+/** The secret family's remedy, with the period the report prints. */
+export const exposedCredentialNextStep = (locale: "en" | "zh-TW"): string =>
+  locale === "en" ? EXPOSED_CREDENTIAL_NEXT_STEP_ENGLISH : EXPOSED_CREDENTIAL_NEXT_STEP_ZH_HANT;
 
 const IAM_PRINCIPAL_PREVIEW_LIMIT = 6;
 

@@ -319,7 +319,7 @@ fn normalized_vulnerability_id(value: &str) -> Option<String> {
 }
 
 /// `CVE-<4+ digits>-<4+ digits>`, per the CVE ID syntax.
-fn is_cve_identifier(upper: &str) -> bool {
+pub(crate) fn is_cve_identifier(upper: &str) -> bool {
     let Some(rest) = upper.strip_prefix("CVE-") else {
         return false;
     };
@@ -334,7 +334,7 @@ fn is_cve_identifier(upper: &str) -> bool {
 }
 
 /// `GHSA-` followed by three base32-ish groups, per the GitHub advisory format.
-fn is_ghsa_identifier(upper: &str) -> bool {
+pub(crate) fn is_ghsa_identifier(upper: &str) -> bool {
     let Some(rest) = upper.strip_prefix("GHSA-") else {
         return false;
     };

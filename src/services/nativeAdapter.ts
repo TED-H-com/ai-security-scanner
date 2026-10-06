@@ -565,13 +565,21 @@ export interface NativeBeginnerMasterReport {
   problem_groups?: Array<{
     group_id: string;
     rule_version: string;
-    kind: "iam_password_policy" | "root_account_usage" | "iam_policy_permissions";
+    kind:
+      | "iam_password_policy"
+      | "root_account_usage"
+      | "iam_policy_permissions"
+      | "vulnerable_dependency"
+      | "exposed_secret";
     title: string;
     target_asset_id: string;
     representative_finding_id: string;
     finding_ids: string[];
     policy_name?: string | null;
     lower_priority_members?: unknown;
+    package_name?: string | null;
+    installed_version?: string | null;
+    advisory_ids?: string[] | null;
   }>;
   next_steps: Array<{
     priority: number;
@@ -3380,6 +3388,11 @@ export const adaptBeginnerMasterReport = (
       findingIds: [...group.finding_ids],
       policyName: group.policy_name ?? undefined,
       ...(lowerPriorityMembers ? { lowerPriorityMembers } : {}),
+      ...(group.package_name ? { packageName: group.package_name } : {}),
+      ...(group.installed_version ? { installedVersion: group.installed_version } : {}),
+      ...(group.advisory_ids && group.advisory_ids.length > 0
+        ? { advisoryIds: [...group.advisory_ids] }
+        : {}),
     };
   }),
   nextSteps: report.next_steps.map((step) => ({

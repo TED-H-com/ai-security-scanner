@@ -687,6 +687,7 @@ mod tests {
                 cwe_ids: Vec::new(),
                 cvss: Vec::new(),
                 benchmarks: Vec::new(),
+                advisory_aliases: Vec::new(),
             }),
             source_rule: Some("PrivilegeEscalation".into()),
             result_pointer_sha256: Some("def".into()),

@@ -18789,10 +18789,10 @@ fn html_grouped_problem_cards(
             .map(str::to_owned)
             .unwrap_or(impact);
             cards.push_str(&format!(concat!(
-                "<article class=\"finding\" id=\"{}\"><h3>{} <span class=\"finding-asset\">— {}</span></h3><p><span class=\"pill pill--{}\">{}</span> · {} {}</p>",
+                "<article class=\"finding\" id=\"{}\"><h3>{}{}<span class=\"finding-asset\">— {}</span></h3><p><span class=\"pill pill--{}\">{}</span> · {} {}</p>",
                 "<p>{}</p><p>{}{}</p><p>{}{}</p>",
                 "<details class=\"technical finding-problem-group\"><summary>{} ({})</summary>{}</details></article>"),
-                anchor, html_escape(&title), targets, severity_slug(&finding.severity), html_escape(&severity),
+                anchor, html_escape(&title), catalog.gap_after(&title), targets, severity_slug(&finding.severity), html_escape(&severity),
                 catalog.format_number(group.finding_ids.len()), catalog.text("original findings", "筆原始發現"), html_escape(&impact),
                 catalog.strong_label(catalog.text("Target", "目標")), targets,
                 catalog.strong_label(catalog.text("What to do next", "下一步怎麼做")), html_escape(&action),
@@ -38543,6 +38543,7 @@ mod tests {
                 cwe_ids: Vec::new(),
                 cvss: Vec::new(),
                 benchmarks: Vec::new(),
+                advisory_aliases: Vec::new(),
             }),
             summary: Some("summary".into()),
             kind: Some(EvidenceKind::SourceCode),
@@ -38701,6 +38702,7 @@ mod tests {
                     cwe_ids: Vec::new(),
                     cvss: Vec::new(),
                     benchmarks: Vec::new(),
+                    advisory_aliases: Vec::new(),
                 }),
                 summary: Some("summary".into()),
                 kind: Some(EvidenceKind::PackageInventory),
@@ -39123,6 +39125,7 @@ mod tests {
                 version: "1.2.0".into(),
                 reference: "1.5".into(),
             }],
+            advisory_aliases: Vec::new(),
         });
         case.finding_observations[0].severity = Severity::High;
         case.finding_observations[0].finding_snapshot = Some(finding.clone());
@@ -39223,6 +39226,66 @@ mod tests {
                     html.contains("<details class=\"technical finding-problem-group\"><summary>")
                 );
             }
+        }
+    }
+
+    #[test]
+    fn html_report_prints_package_and_secret_problem_cards_in_both_languages() {
+        let case = crate::report_problem_groups::tests::demo_like_case();
+        let package_en = "Vulnerable package pyyaml 5.3.1 (CVE-2020-14343 / GHSA-8q59-q68h-6hv4)";
+        let package_zh = "有已知弱點的套件 pyyaml 5.3.1（CVE-2020-14343 / GHSA-8q59-q68h-6hv4）";
+        let secret_en = "Secret found in a file";
+        let secret_zh = "檔案中發現機密";
+        let secret_action_en = crate::finding_narrative::EXPOSED_SECRET_NEXT_STEP_ENGLISH;
+        let secret_action_zh = crate::finding_narrative::EXPOSED_SECRET_NEXT_STEP_ZH_HANT;
+        for (locale, package_title, secret_title, secret_action, counted, expert) in [
+            (
+                crate::export::ReportLocale::En,
+                package_en,
+                secret_en,
+                secret_action_en,
+                "5 related problems call for this kind of change; each needs its own fix.",
+                "Secrets-response specialist",
+            ),
+            (
+                crate::export::ReportLocale::ZhHant,
+                package_zh,
+                secret_zh,
+                secret_action_zh,
+                "有 5 項相關問題需要這類處理，每一項都要分別修正",
+                "機密外洩應變專家",
+            ),
+        ] {
+            let html = String::from_utf8(
+                html_report_bytes(
+                    &case,
+                    "run-1",
+                    &ExportOptions {
+                        redaction: RedactionProfile::None,
+                        include_raw_artifacts: false,
+                        locale,
+                    },
+                )
+                .unwrap(),
+            )
+            .unwrap();
+            assert!(html.contains(package_title), "{package_title}");
+            assert!(html.contains(secret_title), "{secret_title}");
+            assert!(html.contains(secret_action), "{secret_action}");
+            assert!(html.contains(counted), "{counted}");
+            let secret_item = html
+                .split("<li><strong>")
+                .find(|item| item.starts_with(secret_action))
+                .unwrap_or_else(|| panic!("missing secret step: {secret_action}"));
+            let secret_item = secret_item.split("</li>").next().unwrap();
+            assert!(
+                !(secret_item.contains("5 related") || secret_item.contains("有 5 項")),
+                "{secret_item}"
+            );
+            assert!(secret_item.contains(expert), "{secret_item}");
+            println!("rendered card title: {package_title}");
+            println!("rendered card title: {secret_title}");
+            println!("rendered secret step: {secret_action}");
         }
     }
 
@@ -39863,6 +39926,7 @@ mod tests {
                     cwe_ids: Vec::new(),
                     cvss: Vec::new(),
                     benchmarks: Vec::new(),
+                    advisory_aliases: Vec::new(),
                 }),
                 source_rule: Some("generic-api-key".into()),
                 result_pointer_sha256: None,
@@ -39920,6 +39984,7 @@ mod tests {
                 cwe_ids: Vec::new(),
                 cvss: Vec::new(),
                 benchmarks: Vec::new(),
+                advisory_aliases: Vec::new(),
             });
         mutable_canonical.official_references = vec![NEWER_EVIDENCE_SENTINEL.into()];
         case.findings.push(mutable_canonical);
@@ -40911,6 +40976,7 @@ mod tests {
                 cwe_ids: Vec::new(),
                 cvss: Vec::new(),
                 benchmarks: Vec::new(),
+                advisory_aliases: Vec::new(),
             }),
             summary: Some("summary".into()),
             kind: Some(EvidenceKind::Configuration),
@@ -41933,6 +41999,7 @@ mod tests {
                         cwe_ids: Vec::new(),
                         cvss: Vec::new(),
                         benchmarks: Vec::new(),
+                        advisory_aliases: Vec::new(),
                     }),
                     summary: Some("summary".into()),
                     kind: Some(EvidenceKind::Configuration),
@@ -42098,6 +42165,7 @@ mod tests {
                 cwe_ids: Vec::new(),
                 cvss: Vec::new(),
                 benchmarks: Vec::new(),
+                advisory_aliases: Vec::new(),
             }),
             summary: Some(sentinel.into()),
             kind: Some(EvidenceKind::Configuration),

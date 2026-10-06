@@ -1000,6 +1000,7 @@ mod tests {
             cwe_ids: Vec::new(),
             cvss: Vec::new(),
             benchmarks: Vec::new(),
+            advisory_aliases: Vec::new(),
         });
         let adapter = TestAdapter {
             output: AdapterOutput {
@@ -1062,6 +1063,7 @@ mod tests {
             cwe_ids: Vec::new(),
             cvss: Vec::new(),
             benchmarks: Vec::new(),
+            advisory_aliases: Vec::new(),
         });
         let adapter = CloudsplainingTestAdapter {
             output: AdapterOutput {

@@ -2354,6 +2354,7 @@ fn with_weakness(mut record: SourceRecord, weakness: UpstreamWeakness) -> Source
             cwe_ids: Vec::new(),
             cvss: Vec::new(),
             benchmarks: Vec::new(),
+            advisory_aliases: Vec::new(),
         });
     details.cwe_ids = weakness.cwe_ids;
     details.cvss = weakness.cvss;
@@ -2367,6 +2368,11 @@ fn with_scanner_details(
     installed_version: Option<String>,
     fixed_version: Option<String>,
 ) -> SourceRecord {
+    let advisory_aliases = record
+        .scanner_details
+        .as_ref()
+        .map(|details| details.advisory_aliases.clone())
+        .unwrap_or_default();
     let details = ScannerFindingDetails {
         description: bounded_scanner_detail(description, MAX_LONG_TEXT),
         remediation: bounded_scanner_detail(remediation, MAX_LONG_TEXT),
@@ -2376,15 +2382,93 @@ fn with_scanner_details(
         cwe_ids: Vec::new(),
         cvss: Vec::new(),
         benchmarks: Vec::new(),
+        advisory_aliases,
     };
     if details.description.is_some()
         || details.remediation.is_some()
         || details.installed_version.is_some()
         || details.fixed_version.is_some()
+        || !details.advisory_aliases.is_empty()
     {
         record.scanner_details = Some(details);
     }
     record
+}
+
+/// Keep identifiers the scanner itself listed for this result. An empty list
+/// leaves the record unchanged, including a details block created earlier.
+fn with_advisory_aliases(mut record: SourceRecord, aliases: Vec<String>) -> SourceRecord {
+    if aliases.is_empty() {
+        return record;
+    }
+    let details = record
+        .scanner_details
+        .get_or_insert_with(|| ScannerFindingDetails {
+            description: None,
+            remediation: None,
+            installed_version: None,
+            fixed_version: None,
+            aws_iam_policy: None,
+            cwe_ids: Vec::new(),
+            cvss: Vec::new(),
+            benchmarks: Vec::new(),
+            advisory_aliases: Vec::new(),
+        });
+    details.advisory_aliases = aliases;
+    record
+}
+
+/// CVE- or GHSA-shaped ids, in scanner order, as the scanner wrote them.
+///
+/// Compared case-insensitively. The record's own id, anything else, and
+/// uppercase duplicates are dropped. At most 16 remain.
+fn reported_advisory_aliases(
+    raw_ids: impl IntoIterator<Item = String>,
+    own_id: &str,
+) -> Vec<String> {
+    let own = own_id.trim().to_ascii_uppercase();
+    let mut seen = BTreeSet::new();
+    let mut aliases = Vec::new();
+    for raw in raw_ids {
+        let display = raw.trim();
+        if display.is_empty() {
+            continue;
+        }
+        let upper = display.to_ascii_uppercase();
+        if upper == own || seen.contains(&upper) {
+            continue;
+        }
+        if !crate::correlation::is_cve_identifier(&upper)
+            && !crate::correlation::is_ghsa_identifier(&upper)
+        {
+            continue;
+        }
+        seen.insert(upper);
+        aliases.push(display.to_owned());
+        if aliases.len() == 16 {
+            break;
+        }
+    }
+    aliases
+}
+
+fn object_advisory_ids(value: Option<&Value>) -> Vec<String> {
+    value
+        .and_then(Value::as_array)
+        .map(|items| {
+            items
+                .iter()
+                .filter_map(|item| item.get("id").and_then(exact_rule_scalar))
+                .collect()
+        })
+        .unwrap_or_default()
+}
+
+fn string_advisory_ids(value: Option<&Value>) -> Vec<String> {
+    value
+        .and_then(Value::as_array)
+        .map(|items| items.iter().filter_map(exact_rule_scalar).collect())
+        .unwrap_or_default()
 }
 
 fn bounded_scanner_detail(value: Option<String>, max_chars: usize) -> Option<String> {
@@ -4214,6 +4298,7 @@ fn attach_scoutsuite_benchmarks(
             cwe_ids: Vec::new(),
             cvss: Vec::new(),
             benchmarks: Vec::new(),
+            advisory_aliases: Vec::new(),
         });
     details.benchmarks = benchmarks;
     record
@@ -4517,6 +4602,7 @@ fn with_aws_iam_policy_details(
                 cwe_ids: Vec::new(),
                 cvss: Vec::new(),
                 benchmarks: Vec::new(),
+                advisory_aliases: Vec::new(),
             });
         }
     }
@@ -7345,26 +7431,38 @@ fn extract_trivy(parsed: &ParsedArtifact, warnings: &mut Vec<String>) -> Vec<Sou
                     ),
                     _ => unreachable!("closed Trivy result kinds"),
                 };
-                records.push(with_weakness(
-                    with_scanner_details(
-                        record_with_derived_confidence!(
-                            format!("/Results/{result_index}/{field}/{item_index}"),
-                            rule_id,
-                            title,
-                            string_any(object, &["Severity"]).unwrap_or_else(|| "unknown".into()),
-                            location,
-                            asset_hint,
-                            derived_confidence(confidence_basis),
-                            kind.clone(),
-                            references_from(item),
-                            tags,
+                let aliases = if field == "Vulnerabilities" {
+                    reported_advisory_aliases(
+                        string_advisory_ids(object.get("VendorIDs")),
+                        &rule_id,
+                    )
+                } else {
+                    Vec::new()
+                };
+                records.push(with_advisory_aliases(
+                    with_weakness(
+                        with_scanner_details(
+                            record_with_derived_confidence!(
+                                format!("/Results/{result_index}/{field}/{item_index}"),
+                                rule_id,
+                                title,
+                                string_any(object, &["Severity"])
+                                    .unwrap_or_else(|| "unknown".into()),
+                                location,
+                                asset_hint,
+                                derived_confidence(confidence_basis),
+                                kind.clone(),
+                                references_from(item),
+                                tags,
+                            ),
+                            string_any(object, &["Description"]),
+                            None,
+                            string_any(object, &["InstalledVersion"]),
+                            string_any(object, &["FixedVersion"]),
                         ),
-                        string_any(object, &["Description"]),
-                        None,
-                        string_any(object, &["InstalledVersion"]),
-                        string_any(object, &["FixedVersion"]),
+                        trivy_weakness(object),
                     ),
-                    trivy_weakness(object),
+                    aliases,
                 ));
                 if records.len() >= MAX_RECORDS {
                     return records;
@@ -7451,7 +7549,13 @@ fn extract_grype(parsed: &ParsedArtifact, warnings: &mut Vec<String>) -> Vec<Sou
                 nested_string(value, &["artifact", "name"]).unwrap_or_else(|| "package".into());
             let location = nested_string(value, &["artifact", "locations", "0", "path"])
                 .unwrap_or_else(|| package.clone());
-            Some(with_weakness(
+            // Only each related vulnerability's id. Its scores, CWE, and
+            // description stay unread; `grype_weakness` reads the direct block.
+            let aliases = reported_advisory_aliases(
+                object_advisory_ids(value.get("relatedVulnerabilities")),
+                &rule_id,
+            );
+            Some(with_advisory_aliases(with_weakness(
                 with_scanner_details(
                     record_with_derived_confidence!(
                         pointer,
@@ -7472,7 +7576,7 @@ fn extract_grype(parsed: &ParsedArtifact, warnings: &mut Vec<String>) -> Vec<Sou
                     bounded_string_list(value.pointer("/vulnerability/fix/versions"), 16),
                 ),
                 grype_weakness(value),
-            ))
+            ), aliases))
         })
         .collect()
 }

@@ -2688,16 +2688,30 @@ export function FindingsPage({
     () => [...findingGroupEvents].sort((left, right) => right.occurredAt.localeCompare(left.occurredAt) || right.id.localeCompare(left.id)),
     [findingGroupEvents],
   );
-  // A suggestion computed against an older finding set can name a finding this
-  // page does not have, or one that has since been grouped. Neither is
-  // actionable: accepting it would be rejected, and the user could not open the
-  // members to check the claim. Dropping such a row hides no problem, because
-  // every finding it names is either absent or already listed on its own.
+  // A suggestion stays when every finding it names is on this page and is not
+  // already in a case finding group. It also drops when those findings all
+  // belong to one rendered problem card. Membership comes from the rows
+  // `projectProblemRows` produced for the findings this page lists, so a group
+  // the report stored but did not render leaves the suggestion in place.
+  // Accepting a suggestion that names a missing finding would be rejected, and
+  // findings already shown together are read on that card.
   const correlationSuggestions = useMemo(() => {
     const alreadyGrouped = new Set(findingGroups.flatMap((group) => group.findingIds));
-    return (correlationReport?.suggestions ?? []).filter((suggestion) =>
-      suggestion.findingIds.every((findingId) => findingById.has(findingId) && !alreadyGrouped.has(findingId)));
-  }, [correlationReport, findingById, findingGroups]);
+    const renderedGroupByFinding = new Map<string, string>();
+    for (const row of orderedProblems) {
+      if (row.group && row.members.length >= 2) {
+        for (const member of row.members) renderedGroupByFinding.set(member.id, row.group.groupId);
+      }
+    }
+    return (correlationReport?.suggestions ?? []).filter((suggestion) => {
+      if (!suggestion.findingIds.every((findingId) => findingById.has(findingId) && !alreadyGrouped.has(findingId))) {
+        return false;
+      }
+      const rendered = suggestion.findingIds.map((findingId) => renderedGroupByFinding.get(findingId));
+      const shared = rendered[0];
+      return !(shared !== undefined && rendered.every((groupId) => groupId === shared));
+    });
+  }, [correlationReport, findingById, findingGroups, orderedProblems]);
   const correlationUnverifiable = useMemo(
     () => (correlationReport?.unverifiable ?? []).filter((entry) =>
       entry.findingIds.every((findingId) => findingById.has(findingId))),

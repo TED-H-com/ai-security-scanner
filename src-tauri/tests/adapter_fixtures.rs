@@ -7928,3 +7928,167 @@ fn garak_withholds_completion_for_counts_that_cannot_be_true() {
     assert!(clean.warnings.is_empty(), "{:?}", clean.warnings);
     assert!(clean.findings.is_empty());
 }
+
+fn advisory_aliases(output: &AdapterOutput, rule: &str) -> Vec<String> {
+    output
+        .findings
+        .iter()
+        .flat_map(|finding| finding.evidence.iter())
+        .find(|evidence| evidence.source_rule.as_deref() == Some(rule))
+        .and_then(|evidence| evidence.scanner_details.as_ref())
+        .map(|details| details.advisory_aliases.clone())
+        .unwrap_or_default()
+}
+
+#[test]
+fn grype_and_trivy_keep_only_scanner_reported_cve_and_ghsa_aliases() {
+    let (bytes, name, media) = fixture("grype");
+    let synthetic = normalize_bytes("grype", bytes, name, media, "run-aliases");
+    assert!(synthetic.findings.iter().all(|finding| {
+        finding.evidence.iter().all(|evidence| {
+            evidence
+                .scanner_details
+                .as_ref()
+                .is_none_or(|details| details.advisory_aliases.is_empty())
+        })
+    }));
+
+    let grype = normalize_bytes(
+        "grype",
+        include_bytes!("fixtures/adapters/grype-related-vulnerabilities.json"),
+        "grype-related-vulnerabilities.json",
+        "application/json",
+        "run-aliases",
+    );
+    assert_eq!(
+        advisory_aliases(&grype, "GHSA-8q59-q68h-6hv4"),
+        vec!["CVE-2020-14343".to_owned()]
+    );
+    assert_eq!(
+        advisory_aliases(&grype, "GHSA-9hjg-9r4m-mvj7"),
+        vec!["CVE-2024-47081".to_owned()]
+    );
+    let pyyaml = grype
+        .findings
+        .iter()
+        .find(|finding| {
+            finding
+                .evidence
+                .iter()
+                .any(|evidence| evidence.source_rule.as_deref() == Some("GHSA-8q59-q68h-6hv4"))
+        })
+        .unwrap();
+    assert!(pyyaml.tags.iter().any(|tag| tag == "package:pyyaml"));
+    let details = pyyaml.evidence[0].scanner_details.as_ref().unwrap();
+    assert_eq!(
+        details.description.as_deref(),
+        Some("Improper Input Validation in PyYAML")
+    );
+    assert!(details.cwe_ids.is_empty());
+    assert!(
+        details
+            .cvss
+            .iter()
+            .all(|score| score.source != "nvd@nist.gov")
+    );
+
+    let trivy = normalize_bytes(
+        "trivy",
+        include_bytes!("fixtures/adapters/trivy-vendor-ids.json"),
+        "trivy-vendor-ids.json",
+        "application/json",
+        "run-aliases",
+    );
+    assert_eq!(
+        advisory_aliases(&trivy, "CVE-2020-14343"),
+        vec!["GHSA-8q59-q68h-6hv4".to_owned()]
+    );
+    assert_eq!(
+        advisory_aliases(&trivy, "CVE-2024-47081"),
+        vec!["GHSA-9hjg-9r4m-mvj7".to_owned()]
+    );
+    assert!(trivy.findings.iter().any(|finding| {
+        finding.tags.iter().any(|tag| tag == "package:pyyaml")
+            && finding
+                .evidence
+                .iter()
+                .any(|evidence| evidence.source_rule.as_deref() == Some("CVE-2020-14343"))
+    }));
+
+    let mut grype_document: serde_json::Value = serde_json::from_slice(include_bytes!(
+        "fixtures/adapters/grype-related-vulnerabilities.json"
+    ))
+    .unwrap();
+    grype_document["matches"][0]["relatedVulnerabilities"]
+        .as_array_mut()
+        .unwrap()
+        .extend([
+            serde_json::json!({"id": "DSA-5555-1"}),
+            serde_json::json!({"id": "GHSA-8q59-q68h-6hv4"}),
+            serde_json::json!({"id": "cve-2020-14343"}),
+        ]);
+    let dropped_grype = normalize_bytes(
+        "grype",
+        &serde_json::to_vec(&grype_document).unwrap(),
+        "grype-related-vulnerabilities.json",
+        "application/json",
+        "run-aliases",
+    );
+    assert_eq!(
+        advisory_aliases(&dropped_grype, "GHSA-8q59-q68h-6hv4"),
+        vec!["CVE-2020-14343".to_owned()]
+    );
+
+    let mut trivy_document: serde_json::Value =
+        serde_json::from_slice(include_bytes!("fixtures/adapters/trivy-vendor-ids.json")).unwrap();
+    trivy_document["Results"][0]["Vulnerabilities"][0]["VendorIDs"]
+        .as_array_mut()
+        .unwrap()
+        .extend([
+            serde_json::json!("DSA-5555-1"),
+            serde_json::json!("CVE-2020-14343"),
+            serde_json::json!("ghsa-8q59-q68h-6hv4"),
+        ]);
+    trivy_document["Results"]
+        .as_array_mut()
+        .unwrap()
+        .push(serde_json::json!({
+            "Target": "main.tf",
+            "Misconfigurations": [{
+                "ID": "AVD-AWS-0001",
+                "Title": "Bucket logging",
+                "VendorIDs": ["GHSA-8q59-q68h-6hv4"]
+            }],
+            "Secrets": [{
+                "RuleID": "private-key",
+                "Title": "Private key",
+                "VendorIDs": ["CVE-2020-14343"],
+                "StartLine": 1
+            }]
+        }));
+    let dropped_trivy = normalize_bytes(
+        "trivy",
+        &serde_json::to_vec(&trivy_document).unwrap(),
+        "trivy-vendor-ids.json",
+        "application/json",
+        "run-aliases",
+    );
+    assert_eq!(
+        advisory_aliases(&dropped_trivy, "CVE-2020-14343"),
+        vec!["GHSA-8q59-q68h-6hv4".to_owned()]
+    );
+    assert!(dropped_trivy.findings.iter().any(|finding| {
+        finding
+            .evidence
+            .iter()
+            .any(|evidence| evidence.source_rule.as_deref() == Some("AVD-AWS-0001"))
+    }));
+    assert!(dropped_trivy.findings.iter().any(|finding| {
+        finding
+            .evidence
+            .iter()
+            .any(|evidence| evidence.source_rule.as_deref() == Some("private-key"))
+    }));
+    assert!(advisory_aliases(&dropped_trivy, "AVD-AWS-0001").is_empty());
+    assert!(advisory_aliases(&dropped_trivy, "private-key").is_empty());
+}

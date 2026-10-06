@@ -1,0 +1,366 @@
+{
+ "matches": [
+  {
+   "vulnerability": {
+    "id": "GHSA-8q59-q68h-6hv4",
+    "dataSource": "https://github.com/advisories/GHSA-8q59-q68h-6hv4",
+    "namespace": "github:language:python",
+    "severity": "Critical",
+    "urls": [
+     "https://nvd.nist.gov/vuln/detail/CVE-2020-14343",
+     "https://github.com/yaml/pyyaml/commit/a001f2782501ad2d24986959f0239a354675f9dc",
+     "https://bugzilla.redhat.com/show_bug.cgi?id=1860466",
+     "https://github.com/yaml/pyyaml/issues/420#issuecomment-663673966",
+     "https://www.oracle.com/security-alerts/cpuapr2022.html",
+     "https://www.oracle.com/security-alerts/cpujul2022.html",
+     "https://github.com/SeldonIO/seldon-core/issues/2252",
+     "https://github.com/yaml/pyyaml/issues/420",
+     "https://github.com/pypa/advisory-database/tree/main/vulns/pyyaml/PYSEC-2021-142.yaml",
+     "https://pypi.org/project/PyYAML"
+    ],
+    "description": "Improper Input Validation in PyYAML",
+    "cvss": [
+     {
+      "type": "Secondary",
+      "version": "3.1",
+      "vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H",
+      "metrics": {
+       "baseScore": 9.8,
+       "exploitabilityScore": 3.9,
+       "impactScore": 5.9
+      },
+      "vendorMetadata": {}
+     },
+     {
+      "type": "Secondary",
+      "version": "4.0",
+      "vector": "CVSS:4.0/AV:N/AC:L/AT:N/PR:N/UI:N/VC:H/VI:H/VA:H/SC:N/SI:N/SA:N",
+      "metrics": {
+       "baseScore": 9.3
+      },
+      "vendorMetadata": {}
+     }
+    ],
+    "epss": [
+     {
+      "cve": "CVE-2020-14343",
+      "epss": 0.05984,
+      "percentile": 0.92821,
+      "date": "2026-08-23"
+     }
+    ],
+    "cwes": [
+     {
+      "cve": "CVE-2020-14343",
+      "cwe": "CWE-20",
+      "source": "secalert@redhat.com",
+      "type": "Secondary"
+     },
+     {
+      "cve": "CVE-2020-14343",
+      "cwe": "CWE-20",
+      "source": "nvd@nist.gov",
+      "type": "Primary"
+     }
+    ],
+    "fix": {
+     "versions": [
+      "5.4"
+     ],
+     "state": "fixed",
+     "available": [
+      {
+       "version": "5.4",
+       "date": "2021-03-26",
+       "kind": "first-observed"
+      }
+     ]
+    },
+    "advisories": [],
+    "risk": 5.55016
+   },
+   "relatedVulnerabilities": [
+    {
+     "id": "CVE-2020-14343",
+     "dataSource": "https://nvd.nist.gov/vuln/detail/CVE-2020-14343",
+     "namespace": "nvd:cpe",
+     "severity": "Critical",
+     "urls": [
+      "https://bugzilla.redhat.com/show_bug.cgi?id=1860466",
+      "https://github.com/SeldonIO/seldon-core/issues/2252",
+      "https://github.com/yaml/pyyaml/issues/420",
+      "https://www.oracle.com/security-alerts/cpuapr2022.html",
+      "https://www.oracle.com/security-alerts/cpujul2022.html"
+     ],
+     "description": "A vulnerability was discovered in the PyYAML library in versions before 5.4, where it is susceptible to arbitrary code execution when it processes untrusted YAML files through the full_load method or with the FullLoader loader. Applications that use the library to process untrusted input may be vulnerable to this flaw. This flaw allows an attacker to execute arbitrary code on the system by abusing the python/object/new constructor. This flaw is due to an incomplete fix for CVE-2020-1747.",
+     "cvss": [
+      {
+       "source": "nvd@nist.gov",
+       "type": "Primary",
+       "version": "3.1",
+       "vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H",
+       "metrics": {
+        "baseScore": 9.8,
+        "exploitabilityScore": 3.9,
+        "impactScore": 5.9
+       },
+       "vendorMetadata": {}
+      },
+      {
+       "source": "nvd@nist.gov",
+       "type": "Primary",
+       "version": "2.0",
+       "vector": "AV:N/AC:L/Au:N/C:C/I:C/A:C",
+       "metrics": {
+        "baseScore": 10,
+        "exploitabilityScore": 10,
+        "impactScore": 10.1
+       },
+       "vendorMetadata": {}
+      }
+     ],
+     "epss": [
+      {
+       "cve": "CVE-2020-14343",
+       "epss": 0.05984,
+       "percentile": 0.92821,
+       "date": "2026-08-23"
+      }
+     ],
+     "cwes": [
+      {
+       "cve": "CVE-2020-14343",
+       "cwe": "CWE-20",
+       "source": "secalert@redhat.com",
+       "type": "Secondary"
+      },
+      {
+       "cve": "CVE-2020-14343",
+       "cwe": "CWE-20",
+       "source": "nvd@nist.gov",
+       "type": "Primary"
+      }
+     ]
+    }
+   ],
+   "matchDetails": [
+    {
+     "type": "exact-direct-match",
+     "matcher": "python-matcher",
+     "searchedBy": {
+      "language": "python",
+      "namespace": "github:language:python",
+      "package": {
+       "name": "pyyaml",
+       "version": "5.3.1"
+      }
+     },
+     "found": {
+      "vulnerabilityID": "GHSA-8q59-q68h-6hv4",
+      "versionConstraint": "<5.4 (python)"
+     },
+     "fix": {
+      "suggestedVersion": "5.4"
+     }
+    }
+   ],
+   "artifact": {
+    "id": "134b010929e18315",
+    "name": "pyyaml",
+    "version": "5.3.1",
+    "type": "python",
+    "locations": [
+     {
+      "path": "/requirements.txt",
+      "accessPath": "/requirements.txt",
+      "annotations": {
+       "evidence": "primary"
+      }
+     }
+    ],
+    "language": "python",
+    "licenses": [],
+    "cpes": [
+     "cpe:2.3:a:python-pyyaml:python-pyyaml:5.3.1:*:*:*:*:*:*:*",
+     "cpe:2.3:a:python-pyyaml:python_pyyaml:5.3.1:*:*:*:*:*:*:*",
+     "cpe:2.3:a:python_pyyaml:python-pyyaml:5.3.1:*:*:*:*:*:*:*",
+     "cpe:2.3:a:python_pyyaml:python_pyyaml:5.3.1:*:*:*:*:*:*:*",
+     "cpe:2.3:a:python-pyyaml:pyyaml:5.3.1:*:*:*:*:*:*:*",
+     "cpe:2.3:a:python:python-pyyaml:5.3.1:*:*:*:*:*:*:*",
+     "cpe:2.3:a:python:python_pyyaml:5.3.1:*:*:*:*:*:*:*",
+     "cpe:2.3:a:python_pyyaml:pyyaml:5.3.1:*:*:*:*:*:*:*",
+     "cpe:2.3:a:pyyaml:python-pyyaml:5.3.1:*:*:*:*:*:*:*",
+     "cpe:2.3:a:pyyaml:python_pyyaml:5.3.1:*:*:*:*:*:*:*",
+     "cpe:2.3:a:python:pyyaml:5.3.1:*:*:*:*:*:*:*",
+     "cpe:2.3:a:pyyaml:pyyaml:5.3.1:*:*:*:*:*:*:*"
+    ],
+    "purl": "pkg:pypi/pyyaml@5.3.1",
+    "upstreams": []
+   }
+  },
+  {
+   "vulnerability": {
+    "id": "GHSA-9hjg-9r4m-mvj7",
+    "dataSource": "https://github.com/advisories/GHSA-9hjg-9r4m-mvj7",
+    "namespace": "github:language:python",
+    "severity": "Medium",
+    "urls": [
+     "https://github.com/psf/requests/security/advisories/GHSA-9hjg-9r4m-mvj7",
+     "https://nvd.nist.gov/vuln/detail/CVE-2024-47081",
+     "https://github.com/psf/requests/pull/6965",
+     "https://github.com/psf/requests/commit/96ba401c1296ab1dda74a2365ef36d88f7d144ef",
+     "https://requests.readthedocs.io/en/latest/api/#requests.Session.trust_env",
+     "https://seclists.org/fulldisclosure/2025/Jun/2",
+     "http://seclists.org/fulldisclosure/2025/Jun/2",
+     "http://www.openwall.com/lists/oss-security/2025/06/03/11",
+     "http://www.openwall.com/lists/oss-security/2025/06/03/9",
+     "http://www.openwall.com/lists/oss-security/2025/06/04/1",
+     "http://www.openwall.com/lists/oss-security/2025/06/04/6"
+    ],
+    "description": "Requests vulnerable to .netrc credentials leak via malicious URLs",
+    "cvss": [
+     {
+      "type": "Secondary",
+      "version": "3.1",
+      "vector": "CVSS:3.1/AV:N/AC:H/PR:N/UI:R/S:U/C:H/I:N/A:N",
+      "metrics": {
+       "baseScore": 5.3,
+       "exploitabilityScore": 1.7,
+       "impactScore": 3.6
+      },
+      "vendorMetadata": {}
+     }
+    ],
+    "epss": [
+     {
+      "cve": "CVE-2024-47081",
+      "epss": 0.00845,
+      "percentile": 0.54827,
+      "date": "2026-08-23"
+     }
+    ],
+    "cwes": [
+     {
+      "cve": "CVE-2024-47081",
+      "cwe": "CWE-522",
+      "source": "security-advisories@github.com",
+      "type": "Secondary"
+     }
+    ],
+    "fix": {
+     "versions": [
+      "2.32.4"
+     ],
+     "state": "fixed",
+     "available": [
+      {
+       "version": "2.32.4",
+       "date": "2025-06-10",
+       "kind": "first-observed"
+      }
+     ]
+    },
+    "advisories": [],
+    "risk": 0.435175
+   },
+   "relatedVulnerabilities": [
+    {
+     "id": "CVE-2024-47081",
+     "dataSource": "https://nvd.nist.gov/vuln/detail/CVE-2024-47081",
+     "namespace": "nvd:cpe",
+     "severity": "Medium",
+     "urls": [
+      "https://github.com/psf/requests/commit/96ba401c1296ab1dda74a2365ef36d88f7d144ef",
+      "https://github.com/psf/requests/pull/6965",
+      "https://github.com/psf/requests/security/advisories/GHSA-9hjg-9r4m-mvj7",
+      "https://requests.readthedocs.io/en/latest/api/#requests.Session.trust_env",
+      "https://seclists.org/fulldisclosure/2025/Jun/2",
+      "http://seclists.org/fulldisclosure/2025/Jun/2",
+      "http://www.openwall.com/lists/oss-security/2025/06/03/11",
+      "http://www.openwall.com/lists/oss-security/2025/06/03/9",
+      "http://www.openwall.com/lists/oss-security/2025/06/04/1",
+      "http://www.openwall.com/lists/oss-security/2025/06/04/6"
+     ],
+     "description": "Requests is a HTTP library. Due to a URL parsing issue, Requests releases prior to 2.32.4 may leak .netrc credentials to third parties for specific maliciously-crafted URLs. Users should upgrade to version 2.32.4 to receive a fix. For older versions of Requests, use of the .netrc file can be disabled with `trust_env=False` on one's Requests Session.",
+     "cvss": [
+      {
+       "source": "security-advisories@github.com",
+       "type": "Secondary",
+       "version": "3.1",
+       "vector": "CVSS:3.1/AV:N/AC:H/PR:N/UI:R/S:U/C:H/I:N/A:N",
+       "metrics": {
+        "baseScore": 5.3,
+        "exploitabilityScore": 1.7,
+        "impactScore": 3.6
+       },
+       "vendorMetadata": {}
+      }
+     ],
+     "epss": [
+      {
+       "cve": "CVE-2024-47081",
+       "epss": 0.00845,
+       "percentile": 0.54827,
+       "date": "2026-08-23"
+      }
+     ],
+     "cwes": [
+      {
+       "cve": "CVE-2024-47081",
+       "cwe": "CWE-522",
+       "source": "security-advisories@github.com",
+       "type": "Secondary"
+      }
+     ]
+    }
+   ],
+   "matchDetails": [
+    {
+     "type": "exact-direct-match",
+     "matcher": "python-matcher",
+     "searchedBy": {
+      "language": "python",
+      "namespace": "github:language:python",
+      "package": {
+       "name": "requests",
+       "version": "2.31.0"
+      }
+     },
+     "found": {
+      "vulnerabilityID": "GHSA-9hjg-9r4m-mvj7",
+      "versionConstraint": "<2.32.4 (python)"
+     },
+     "fix": {
+      "suggestedVersion": "2.32.4"
+     }
+    }
+   ],
+   "artifact": {
+    "id": "21ce5e236ab6b5c2",
+    "name": "requests",
+    "version": "2.31.0",
+    "type": "python",
+    "locations": [
+     {
+      "path": "/requirements.txt",
+      "accessPath": "/requirements.txt",
+      "annotations": {
+       "evidence": "primary"
+      }
+     }
+    ],
+    "language": "python",
+    "licenses": [],
+    "cpes": [
+     "cpe:2.3:a:python:requests:2.31.0:*:*:*:*:*:*:*"
+    ],
+    "purl": "pkg:pypi/requests@2.31.0",
+    "upstreams": []
+   }
+  }
+ ],
+ "descriptor": {
+  "name": "grype",
+  "version": "0.117.0"
+ }
+}

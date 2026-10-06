@@ -4905,3 +4905,54 @@ test("every product-owned gateway preparation marker maps to one redacted failur
     assert.doesNotMatch(JSON.stringify(failed), new RegExp(secret, "u"), marker);
   }
 });
+
+test("package and secret problem groups keep their fields and omit empty ones", () => {
+  const fixture = beginnerStatusReportFixture();
+  const report = adaptBeginnerMasterReport({
+    ...fixture,
+    problem_groups: [
+      {
+        group_id: "group-package",
+        rule_version: "dependency-advisory-1",
+        kind: "vulnerable_dependency",
+        title: "Vulnerable package pyyaml 5.3.1 (CVE-2020-14343 / GHSA-8q59-q68h-6hv4)",
+        target_asset_id: "asset-status",
+        representative_finding_id: "finding-1",
+        finding_ids: ["finding-1", "finding-2"],
+        package_name: "pyyaml",
+        installed_version: "5.3.1",
+        advisory_ids: ["CVE-2020-14343", "GHSA-8q59-q68h-6hv4"],
+      },
+      {
+        group_id: "group-secret",
+        rule_version: "secret-location-1",
+        kind: "exposed_secret",
+        title: "Secret found in a file",
+        target_asset_id: "asset-status",
+        representative_finding_id: "finding-3",
+        finding_ids: ["finding-3", "finding-4"],
+        package_name: null,
+        installed_version: "",
+        advisory_ids: [],
+      },
+    ],
+  });
+  assert.deepEqual(report.problemGroups?.[0], {
+    groupId: "group-package",
+    ruleVersion: "dependency-advisory-1",
+    kind: "vulnerable_dependency",
+    title: "Vulnerable package pyyaml 5.3.1 (CVE-2020-14343 / GHSA-8q59-q68h-6hv4)",
+    targetAssetId: "asset-status",
+    representativeFindingId: "finding-1",
+    findingIds: ["finding-1", "finding-2"],
+    policyName: undefined,
+    packageName: "pyyaml",
+    installedVersion: "5.3.1",
+    advisoryIds: ["CVE-2020-14343", "GHSA-8q59-q68h-6hv4"],
+  });
+  const secret = report.problemGroups?.[1];
+  assert.equal(secret?.kind, "exposed_secret");
+  assert.equal(Object.hasOwn(secret ?? {}, "packageName"), false);
+  assert.equal(Object.hasOwn(secret ?? {}, "installedVersion"), false);
+  assert.equal(Object.hasOwn(secret ?? {}, "advisoryIds"), false);
+});

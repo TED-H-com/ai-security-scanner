@@ -1,3 +1,4 @@
+import { exposedCredentialNextStep } from "./findingNarrative.ts";
 import type { Locale } from "./i18n";
 import type { BeginnerReportFinding, BeginnerReportProblemGroup, Finding, Severity } from "./types";
 
@@ -50,6 +51,9 @@ export function problemGroupTitle(group: BeginnerReportProblemGroup, locale: Loc
     case "iam_password_policy": return "IAM 密碼政策需要調整";
     case "root_account_usage": return "最近使用過 root 帳號";
     case "iam_policy_permissions": return `檢查 IAM policy 的權限：${group.policyName ?? "IAM policy"}`;
+    case "vulnerable_dependency":
+      return `有已知弱點的套件 ${group.packageName ?? ""} ${group.installedVersion ?? ""}（${(group.advisoryIds ?? []).join(" / ")}）`;
+    case "exposed_secret": return "檔案中發現機密";
   }
 }
 
@@ -68,6 +72,8 @@ export function problemGroupAction(group: BeginnerReportProblemGroup | undefined
     case "root_account_usage": return locale === "en"
       ? "Review each scanner's root-usage window and use an IAM role for routine work."
       : "檢查各掃描工具記錄的 root 使用時間範圍，日常工作改用 IAM role。";
+    case "exposed_secret": return exposedCredentialNextStep(locale);
+    case "vulnerable_dependency": return undefined;
     default: return undefined;
   }
 }
@@ -84,6 +90,8 @@ export function problemGroupImpact(group: BeginnerReportProblemGroup | undefined
     case "root_account_usage": return locale === "en"
       ? "Root-account activity uses permissions with broad control of this AWS account."
       : "root 帳號的活動會使用可廣泛控制此 AWS 帳號的權限。";
+    case "vulnerable_dependency":
+    case "exposed_secret": return undefined;
     default: return undefined;
   }
 }

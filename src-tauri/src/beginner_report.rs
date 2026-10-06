@@ -903,10 +903,13 @@ pub fn build_beginner_master_report(
         });
     }
 
-    let (mut findings, finding_warnings) = project_findings(case, run);
+    let selected_observations = selected_run_observations(case, run);
+    let package_by_finding = package_tags_from_observations(&selected_observations);
+    let (mut findings, finding_warnings) = project_findings(case, run, &selected_observations);
     apply_coverage_constrained_finding_actions(&mut findings, &actual);
     let finding_groups = project_finding_groups(case, &findings);
-    let problem_groups = crate::report_problem_groups::build_problem_groups(&findings, run);
+    let problem_groups =
+        crate::report_problem_groups::build_problem_groups(&findings, run, &package_by_finding);
     data_quality_warnings.extend(finding_warnings);
     debug_assert!(data_quality_warnings.iter().all(|warning| {
         crate::finding_narrative::data_quality_warning_zh_hant(warning).is_some()
@@ -983,7 +986,7 @@ pub fn build_beginner_master_report(
             state_explanation(summary).into()
         },
     };
-    let next_steps = project_next_steps(&findings, &coverage_gaps, &actual);
+    let next_steps = project_next_steps(&findings, &coverage_gaps, &actual, &problem_groups);
     let technical_details = project_technical_details(case, run);
     let coverage_counts = coverage_counts(&actual, &coverage_gaps);
     let inventory = project_inventory(case, run);
@@ -3939,7 +3942,10 @@ fn append_case_exclusions(case: &AssessmentCase, run: &ScanRun, gaps: &mut Vec<C
     }
 }
 
-fn project_findings(case: &AssessmentCase, run: &ScanRun) -> (Vec<BeginnerFinding>, Vec<String>) {
+fn selected_run_observations<'a>(
+    case: &'a AssessmentCase,
+    run: &ScanRun,
+) -> BTreeMap<Id, &'a FindingObservation> {
     let mut selected = BTreeMap::<Id, &FindingObservation>::new();
     for observation in case
         .finding_observations
@@ -3955,7 +3961,42 @@ fn project_findings(case: &AssessmentCase, run: &ScanRun) -> (Vec<BeginnerFindin
             })
             .or_insert(observation);
     }
+    selected
+}
 
+/// One distinct `package:` tag from a frozen selected-run snapshot.
+///
+/// Zero tags, or more than one, contribute nothing. The tag value is already
+/// the scanner's lowercased package name.
+fn package_tags_from_observations(
+    selected: &BTreeMap<Id, &FindingObservation>,
+) -> BTreeMap<Id, String> {
+    let mut packages = BTreeMap::new();
+    for (finding_id, observation) in selected {
+        let Some(snapshot) = observation.finding_snapshot.as_ref() else {
+            continue;
+        };
+        let mut names = BTreeSet::new();
+        for tag in &snapshot.tags {
+            let Some(name) = tag.strip_prefix("package:") else {
+                continue;
+            };
+            if !name.is_empty() {
+                names.insert(name.to_owned());
+            }
+        }
+        if names.len() == 1 {
+            packages.insert(finding_id.clone(), names.into_iter().next().unwrap());
+        }
+    }
+    packages
+}
+
+fn project_findings(
+    case: &AssessmentCase,
+    run: &ScanRun,
+    selected: &BTreeMap<Id, &FindingObservation>,
+) -> (Vec<BeginnerFinding>, Vec<String>) {
     let canonical = case
         .findings
         .iter()
@@ -4416,6 +4457,7 @@ fn project_next_steps(
     findings: &[BeginnerFinding],
     gaps: &[CoverageGap],
     actual: &ActualCoverage,
+    problem_groups: &[crate::report_problem_groups::ReportProblemGroup],
 ) -> Vec<BeginnerNextStep> {
     // Keyed on the sentences the reader actually sees rather than on the
     // stored `next_step`: a Cloudsplaining finding's instruction is composed
@@ -4431,19 +4473,35 @@ fn project_next_steps(
             .is_some_and(|code| code.is_exposure_observation())
     }) {
         let policy = finding_aws_iam_policy(finding);
-        let expert = finding.recommended_expert_type.clone();
+        let exposed_secret = problem_groups.iter().any(|group| {
+            group.kind == crate::report_problem_groups::ReportProblemKind::ExposedSecret
+                && group
+                    .finding_ids
+                    .iter()
+                    .any(|finding_id| finding_id == &finding.finding_id)
+        });
+        let family = if exposed_secret {
+            Some(FindingFamily::Secret)
+        } else {
+            finding.family
+        };
+        let expert = if exposed_secret {
+            "Secrets-response specialist".to_owned()
+        } else {
+            finding.recommended_expert_type.clone()
+        };
         let unconfirmed = finding_unconfirmed_by_coverage(finding, actual);
         let key = (
             crate::finding_narrative::finding_next_action_english(
                 &finding.next_step,
-                finding.family,
+                family,
                 policy,
                 unconfirmed,
             ),
             crate::finding_narrative::finding_next_action_zh_hant(
                 &finding.next_step,
                 &expert,
-                finding.family,
+                family,
                 policy,
                 unconfirmed,
             ),
@@ -4473,7 +4531,7 @@ fn project_next_steps(
             finding_id: Some(finding.finding_id.clone()),
             task_id: None,
             recommended_expert_type: Some(expert),
-            family: finding.family,
+            family,
             also_resolves: Vec::new(),
             shared_fix: policy.is_some() && !unconfirmed,
         });
@@ -7915,6 +7973,7 @@ pub(crate) mod tests {
             cwe_ids: Vec::new(),
             cvss: Vec::new(),
             benchmarks: Vec::new(),
+            advisory_aliases: Vec::new(),
         });
         case.findings = vec![low.clone(), high.clone()];
         case.finding_observations = vec![
@@ -7964,6 +8023,7 @@ pub(crate) mod tests {
                 cwe_ids: Vec::new(),
                 cvss: Vec::new(),
                 benchmarks: Vec::new(),
+                advisory_aliases: Vec::new(),
             })
         );
         assert_eq!(evidence.kind, Some(EvidenceKind::Observation));
@@ -8597,6 +8657,7 @@ pub(crate) mod tests {
                 cwe_ids: Vec::new(),
                 cvss: Vec::new(),
                 benchmarks: Vec::new(),
+                advisory_aliases: Vec::new(),
             });
         }
         follow.title = "A second privilege path in the same policy".into();
@@ -8633,7 +8694,7 @@ pub(crate) mod tests {
             network_scopes: Vec::new(),
             unavailable_dimensions: Vec::new(),
         };
-        let fallback = project_next_steps(&[], &[], &empty_actual);
+        let fallback = project_next_steps(&[], &[], &empty_actual, &[]);
         assert_eq!(fallback.len(), 1);
         assert_eq!(fallback[0].code, NextActionCode::ReviewCoverage);
         assert_eq!(

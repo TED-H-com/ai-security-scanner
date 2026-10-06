@@ -1413,6 +1413,9 @@ pub struct ScannerFindingDetails {
     /// claim of conformance.
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub benchmarks: Vec<BenchmarkReference>,
+    /// Identifiers the scanner itself says name the same vulnerability as this result, as it reported them. Never derived from references, URLs, titles, or descriptions.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub advisory_aliases: Vec<String>,
 }
 
 /// One CVSS score exactly as a scanner published it.

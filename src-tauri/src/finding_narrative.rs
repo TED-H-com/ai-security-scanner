@@ -79,6 +79,13 @@ fn consequence_english(family: FindingFamily) -> &'static str {
     }
 }
 
+/// The full next-step sentence for an exposed credential, including the period.
+pub(crate) const EXPOSED_SECRET_NEXT_STEP_ENGLISH: &str = "Revoke and rotate the exposed credential, then remove it from the source and every retained history entry.";
+
+/// The Traditional Chinese form of [`EXPOSED_SECRET_NEXT_STEP_ENGLISH`].
+pub(crate) const EXPOSED_SECRET_NEXT_STEP_ZH_HANT: &str =
+    "先撤銷並輪替這組已外洩的憑證，再從原始碼以及仍保留它的歷史紀錄中移除。";
+
 /// The direct recommended action for each finding family.
 ///
 /// `Secret` departs from `SourceCode` even though they share a consequence. A
@@ -96,9 +103,9 @@ fn remedy(family: FindingFamily) -> &'static str {
         // reads this clause.
         FindingFamily::NetworkExposure => "調整這項檢查所指出的服務或設定",
         FindingFamily::SourceCode => "修改程式碼以移除回報的不安全寫法",
-        FindingFamily::Secret => {
-            "先撤銷並輪替這組已外洩的憑證，再從原始碼以及仍保留它的歷史紀錄中移除"
-        }
+        FindingFamily::Secret => EXPOSED_SECRET_NEXT_STEP_ZH_HANT
+            .strip_suffix('。')
+            .expect("exposed-secret next step ends with an ideographic full stop"),
         FindingFamily::InfrastructureAsCode => {
             "修改基礎架構即程式碼的範本，讓重新部署不會再還原這個設定"
         }
@@ -131,9 +138,9 @@ fn remedy_english(family: FindingFamily) -> &'static str {
             "Correct the service or configuration named by this check"
         }
         FindingFamily::SourceCode => "Change the code to remove the reported unsafe pattern",
-        FindingFamily::Secret => {
-            "Revoke and rotate the exposed credential, then remove it from the source and every retained history entry"
-        }
+        FindingFamily::Secret => EXPOSED_SECRET_NEXT_STEP_ENGLISH
+            .strip_suffix('.')
+            .expect("exposed-secret next step ends with a period"),
         FindingFamily::InfrastructureAsCode => {
             "Correct the infrastructure-as-code template so redeployment does not restore the insecure setting"
         }
@@ -3106,6 +3113,14 @@ fn report_file_path(raw: &str) -> String {
     } else {
         path
     }
+}
+
+/// Path and starting line of a scanner location, normalized the way the report
+/// prints a file path. `None` when the location has no line.
+pub(crate) fn normalized_source_path_line(raw: &str) -> Option<(String, u32)> {
+    let (path, line, _, _) = parse_location_coordinate(raw.trim())?;
+    let line = line?.parse().ok()?;
+    Some((report_file_path(path), line))
 }
 
 /// The resource label worth printing after `path`, if any. KICS writes `n/a`

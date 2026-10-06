@@ -94,3 +94,29 @@ test("Results group guidance matches the shared HTML report in both languages", 
   assert.deepEqual(missing, [], `Shared report must retain this guidance:\n${missing.join("\n")}`);
   assert.equal(problemGroupAction({...group,kind:"iam_policy_permissions"},"en"),undefined);
 });
+
+test("package and secret cards use the recorded fields and the secret remedy", () => {
+  const dependency = {
+    ...group,
+    kind: "vulnerable_dependency" as const,
+    title: "Vulnerable package pyyaml 5.3.1 (CVE-2020-14343 / GHSA-8q59-q68h-6hv4)",
+    packageName: "pyyaml",
+    installedVersion: "5.3.1",
+    advisoryIds: ["CVE-2020-14343", "GHSA-8q59-q68h-6hv4"],
+  };
+  const secret = {
+    ...group,
+    kind: "exposed_secret" as const,
+    title: "Secret found in a file",
+  };
+  assert.equal(problemGroupTitle(dependency, "en"), dependency.title);
+  assert.equal(problemGroupTitle(dependency, "zh-TW"), "有已知弱點的套件 pyyaml 5.3.1（CVE-2020-14343 / GHSA-8q59-q68h-6hv4）");
+  assert.equal(problemGroupTitle(secret, "en"), "Secret found in a file");
+  assert.equal(problemGroupTitle(secret, "zh-TW"), "檔案中發現機密");
+  assert.equal(problemGroupAction(dependency, "en"), undefined);
+  assert.equal(problemGroupAction(dependency, "zh-TW"), undefined);
+  assert.equal(problemGroupImpact(dependency, "en"), undefined);
+  assert.equal(problemGroupImpact(secret, "zh-TW"), undefined);
+  assert.equal(problemGroupAction(secret, "en"), "Revoke and rotate the exposed credential, then remove it from the source and every retained history entry.");
+  assert.equal(problemGroupAction(secret, "zh-TW"), "先撤銷並輪替這組已外洩的憑證，再從原始碼以及仍保留它的歷史紀錄中移除。");
+});

@@ -1569,6 +1569,12 @@ fn redact_beginner_master_report(report: &mut BeginnerMasterReport, case: &Asses
         group.actor = "[redacted]".into();
     }
     for group in &mut report.problem_groups {
+        if let Some(package_name) = &mut group.package_name {
+            redact_known_literals(package_name, &replacements);
+        }
+        if let Some(installed_version) = &mut group.installed_version {
+            redact_known_literals(installed_version, &replacements);
+        }
         if group.policy_name.is_some() {
             group.policy_name = report
                 .findings
@@ -3214,6 +3220,7 @@ mod tests {
                     cwe_ids: Vec::new(),
                     cvss: Vec::new(),
                     benchmarks: Vec::new(),
+                    advisory_aliases: Vec::new(),
                 }),
                 source_rule: Some("DataExfiltration".into()),
                 result_pointer_sha256: Some("b".repeat(64)),
@@ -4150,6 +4157,7 @@ mod tests {
             cwe_ids: Vec::new(),
             cvss: Vec::new(),
             benchmarks: Vec::new(),
+            advisory_aliases: Vec::new(),
         });
         assert!(
             validate_evidence_references(&case)
@@ -5128,6 +5136,7 @@ mod tests {
                     cwe_ids: Vec::new(),
                     cvss: Vec::new(),
                     benchmarks: Vec::new(),
+                    advisory_aliases: Vec::new(),
                 }),
                 source_rule: None,
                 result_pointer_sha256: None,
@@ -5900,5 +5909,53 @@ mod tests {
                     .contains("STALE_EXPOSURE")
             );
         }
+    }
+
+    #[test]
+    fn standard_redaction_rewrites_a_private_package_before_the_problem_title() {
+        let case = crate::report_problem_groups::tests::package_name_redaction_case();
+        let plain = beginner_report_for_export(&case, "run-1", RedactionProfile::None).unwrap();
+        let redacted =
+            beginner_report_for_export(&case, "run-1", RedactionProfile::Standard).unwrap();
+        fn vulnerable_group(
+            report: &crate::beginner_report::BeginnerMasterReport,
+        ) -> &crate::report_problem_groups::ReportProblemGroup {
+            report
+                .problem_groups
+                .iter()
+                .find(|group| {
+                    group.kind
+                        == crate::report_problem_groups::ReportProblemKind::VulnerableDependency
+                })
+                .unwrap()
+        }
+        let plain_group = vulnerable_group(&plain);
+        assert_eq!(plain_group.package_name.as_deref(), Some("acmecorp-lib"));
+        assert_eq!(
+            plain_group.installed_version.as_deref(),
+            Some("acmecorp-1.2.3")
+        );
+        assert_eq!(
+            plain_group.advisory_ids,
+            vec!["CVE-2024-1111".to_owned(), "GHSA-abcd-efgh-ijkl".to_owned()]
+        );
+        assert_eq!(
+            plain_group.title,
+            "Vulnerable package acmecorp-lib acmecorp-1.2.3 (CVE-2024-1111 / GHSA-abcd-efgh-ijkl)"
+        );
+        let redacted_group = vulnerable_group(&redacted);
+        assert_eq!(
+            redacted_group.package_name.as_deref(),
+            Some("Organization-lib")
+        );
+        assert_eq!(
+            redacted_group.installed_version.as_deref(),
+            Some("Organization-1.2.3")
+        );
+        assert_eq!(redacted_group.advisory_ids, plain_group.advisory_ids);
+        assert_eq!(
+            redacted_group.title,
+            "Vulnerable package Organization-lib Organization-1.2.3 (CVE-2024-1111 / GHSA-abcd-efgh-ijkl)"
+        );
     }
 }

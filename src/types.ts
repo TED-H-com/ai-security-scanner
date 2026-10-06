@@ -1422,12 +1422,20 @@ export interface BeginnerMasterReport {
 export interface BeginnerReportProblemGroup {
   groupId: string;
   ruleVersion: string;
-  kind: "iam_password_policy" | "root_account_usage" | "iam_policy_permissions";
+  kind:
+    | "iam_password_policy"
+    | "root_account_usage"
+    | "iam_policy_permissions"
+    | "vulnerable_dependency"
+    | "exposed_secret";
   title: string;
   targetAssetId: string;
   representativeFindingId: string;
   findingIds: string[];
   policyName?: string;
+  packageName?: string;
+  installedVersion?: string;
+  advisoryIds?: string[];
   /** Set when this product orders some or all members lower than their severity. */
   lowerPriorityMembers?: "partial" | "all";
 }
