@@ -2316,6 +2316,53 @@ test("native verification diffs retain their five-way status and structured reas
     assetId: undefined,
     detail: "severity changed from high to critical",
   }]);
+  assert.equal(workspace.verification?.diffs[0]?.baselineFindingId, undefined);
+  assert.equal(workspace.verification?.diffs[0]?.currentFindingId, undefined);
+  assert.equal(Object.hasOwn(workspace.verification?.diffs[0] ?? {}, "baselineFindingId"), false);
+  assert.equal(Object.hasOwn(workspace.verification?.diffs[0] ?? {}, "currentFindingId"), false);
+});
+
+test("native verification diffs keep baseline and current finding ids when present", () => {
+  const workspace = adaptNativeCase(platformCaseFixture({
+    comparisons: [{
+      id: "comparison-ids",
+      case_id: "case-platforms-1",
+      baseline_run_id: "run-before",
+      current_run_id: "run-after",
+      created_at: "2026-08-26T01:00:00Z",
+      complete: true,
+      diffs: [
+        {
+          fingerprint: "both-sides",
+          baseline_finding_id: "baseline-1",
+          current_finding_id: "current-1",
+          status: "still_present",
+          explanation: "The same fingerprint is observed again.",
+          evidence_changed: false,
+          reasons: [],
+        },
+        {
+          fingerprint: "baseline-only",
+          baseline_finding_id: "baseline-2",
+          current_finding_id: null,
+          status: "resolved",
+          explanation: "The fingerprint was not observed again.",
+          evidence_changed: false,
+          reasons: [],
+        },
+      ],
+    }],
+  }));
+
+  const both = workspace.verification?.diffs[0];
+  assert.equal(both?.findingId, "current-1");
+  assert.equal(both?.baselineFindingId, "baseline-1");
+  assert.equal(both?.currentFindingId, "current-1");
+  const baselineOnly = workspace.verification?.diffs[1];
+  assert.equal(baselineOnly?.findingId, "baseline-2");
+  assert.equal(baselineOnly?.baselineFindingId, "baseline-2");
+  assert.equal(baselineOnly?.currentFindingId, undefined);
+  assert.equal(Object.hasOwn(baselineOnly ?? {}, "currentFindingId"), false);
 });
 
 const snapshotSha = (character: string) => character.repeat(64);

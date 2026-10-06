@@ -7,9 +7,15 @@ import { StatusPill } from "../components/StatusPill";
 import { useI18n } from "../i18n";
 import { diffMeta, runStatusMeta, severityMeta } from "../lib";
 import type { LocalFolderRecheckRow } from "../localFolderRecheck.ts";
+import { problemGroupTitle } from "../reportProblemPresentation.ts";
 import { scanRunIdentityPresentation } from "../scanRunIdentityPresentation";
 import { isVerificationBaselineRun } from "../runLifecycle.ts";
 import type { Asset, DiffState, Finding, ScanRun, VerificationSummary } from "../types";
+import {
+  compareProblems,
+  type VerificationProblem,
+  type VerificationProblemReport,
+} from "../verificationProblems.ts";
 import {
   affectedEngineCount,
   isOnlyMappingVersionDrift,
@@ -24,6 +30,10 @@ interface VerificationPageProps {
   findings: Finding[];
   assets?: ReadonlyArray<Pick<Asset, "id" | "name">>;
   folderRecheckRows?: readonly LocalFolderRecheckRow[];
+  /** Problem cards from the before-fix run. Absent in demo mode or when that run has no report. */
+  baselineReport?: VerificationProblemReport;
+  /** Problem cards from the after-fix run. Absent in demo mode or when that run has no report. */
+  currentReport?: VerificationProblemReport;
   baselineRunId?: string;
   busy?: boolean;
   onSelectBaseline: (runId: string) => void;
@@ -149,6 +159,8 @@ const copy = {
   notObservedAgain: { en: "Not observed this time", zhTW: "這次沒有再觀察到" },
   unknown: { en: "Unknown", zhTW: "未知" },
   openEvidence: { en: "Open finding evidence", zhTW: "查看問題證據" },
+  originalFindingCount: { en: "{count} original findings", zhTW: "{count} 筆原始發現" },
+  originalFindingsCompared: { en: "Original findings compared", zhTW: "比較的原始發現" },
   baselineMissing: {
     en: "The baseline finding is no longer in the current list. Its complete technical history remains in the case package.",
     zhTW: "這筆基準問題已不在目前清單；完整技術歷史仍保留在案件包。",
@@ -201,12 +213,86 @@ const mappingDiffSummary = {
   zhTW: "這項檢查在兩次掃描中都已完成，但控制對照目錄版本不同；這個問題目前沒有比較分類。",
 } as const;
 
+function GroupedComparisonArticle({
+  problem,
+  findings,
+  onOpenFinding,
+}: {
+  problem: VerificationProblem;
+  findings: readonly Finding[];
+  onOpenFinding: (findingId: string) => void;
+}) {
+  const { locale, text, formatNumber } = useI18n();
+  const meta = diffMeta[problem.state];
+  const displaySeverity = problem.afterSeverity ?? problem.beforeSeverity;
+  const findingId = (problem.displaysBaseline ? problem.lead.baselineFindingId : problem.lead.currentFindingId)
+    ?? problem.lead.findingId;
+  const findingAvailable = Boolean(findingId && findings.some((finding) => finding.id === findingId));
+  const mappingVersionDriftOnlyForProblem = problem.state === "unverifiable"
+    && problem.members.every((member) => isOnlyMappingVersionDrift(member.changeReasons ?? []));
+  const summaryCopy = problem.moved
+    ? copy.movedSummary
+    : mappingVersionDriftOnlyForProblem ? mappingDiffSummary : stateSummaryCopy[problem.state];
+  const title = problem.group ? problemGroupTitle(problem.group, locale) : problem.lead.title;
+
+  return (
+    <article className={`diff-row diff-row--${meta.tone}`}>
+      <span className="diff-row__icon">
+        <Icon name={problem.state === "resolved" ? "check" : problem.state === "new" ? "plus" : problem.state === "persistent" ? "warning" : "info"} size={19} />
+      </span>
+      <div className="diff-row__copy">
+        <div className="diff-row__meta">
+          <StatusPill label={meta.label} tone={meta.tone} />
+          {displaySeverity && <StatusPill label={severityMeta[displaySeverity].label} tone={severityMeta[displaySeverity].tone} />}
+          <span>{text(copy.originalFindingCount, { count: formatNumber(problem.members.length) })}</span>
+        </div>
+        <h3>{title}</h3>
+        <p>{text(summaryCopy)}</p>
+        <span>{problem.lead.assetName}</span>
+        {(problem.beforeSeverity || problem.afterSeverity) && (
+          <div className="diff-severity-change">
+            <span>{text(copy.before, { severity: problem.beforeSeverity ? severityMeta[problem.beforeSeverity].label : text(copy.notObserved) })}</span>
+            <Icon name="arrow" size={13} />
+            <span>{text(copy.after, {
+              severity: problem.afterSeverity
+                ? severityMeta[problem.afterSeverity].label
+                : problem.state === "resolved" ? text(copy.notObservedAgain) : text(copy.unknown),
+            })}</span>
+          </div>
+        )}
+        {findingId && findingAvailable ? (
+          <button className="button button--ghost button--small diff-row__action" type="button" onClick={() => onOpenFinding(findingId)}>
+            {text(copy.openEvidence)} <Icon name="arrow" size={14} />
+          </button>
+        ) : findingId ? <small className="diff-row__baseline-note">{text(copy.baselineMissing)}</small> : null}
+        <details className="page-technical-details">
+          <summary>{text(copy.originalFindingsCompared)}</summary>
+          <ul className="original-findings-compared">
+            {problem.members.map((member) => (
+              <li key={member.id}>
+                {member.title}
+                {" — "}
+                {diffMeta[member.state].label}
+                {member.explanation ? (
+                  <p>{displayTechnicalDetail(verificationDiffExplanation(locale, member)) ?? text(copy.notSpecified)}</p>
+                ) : null}
+              </li>
+            ))}
+          </ul>
+        </details>
+      </div>
+    </article>
+  );
+}
+
 export function VerificationPage({
   verification,
   runs,
   findings,
   assets = [],
   folderRecheckRows = [],
+  baselineReport,
+  currentReport,
   baselineRunId,
   busy,
   onSelectBaseline,
@@ -217,9 +303,13 @@ export function VerificationPage({
   const { locale, text, formatDateTime, formatNumber } = useI18n();
   const [filter, setFilter] = useState<DiffState | "all">("all");
 
+  const problems = useMemo(
+    () => compareProblems(verification?.diffs ?? [], baselineReport, currentReport),
+    [baselineReport, currentReport, verification],
+  );
   const counts = useMemo(
-    () => Object.fromEntries(states.map((state) => [state, verification?.diffs.filter((item) => item.state === state).length ?? 0])) as Record<DiffState, number>,
-    [verification],
+    () => Object.fromEntries(states.map((state) => [state, problems.filter((problem) => problem.state === state).length])) as Record<DiffState, number>,
+    [problems],
   );
 
   const activeRun = runs.find((run) => run.status === "running" || run.status === "queued" || run.status === "paused");
@@ -297,7 +387,7 @@ export function VerificationPage({
     );
   }
 
-  const filtered = filter === "all" ? verification.diffs : verification.diffs.filter((item) => item.state === filter);
+  const filtered = filter === "all" ? problems : problems.filter((problem) => problem.state === filter);
   const baselineRun = runs.find((run) => run.id === verification.baselineRunId);
   const comparisonRun = runs.find((run) => run.id === verification.comparisonRunId);
   const comparisonIncomplete = verification.complete !== true
@@ -442,12 +532,12 @@ export function VerificationPage({
             <h2>{text(copy.diffTitle)}</h2>
             <p>{text(copy.diffDescription)}</p>
           </div>
-          <span className="count-label">{text(copy.count, { shown: formatNumber(filtered.length), total: formatNumber(verification.diffs.length) })}</span>
+          <span className="count-label">{text(copy.count, { shown: formatNumber(filtered.length), total: formatNumber(problems.length) })}</span>
         </div>
 
         <div className="segmented-filter" aria-label={text(copy.filterAria)}>
           <button type="button" className={filter === "all" ? "active" : ""} onClick={() => setFilter("all")}>
-            {text(copy.all)} <b>{formatNumber(verification.diffs.length)}</b>
+            {text(copy.all)} <b>{formatNumber(problems.length)}</b>
           </button>
           {states.map((state) => (
             <button key={state} type="button" className={filter === state ? "active" : ""} onClick={() => setFilter(state)}>
@@ -460,7 +550,18 @@ export function VerificationPage({
           <EmptyState icon="verification" title={text(copy.emptyFilterTitle)} description={text(copy.emptyFilterDescription)} />
         ) : (
           <div className="diff-list">
-            {filtered.map((item) => {
+            {filtered.map((problem) => {
+              if (problem.members.length !== 1) {
+                return (
+                  <GroupedComparisonArticle
+                    key={problem.id}
+                    problem={problem}
+                    findings={findings}
+                    onOpenFinding={onOpenFinding}
+                  />
+                );
+              }
+              const item = problem.members[0]!;
               const meta = diffMeta[item.state];
               const severity = item.afterSeverity ?? item.beforeSeverity;
               const findingId = item.findingId;

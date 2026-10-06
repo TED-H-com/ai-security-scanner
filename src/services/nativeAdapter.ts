@@ -2876,9 +2876,17 @@ export const adaptNativeCase = (
           changed: "persistent",
           unable_to_verify: "unverifiable",
         };
+        const baselineFindingId = typeof diff.baseline_finding_id === "string" && diff.baseline_finding_id.length > 0
+          ? diff.baseline_finding_id
+          : undefined;
+        const currentFindingId = typeof diff.current_finding_id === "string" && diff.current_finding_id.length > 0
+          ? diff.current_finding_id
+          : undefined;
         return {
           id: `${comparison.id}-${index}`,
           findingId: diff.current_finding_id ?? diff.baseline_finding_id ?? undefined,
+          ...(baselineFindingId ? { baselineFindingId } : {}),
+          ...(currentFindingId ? { currentFindingId } : {}),
           title: sourceFinding?.title ?? diff.fingerprint,
           assetName: localizedList(
             sourceFinding?.asset_ids

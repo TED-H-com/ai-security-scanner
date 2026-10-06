@@ -43,6 +43,19 @@
   word-break: break-word;
 }
 
+.page-technical-details .original-findings-compared {
+  margin: 9px 0 0;
+  padding-left: 1.1rem;
+}
+
+.page-technical-details .original-findings-compared li + li {
+  margin-top: 8px;
+}
+
+.page-technical-details .original-findings-compared p {
+  margin: 3px 0 0;
+}
+
 .page-technical-details--guide {
   padding: 13px 15px;
   font-size: 0.78rem;

@@ -1850,6 +1850,10 @@ export type DiffState = "resolved" | "persistent" | "new" | "unverifiable";
 export interface VerificationDiff {
   id: string;
   findingId?: string;
+  /** Finding on the before-fix run. Omitted when this diff has no baseline side. */
+  baselineFindingId?: string;
+  /** Finding on the after-fix run. Omitted when this diff has no current side. */
+  currentFindingId?: string;
   title: string;
   assetName: string;
   state: DiffState;

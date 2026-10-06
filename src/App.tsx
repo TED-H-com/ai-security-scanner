@@ -2764,7 +2764,12 @@ export default function App() {
             onVerifyReceived={verifyReceivedExport}
           />
         );
-      case "verification":
+      case "verification": {
+        const verificationReport = (runId: string | undefined) => (
+          mode === "demo" || runId === undefined
+            ? undefined
+            : workspace.beginnerReports?.find((report) => report.runId === runId)
+        );
         return (
           <VerificationPage
             verification={workspace.verification}
@@ -2772,6 +2777,8 @@ export default function App() {
             findings={workspace.findings}
             assets={workspace.assets}
             folderRecheckRows={folderRecheck.rows}
+            baselineReport={verificationReport(workspace.verification?.baselineRunId)}
+            currentReport={verificationReport(workspace.verification?.comparisonRunId)}
             baselineRunId={verificationBaselineRunId}
             busy={busyAction === "rescan" || busyAction === "refresh-workspace"}
             onSelectBaseline={setVerificationBaselineRunId}
@@ -2787,6 +2794,7 @@ export default function App() {
             }}
           />
         );
+      }
       default:
         return null;
     }

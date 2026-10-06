@@ -1,9 +1,18 @@
 import { cleanup, fireEvent, render, within } from "@testing-library/react";
-import { afterEach, beforeEach, expect, test } from "vitest";
+import { afterEach, beforeEach, expect, test, vi } from "vitest";
 
 import { VerificationPage } from "../../src/pages/VerificationPage";
 import { I18nProvider, localeStorageKey } from "../../src/i18n";
-import type { Finding, ScanRun, VerificationDiff, VerificationSummary } from "../../src/types";
+import type {
+  BeginnerReportFinding,
+  BeginnerReportProblemGroup,
+  Finding,
+  ScanRun,
+  Severity,
+  VerificationDiff,
+  VerificationSummary,
+} from "../../src/types";
+import type { VerificationProblemReport } from "../../src/verificationProblems";
 
 // This is the surface that answers "did the fix work". A wrong claim here is
 // the most damaging one the app can make: a user reads it and closes the work.
@@ -52,6 +61,11 @@ const renderVerification = (
   verification: VerificationSummary | undefined,
   runs: ScanRun[],
   findings: Finding[] = [],
+  reports: {
+    baselineReport?: VerificationProblemReport;
+    currentReport?: VerificationProblemReport;
+    onOpenFinding?: (findingId: string) => void;
+  } = {},
 ) =>
   render(
     <I18nProvider>
@@ -59,10 +73,12 @@ const renderVerification = (
         verification={verification}
         runs={runs}
         findings={findings}
+        baselineReport={reports.baselineReport}
+        currentReport={reports.currentReport}
         baselineRunId="run-before"
         onSelectBaseline={() => {}}
         onStartRescan={() => Promise.resolve()}
-        onOpenFinding={() => {}}
+        onOpenFinding={reports.onOpenFinding ?? (() => {})}
       />
     </I18nProvider>,
   );
@@ -316,4 +332,200 @@ test("a comparison row whose finding is gone records that rather than offering m
   const present = diffRow(container, "Finding b");
   expect(present.querySelector(".diff-row__action")).not.toBeNull();
   expect(present.textContent).not.toContain("no longer in the current list");
+});
+
+const reportFinding = (id: string, severity: Severity): BeginnerReportFinding => ({
+  findingId: id,
+  severity,
+  targetAssetIds: ["asset-1"],
+  priority: 10,
+} as BeginnerReportFinding);
+
+const passwordGroup = (findingIds: string[], representativeFindingId: string): BeginnerReportProblemGroup => ({
+  groupId: "password",
+  ruleVersion: "aws-related-checks-1",
+  kind: "iam_password_policy",
+  title: "IAM password policy needs attention",
+  targetAssetId: "asset-1",
+  representativeFindingId,
+  findingIds,
+});
+
+const cardValue = (container: HTMLElement, label: string): string => {
+  const card = Array.from(container.querySelectorAll<HTMLElement>(".metric-card")).find(
+    (candidate) => candidate.querySelector(".metric-card__label")?.textContent === label,
+  );
+  if (!card) throw new Error(`no metric card labelled ${label}`);
+  return card.querySelector(".metric-card__value")!.textContent ?? "";
+};
+
+test.each([
+  ["en", {
+    title: "IAM password policy needs attention",
+    count: "2 original findings",
+    compared: "Original findings compared",
+    resolved: "No longer observed",
+    fresh: "New",
+    present: "Still present",
+    unverifiable: "Verification incomplete",
+    severity: "Critical",
+    lowerSeverity: "Low",
+    after: "Not observed this time",
+    all: "All",
+    total: "2 of 2",
+    evidence: "Open finding evidence",
+    lengthDetail: "Length comparison detail.",
+    symbolDetail: "Symbol comparison detail.",
+  }],
+  ["zh-TW", {
+    title: "IAM 密碼政策需要調整",
+    count: "2 筆原始發現",
+    compared: "比較的原始發現",
+    resolved: "這次沒有再看到",
+    fresh: "新出現",
+    present: "仍然存在",
+    unverifiable: "驗證未完成",
+    severity: "重大",
+    lowerSeverity: "低",
+    after: "這次沒有再觀察到",
+    all: "全部",
+    total: "2／2",
+    evidence: "查看問題證據",
+    lengthDetail: "目前掃描已針對原始座標，完成版本、知識、對照映射、範圍與目標合約完全可比較的檢查，且未再次出現這個指紋。",
+    symbolDetail: "目前掃描已針對原始座標，完成版本、知識、對照映射、範圍與目標合約完全可比較的檢查，且未再次出現這個指紋。",
+  }],
+] as const)("a grouped resolved problem is one card in %s", (locale, phrase) => {
+  window.localStorage.setItem(localeStorageKey, locale);
+  const onOpenFinding = vi.fn();
+  const { container } = renderVerification(
+    summary({
+      diffs: [
+        diff({
+          id: "low",
+          state: "resolved",
+          comparisonStatus: "resolved",
+          findingId: "policy-low",
+          baselineFindingId: "policy-low",
+          beforeSeverity: "low",
+          title: "Symbol requirement",
+          assetName: "other-account",
+          explanation: "Symbol comparison detail.",
+        }),
+        diff({
+          id: "high",
+          state: "resolved",
+          comparisonStatus: "resolved",
+          findingId: "policy-critical",
+          baselineFindingId: "policy-critical",
+          beforeSeverity: "critical",
+          title: "Minimum length",
+          assetName: "production-account",
+          explanation: "Length comparison detail.",
+        }),
+        diff({
+          id: "fresh",
+          state: "new",
+          comparisonStatus: "newly_observed",
+          findingId: "exposed-port",
+          currentFindingId: "exposed-port",
+          afterSeverity: "high",
+          title: "Exposed admin port",
+        }),
+      ],
+    }),
+    bothRunsCompleted,
+    [{ id: "policy-critical" } as Finding],
+    {
+      baselineReport: {
+        findings: [
+          reportFinding("policy-low", "low"),
+          reportFinding("policy-critical", "critical"),
+        ],
+        problemGroups: [passwordGroup(["policy-low", "policy-critical"], "policy-low")],
+      },
+      onOpenFinding,
+    },
+  );
+
+  expect(container.querySelectorAll(".diff-row")).toHaveLength(2);
+  expect(cardValue(container, phrase.resolved)).toBe("1");
+  expect(cardValue(container, phrase.fresh)).toBe("1");
+  expect(cardValue(container, phrase.present)).toBe("0");
+  expect(cardValue(container, phrase.unverifiable)).toBe("0");
+  expect(container.querySelector(".count-label")?.textContent).toBe(phrase.total);
+  const all = Array.from(container.querySelectorAll(".segmented-filter button"))
+    .find((button) => button.textContent?.includes(phrase.all));
+  expect(all?.textContent).toContain("2");
+
+  const row = diffRow(container, phrase.title);
+  expect(row.querySelector("h3")?.textContent).toBe(phrase.title);
+  expect(row.textContent).toContain(phrase.count);
+  expect(row.textContent).toContain("production-account");
+  expect(row.textContent).not.toContain("other-account");
+  expect(row.querySelector(".diff-severity-change")?.textContent).toContain(phrase.severity);
+  expect(row.querySelector(".diff-severity-change")?.textContent).toContain(phrase.after);
+  expect(row.querySelector(".diff-severity-change")?.textContent).not.toContain(phrase.lowerSeverity);
+  const pills = Array.from(row.querySelectorAll(".status-pill")).map((pill) => pill.textContent ?? "");
+  expect(pills.some((pill) => pill.includes(phrase.severity))).toBe(true);
+  expect(pills.some((pill) => pill.includes(phrase.lowerSeverity))).toBe(false);
+
+  const details = row.querySelector<HTMLDetailsElement>("details.page-technical-details");
+  expect(details).not.toBeNull();
+  expect(details!.open).toBe(false);
+  expect(details!.querySelector("summary")?.textContent).toBe(phrase.compared);
+  expect(details!.textContent).toContain("Minimum length");
+  expect(details!.textContent).toContain("Symbol requirement");
+  expect(details!.textContent).toContain(phrase.resolved);
+  expect(details!.textContent).toContain(phrase.lengthDetail);
+  expect(details!.textContent).toContain(phrase.symbolDetail);
+
+  fireEvent.click(row.querySelector(".diff-row__action")!);
+  expect(onOpenFinding).toHaveBeenCalledWith("policy-critical");
+
+  const fresh = diffRow(container, "Exposed admin port");
+  expect(fresh.textContent).not.toContain(phrase.count);
+  expect(fresh.querySelector("details.page-technical-details summary")?.textContent).not.toBe(phrase.compared);
+});
+
+test.each([
+  ["en", "only its line moved", "The same problem is still present"],
+  ["zh-TW", "只是行號改變", "相同問題仍然存在"],
+] as const)("a grouped problem uses the moved summary only when every observed member moved (%s)", (locale, moved, persistent) => {
+  window.localStorage.setItem(localeStorageKey, locale);
+  const baselineReport: VerificationProblemReport = {
+    findings: [reportFinding("left", "high"), reportFinding("right", "medium")],
+    problemGroups: [passwordGroup(["left", "right"], "left")],
+  };
+  const member = (id: string, movedLocation: boolean): VerificationDiff => diff({
+    id,
+    state: "persistent",
+    comparisonStatus: "still_present",
+    baselineFindingId: id,
+    currentFindingId: id,
+    beforeSeverity: "high",
+    afterSeverity: "high",
+    changeReasons: movedLocation
+      ? [{ code: "location_moved", detail: "location moved within the same file" }]
+      : [{ code: "severity_changed", detail: "severity changed from high to critical" }],
+  });
+  const renderPair = (rightMoved: boolean) => renderVerification(
+    summary({ diffs: [member("left", true), member("right", rightMoved)] }),
+    bothRunsCompleted,
+    [],
+    { baselineReport, currentReport: baselineReport },
+  );
+
+  const groupTitle = locale === "zh-TW" ? "IAM 密碼政策需要調整" : "IAM password policy needs attention";
+  const movedCard = renderPair(true).container;
+  const movedRow = diffRow(movedCard, groupTitle);
+  expect(movedCard.querySelectorAll(".diff-row")).toHaveLength(1);
+  expect(movedRow.textContent).toContain(moved);
+  expect(movedRow.textContent).not.toContain(persistent);
+  cleanup();
+
+  const staying = renderPair(false).container;
+  const stayingRow = diffRow(staying, groupTitle);
+  expect(staying.querySelectorAll(".diff-row")).toHaveLength(1);
+  expect(stayingRow.textContent).toContain(persistent);
+  expect(stayingRow.textContent).not.toContain(moved);
 });
