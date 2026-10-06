@@ -129,9 +129,13 @@ pub struct BeginnerMasterReport {
 }
 
 impl BeginnerMasterReport {
-    /// One first-layer row per problem. Group members retain their original
-    /// fields in `findings`; the representative carries the highest severity.
-    pub fn problem_findings(&self) -> Vec<&BeginnerFinding> {
+    /// Finding id to the problem group that [`problem_findings`] renders.
+    ///
+    /// A group is skipped when it has fewer than two members, does not contain
+    /// its representative, has a member on another asset, or reuses a member
+    /// an earlier group already claimed. [`problem_group`] still returns a
+    /// group this map left out.
+    pub fn rendered_problem_membership(&self) -> BTreeMap<&str, &ReportProblemGroup> {
         let by_id = self
             .findings
             .iter()
@@ -157,6 +161,18 @@ impl BeginnerMasterReport {
                 membership.insert(id.as_str(), group);
             }
         }
+        membership
+    }
+
+    /// One first-layer row per problem. Group members retain their original
+    /// fields in `findings`; the representative carries the highest severity.
+    pub fn problem_findings(&self) -> Vec<&BeginnerFinding> {
+        let membership = self.rendered_problem_membership();
+        let by_id = self
+            .findings
+            .iter()
+            .map(|finding| (finding.finding_id.as_str(), finding))
+            .collect::<BTreeMap<_, _>>();
         let mut emitted = BTreeSet::new();
         self.findings
             .iter()

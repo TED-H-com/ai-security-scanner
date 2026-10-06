@@ -18927,7 +18927,224 @@ struct VerificationDiffCounts {
     moved: usize,
 }
 
-fn verification_diff_counts(diffs: &[FindingDiff]) -> VerificationDiffCounts {
+#[derive(Clone, Copy, PartialEq, Eq)]
+enum ComparedProblemStatus {
+    NoLongerObserved,
+    StillPresent,
+    New,
+    VerificationIncomplete,
+}
+
+struct ComparedProblem<'a> {
+    diffs: Vec<&'a FindingDiff>,
+    status: ComparedProblemStatus,
+    moved: bool,
+    /// No longer observed reads the baseline report. Every other status reads
+    /// this report, or the baseline when the problem has no current-side member.
+    from_baseline: bool,
+    /// The display side's card representative, or the first member's finding
+    /// on that side. `None` when that side's report or finding is unavailable.
+    lead: Option<&'a BeginnerFinding>,
+    /// The lead's place in the display side's `problem_findings`.
+    position: Option<usize>,
+}
+
+/// One report of a fix check, indexed once so a large comparison stays linear.
+struct ComparisonSide<'a> {
+    report: &'a BeginnerMasterReport,
+    membership: BTreeMap<&'a str, &'a crate::beginner_report::ReportProblemGroup>,
+    positions: BTreeMap<&'a str, usize>,
+    findings: BTreeMap<&'a str, &'a BeginnerFinding>,
+}
+
+impl<'a> ComparisonSide<'a> {
+    fn new(report: &'a BeginnerMasterReport) -> Self {
+        Self {
+            report,
+            membership: report.rendered_problem_membership(),
+            positions: problem_finding_positions(report),
+            findings: report
+                .findings
+                .iter()
+                .map(|finding| (finding.finding_id.as_str(), finding))
+                .collect(),
+        }
+    }
+
+    fn finding(&self, id: Option<&str>) -> Option<&'a BeginnerFinding> {
+        id.and_then(|id| self.findings.get(id).copied())
+    }
+}
+
+#[derive(Default)]
+struct ComparisonNodes {
+    parent: BTreeMap<String, String>,
+}
+
+impl ComparisonNodes {
+    fn add(&mut self, node: &str) {
+        self.parent
+            .entry(node.to_owned())
+            .or_insert_with(|| node.to_owned());
+    }
+
+    fn find(&mut self, node: &str) -> String {
+        self.add(node);
+        let mut current = node.to_owned();
+        let mut path = Vec::new();
+        while let Some(parent) = self.parent.get(&current).cloned() {
+            if parent == current {
+                break;
+            }
+            path.push(current);
+            current = parent;
+        }
+        for step in path {
+            self.parent.insert(step, current.clone());
+        }
+        current
+    }
+
+    fn unite(&mut self, left: &str, right: &str) {
+        let left = self.find(left);
+        let right = self.find(right);
+        if left != right {
+            self.parent.insert(right, left);
+        }
+    }
+}
+
+fn is_still_observed(diff: &FindingDiff) -> bool {
+    matches!(
+        diff.status,
+        FindingDiffStatus::StillPresent | FindingDiffStatus::Changed
+    )
+}
+
+fn location_moved(diff: &FindingDiff) -> bool {
+    diff.reasons
+        .iter()
+        .any(|reason| reason.code == FindingDiffReasonCode::LocationMoved)
+}
+
+fn compared_problem_status(diffs: &[&FindingDiff]) -> ComparedProblemStatus {
+    if diffs.iter().any(|diff| is_still_observed(diff)) {
+        ComparedProblemStatus::StillPresent
+    } else if diffs
+        .iter()
+        .any(|diff| diff.status == FindingDiffStatus::UnableToVerify)
+    {
+        ComparedProblemStatus::VerificationIncomplete
+    } else if diffs
+        .iter()
+        .all(|diff| diff.status == FindingDiffStatus::Resolved)
+    {
+        ComparedProblemStatus::NoLongerObserved
+    } else if diffs
+        .iter()
+        .all(|diff| diff.status == FindingDiffStatus::NewlyObserved)
+    {
+        ComparedProblemStatus::New
+    } else {
+        ComparedProblemStatus::VerificationIncomplete
+    }
+}
+
+/// `B:` or `C:` plus the rendered group id, or the finding id when this report
+/// does not render a group for it. A missing baseline report keeps the finding id.
+fn comparison_side_node(
+    prefix: &str,
+    finding_id: &str,
+    membership: Option<&BTreeMap<&str, &crate::beginner_report::ReportProblemGroup>>,
+) -> String {
+    let rendered = membership
+        .and_then(|membership| membership.get(finding_id))
+        .map(|group| group.group_id.as_str());
+    format!("{prefix}{}", rendered.unwrap_or(finding_id))
+}
+
+/// One compared problem per connected component of the diff graph.
+///
+/// Each diff contributes a baseline node and a current node. Members of one
+/// rendered card share a node, so they stay one problem: still present while
+/// any member is observed again, and no longer observed only when every
+/// member was compared and resolved.
+fn compared_problems<'a>(
+    diffs: &'a [FindingDiff],
+    baseline: Option<&ComparisonSide<'a>>,
+    current: &ComparisonSide<'a>,
+) -> Vec<ComparedProblem<'a>> {
+    let mut nodes = ComparisonNodes::default();
+    let mut diff_nodes = Vec::with_capacity(diffs.len());
+    for (index, diff) in diffs.iter().enumerate() {
+        let mut pair = Vec::new();
+        if let Some(id) = diff.baseline_finding_id.as_deref() {
+            pair.push(comparison_side_node(
+                "B:",
+                id,
+                baseline.map(|side| &side.membership),
+            ));
+        }
+        if let Some(id) = diff.current_finding_id.as_deref() {
+            pair.push(comparison_side_node("C:", id, Some(&current.membership)));
+        }
+        if pair.is_empty() {
+            pair.push(format!("D:{index}"));
+        }
+        for node in &pair {
+            nodes.add(node);
+        }
+        if pair.len() == 2 {
+            nodes.unite(&pair[0], &pair[1]);
+        }
+        diff_nodes.push(pair);
+    }
+
+    let mut order = Vec::new();
+    let mut buckets: BTreeMap<String, Vec<&FindingDiff>> = BTreeMap::new();
+    for (index, diff) in diffs.iter().enumerate() {
+        let root = nodes.find(&diff_nodes[index][0]);
+        if !buckets.contains_key(&root) {
+            order.push(root.clone());
+        }
+        buckets.entry(root).or_default().push(diff);
+    }
+
+    order
+        .into_iter()
+        .map(|root| {
+            let members = buckets
+                .remove(&root)
+                .expect("comparison component keeps its diffs");
+            let status = compared_problem_status(&members);
+            let moved = status == ComparedProblemStatus::StillPresent
+                && members
+                    .iter()
+                    .all(|diff| !is_still_observed(diff) || location_moved(diff));
+            let from_baseline = status == ComparedProblemStatus::NoLongerObserved
+                || members.iter().all(|diff| diff.current_finding_id.is_none());
+            let side = if from_baseline {
+                baseline
+            } else {
+                Some(current)
+            };
+            let lead = side.and_then(|side| lead_finding(&members, side, from_baseline));
+            let position = side
+                .zip(lead)
+                .and_then(|(side, lead)| side.positions.get(lead.finding_id.as_str()).copied());
+            ComparedProblem {
+                diffs: members,
+                status,
+                moved,
+                from_baseline,
+                lead,
+                position,
+            }
+        })
+        .collect()
+}
+
+fn problem_counts(problems: &[ComparedProblem<'_>]) -> VerificationDiffCounts {
     let mut counts = VerificationDiffCounts {
         resolved: 0,
         still_present: 0,
@@ -18935,70 +19152,239 @@ fn verification_diff_counts(diffs: &[FindingDiff]) -> VerificationDiffCounts {
         unable_to_verify: 0,
         moved: 0,
     };
-    for diff in diffs {
-        match diff.status {
-            FindingDiffStatus::Resolved => counts.resolved += 1,
-            FindingDiffStatus::StillPresent | FindingDiffStatus::Changed => {
+    for problem in problems {
+        match problem.status {
+            ComparedProblemStatus::NoLongerObserved => counts.resolved += 1,
+            ComparedProblemStatus::StillPresent => {
                 counts.still_present += 1;
-                if diff
-                    .reasons
-                    .iter()
-                    .any(|reason| reason.code == FindingDiffReasonCode::LocationMoved)
-                {
+                if problem.moved {
                     counts.moved += 1;
                 }
             }
-            FindingDiffStatus::NewlyObserved => counts.newly_observed += 1,
-            FindingDiffStatus::UnableToVerify => counts.unable_to_verify += 1,
+            ComparedProblemStatus::New => counts.newly_observed += 1,
+            ComparedProblemStatus::VerificationIncomplete => counts.unable_to_verify += 1,
         }
     }
     counts
 }
 
-fn html_compared_row(
-    diff: &FindingDiff,
-    finding_id: Option<&str>,
-    severity: Option<&crate::domain::Severity>,
-    source: Option<&BeginnerMasterReport>,
-    labels: &BTreeMap<Id, String>,
-    link_from: Option<&BeginnerMasterReport>,
-    catalog: HtmlReportCatalog,
-) -> (String, bool) {
-    let looked_up = source.and_then(|source| {
-        let finding_id = finding_id?;
-        source
-            .findings
-            .iter()
-            .find(|finding| finding.finding_id == finding_id)
-            .map(|finding| (source, finding))
-    });
-    let (title, secret, asset_html) = if let Some((source, finding)) = looked_up {
-        let secret = matches!(
-            finding.family,
-            Some(FindingFamily::Secret | FindingFamily::McpSecret)
-        );
-        (
-            html_problem_title(source, finding, catalog),
-            secret,
-            readable_target_list(&finding.target_asset_ids, labels, catalog),
-        )
+fn side_finding_id(diff: &FindingDiff, from_baseline: bool) -> Option<&str> {
+    if from_baseline {
+        diff.baseline_finding_id.as_deref()
     } else {
-        (
-            diff.fingerprint.clone(),
-            false,
-            readable_target_list(&[], labels, catalog),
-        )
+        diff.current_finding_id.as_deref()
+    }
+}
+
+/// The report a compared problem displays from, when it is available.
+fn display_side<'s, 'a>(
+    problem: &ComparedProblem<'_>,
+    baseline: Option<&'s ComparisonSide<'a>>,
+    current: &'s ComparisonSide<'a>,
+) -> Option<&'s ComparisonSide<'a>> {
+    if problem.from_baseline {
+        baseline
+    } else {
+        Some(current)
+    }
+}
+
+/// The display side's lead: the representative of the rendered card that
+/// comes first in `problem_findings`, otherwise the first member's finding on
+/// that side.
+fn lead_finding<'a>(
+    diffs: &[&FindingDiff],
+    side: &ComparisonSide<'a>,
+    from_baseline: bool,
+) -> Option<&'a BeginnerFinding> {
+    let mut grouped: Option<(usize, &'a str)> = None;
+    for diff in diffs {
+        let Some(group) =
+            side_finding_id(diff, from_baseline).and_then(|id| side.membership.get(id).copied())
+        else {
+            continue;
+        };
+        let position = side
+            .positions
+            .get(group.representative_finding_id.as_str())
+            .copied()
+            .unwrap_or(usize::MAX);
+        if grouped.is_none_or(|(first, _)| position < first) {
+            grouped = Some((position, group.representative_finding_id.as_str()));
+        }
+    }
+    match grouped {
+        Some((_, id)) => side.finding(Some(id)),
+        None => side.finding(
+            diffs
+                .iter()
+                .find_map(|diff| side_finding_id(diff, from_baseline)),
+        ),
+    }
+}
+
+fn side_severity<'a>(problem: &ComparedProblem<'a>) -> Option<&'a crate::domain::Severity> {
+    problem
+        .diffs
+        .iter()
+        .filter_map(|diff| {
+            if problem.from_baseline {
+                diff.baseline_severity.as_ref()
+            } else {
+                diff.current_severity.as_ref()
+            }
+        })
+        .max_by_key(|severity| crate::beginner_report::severity_rank(severity))
+}
+
+fn fallback_fingerprint(problem: &ComparedProblem<'_>) -> String {
+    problem
+        .diffs
+        .iter()
+        .find(|diff| side_finding_id(diff, problem.from_baseline).is_some())
+        .or_else(|| problem.diffs.first())
+        .map(|diff| diff.fingerprint.clone())
+        .unwrap_or_default()
+}
+
+/// The display side's group title for a grouped lead, otherwise the lead's own
+/// headline. The fingerprint stands in when that side's finding is unavailable.
+fn compared_problem_title(
+    problem: &ComparedProblem<'_>,
+    side: Option<&ComparisonSide<'_>>,
+    catalog: HtmlReportCatalog,
+) -> String {
+    match (side, problem.lead) {
+        (Some(side), Some(lead)) => html_problem_title(side.report, lead, catalog),
+        _ => fallback_fingerprint(problem),
+    }
+}
+
+fn baseline_member_is_secret(diff: &FindingDiff, baseline: Option<&ComparisonSide<'_>>) -> bool {
+    baseline
+        .and_then(|side| side.finding(diff.baseline_finding_id.as_deref()))
+        .is_some_and(|finding| {
+            matches!(
+                finding.family,
+                Some(FindingFamily::Secret | FindingFamily::McpSecret)
+            )
+        })
+}
+
+fn finding_headline_text(finding: &BeginnerFinding, catalog: HtmlReportCatalog) -> String {
+    match catalog.locale {
+        crate::export::ReportLocale::En => {
+            crate::finding_narrative::finding_headline_english(&finding.title, finding.family)
+        }
+        crate::export::ReportLocale::ZhHant => {
+            crate::finding_narrative::finding_headline_zh_hant(&finding.title, finding.family)
+        }
+    }
+}
+
+/// A member's own headline, from the display side first. Never the group title.
+fn html_member_headline(
+    diff: &FindingDiff,
+    baseline: Option<&ComparisonSide<'_>>,
+    current: &ComparisonSide<'_>,
+    from_baseline: bool,
+    catalog: HtmlReportCatalog,
+) -> String {
+    let before = baseline.and_then(|side| side.finding(diff.baseline_finding_id.as_deref()));
+    let after = current.finding(diff.current_finding_id.as_deref());
+    let finding = if from_baseline {
+        before.or(after)
+    } else {
+        after.or(before)
     };
-    let anchor = link_from.and_then(|report| {
-        let finding_id = finding_id?;
-        html_problem_anchor(report, finding_id)
-    });
+    finding.map_or_else(
+        || diff.fingerprint.clone(),
+        |finding| finding_headline_text(finding, catalog),
+    )
+}
+
+fn compared_member_status_label(
+    status: &FindingDiffStatus,
+    catalog: HtmlReportCatalog,
+) -> &'static str {
+    match status {
+        FindingDiffStatus::Resolved => catalog.text("No longer observed", "這次沒有再看到"),
+        FindingDiffStatus::StillPresent | FindingDiffStatus::Changed => {
+            catalog.text("Still present", "仍然存在")
+        }
+        FindingDiffStatus::NewlyObserved => catalog.text("New", "新出現"),
+        FindingDiffStatus::UnableToVerify => catalog.text("Verification incomplete", "驗證未完成"),
+    }
+}
+
+/// Original findings behind every multi-member problem, under that problem's
+/// card title. Omitted when every compared problem is a single finding, so
+/// that section stays unchanged.
+fn html_compared_original_findings(
+    problems: &[ComparedProblem<'_>],
+    baseline: Option<&ComparisonSide<'_>>,
+    current: &ComparisonSide<'_>,
+    catalog: HtmlReportCatalog,
+) -> String {
+    let mut items = String::new();
+    for problem in problems.iter().filter(|problem| problem.diffs.len() > 1) {
+        let mut members = String::new();
+        for diff in &problem.diffs {
+            members.push_str(&format!(
+                "<li>{} \u{b7} {}</li>",
+                html_escape(&html_member_headline(
+                    diff,
+                    baseline,
+                    current,
+                    problem.from_baseline,
+                    catalog
+                )),
+                html_escape(compared_member_status_label(&diff.status, catalog)),
+            ));
+        }
+        items.push_str(&format!(
+            "<li>{}<ul>{members}</ul></li>",
+            html_escape(&compared_problem_title(
+                problem,
+                display_side(problem, baseline, current),
+                catalog
+            )),
+        ));
+    }
+    if items.is_empty() {
+        return String::new();
+    }
+    format!(
+        "<details class=\"technical\"><summary><strong>{}</strong></summary><ul>{}</ul></details>",
+        html_escape(catalog.text("Original findings compared", "比較的原始發現")),
+        items,
+    )
+}
+
+fn html_compared_problem_row(
+    problem: &ComparedProblem<'_>,
+    side: Option<&ComparisonSide<'_>>,
+    labels: &BTreeMap<Id, String>,
+    link: bool,
+    catalog: HtmlReportCatalog,
+) -> String {
+    let title = compared_problem_title(problem, side, catalog);
+    let lead = side.and(problem.lead);
+    let asset_html = readable_target_list(
+        lead.map_or(&[][..], |lead| lead.target_asset_ids.as_slice()),
+        labels,
+        catalog,
+    );
+    let anchor = side
+        .filter(|_| link)
+        .zip(lead)
+        .and_then(|(side, lead)| html_problem_anchor(side.report, &lead.finding_id));
     let title = html_escape(&title);
     let title = match anchor {
         Some(anchor) => format!("<a href=\"#{}\">{}</a>", html_escape(&anchor), title),
         None => title,
     };
-    let severity = severity
+    let severity = side_severity(problem)
         .map(|severity| {
             format!(
                 "<span class=\"pill pill--{}\">{}</span> ",
@@ -19007,9 +19393,17 @@ fn html_compared_row(
             )
         })
         .unwrap_or_default();
-    (
-        format!("<li>{severity}{title} <span class=\"finding-asset\">— {asset_html}</span></li>"),
-        secret,
+    let originals = if problem.diffs.len() > 1 {
+        format!(
+            " \u{b7} {} {}",
+            catalog.format_number(problem.diffs.len()),
+            catalog.text("original findings", "筆原始發現"),
+        )
+    } else {
+        String::new()
+    };
+    format!(
+        "<li>{severity}{title} <span class=\"finding-asset\">— {asset_html}</span>{originals}</li>"
     )
 }
 
@@ -19055,41 +19449,19 @@ fn problem_finding_positions(report: &BeginnerMasterReport) -> BTreeMap<&str, us
         .collect()
 }
 
-/// One status's rows in the report's own order.
+/// One status's problems in the display side's `problem_findings` order.
 ///
-/// A grouped finding takes its representative's position in `problem_findings`,
-/// the same place `html_problem_anchor` uses. A finding that is not in that
-/// list, including a fingerprint fallback, sorts after every finding that is.
-/// Equal positions keep diff order.
-fn ordered_comparison_rows<'a>(
-    diffs: &'a [FindingDiff],
-    status: FindingDiffStatus,
-    report: Option<&BeginnerMasterReport>,
-    finding_id_of: impl Fn(&FindingDiff) -> Option<&str>,
-) -> Vec<&'a FindingDiff> {
-    let positions = report.map(problem_finding_positions);
-    let mut rows = diffs
+/// A lead that is not in that list, including a fingerprint fallback, sorts
+/// last. Equal positions keep component order.
+fn ordered_compared_problems<'p, 'a>(
+    problems: &'p [ComparedProblem<'a>],
+    status: ComparedProblemStatus,
+) -> Vec<&'p ComparedProblem<'a>> {
+    let mut rows = problems
         .iter()
-        .filter(|diff| diff.status == status)
+        .filter(|problem| problem.status == status)
         .collect::<Vec<_>>();
-    rows.sort_by(|left, right| {
-        let position = |diff: &FindingDiff| {
-            let report = report?;
-            let positions = positions.as_ref()?;
-            let finding_id = finding_id_of(diff)?;
-            let anchor_id = report
-                .problem_group(finding_id)
-                .map(|group| group.representative_finding_id.as_str())
-                .unwrap_or(finding_id);
-            positions.get(anchor_id).copied()
-        };
-        match (position(left), position(right)) {
-            (Some(left_at), Some(right_at)) => left_at.cmp(&right_at),
-            (Some(_), None) => std::cmp::Ordering::Less,
-            (None, Some(_)) => std::cmp::Ordering::Greater,
-            (None, None) => std::cmp::Ordering::Equal,
-        }
-    });
+    rows.sort_by_key(|problem| (problem.position.is_none(), problem.position));
     rows
 }
 
@@ -19126,7 +19498,10 @@ fn html_verification_comparison_section(
         .as_ref()
         .map(|baseline| readable_target_labels(baseline, catalog))
         .unwrap_or_default();
-    let counts = verification_diff_counts(&comparison.diffs);
+    let baseline_side = baseline_report.as_ref().map(ComparisonSide::new);
+    let current_side = ComparisonSide::new(report);
+    let problems = compared_problems(&comparison.diffs, baseline_side.as_ref(), &current_side);
+    let counts = problem_counts(&problems);
     let finished = catalog.format_time(
         baseline_run
             .completed_at
@@ -19154,41 +19529,33 @@ fn html_verification_comparison_section(
 
     let mut resolved_rows = String::new();
     let mut any_secret = false;
-    for diff in ordered_comparison_rows(
-        &comparison.diffs,
-        FindingDiffStatus::Resolved,
-        baseline_report.as_ref(),
-        |diff| diff.baseline_finding_id.as_deref(),
-    ) {
-        let (row, secret) = html_compared_row(
-            diff,
-            diff.baseline_finding_id.as_deref(),
-            diff.baseline_severity.as_ref(),
-            baseline_report.as_ref(),
+    for problem in ordered_compared_problems(&problems, ComparedProblemStatus::NoLongerObserved) {
+        any_secret |= problem
+            .diffs
+            .iter()
+            .any(|diff| baseline_member_is_secret(diff, baseline_side.as_ref()));
+        resolved_rows.push_str(&html_compared_problem_row(
+            problem,
+            display_side(problem, baseline_side.as_ref(), &current_side),
             &baseline_labels,
-            None,
+            false,
             catalog,
-        );
-        any_secret |= secret;
-        resolved_rows.push_str(&row);
+        ));
     }
     let mut new_rows = String::new();
-    for diff in ordered_comparison_rows(
-        &comparison.diffs,
-        FindingDiffStatus::NewlyObserved,
-        Some(report),
-        |diff| diff.current_finding_id.as_deref(),
-    ) {
-        let (row, _) = html_compared_row(
-            diff,
-            diff.current_finding_id.as_deref(),
-            diff.current_severity.as_ref(),
-            Some(report),
-            target_labels,
-            Some(report),
+    for problem in ordered_compared_problems(&problems, ComparedProblemStatus::New) {
+        let labels = if problem.from_baseline {
+            &baseline_labels
+        } else {
+            target_labels
+        };
+        new_rows.push_str(&html_compared_problem_row(
+            problem,
+            display_side(problem, baseline_side.as_ref(), &current_side),
+            labels,
+            !problem.from_baseline,
             catalog,
-        );
-        new_rows.push_str(&row);
+        ));
     }
 
     let local_changes = exported
@@ -19306,6 +19673,12 @@ fn html_verification_comparison_section(
             new_rows,
         ));
     }
+    html.push_str(&html_compared_original_findings(
+        &problems,
+        baseline_side.as_ref(),
+        &current_side,
+        catalog,
+    ));
     html.push_str(&format!(
         "<details class=\"technical\"><summary><strong>{}</strong></summary><dl>{}</dl>{}</details></section>",
         html_escape(catalog.text("Scan run IDs", "掃描輪次 ID")),
@@ -49768,9 +50141,12 @@ mod tests {
         let later_severity = later.severity.clone();
         let later_title = later.title.clone();
         let group_title = group.title_english();
+        let lower_title = lower.title.clone();
+        let higher_title = higher.title.clone();
         // Diff order is the later finding, then the lower-severity member, then
-        // the higher-severity member. The two members share the representative's
-        // earlier position and keep this relative order.
+        // the higher-severity member. The two members are one card at the
+        // representative's earlier position. Its severity is the higher of the
+        // two compared members.
         case.comparisons.push(VerificationComparison {
             id: "comparison-groups".into(),
             case_id: case.id.clone(),
@@ -49822,7 +50198,7 @@ mod tests {
             comparison_list(section, "<h3>No longer observed</h3>")
                 .matches("<li>")
                 .count(),
-            3,
+            2,
             "{section}"
         );
         let catalog = HtmlReportCatalog::new(crate::export::ReportLocale::En);
@@ -49835,8 +50211,716 @@ mod tests {
             )
         };
         let lower_row = marker(&lower_severity, &group_title);
-        let higher_row = marker(&higher_severity, &group_title);
+        let group_row = marker(&higher_severity, &group_title);
         let later_row = marker(&later_severity, &later_title);
-        assert_in_order(section, &[&lower_row, &higher_row, &later_row]);
+        assert!(
+            !section.contains(&lower_row),
+            "the lower member is not its own row: {section}"
+        );
+        assert_in_order(
+            section,
+            &[
+                &group_row,
+                "2 original findings",
+                &later_row,
+                "Original findings compared",
+                &html_escape(&group_title),
+                &html_escape(&lower_title),
+                "No longer observed",
+                &html_escape(&higher_title),
+                "No longer observed",
+            ],
+        );
+        let technical = section
+            .split_once("Original findings compared")
+            .expect("technical block")
+            .1;
+        let members = technical
+            .split_once(&format!("<li>{}<ul>", html_escape(&group_title)))
+            .expect("the card title heads its members")
+            .1;
+        assert!(
+            !members.contains(&group_title),
+            "member rows keep their own titles: {members}"
+        );
+        assert!(section.contains(
+            "<div class=\"kpi kpi--complete\"><span class=\"kpi__value\">2</span><span class=\"kpi__label\">No longer observed</span></div>"
+        ));
+    }
+
+    fn push_same_run_comparison(case: &mut AssessmentCase, diffs: Vec<FindingDiff>) {
+        let run_id = case.scan_runs[0].id.clone();
+        case.comparisons.push(VerificationComparison {
+            id: "comparison-cards".into(),
+            case_id: case.id.clone(),
+            baseline_run_id: run_id.clone(),
+            current_run_id: run_id,
+            created_at: case.scan_runs[0].created_at,
+            diffs,
+            complete: true,
+            completeness_issues: Vec::new(),
+            local_input_changes: Vec::new(),
+        });
+    }
+
+    fn rendered_group(
+        report: &BeginnerMasterReport,
+        kind: crate::report_problem_groups::ReportProblemKind,
+        size: usize,
+    ) -> &crate::beginner_report::ReportProblemGroup {
+        report
+            .problem_groups
+            .iter()
+            .find(|group| {
+                group.kind == kind
+                    && group.finding_ids.len() == size
+                    && report
+                        .rendered_problem_membership()
+                        .contains_key(group.representative_finding_id.as_str())
+            })
+            .unwrap_or_else(|| panic!("rendered {kind:?} group of {size}"))
+    }
+
+    fn member_record(report: &BeginnerMasterReport, id: &str) -> (String, String, Severity) {
+        let finding = report
+            .findings
+            .iter()
+            .find(|finding| finding.finding_id == id)
+            .unwrap_or_else(|| panic!("finding {id}"));
+        (
+            finding.finding_id.clone(),
+            finding.title.clone(),
+            finding.severity.clone(),
+        )
+    }
+
+    fn comparison_kpis(zh: bool, counts: [usize; 4]) -> String {
+        let catalog = HtmlReportCatalog::new(if zh {
+            crate::export::ReportLocale::ZhHant
+        } else {
+            crate::export::ReportLocale::En
+        });
+        html_kpi_tiles(
+            &[
+                (
+                    catalog.text("No longer observed", "這次沒有再看到"),
+                    counts[0],
+                    "complete",
+                ),
+                (
+                    catalog.text("Still present", "仍然存在"),
+                    counts[1],
+                    "problems",
+                ),
+                (catalog.text("New", "新出現"), counts[2], "partial"),
+                (
+                    catalog.text("Verification incomplete", "驗證未完成"),
+                    counts[3],
+                    "partial",
+                ),
+            ],
+            catalog,
+        )
+    }
+
+    fn set_snapshot_family(case: &mut AssessmentCase, finding_id: &str, family: FindingFamily) {
+        for finding in &mut case.findings {
+            if finding.id == finding_id {
+                finding.family = Some(family);
+            }
+        }
+        for observation in &mut case.finding_observations {
+            if observation.finding_id == finding_id
+                && let Some(snapshot) = observation.finding_snapshot.as_mut()
+            {
+                snapshot.family = Some(family);
+            }
+        }
+    }
+
+    fn root_members(report: &BeginnerMasterReport) -> Vec<(String, String, Severity)> {
+        let group = rendered_group(
+            report,
+            crate::report_problem_groups::ReportProblemKind::RootAccountUsage,
+            2,
+        );
+        group
+            .finding_ids
+            .iter()
+            .map(|id| member_record(report, id))
+            .collect()
+    }
+
+    #[test]
+    fn html_fix_check_comparison_counts_rendered_problem_cards() {
+        let mut case = crate::report_problem_groups::tests::approved_case();
+        let report = build_beginner_master_report(&case, "run-1").expect("report");
+        let group = rendered_group(
+            &report,
+            crate::report_problem_groups::ReportProblemKind::RootAccountUsage,
+            2,
+        );
+        let mut members = root_members(&report);
+        members.sort_by_key(|(_, _, severity)| crate::beginner_report::severity_rank(severity));
+        let ungrouped = report
+            .findings
+            .iter()
+            .filter(|finding| {
+                !report
+                    .rendered_problem_membership()
+                    .contains_key(finding.finding_id.as_str())
+            })
+            .map(|finding| member_record(&report, &finding.finding_id))
+            .take(2)
+            .collect::<Vec<_>>();
+        let resolved = &ungrouped[0];
+        let new_finding = &ungrouped[1];
+        let mut diffs = Vec::new();
+        for (index, (id, _, severity)) in members.iter().enumerate() {
+            diffs.push(fix_check_diff(
+                &format!("fp-member-{index}"),
+                Some(id.as_str()),
+                None,
+                FindingDiffStatus::Resolved,
+                Some(severity.clone()),
+                None,
+                false,
+            ));
+        }
+        diffs.push(fix_check_diff(
+            "fp-ungrouped-resolved",
+            Some(resolved.0.as_str()),
+            None,
+            FindingDiffStatus::Resolved,
+            Some(resolved.2.clone()),
+            None,
+            false,
+        ));
+        diffs.push(fix_check_diff(
+            "fp-new-card",
+            None,
+            Some(new_finding.0.as_str()),
+            FindingDiffStatus::NewlyObserved,
+            None,
+            Some(new_finding.2.clone()),
+            false,
+        ));
+        push_same_run_comparison(&mut case, diffs);
+        let top = members
+            .iter()
+            .max_by_key(|(_, _, severity)| crate::beginner_report::severity_rank(severity))
+            .expect("members");
+        let ordered = report.problem_findings();
+        let group_at = ordered
+            .iter()
+            .position(|finding| finding.finding_id == group.representative_finding_id)
+            .expect("representative position");
+        let resolved_at = ordered
+            .iter()
+            .position(|finding| finding.finding_id == resolved.0)
+            .expect("ungrouped position");
+
+        for (locale, zh) in [
+            (crate::export::ReportLocale::En, false),
+            (crate::export::ReportLocale::ZhHant, true),
+        ] {
+            let html = html_for_run(&case, "run-1", RedactionProfile::None, locale);
+            let section = verification_comparison_section(&html);
+            assert!(
+                section.contains(&comparison_kpis(zh, [2, 0, 1, 0])),
+                "{section}"
+            );
+            let catalog = HtmlReportCatalog::new(locale);
+            let group_title = if zh {
+                group.title_zh_hant()
+            } else {
+                group.title_english()
+            };
+            let resolved_heading = format!(
+                "<h3>{}</h3>",
+                catalog.text("No longer observed", "這次沒有再看到")
+            );
+            let resolved_list = comparison_list(section, &resolved_heading);
+            assert_eq!(resolved_list.matches("<li>").count(), 2, "{resolved_list}");
+            let count = format!(
+                " \u{b7} {} {}",
+                catalog.format_number(2),
+                catalog.text("original findings", "筆原始發現"),
+            );
+            let rows = resolved_list.split("<li>").skip(1).collect::<Vec<_>>();
+            let group_row = rows
+                .iter()
+                .copied()
+                .find(|row| row.contains(&group_title))
+                .unwrap_or_else(|| panic!("group row missing from {resolved_list}"));
+            assert!(group_row.contains(&count), "{group_row}");
+            assert!(
+                group_row.contains(&format!("pill--{}", severity_slug(&top.2))),
+                "{group_row}"
+            );
+            assert!(
+                group_row.contains(&html_escape(&catalog.identifier(&enum_key(&top.2)))),
+                "{group_row}"
+            );
+            let other = rows
+                .iter()
+                .copied()
+                .find(|row| row.contains(&html_escape(&resolved.1)))
+                .unwrap_or_else(|| panic!("ungrouped row missing from {resolved_list}"));
+            assert!(!other.contains(&count), "{other}");
+            let (first, second) = if group_at < resolved_at {
+                (group_title.as_str(), resolved.1.as_str())
+            } else {
+                (resolved.1.as_str(), group_title.as_str())
+            };
+            assert_in_order(resolved_list, &[first, second]);
+            let new_list = comparison_list(
+                section,
+                &format!("<h3>{}</h3>", catalog.text("New", "新出現")),
+            );
+            assert_eq!(new_list.matches("<li>").count(), 1, "{new_list}");
+            let anchor = html_problem_anchor(&report, &new_finding.0).expect("anchor");
+            assert!(
+                new_list.contains(&format!("href=\"#{anchor}\"")),
+                "{new_list}"
+            );
+            assert!(
+                new_list.contains(&html_escape(&new_finding.1)),
+                "{new_list}"
+            );
+            let summary = catalog.text("Original findings compared", "比較的原始發現");
+            let technical = section
+                .split_once(summary)
+                .unwrap_or_else(|| panic!("missing {summary} in {section}"))
+                .1;
+            let status = catalog.text("No longer observed", "這次沒有再看到");
+            let mut rest = technical;
+            for (_, title, _) in &members {
+                let escaped = html_escape(title);
+                let title_at = rest
+                    .find(&escaped)
+                    .unwrap_or_else(|| panic!("{escaped} missing from {technical}"));
+                rest = &rest[title_at + escaped.len()..];
+                let status_at = rest
+                    .find(status)
+                    .unwrap_or_else(|| panic!("{status} missing after {escaped}"));
+                rest = &rest[status_at + status.len()..];
+            }
+            let member_list = technical
+                .split_once(&format!("<li>{}<ul>", html_escape(&group_title)))
+                .unwrap_or_else(|| panic!("the card title heads its members in {technical}"))
+                .1
+                .split_once("</ul>")
+                .expect("member list")
+                .0;
+            assert!(
+                !member_list.contains(&group_title),
+                "member rows keep their own titles: {member_list}"
+            );
+            assert_in_order(
+                section,
+                &[summary, catalog.text("Scan run IDs", "掃描輪次 ID")],
+            );
+            assert!(
+                !section.contains("<details class=\"technical\" open"),
+                "{section}"
+            );
+        }
+    }
+
+    #[test]
+    fn html_fix_check_comparison_keeps_a_partly_fixed_group_present() {
+        let mut case = crate::report_problem_groups::tests::approved_case();
+        let report = build_beginner_master_report(&case, "run-1").expect("report");
+        let members = root_members(&report);
+        push_same_run_comparison(
+            &mut case,
+            vec![
+                fix_check_diff(
+                    "fp-resolved",
+                    Some(members[0].0.as_str()),
+                    None,
+                    FindingDiffStatus::Resolved,
+                    Some(members[0].2.clone()),
+                    None,
+                    false,
+                ),
+                fix_check_diff(
+                    "fp-present",
+                    Some(members[1].0.as_str()),
+                    Some(members[1].0.as_str()),
+                    FindingDiffStatus::StillPresent,
+                    Some(members[1].2.clone()),
+                    Some(members[1].2.clone()),
+                    false,
+                ),
+            ],
+        );
+        let html = html_for_run(
+            &case,
+            "run-1",
+            RedactionProfile::None,
+            crate::export::ReportLocale::En,
+        );
+        let section = verification_comparison_section(&html);
+        assert!(
+            section.contains(&comparison_kpis(false, [0, 1, 0, 0])),
+            "{section}"
+        );
+        assert!(
+            !section.contains("<h3>No longer observed</h3>"),
+            "{section}"
+        );
+        assert_in_order(
+            section
+                .split_once("Original findings compared")
+                .expect("technical")
+                .1,
+            &[
+                &html_escape(&members[0].1),
+                "No longer observed",
+                &html_escape(&members[1].1),
+                "Still present",
+            ],
+        );
+    }
+
+    #[test]
+    fn html_fix_check_comparison_counts_a_group_as_moved_only_when_every_member_moved() {
+        let section_for = |moved: [bool; 2]| {
+            let mut case = crate::report_problem_groups::tests::approved_case();
+            let report = build_beginner_master_report(&case, "run-1").expect("report");
+            let members = root_members(&report);
+            let diffs = members
+                .iter()
+                .enumerate()
+                .map(|(index, member)| {
+                    fix_check_diff(
+                        &format!("fp-moved-{index}"),
+                        Some(member.0.as_str()),
+                        Some(member.0.as_str()),
+                        FindingDiffStatus::StillPresent,
+                        Some(member.2.clone()),
+                        Some(member.2.clone()),
+                        moved[index],
+                    )
+                })
+                .collect();
+            push_same_run_comparison(&mut case, diffs);
+            let html = html_for_run(
+                &case,
+                "run-1",
+                RedactionProfile::None,
+                crate::export::ReportLocale::En,
+            );
+            verification_comparison_section(&html).to_owned()
+        };
+        let mixed = section_for([true, false]);
+        assert!(
+            mixed.contains(&comparison_kpis(false, [0, 1, 0, 0])),
+            "{mixed}"
+        );
+        assert!(
+            !mixed.contains("only moved to another line in the same file"),
+            "{mixed}"
+        );
+        let both = section_for([true, true]);
+        assert!(
+            both.contains(&comparison_kpis(false, [0, 1, 0, 0])),
+            "{both}"
+        );
+        assert!(
+            both.contains(
+                "1 of the still-present problems only moved to another line in the same file."
+            ),
+            "{both}"
+        );
+        assert!(!both.contains("2 of the still-present problems"), "{both}");
+    }
+
+    #[test]
+    fn html_fix_check_comparison_keeps_a_partly_unverified_group_incomplete() {
+        let mut case = crate::report_problem_groups::tests::approved_case();
+        let report = build_beginner_master_report(&case, "run-1").expect("report");
+        let members = root_members(&report);
+        push_same_run_comparison(
+            &mut case,
+            vec![
+                fix_check_diff(
+                    "fp-resolved",
+                    Some(members[0].0.as_str()),
+                    None,
+                    FindingDiffStatus::Resolved,
+                    Some(members[0].2.clone()),
+                    None,
+                    false,
+                ),
+                fix_check_diff(
+                    "fp-unverified",
+                    Some(members[1].0.as_str()),
+                    None,
+                    FindingDiffStatus::UnableToVerify,
+                    Some(members[1].2.clone()),
+                    None,
+                    false,
+                ),
+            ],
+        );
+        let html = html_for_run(
+            &case,
+            "run-1",
+            RedactionProfile::None,
+            crate::export::ReportLocale::En,
+        );
+        let section = verification_comparison_section(&html);
+        assert!(
+            section.contains(&comparison_kpis(false, [0, 0, 0, 1])),
+            "{section}"
+        );
+        assert!(
+            !section.contains("<h3>No longer observed</h3>"),
+            "{section}"
+        );
+    }
+
+    const UNGROUPED_COMPARISON_EN: &str = r##"<section class="verification-comparison"><h2>Compared with the earlier scan</h2><p>Compared with Scan 1, finished 2026-10-01 15:04:05 UTC.</p><div class="kpi-row"><div class="kpi kpi--complete"><span class="kpi__value">2</span><span class="kpi__label">No longer observed</span></div><div class="kpi kpi--problems"><span class="kpi__value">2</span><span class="kpi__label">Still present</span></div><div class="kpi kpi--partial"><span class="kpi__value">1</span><span class="kpi__label">New</span></div><div class="kpi kpi--quiet"><span class="kpi__value">0</span><span class="kpi__label">Verification incomplete</span></div></div><p>1 of the still-present problems only moved to another line in the same file.</p><h3>No longer observed</h3><ul><li><span class="pill pill--high">High</span> Token file in private-folder-alpha <span class="finding-asset">— private-folder-alpha</span></li><li><span class="pill pill--medium">Medium</span> Outdated lockfile &amp; notes <span class="finding-asset">— private-folder-alpha</span></li></ul><p>The same completed check no longer found this problem. Review the new evidence, then close it.</p><p>A secret removed from the files can still be read from version history and copies made earlier. Revoke or rotate it.</p><h3>New</h3><ul><li><span class="pill pill--critical">Critical</span> <a href="#f1">New debug endpoint</a> <span class="finding-asset">— private-folder-alpha</span></li></ul><details class="technical"><summary><strong>Scan run IDs</strong></summary><dl><div><dt>Before-fix scan</dt><dd><code>run-before</code></dd></div><div><dt>After-fix check</dt><dd><code>run-after</code></dd></div></dl><h3>Folder copies compared</h3><ul><li>private-folder-alpha: 0123456789ab → fedcba987654</li><li>private-folder-alpha: the same files in both scans (aaaaaaaaaaaa)</li></ul></details></section>"##;
+
+    const UNGROUPED_COMPARISON_ZH: &str = r##"<section class="verification-comparison"><h2>與先前掃描的比較</h2><p>與 2026年10月01日 15:04:05 UTC 完成的第 1 次掃描比較。</p><div class="kpi-row"><div class="kpi kpi--complete"><span class="kpi__value">2</span><span class="kpi__label">這次沒有再看到</span></div><div class="kpi kpi--problems"><span class="kpi__value">2</span><span class="kpi__label">仍然存在</span></div><div class="kpi kpi--partial"><span class="kpi__value">1</span><span class="kpi__label">新出現</span></div><div class="kpi kpi--quiet"><span class="kpi__value">0</span><span class="kpi__label">驗證未完成</span></div></div><p>其中 1 個仍然存在的問題只是在同一個檔案中換了行號。</p><h3>這次沒有再看到</h3><ul><li><span class="pill pill--high">高</span> Token file in private-folder-alpha <span class="finding-asset">— private-folder-alpha</span></li><li><span class="pill pill--medium">中</span> Outdated lockfile &amp; notes <span class="finding-asset">— private-folder-alpha</span></li></ul><p>相同檢查已完成，且沒有再找到這個問題；查看新證據後即可關閉。</p><p>從檔案移除的機密仍可能留在版本紀錄與先前的副本中，請撤銷或更換它。</p><h3>新出現</h3><ul><li><span class="pill pill--critical">嚴重</span> <a href="#f1">New debug endpoint</a> <span class="finding-asset">— private-folder-alpha</span></li></ul><details class="technical"><summary><strong>掃描輪次 ID</strong></summary><dl><div><dt>修復前掃描</dt><dd><code>run-before</code></dd></div><div><dt>修復後複驗</dt><dd><code>run-after</code></dd></div></dl><h3>比較的資料夾副本</h3><ul><li>private-folder-alpha：0123456789ab → fedcba987654</li><li>private-folder-alpha：兩次掃描的檔案相同（aaaaaaaaaaaa）</li></ul></details></section>"##;
+
+    #[test]
+    fn html_fix_check_comparison_of_single_findings_is_byte_identical() {
+        let case = fix_check_case(Some(FindingFamily::Secret));
+        let english = html_for_run(
+            &case,
+            "run-after",
+            RedactionProfile::None,
+            crate::export::ReportLocale::En,
+        );
+        let chinese = html_for_run(
+            &case,
+            "run-after",
+            RedactionProfile::None,
+            crate::export::ReportLocale::ZhHant,
+        );
+        assert_eq!(
+            verification_comparison_section(&english),
+            UNGROUPED_COMPARISON_EN
+        );
+        assert_eq!(
+            verification_comparison_section(&chinese),
+            UNGROUPED_COMPARISON_ZH
+        );
+    }
+
+    #[test]
+    fn html_fix_check_comparison_redacts_grouped_titles_and_member_titles() {
+        let mut case = crate::report_problem_groups::tests::approved_case();
+        let report = build_beginner_master_report(&case, "run-1").expect("report");
+        let group = report
+            .problem_groups
+            .iter()
+            .find(|group| {
+                group.kind == crate::report_problem_groups::ReportProblemKind::IamPolicyPermissions
+                    && group.finding_ids.len() == 2
+                    && group.policy_name.as_deref() == Some("PrivatePolicy")
+                    && report
+                        .rendered_problem_membership()
+                        .contains_key(group.representative_finding_id.as_str())
+            })
+            .expect("private policy group");
+        let group_id = group.group_id.clone();
+        let member_ids = group.finding_ids.clone();
+        push_same_run_comparison(
+            &mut case,
+            member_ids
+                .iter()
+                .enumerate()
+                .map(|(index, id)| {
+                    let (_, _, severity) = member_record(&report, id);
+                    fix_check_diff(
+                        &format!("fp-policy-{index}"),
+                        Some(id.as_str()),
+                        None,
+                        FindingDiffStatus::Resolved,
+                        Some(severity),
+                        None,
+                        false,
+                    )
+                })
+                .collect(),
+        );
+        let plain_report =
+            beginner_report_for_export(&case, "run-1", RedactionProfile::None).expect("plain");
+        let redacted_report =
+            beginner_report_for_export(&case, "run-1", RedactionProfile::Standard)
+                .expect("redacted");
+        let plain_group = plain_report
+            .problem_groups
+            .iter()
+            .find(|group| group.group_id == group_id)
+            .expect("plain group");
+        let redacted_group = redacted_report
+            .problem_groups
+            .iter()
+            .find(|group| group.group_id == group_id)
+            .expect("redacted group");
+        let title_of = |source: &BeginnerMasterReport, id: &str| {
+            source
+                .findings
+                .iter()
+                .find(|finding| finding.finding_id == id)
+                .expect("member")
+                .title
+                .clone()
+        };
+        let plain_html = html_for_run(
+            &case,
+            "run-1",
+            RedactionProfile::None,
+            crate::export::ReportLocale::En,
+        );
+        let redacted_html = html_for_run(
+            &case,
+            "run-1",
+            RedactionProfile::Standard,
+            crate::export::ReportLocale::En,
+        );
+        let plain = verification_comparison_section(&plain_html);
+        let redacted = verification_comparison_section(&redacted_html);
+        assert!(plain.contains(&plain_group.title_english()), "{plain}");
+        assert!(plain.contains("PrivatePolicy"), "{plain}");
+        assert!(
+            redacted.contains(&redacted_group.title_english()),
+            "{redacted}"
+        );
+        assert!(!redacted.contains("PrivatePolicy"), "{redacted}");
+        assert_ne!(plain_group.title_english(), redacted_group.title_english());
+        let plain_technical = plain
+            .split_once("Original findings compared")
+            .expect("plain technical")
+            .1;
+        let redacted_technical = redacted
+            .split_once("Original findings compared")
+            .expect("redacted technical")
+            .1;
+        for id in &member_ids {
+            let plain_title = title_of(&plain_report, id);
+            let redacted_title = title_of(&redacted_report, id);
+            assert_ne!(plain_title, redacted_title);
+            assert!(
+                plain_technical.contains(&html_escape(&plain_title)),
+                "{plain_title} missing from {plain_technical}"
+            );
+            assert!(
+                redacted_technical.contains(&html_escape(&redacted_title)),
+                "{redacted_title} missing from {redacted_technical}"
+            );
+            assert!(
+                !redacted_technical.contains(&html_escape(&plain_title)),
+                "{plain_title} leaked into {redacted_technical}"
+            );
+            assert!(
+                redacted_title.contains("[redacted IAM policy"),
+                "{redacted_title}"
+            );
+        }
+        let redacted_zh_html = html_for_run(
+            &case,
+            "run-1",
+            RedactionProfile::Standard,
+            crate::export::ReportLocale::ZhHant,
+        );
+        let redacted_zh = verification_comparison_section(&redacted_zh_html);
+        // A Chinese page names the English redaction markers after the section
+        // is built, so the alias inside the group title is （IAM 政策 N）.
+        let localized_group = localize_redaction_markers(&redacted_group.title_zh_hant());
+        assert!(redacted_zh.contains(&localized_group), "{redacted_zh}");
+        assert!(localized_group.contains("（IAM 政策"), "{localized_group}");
+        assert!(!redacted_zh.contains("PrivatePolicy"), "{redacted_zh}");
+        let redacted_zh_technical = redacted_zh
+            .split_once("比較的原始發現")
+            .expect("zh technical")
+            .1;
+        for id in &member_ids {
+            let plain_title = title_of(&plain_report, id);
+            let redacted_title = title_of(&redacted_report, id);
+            let localized_title = localize_redaction_markers(&html_escape(&redacted_title));
+            assert!(
+                redacted_zh_technical.contains(&localized_title),
+                "{localized_title} missing from {redacted_zh_technical}"
+            );
+            assert!(
+                !redacted_zh_technical.contains(&html_escape(&plain_title)),
+                "{plain_title} leaked into {redacted_zh_technical}"
+            );
+        }
+    }
+
+    #[test]
+    fn html_fix_check_comparison_warns_when_a_grouped_member_is_a_secret() {
+        let mut case = crate::report_problem_groups::tests::approved_case();
+        let report = build_beginner_master_report(&case, "run-1").expect("report");
+        let group = rendered_group(
+            &report,
+            crate::report_problem_groups::ReportProblemKind::RootAccountUsage,
+            2,
+        );
+        let members = root_members(&report);
+        let secret_id = members
+            .iter()
+            .find(|member| member.0 != group.representative_finding_id)
+            .expect("non-representative member")
+            .0
+            .clone();
+        set_snapshot_family(&mut case, &secret_id, FindingFamily::Secret);
+        push_same_run_comparison(
+            &mut case,
+            members
+                .iter()
+                .enumerate()
+                .map(|(index, member)| {
+                    fix_check_diff(
+                        &format!("fp-secret-member-{index}"),
+                        Some(member.0.as_str()),
+                        None,
+                        FindingDiffStatus::Resolved,
+                        Some(member.2.clone()),
+                        None,
+                        false,
+                    )
+                })
+                .collect(),
+        );
+        let english = html_for_run(
+            &case,
+            "run-1",
+            RedactionProfile::None,
+            crate::export::ReportLocale::En,
+        );
+        let chinese = html_for_run(
+            &case,
+            "run-1",
+            RedactionProfile::None,
+            crate::export::ReportLocale::ZhHant,
+        );
+        let english_section = verification_comparison_section(&english);
+        let chinese_section = verification_comparison_section(&chinese);
+        assert!(
+            english_section.contains(&comparison_kpis(false, [1, 0, 0, 0])),
+            "{english_section}"
+        );
+        assert!(
+            comparison_list(english_section, "<h3>No longer observed</h3>")
+                .contains("2 original findings"),
+            "{english_section}"
+        );
+        assert!(
+            english_section.contains(FIX_CHECK_SECRET_NOTE),
+            "{english_section}"
+        );
+        assert!(
+            chinese_section.contains(FIX_CHECK_SECRET_NOTE_ZH),
+            "{chinese_section}"
+        );
     }
 }
