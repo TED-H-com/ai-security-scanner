@@ -3,6 +3,7 @@ import { readFile, writeFile, mkdir } from 'node:fs/promises';
 import { createHash } from 'node:crypto';
 import { resolve, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { addJapanese } from './localize-public-site.mjs';
 
 const root = fileURLToPath(new URL('../', import.meta.url));
 const repo = 'https://github.com/teddashh/ai-security-scanner';
@@ -38,7 +39,7 @@ export function stripSampleAdditions(html) {
   return html.replace(/<!-- public-sample:(style|banner|sources):start -->[\s\S]*?<!-- public-sample:\1:end -->/g, '');
 }
 function shell(page, title, description, content) {
-  return `<!doctype html>
+  return addJapanese(`<!doctype html>
 <html lang="en" data-lang="en"><head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="theme-color" content="#102c37"><meta name="description" content="${escape(description[0])}" data-en="${escape(description[0])}" data-zh="${escape(description[1])}">
@@ -55,7 +56,7 @@ function shell(page, title, description, content) {
 <main id="main">${content}</main>
 <footer class="site-footer"><div class="footer-inner"><p>ai-security-scanner · v0.4.0 · 2026-10-04</p><p>${localizedLink('index.html',['Back to the project','回到專案首頁'])} · <a href="${repo}/tree/main/docs/samples/v0.4.0">${bi(['Examples on GitHub','GitHub 範例檔案'])}</a></p></div></footer>
 <script src="project-site.js" defer></script>${page === 'scanner-guide' ? '<script src="scanner-guide.js" defer></script>' : ''}
-</body></html>\n`;
+</body></html>\n`);
 }
 function format(source) {
   if (['scubagear', 'maester'].includes(source.id)) return ['JSON · managed envelope of native verdicts', 'JSON · 包含原生判定的受管外層格式'];

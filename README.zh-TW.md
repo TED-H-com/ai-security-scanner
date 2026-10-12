@@ -1,12 +1,16 @@
 # ai-security-scanner
 
-[專案網站](https://teddashh.github.io/ai-security-scanner/?lang=zh-TW) · [English](README.md) · [使用說明](docs/README.zh-TW.md) · [下載](https://github.com/teddashh/ai-security-scanner/releases)
+[專案網站](https://teddashh.github.io/ai-security-scanner/?lang=zh-TW) · [English](README.md) · [使用說明](docs/README.zh-TW.md) · [下載](https://github.com/teddashh/ai-security-scanner/releases) · [日本語](README.ja.md)
 
 *本機優先的整合式資安評估工作台：選好要檢查的資產，就能拿到一份可追溯、能直接交付並照著處理的報告，不必自己管理整套掃描工具。*
 
 檢查你的程式碼、網站與公司系統，把需要注意的安全問題整理成一份報告。你會知道哪裡有問題、為什麼重要，以及接下來可以怎麼做。
 
 在桌面應用程式裡選好要檢查的項目，程式就會選用適合的安全工具，整理檢查結果。可以先從一個資料夾或網站開始，也可以一次檢查公司環境中的多個系統。
+
+## 介面語言
+
+`main` 分支已加入日文介面，可在 **設定 → 日本語** 選擇，重新啟動後仍會保留。公開的 v0.5.0 安裝檔尚未包含此更新。未翻譯的說明會顯示英文；日文介面匯出的 HTML 報告目前使用英文。另有 [日文 README](README.ja.md) 與[日文網站](https://teddashh.github.io/ai-security-scanner/?lang=ja)。
 
 ## 完成第一次掃描
 

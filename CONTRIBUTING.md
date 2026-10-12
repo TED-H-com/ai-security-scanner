@@ -83,6 +83,13 @@ When reviewing a user-facing claim:
 
 ## Verification
 
+Japanese website copy lives in `docs/locales/ja.json`. After editing it, run
+`node scripts/localize-public-site.mjs` for the homepage and fix-comparison page,
+then `node scripts/build-public-showcase.mjs` for the guide and sample index.
+Both commands accept `--check` to verify the generated markup. Keep scanner
+identifiers, versions and archived report evidence unchanged; Japanese pages link
+to the existing English reports with their language labeled explicitly.
+
 Run checks proportional to the changed boundary. Common commands include:
 
 ```bash

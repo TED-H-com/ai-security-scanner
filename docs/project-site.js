@@ -10,22 +10,38 @@ const pageCopy = {
     title: "ai-security-scanner · 找出安全問題，知道下一步",
     description: "在一個桌面程式裡檢查程式碼、網站與公司系統。看一份報告，了解問題、處理順序與下一步。支援 Windows、macOS 與 Linux。",
   },
+  ja: {
+    title: "ai-security-scanner · セキュリティの問題と、次にすることがわかる。",
+    description: "コード、ウェブサイト、社内システムを 1 つのデスクトップアプリでチェック。対応の優先順位と次の手順を、わかりやすいレポートで確認できます。Windows・macOS・Linux に対応。",
+  },
 };
 
 const applyLanguage = (language, updateUrl = true) => {
-  const selected = language === "zh-TW" ? "zh-TW" : "en";
+  const selected = Object.hasOwn(pageCopy, language) ? language : "en";
   document.documentElement.dataset.lang = selected;
-  document.documentElement.lang = selected === "zh-TW" ? "zh-Hant" : "en";
+  document.documentElement.lang = selected === "zh-TW" ? "zh-Hant" : selected;
   const titleElement = document.querySelector("title");
-  const title = (selected === "zh-TW" ? titleElement?.dataset.zh : titleElement?.dataset.en) || pageCopy[selected].title;
-  const summary = (selected === "zh-TW" ? description?.dataset.zh : description?.dataset.en) || pageCopy[selected].description;
+  const key = selected === "zh-TW" ? "zh" : selected;
+  const title = titleElement?.dataset[key] || pageCopy[selected].title;
+  const summary = description?.dataset[key] || pageCopy[selected].description;
   document.title = title;
   description?.setAttribute("content", summary);
   document.querySelector('meta[property="og:title"]')?.setAttribute("content", title);
   document.querySelector('meta[property="og:description"]')?.setAttribute("content", summary);
-  document.querySelector('meta[property="og:locale"]')?.setAttribute("content", selected === "zh-TW" ? "zh_TW" : "en_US");
+  document.querySelector('meta[property="og:locale"]')?.setAttribute("content", { en: "en_US", "zh-TW": "zh_TW", ja: "ja_JP" }[selected]);
   for (const link of document.querySelectorAll("a[data-href-en][data-href-zh]")) {
-    link.href = selected === "zh-TW" ? link.dataset.hrefZh : link.dataset.hrefEn;
+    const url = new URL(selected === "zh-TW" ? link.dataset.hrefZh : link.dataset.hrefEn, window.location.href);
+    const page = url.pathname.split('/').pop();
+    if (url.origin === location.origin && ['index.html', 'scanner-guide.html', 'sample-reports.html', 'check-fixes-demo.html'].includes(page)) {
+      url.searchParams.set('lang', selected);
+    }
+    link.href = selected === 'ja' && link.dataset.hrefJa ? link.dataset.hrefJa : url.href;
+  }
+  for (const element of document.querySelectorAll('[data-aria-label-en], [data-alt-en]')) {
+    for (const attribute of ['aria-label', 'alt']) {
+      const value = element.getAttribute(`data-${attribute}-${key}`) || element.getAttribute(`data-${attribute}-en`);
+      if (value) element.setAttribute(attribute, value);
+    }
   }
 
   for (const button of languageButtons) {
@@ -36,9 +52,9 @@ const applyLanguage = (language, updateUrl = true) => {
 
   if (updateUrl) {
     const url = new URL(window.location.href);
-    if (selected === "zh-TW") url.searchParams.set("lang", "zh-TW");
-    else url.searchParams.delete("lang");
+    url.searchParams.set("lang", selected);
     window.history.replaceState({}, "", url);
+    try { localStorage.setItem('ai-security-scanner.site-language', selected); } catch { /* Storage is optional. */ }
   }
 };
 

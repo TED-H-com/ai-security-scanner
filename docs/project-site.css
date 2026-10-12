@@ -27,6 +27,9 @@ html {
   scroll-padding-top: 96px;
 }
 
+html:not([data-lang="ja"]) .lang-ja,
+html[data-lang="ja"] .lang-en,
+html[data-lang="ja"] .lang-zh,
 html[data-lang="en"] .lang-zh,
 html[data-lang="zh-TW"] .lang-en {
   display: none !important;
@@ -204,8 +207,19 @@ h1 {
   white-space: nowrap;
 }
 
-.hero h1 .lang-zh .accent-word {
+.hero h1 .lang-zh .accent-word,
+.hero h1 .lang-ja .accent-word {
   display: inline-block;
+}
+
+html[lang="ja"] h1 {
+  font-size: clamp(2.3rem, 5vw, 4.25rem);
+  letter-spacing: normal;
+  line-height: 1.2;
+}
+
+html[lang="ja"] .eyebrow {
+  letter-spacing: normal;
 }
 
 .accent-word::after {

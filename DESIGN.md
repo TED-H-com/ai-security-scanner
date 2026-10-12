@@ -9,7 +9,7 @@ This records the current desktop app. Product behavior is defined in
 A compact work surface with dark teal navigation, pale surfaces and green primary
 actions. Put the next useful action and scan outcome first. Optional configuration
 and upstream evidence belong in expandable sections. Keep English and Traditional
-Chinese equally readable.
+Chinese and Japanese equally readable.
 
 ## 2. Color roles
 
@@ -35,6 +35,9 @@ Microsoft JhengHei fallbacks. Existing page headings use
 with 1.45 line height. Technical form copy uses 0.78rem. Preserve sibling styles
 instead of introducing a new type scale. Wrap full URLs and identifiers without
 discarding their content; do not apply Latin letter spacing to Chinese prose.
+
+Japanese uses the same Latin/system stack, with Noto Sans JP, Hiragino Kaku Gothic
+ProN, Yu Gothic and Meiryo fallbacks for Japanese glyph forms.
 
 ## 4. Components
 
@@ -68,7 +71,7 @@ to app pages.
 
 Respect existing 1250/1050/900/820/600px breakpoints in the app and page styles.
 Navigation and grids collapse using those rules. Verify 390, 768 and 1440px widths
-in both languages, including populated long values. No horizontal page overflow;
+in all three languages, including populated long values. No horizontal page overflow;
 preserve touch hit areas and readable inputs.
 
 ## 9. Implementation guide

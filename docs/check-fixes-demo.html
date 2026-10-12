@@ -4,7 +4,7 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="theme-color" content="#102c37">
-    <meta name="description" content="A real scan of a small demo project, fixed and checked again: 6 problems no longer observed, 7 still present and 1 new. Screenshots and both HTML reports." data-en="A real scan of a small demo project, fixed and checked again: 6 problems no longer observed, 7 still present and 1 new. Screenshots and both HTML reports." data-zh="一個小型示範專案的真實掃描：修正後再檢查一次，6 個問題這次沒有再看到、7 個仍然存在、1 個新出現。附截圖與兩次掃描的 HTML 報告。">
+    <meta name="description" content="A real scan of a small demo project, fixed and checked again: 6 problems no longer observed, 7 still present and 1 new. Screenshots and both HTML reports." data-en="A real scan of a small demo project, fixed and checked again: 6 problems no longer observed, 7 still present and 1 new. Screenshots and both HTML reports." data-zh="一個小型示範專案的真實掃描：修正後再檢查一次，6 個問題這次沒有再看到、7 個仍然存在、1 個新出現。附截圖與兩次掃描的 HTML 報告。" data-ja="小さなデモプロジェクトを修正して再スキャン。6 件が今回は検出されず、7 件が引き続き検出され、1 件が新規でした。画面と両方の HTML レポートを紹介します。">
     <meta property="og:type" content="website">
     <meta property="og:locale" content="en_US">
     <meta property="og:title" content="Check a fix: a real before-and-after scan · ai-security-scanner">
@@ -13,89 +13,80 @@
     <meta property="og:image" content="https://teddashh.github.io/ai-security-scanner/demos/check-fixes/comparison-en.webp">
     <meta name="twitter:card" content="summary_large_image">
     <link rel="canonical" href="https://teddashh.github.io/ai-security-scanner/check-fixes-demo.html">
-    <link rel="alternate" hreflang="en" href="https://teddashh.github.io/ai-security-scanner/check-fixes-demo.html">
+    <link rel="alternate" hreflang="en" href="https://teddashh.github.io/ai-security-scanner/check-fixes-demo.html"><link rel="alternate" hreflang="ja" href="https://teddashh.github.io/ai-security-scanner/check-fixes-demo.html?lang=ja">
     <link rel="alternate" hreflang="zh-Hant" href="https://teddashh.github.io/ai-security-scanner/check-fixes-demo.html?lang=zh-TW">
     <link rel="icon" href="project-mark.svg" type="image/svg+xml">
     <link rel="stylesheet" href="project-site.css">
     <link rel="stylesheet" href="showcase.css">
-    <title data-en="Check a fix: a real before-and-after scan · ai-security-scanner" data-zh="確認修復：一次真實的修復前後掃描 · ai-security-scanner">Check a fix: a real before-and-after scan · ai-security-scanner</title>
-    <script>
-      (() => {
-        const requested = new URLSearchParams(window.location.search).get("lang");
-        const prefersChinese = navigator.languages?.some((language) => language.toLowerCase().startsWith("zh"));
-        if (requested === "zh-TW" || (!requested && prefersChinese)) {
-          document.documentElement.dataset.lang = "zh-TW";
-          document.documentElement.lang = "zh-Hant";
-        }
-      })();
-    </script>
+    <title data-en="Check a fix: a real before-and-after scan · ai-security-scanner" data-zh="確認修復：一次真實的修復前後掃描 · ai-security-scanner" data-ja="修正を確認：実際のスキャンの前後比較 · ai-security-scanner">Check a fix: a real before-and-after scan · ai-security-scanner</title>
+    <script src="site-language.js"></script>
   </head>
   <body class="showcase-page">
-    <a class="skip-link" href="#main"><span class="lang-en">Skip to content</span><span class="lang-zh" lang="zh-Hant">跳到主要內容</span></a>
+    <a class="skip-link" href="#main"><span class="lang-en">Skip to content</span><span class="lang-ja" lang="ja">本文へスキップ</span><span class="lang-zh" lang="zh-Hant">跳到主要內容</span></a>
 
     <header class="site-header">
       <div class="header-inner">
         <a class="brand" href="index.html" data-href-en="index.html" data-href-zh="index.html?lang=zh-TW"><img src="project-mark.svg" alt=""><span>ai-security-scanner</span></a>
-        <nav class="nav" aria-label="Primary navigation">
-          <a href="sample-reports.html" data-href-en="sample-reports.html" data-href-zh="sample-reports.html?lang=zh-TW"><span class="lang-en">Sample reports</span><span class="lang-zh" lang="zh-Hant">範例報告</span></a>
-          <a href="scanner-guide.html" data-href-en="scanner-guide.html" data-href-zh="scanner-guide.html?lang=zh-TW"><span class="lang-en">Scanner guide</span><span class="lang-zh" lang="zh-Hant">掃描器指南</span></a>
-          <a href="check-fixes-demo.html" data-href-en="check-fixes-demo.html" data-href-zh="check-fixes-demo.html?lang=zh-TW"><span class="lang-en">Real scan example</span><span class="lang-zh" lang="zh-Hant">真實掃描案例</span></a>
+        <nav class="nav" aria-label="Primary navigation" data-aria-label-en="Primary navigation" data-aria-label-ja="メインナビゲーション">
+          <a href="sample-reports.html" data-href-en="sample-reports.html" data-href-zh="sample-reports.html?lang=zh-TW"><span class="lang-en">Sample reports</span><span class="lang-ja" lang="ja">レポートのサンプル</span><span class="lang-zh" lang="zh-Hant">範例報告</span></a>
+          <a href="scanner-guide.html" data-href-en="scanner-guide.html" data-href-zh="scanner-guide.html?lang=zh-TW"><span class="lang-en">Scanner guide</span><span class="lang-ja" lang="ja">スキャナーガイド</span><span class="lang-zh" lang="zh-Hant">掃描器指南</span></a>
+          <a href="check-fixes-demo.html" data-href-en="check-fixes-demo.html" data-href-zh="check-fixes-demo.html?lang=zh-TW"><span class="lang-en">Real scan example</span><span class="lang-ja" lang="ja">実際のスキャン例</span><span class="lang-zh" lang="zh-Hant">真實掃描案例</span></a>
           <a href="https://github.com/teddashh/ai-security-scanner">GitHub ↗</a>
         </nav>
-        <div class="language-switch" role="group" aria-label="Language">
+        <div class="language-switch" role="group" aria-label="Language" data-aria-label-en="Language" data-aria-label-ja="言語">
           <button type="button" data-language="en" aria-pressed="true">EN</button>
-          <button type="button" data-language="zh-TW" aria-pressed="false">繁中</button>
+          <button type="button" data-language="zh-TW" aria-pressed="false">繁中</button><button type="button" data-language="ja" aria-pressed="false">日本語</button>
         </div>
       </div>
     </header>
 
     <main id="main">
       <section class="section showcase-intro">
-        <p class="eyebrow"><span class="lang-en">Real scan / 2026-10-07</span><span class="lang-zh" lang="zh-Hant">真實掃描 / 2026-10-07</span></p>
-        <h1><span class="lang-en">Fix it, then check again.</span><span class="lang-zh" lang="zh-Hant">修好之後，再檢查一次。</span></h1>
-        <p class="showcase-lead"><span class="lang-en">We scanned a small demo project, fixed some of its problems and checked it again. The app compared the two scans.</span><span class="lang-zh" lang="zh-Hant">我們掃描一個小型示範專案，修正其中幾個問題後再檢查一次，由程式比較兩次掃描的結果。</span></p>
+        <p class="eyebrow"><span class="lang-en">Real scan / 2026-10-07</span><span class="lang-ja" lang="ja">実際のスキャン / 2026-10-07</span><span class="lang-zh" lang="zh-Hant">真實掃描 / 2026-10-07</span></p>
+        <h1><span class="lang-en">Fix it, then check again.</span><span class="lang-ja" lang="ja">修正して、もう一度確認。</span><span class="lang-zh" lang="zh-Hant">修好之後，再檢查一次。</span></h1>
+        <p class="showcase-lead"><span class="lang-en">We scanned a small demo project, fixed some of its problems and checked it again. The app compared the two scans.</span><span class="lang-ja" lang="ja">小さなデモプロジェクトをスキャンし、一部の問題を修正して再スキャンしました。アプリで 2 回の結果を比較しています。</span><span class="lang-zh" lang="zh-Hant">我們掃描一個小型示範專案，修正其中幾個問題後再檢查一次，由程式比較兩次掃描的結果。</span></p>
         <ul class="demo-metrics">
-          <li><strong>13 → 8</strong><span class="lang-en">Problems found</span><span class="lang-zh" lang="zh-Hant">發現的問題</span></li>
-          <li><strong>6</strong><span class="lang-en">No longer observed</span><span class="lang-zh" lang="zh-Hant">這次沒有再看到</span></li>
-          <li><strong>7</strong><span class="lang-en">Still present</span><span class="lang-zh" lang="zh-Hant">仍然存在</span></li>
-          <li><strong>1</strong><span class="lang-en">New</span><span class="lang-zh" lang="zh-Hant">新出現</span></li>
-          <li><strong>0</strong><span class="lang-en">Verification incomplete</span><span class="lang-zh" lang="zh-Hant">驗證未完成</span></li>
+          <li><strong>13 → 8</strong><span class="lang-en">Problems found</span><span class="lang-ja" lang="ja">見つかった問題</span><span class="lang-zh" lang="zh-Hant">發現的問題</span></li>
+          <li><strong>6</strong><span class="lang-en">No longer observed</span><span class="lang-ja" lang="ja">今回は検出されず</span><span class="lang-zh" lang="zh-Hant">這次沒有再看到</span></li>
+          <li><strong>7</strong><span class="lang-en">Still present</span><span class="lang-ja" lang="ja">引き続き検出</span><span class="lang-zh" lang="zh-Hant">仍然存在</span></li>
+          <li><strong>1</strong><span class="lang-en">New</span><span class="lang-ja" lang="ja">新規</span><span class="lang-zh" lang="zh-Hant">新出現</span></li>
+          <li><strong>0</strong><span class="lang-en">Verification incomplete</span><span class="lang-ja" lang="ja">検証未完了</span><span class="lang-zh" lang="zh-Hant">驗證未完成</span></li>
         </ul>
-        <p class="version-note"><span class="lang-en">These improvements are included in v0.5.0. This example was made with development builds after v0.4.1: the scans with commit <code>bca90a8</code>, the comparison screenshot with <code>dff42c2</code>, and the reports and other screenshots with <code>e663b0a</code>. v0.4.1 does not have step 4, choosing the fixed folder again (it scans the copy saved when the folder was first chosen), the comparison at the top of the Scan 2 report, or problems that combine related findings: it lists every finding on its own.</span><span class="lang-zh" lang="zh-Hant">這些改進已納入 v0.5.0。本範例使用 v0.4.1 之後的開發版本製作：掃描使用 commit <code>bca90a8</code>，比較結果截圖使用 <code>dff42c2</code>，報告與其他截圖使用 <code>e663b0a</code>。v0.4.1 沒有第 4 步「重新選擇修正後的資料夾」（它掃描的是第一次選擇資料夾時保存的副本），沒有第 2 次掃描報告開頭的比較，也不會把相關的發現合併成一個問題，而是逐筆列出。</span></p>
+        <p class="version-note"><span class="lang-en">These improvements are included in v0.5.0. This example was made with development builds after v0.4.1: the scans with commit <code>bca90a8</code>, the comparison screenshot with <code>dff42c2</code>, and the reports and other screenshots with <code>e663b0a</code>. v0.4.1 does not have step 4, choosing the fixed folder again (it scans the copy saved when the folder was first chosen), the comparison at the top of the Scan 2 report, or problems that combine related findings: it lists every finding on its own.</span><span class="lang-ja" lang="ja">これらの改善は v0.5.0 に含まれます。この例は v0.4.1 以降の開発ビルドで作成しました。スキャンに使ったコミットは <code>bca90a8</code>、比較画面は <code>dff42c2</code>、レポートとその他の画面は <code>e663b0a</code>です。v0.4.1 には手順 4 のフォルダー再選択、2 回目のレポート冒頭の比較、関連結果をまとめた問題表示がありません。最初に選んだ時点のコピーをスキャンし、各検出結果を個別に表示します。</span><span class="lang-zh" lang="zh-Hant">這些改進已納入 v0.5.0。本範例使用 v0.4.1 之後的開發版本製作：掃描使用 commit <code>bca90a8</code>，比較結果截圖使用 <code>dff42c2</code>，報告與其他截圖使用 <code>e663b0a</code>。v0.4.1 沒有第 4 步「重新選擇修正後的資料夾」（它掃描的是第一次選擇資料夾時保存的副本），沒有第 2 次掃描報告開頭的比較，也不會把相關的發現合併成一個問題，而是逐筆列出。</span></p>
       </section>
 
       <section class="section demo-step" id="project">
         <p class="eyebrow">01</p>
-        <h2><span class="lang-en">A small API with planted problems</span><span class="lang-zh" lang="zh-Hant">一個刻意放入問題的小型 API</span></h2>
-        <p><span class="lang-en"><code>inventory-api-demo</code> is a small Flask service written for this demo. It has five planted problems:</span><span class="lang-zh" lang="zh-Hant"><code>inventory-api-demo</code> 是為這次示範寫的小型 Flask 服務，刻意放入五種問題：</span></p>
+        <h2><span class="lang-en">A small API with planted problems</span><span class="lang-ja" lang="ja">意図的に問題を入れた小さな API</span><span class="lang-zh" lang="zh-Hant">一個刻意放入問題的小型 API</span></h2>
+        <p><span class="lang-en"><code>inventory-api-demo</code> is a small Flask service written for this demo. It has five planted problems:</span><span class="lang-ja" lang="ja"><code>inventory-api-demo</code> は、このデモ用の小さな Flask サービスです。次の 5 つの問題を入れています。</span><span class="lang-zh" lang="zh-Hant"><code>inventory-api-demo</code> 是為這次示範寫的小型 Flask 服務，刻意放入五種問題：</span></p>
         <ul>
-          <li><span class="lang-en">a private deploy key in the folder, created for this demo and never used anywhere;</span><span class="lang-zh" lang="zh-Hant">資料夾裡有一把部署用私鑰，為示範而產生，從未在任何地方使用；</span></li>
-          <li><span class="lang-en">YAML input loaded with the unsafe loader;</span><span class="lang-zh" lang="zh-Hant">用不安全的方式載入 YAML 輸入；</span></li>
-          <li><span class="lang-en">PyYAML 5.3.1, which has a known critical vulnerability;</span><span class="lang-zh" lang="zh-Hant">使用有已知重大弱點的 PyYAML 5.3.1；</span></li>
-          <li><span class="lang-en">a container that runs as root;</span><span class="lang-zh" lang="zh-Hant">容器以 root 身分執行；</span></li>
-          <li><span class="lang-en">a ping endpoint that passes user input to a shell.</span><span class="lang-zh" lang="zh-Hant">ping 端點把使用者輸入交給 shell 執行。</span></li>
+          <li><span class="lang-en">a private deploy key in the folder, created for this demo and never used anywhere;</span><span class="lang-ja" lang="ja">デモ用に作成し、一度も使用していないデプロイ用の秘密鍵をフォルダーに保存。</span><span class="lang-zh" lang="zh-Hant">資料夾裡有一把部署用私鑰，為示範而產生，從未在任何地方使用；</span></li>
+          <li><span class="lang-en">YAML input loaded with the unsafe loader;</span><span class="lang-ja" lang="ja">YAML 入力を安全でないローダーで読み込み。</span><span class="lang-zh" lang="zh-Hant">用不安全的方式載入 YAML 輸入；</span></li>
+          <li><span class="lang-en">PyYAML 5.3.1, which has a known critical vulnerability;</span><span class="lang-ja" lang="ja">既知の緊急の脆弱性がある PyYAML 5.3.1 を使用。</span><span class="lang-zh" lang="zh-Hant">使用有已知重大弱點的 PyYAML 5.3.1；</span></li>
+          <li><span class="lang-en">a container that runs as root;</span><span class="lang-ja" lang="ja">コンテナーを root で実行。</span><span class="lang-zh" lang="zh-Hant">容器以 root 身分執行；</span></li>
+          <li><span class="lang-en">a ping endpoint that passes user input to a shell.</span><span class="lang-ja" lang="ja">ping のエンドポイントで、ユーザー入力をシェルに渡す。</span><span class="lang-zh" lang="zh-Hant">ping 端點把使用者輸入交給 shell 執行。</span></li>
         </ul>
       </section>
 
       <section class="section demo-step" id="first-scan">
         <p class="eyebrow">02</p>
-        <h2><span class="lang-en">First scan: 13 problems</span><span class="lang-zh" lang="zh-Hant">第一次掃描：13 個問題</span></h2>
-        <p><span class="lang-en">The app scanned the folder with eight tools in about 13 minutes on the test computer. All eight completed. The report shows their 26 findings as 13 problems, 6 of them Critical or High, and starts with the vulnerable PyYAML version.</span><span class="lang-zh" lang="zh-Hant">程式用八個工具掃描這個資料夾，在測試電腦上約 13 分鐘完成，八個工具都跑完。報告把它們的 26 筆發現整理成 13 個問題，其中 6 個是重大或高風險，並建議先處理有弱點的 PyYAML 版本。</span></p>
+        <h2><span class="lang-en">First scan: 13 problems</span><span class="lang-ja" lang="ja">1 回目：13 件の問題</span><span class="lang-zh" lang="zh-Hant">第一次掃描：13 個問題</span></h2>
+        <p><span class="lang-en">The app scanned the folder with eight tools in about 13 minutes on the test computer. All eight completed. The report shows their 26 findings as 13 problems, 6 of them Critical or High, and starts with the vulnerable PyYAML version.</span><span class="lang-ja" lang="ja">テスト用コンピューターで、8 ツールが約 13 分で完了しました。26 件の検出結果を 13 件の問題にまとめ、うち 6 件が緊急または高です。レポートは脆弱な PyYAML の版から表示します。</span><span class="lang-zh" lang="zh-Hant">程式用八個工具掃描這個資料夾，在測試電腦上約 13 分鐘完成，八個工具都跑完。報告把它們的 26 筆發現整理成 13 個問題，其中 6 個是重大或高風險，並建議先處理有弱點的 PyYAML 版本。</span></p>
         <figure class="demo-shot">
-          <img class="lang-en" src="demos/check-fixes/results-scan1-en.webp" width="1440" height="920" loading="lazy" alt="Results for Scan 1: one asset with 13 problems, and the first three to fix: the Critical PyYAML 5.3.1 package, a High Dockerfile without a USER instruction and a High private key in a file.">
+          <img class="lang-en" src="demos/check-fixes/results-scan1-en.webp" width="1440" height="920" loading="lazy" alt="Results for Scan 1: one asset with 13 problems, and the first three to fix: the Critical PyYAML 5.3.1 package, a High Dockerfile without a USER instruction and a High private key in a file."><img class="lang-ja" src="demos/check-fixes/results-scan1-en.webp" width="1440" height="920" loading="lazy" alt="1 回目の結果：1 資産に 13 問題。優先する 3 件は、緊急の PyYAML 5.3.1、高の USER 指定がない Dockerfile、高のファイル内の秘密鍵。" lang="ja">
           <img class="lang-zh" lang="zh-Hant" src="demos/check-fixes/results-scan1-zh-TW.webp" width="1440" height="920" loading="lazy" alt="第 1 次掃描的結果：一個資產有 13 個問題，最先處理的三項是重大的 PyYAML 5.3.1 套件、高風險的 Dockerfile 未指定 USER，以及高風險的檔案中私鑰。">
-          <figcaption><span class="lang-en">Results for Scan 1: what to fix first.</span><span class="lang-zh" lang="zh-Hant">第 1 次掃描的結果：先處理哪些問題。</span></figcaption>
+          <figcaption><span class="lang-en">Results for Scan 1: what to fix first.</span><span class="lang-ja" lang="ja">1 回目の結果：最初に修正すること。</span><span class="lang-zh" lang="zh-Hant">第 1 次掃描的結果：先處理哪些問題。</span></figcaption>
         </figure>
         <details class="demo-detail">
-          <summary><span class="lang-en">Tools and versions</span><span class="lang-zh" lang="zh-Hant">工具與版本</span></summary>
-          <p><span class="lang-en">Checkov 3.3.13 · Gitleaks 8.30.1 · Grype 0.117.0 · KICS 2.1.20 · Semgrep 1.174.0 · Syft 1.51.0 · Trivy 0.74.0 · TruffleHog 3.97.0. Syft lists the software packages; it does not report problems. Both scans used the same versions.</span><span class="lang-zh" lang="zh-Hant">Checkov 3.3.13 · Gitleaks 8.30.1 · Grype 0.117.0 · KICS 2.1.20 · Semgrep 1.174.0 · Syft 1.51.0 · Trivy 0.74.0 · TruffleHog 3.97.0。Syft 負責列出軟體套件，不回報問題。兩次掃描使用相同版本。</span></p>
+          <summary><span class="lang-en">Tools and versions</span><span class="lang-ja" lang="ja">ツールとバージョン</span><span class="lang-zh" lang="zh-Hant">工具與版本</span></summary>
+          <p><span class="lang-en">Checkov 3.3.13 · Gitleaks 8.30.1 · Grype 0.117.0 · KICS 2.1.20 · Semgrep 1.174.0 · Syft 1.51.0 · Trivy 0.74.0 · TruffleHog 3.97.0. Syft lists the software packages; it does not report problems. Both scans used the same versions.</span><span class="lang-ja" lang="ja">Checkov 3.3.13 · Gitleaks 8.30.1 · Grype 0.117.0 · KICS 2.1.20 · Semgrep 1.174.0 · Syft 1.51.0 · Trivy 0.74.0 · TruffleHog 3.97.0。Syft はパッケージを一覧化するツールで、問題は報告しません。両スキャンで同じ版を使いました。</span><span class="lang-zh" lang="zh-Hant">Checkov 3.3.13 · Gitleaks 8.30.1 · Grype 0.117.0 · KICS 2.1.20 · Semgrep 1.174.0 · Syft 1.51.0 · Trivy 0.74.0 · TruffleHog 3.97.0。Syft 負責列出軟體套件，不回報問題。兩次掃描使用相同版本。</span></p>
         </details>
       </section>
 
       <section class="section demo-step" id="fix">
         <p class="eyebrow">03</p>
-        <h2><span class="lang-en">The fix</span><span class="lang-zh" lang="zh-Hant">修正</span></h2>
-        <p><span class="lang-en">One commit fixed four of the five problems and left the shell call alone. It also turned on Flask debug mode on purpose, to see whether the check catches a new problem.</span><span class="lang-zh" lang="zh-Hant">一個 commit 修正了五種問題中的四種，shell 呼叫則維持原樣；另外刻意開啟 Flask 的除錯模式，看看檢查能不能抓到新問題。</span></p>
+        <h2><span class="lang-en">The fix</span><span class="lang-ja" lang="ja">修正内容</span><span class="lang-zh" lang="zh-Hant">修正</span></h2>
+        <p><span class="lang-en">One commit fixed four of the five problems and left the shell call alone. It also turned on Flask debug mode on purpose, to see whether the check catches a new problem.</span><span class="lang-ja" lang="ja">1 コミットで 5 つのうち 4 つを修正し、シェル呼び出しは残しました。新しい問題を検出できるか確認するため、意図的に Flask のデバッグモードも有効にしました。</span><span class="lang-zh" lang="zh-Hant">一個 commit 修正了五種問題中的四種，shell 呼叫則維持原樣；另外刻意開啟 Flask 的除錯模式，看看檢查能不能抓到新問題。</span></p>
         <pre class="demo-diff"><code>deploy/deploy_key    deleted
 .gitignore           added: deploy/*_key
 
@@ -128,52 +119,52 @@
 
       <section class="section demo-step" id="choose-folder">
         <p class="eyebrow">04</p>
-        <h2><span class="lang-en">Choose the fixed folder again</span><span class="lang-zh" lang="zh-Hant">重新選擇修正後的資料夾</span></h2>
-        <p><span class="lang-en">A scan reads a copy of the folder saved when you choose it. Before checking again, choose the folder again in My scans → Check fixes. Here the new copy had 3 files changed, 1 added and 1 removed.</span><span class="lang-zh" lang="zh-Hant">掃描讀取的是選擇資料夾時保存的副本。再次檢查前，先到「我的掃描 → 確認修復」重新選擇資料夾。這次的新副本有 3 個檔案變更、1 個新增、1 個移除。</span></p>
+        <h2><span class="lang-en">Choose the fixed folder again</span><span class="lang-ja" lang="ja">修正後のフォルダーを再選択</span><span class="lang-zh" lang="zh-Hant">重新選擇修正後的資料夾</span></h2>
+        <p><span class="lang-en">A scan reads a copy of the folder saved when you choose it. Before checking again, choose the folder again in My scans → Check fixes. Here the new copy had 3 files changed, 1 added and 1 removed.</span><span class="lang-ja" lang="ja">スキャンはフォルダー選択時に保存したコピーを読みます。「マイスキャン → 修正を確認」でフォルダーを選び直してください。この例の新しいコピーは、変更 3 ファイル、追加 1、削除 1 でした。</span><span class="lang-zh" lang="zh-Hant">掃描讀取的是選擇資料夾時保存的副本。再次檢查前，先到「我的掃描 → 確認修復」重新選擇資料夾。這次的新副本有 3 個檔案變更、1 個新增、1 個移除。</span></p>
         <figure class="demo-shot">
-          <img class="lang-en" src="demos/check-fixes/choose-folder-en.webp" width="1440" height="742" loading="lazy" alt="Check fixes with Scan 1 as the baseline. The step Choose the fixed folder lists the folder as not chosen again yet, and the start button waits until it is.">
+          <img class="lang-en" src="demos/check-fixes/choose-folder-en.webp" width="1440" height="742" loading="lazy" alt="Check fixes with Scan 1 as the baseline. The step Choose the fixed folder lists the folder as not chosen again yet, and the start button waits until it is."><img class="lang-ja" src="demos/check-fixes/choose-folder-en.webp" width="1440" height="742" loading="lazy" alt="1 回目を比較元に修正を確認。「修正済みフォルダーを選択」は未選択で、開始ボタンは再選択を待っています。" lang="ja">
           <img class="lang-zh" lang="zh-Hant" src="demos/check-fixes/choose-folder-zh-TW.webp" width="1440" height="746" loading="lazy" alt="確認修復以第 1 次掃描為比較基準。「選擇修正後的資料夾」步驟顯示資料夾尚未重新選擇，開始按鈕要等選好後才能使用。">
-          <figcaption><span class="lang-en">Check fixes asks for the fixed folder before it starts.</span><span class="lang-zh" lang="zh-Hant">確認修復會先請你選擇修正後的資料夾，再開始檢查。</span></figcaption>
+          <figcaption><span class="lang-en">Check fixes asks for the fixed folder before it starts.</span><span class="lang-ja" lang="ja">修正の確認を始める前に、修正済みのフォルダーを選びます。</span><span class="lang-zh" lang="zh-Hant">確認修復會先請你選擇修正後的資料夾，再開始檢查。</span></figcaption>
         </figure>
       </section>
 
       <section class="section demo-step" id="result">
         <p class="eyebrow">05</p>
-        <h2><span class="lang-en">What changed</span><span class="lang-zh" lang="zh-Hant">比較結果</span></h2>
-        <p><span class="lang-en">The same eight tools ran again, in about 12 minutes. Every check completed in both scans with the same tool versions, so every problem could be compared.</span><span class="lang-zh" lang="zh-Hant">同樣的八個工具再跑一次，約 12 分鐘。兩次掃描的每項檢查都已完成，工具版本也相同，所以每個問題都能比較。</span></p>
+        <h2><span class="lang-en">What changed</span><span class="lang-ja" lang="ja">変更点を見る</span><span class="lang-zh" lang="zh-Hant">比較結果</span></h2>
+        <p><span class="lang-en">The same eight tools ran again, in about 12 minutes. Every check completed in both scans with the same tool versions, so every problem could be compared.</span><span class="lang-ja" lang="ja">同じ 8 ツールを再実行し、約 12 分で完了しました。両スキャンで同じ版の全チェックが完了しているため、すべての問題を比較できました。</span><span class="lang-zh" lang="zh-Hant">同樣的八個工具再跑一次，約 12 分鐘。兩次掃描的每項檢查都已完成，工具版本也相同，所以每個問題都能比較。</span></p>
         <figure class="demo-shot">
-          <img class="lang-en" src="demos/check-fixes/comparison-en.webp" width="1440" height="920" loading="lazy" alt="Check fixes comparison: folder copies e35c4d74be02 to 98c8d9af6838; 6 no longer observed, 7 still present, 1 new, 0 verification incomplete.">
+          <img class="lang-en" src="demos/check-fixes/comparison-en.webp" width="1440" height="920" loading="lazy" alt="Check fixes comparison: folder copies e35c4d74be02 to 98c8d9af6838; 6 no longer observed, 7 still present, 1 new, 0 verification incomplete."><img class="lang-ja" src="demos/check-fixes/comparison-en.webp" width="1440" height="920" loading="lazy" alt="修正の比較：コピー e35c4d74be02 と 98c8d9af6838。今回は検出されず 6、引き続き検出 7、新規 1、検証未完了 0。" lang="ja">
           <img class="lang-zh" lang="zh-Hant" src="demos/check-fixes/comparison-zh-TW.webp" width="1440" height="920" loading="lazy" alt="確認修復的比較結果：資料夾副本 e35c4d74be02 → 98c8d9af6838；6 個這次沒有再看到、7 個仍然存在、1 個新出現、0 個驗證未完成。">
-          <figcaption><span class="lang-en">The comparison names the two folder copies it read.</span><span class="lang-zh" lang="zh-Hant">比較結果會列出它讀取的兩份資料夾副本。</span></figcaption>
+          <figcaption><span class="lang-en">The comparison names the two folder copies it read.</span><span class="lang-ja" lang="ja">比較には、読み取った 2 つのフォルダーコピーの名前を表示します。</span><span class="lang-zh" lang="zh-Hant">比較結果會列出它讀取的兩份資料夾副本。</span></figcaption>
         </figure>
         <div class="table-scroll">
           <table>
-            <caption class="visually-hidden"><span class="lang-en">Comparison outcome by problem</span><span class="lang-zh" lang="zh-Hant">依問題列出的比較結果</span></caption>
+            <caption class="visually-hidden"><span class="lang-en">Comparison outcome by problem</span><span class="lang-ja" lang="ja">問題ごとの比較結果</span><span class="lang-zh" lang="zh-Hant">依問題列出的比較結果</span></caption>
             <thead>
               <tr>
-                <th scope="col"><span class="lang-en">Outcome</span><span class="lang-zh" lang="zh-Hant">結果</span></th>
-                <th scope="col" class="numeric"><span class="lang-en">Problems</span><span class="lang-zh" lang="zh-Hant">問題</span></th>
-                <th scope="col"><span class="lang-en">What they were</span><span class="lang-zh" lang="zh-Hant">內容</span></th>
+                <th scope="col"><span class="lang-en">Outcome</span><span class="lang-ja" lang="ja">状態</span><span class="lang-zh" lang="zh-Hant">結果</span></th>
+                <th scope="col" class="numeric"><span class="lang-en">Problems</span><span class="lang-ja" lang="ja">問題数</span><span class="lang-zh" lang="zh-Hant">問題</span></th>
+                <th scope="col"><span class="lang-en">What they were</span><span class="lang-ja" lang="ja">内容</span><span class="lang-zh" lang="zh-Hant">內容</span></th>
               </tr>
             </thead>
             <tbody>
               <tr>
-                <th scope="row"><span class="lang-en">No longer observed</span><span class="lang-zh" lang="zh-Hant">這次沒有再看到</span></th>
+                <th scope="row"><span class="lang-en">No longer observed</span><span class="lang-ja" lang="ja">今回は検出されず</span><span class="lang-zh" lang="zh-Hant">這次沒有再看到</span></th>
                 <td class="numeric">6</td>
-                <td><span class="lang-en">Private key: 1 problem from 5 detections (Gitleaks, TruffleHog, Semgrep ×3). PyYAML 5.3.1: 1 from 2 (Grype, Trivy). Unsafe YAML loading: 1 (Semgrep). Container runs as root: 3, one each from Checkov, KICS and Semgrep.</span><span class="lang-zh" lang="zh-Hant">私鑰：1 個問題，來自 5 筆偵測（Gitleaks、TruffleHog、Semgrep ×3）。PyYAML 5.3.1：1 個，來自 2 筆（Grype、Trivy）。不安全的 YAML 載入：1 個（Semgrep）。容器以 root 執行：3 個，Checkov、KICS、Semgrep 各一個。</span></td>
+                <td><span class="lang-en">Private key: 1 problem from 5 detections (Gitleaks, TruffleHog, Semgrep ×3). PyYAML 5.3.1: 1 from 2 (Grype, Trivy). Unsafe YAML loading: 1 (Semgrep). Container runs as root: 3, one each from Checkov, KICS and Semgrep.</span><span class="lang-ja" lang="ja">秘密鍵：5 検出から 1 問題（Gitleaks、TruffleHog、Semgrep ×3）。PyYAML 5.3.1：2 検出から 1 問題（Grype、Trivy）。危険な YAML 読み込み：1 問題（Semgrep）。root 実行：3 問題（Checkov、KICS、Semgrep 各 1）。</span><span class="lang-zh" lang="zh-Hant">私鑰：1 個問題，來自 5 筆偵測（Gitleaks、TruffleHog、Semgrep ×3）。PyYAML 5.3.1：1 個，來自 2 筆（Grype、Trivy）。不安全的 YAML 載入：1 個（Semgrep）。容器以 root 執行：3 個，Checkov、KICS、Semgrep 各一個。</span></td>
               </tr>
               <tr>
-                <th scope="row"><span class="lang-en">Still present</span><span class="lang-zh" lang="zh-Hant">仍然存在</span></th>
+                <th scope="row"><span class="lang-en">Still present</span><span class="lang-ja" lang="ja">引き続き検出</span><span class="lang-zh" lang="zh-Hant">仍然存在</span></th>
                 <td class="numeric">7</td>
-                <td><span class="lang-en">Shell call: 1 problem from 5 Semgrep detections; the code moved from line 19 to line 21. Flask and requests advisories: 4, each reported by Grype and Trivy. No container health check: 2 (Checkov, KICS).</span><span class="lang-zh" lang="zh-Hant">shell 呼叫：1 個問題，來自 5 筆 Semgrep 偵測，程式碼從第 19 行移到第 21 行。Flask 與 requests 的安全公告：4 個，每個都由 Grype 與 Trivy 回報。容器沒有健康檢查：2 個（Checkov、KICS）。</span></td>
+                <td><span class="lang-en">Shell call: 1 problem from 5 Semgrep detections; the code moved from line 19 to line 21. Flask and requests advisories: 4, each reported by Grype and Trivy. No container health check: 2 (Checkov, KICS).</span><span class="lang-ja" lang="ja">シェル呼び出し：Semgrep の 5 検出から 1 問題。コードは 19 行から 21 行に移動。Flask・requests のアドバイザリ：4 問題を Grype と Trivy がそれぞれ報告。コンテナーのヘルスチェック不足：2 問題（Checkov、KICS）。</span><span class="lang-zh" lang="zh-Hant">shell 呼叫：1 個問題，來自 5 筆 Semgrep 偵測，程式碼從第 19 行移到第 21 行。Flask 與 requests 的安全公告：4 個，每個都由 Grype 與 Trivy 回報。容器沒有健康檢查：2 個（Checkov、KICS）。</span></td>
               </tr>
               <tr>
-                <th scope="row"><span class="lang-en">New</span><span class="lang-zh" lang="zh-Hant">新出現</span></th>
+                <th scope="row"><span class="lang-en">New</span><span class="lang-ja" lang="ja">新規</span><span class="lang-zh" lang="zh-Hant">新出現</span></th>
                 <td class="numeric">1</td>
-                <td><span class="lang-en">Flask debug mode (Semgrep, app.py line 26).</span><span class="lang-zh" lang="zh-Hant">Flask 除錯模式（Semgrep，app.py 第 26 行）。</span></td>
+                <td><span class="lang-en">Flask debug mode (Semgrep, app.py line 26).</span><span class="lang-ja" lang="ja">Flask のデバッグモード（Semgrep、app.py 26 行）。</span><span class="lang-zh" lang="zh-Hant">Flask 除錯模式（Semgrep，app.py 第 26 行）。</span></td>
               </tr>
               <tr>
-                <th scope="row"><span class="lang-en">Verification incomplete</span><span class="lang-zh" lang="zh-Hant">驗證未完成</span></th>
+                <th scope="row"><span class="lang-en">Verification incomplete</span><span class="lang-ja" lang="ja">検証未完了</span><span class="lang-zh" lang="zh-Hant">驗證未完成</span></th>
                 <td class="numeric">0</td>
                 <td>—</td>
               </tr>
@@ -181,59 +172,59 @@
           </table>
         </div>
         <figure class="demo-shot demo-shot--card">
-          <img class="lang-en" src="demos/check-fixes/moved-line-en.webp" width="1104" height="584" loading="lazy" alt="The still-present shell-call problem, High, from 5 original findings: the same rule still finds this problem in the same file and only its line moved. The open list says each of the 5 findings moved from line 19 to line 21.">
+          <img class="lang-en" src="demos/check-fixes/moved-line-en.webp" width="1104" height="584" loading="lazy" alt="The still-present shell-call problem, High, from 5 original findings: the same rule still finds this problem in the same file and only its line moved. The open list says each of the 5 findings moved from line 19 to line 21."><img class="lang-ja" src="demos/check-fixes/moved-line-en.webp" width="1104" height="584" loading="lazy" alt="引き続き検出された高のシェル呼び出し。元の検出 5 件は、同じルール・ファイルで行だけが 19 から 21 に移動しています。" lang="ja">
           <img class="lang-zh" lang="zh-Hant" src="demos/check-fixes/moved-line-zh-TW.webp" width="1104" height="591" loading="lazy" alt="仍然存在的 shell 呼叫問題，高風險，來自 5 筆原始發現：同一條規則在同一個檔案仍找到這個問題，只是行號改變。展開的清單顯示 5 筆發現都從第 19 行移到第 21 行。">
-          <figcaption><span class="lang-en">The shell call moved two lines down. It stays still present; only its line moved.</span><span class="lang-zh" lang="zh-Hant">shell 呼叫往下移了兩行。它仍然存在，只是行號改變。</span></figcaption>
+          <figcaption><span class="lang-en">The shell call moved two lines down. It stays still present; only its line moved.</span><span class="lang-ja" lang="ja">シェル呼び出しは 2 行下に移動しただけなので、「引き続き検出」のままです。</span><span class="lang-zh" lang="zh-Hant">shell 呼叫往下移了兩行。它仍然存在，只是行號改變。</span></figcaption>
         </figure>
         <figure class="demo-shot demo-shot--card">
-          <img class="lang-en" src="demos/check-fixes/new-problem-en.webp" width="1104" height="271" loading="lazy" alt="The one new problem: Semgrep detected a Flask app with debug=True, before not observed, after Medium.">
+          <img class="lang-en" src="demos/check-fixes/new-problem-en.webp" width="1104" height="271" loading="lazy" alt="The one new problem: Semgrep detected a Flask app with debug=True, before not observed, after Medium."><img class="lang-ja" src="demos/check-fixes/new-problem-en.webp" width="1104" height="271" loading="lazy" alt="新規の問題：Semgrep が debug=True の Flask アプリを検出。修正前は未検出、修正後は中の重大度。" lang="ja">
           <img class="lang-zh" lang="zh-Hant" src="demos/check-fixes/new-problem-zh-TW.webp" width="1104" height="273" loading="lazy" alt="唯一新出現的問題：Semgrep 偵測到 Flask 應用程式開啟 debug=True，修復前沒有觀察到，修復後為中風險。">
-          <figcaption><span class="lang-en">Debug mode, turned on in the fix, shows up as new.</span><span class="lang-zh" lang="zh-Hant">修正時開啟的除錯模式，被列為新出現的問題。</span></figcaption>
+          <figcaption><span class="lang-en">Debug mode, turned on in the fix, shows up as new.</span><span class="lang-ja" lang="ja">修正時に有効にしたデバッグモードは「新規」と表示されます。</span><span class="lang-zh" lang="zh-Hant">修正時開啟的除錯模式，被列為新出現的問題。</span></figcaption>
         </figure>
       </section>
 
       <section class="section demo-step" id="not-covered">
         <p class="eyebrow">06</p>
-        <h2><span class="lang-en">What this demo does not show</span><span class="lang-zh" lang="zh-Hant">這次沒有涵蓋的部分</span></h2>
+        <h2><span class="lang-en">What this demo does not show</span><span class="lang-ja" lang="ja">このデモの対象外</span><span class="lang-zh" lang="zh-Hant">這次沒有涵蓋的部分</span></h2>
         <ul>
-          <li><span class="lang-en">The deleted key is still in the project's git history and in any earlier copy. The folder scan no longer finds it, but a real key must still be revoked or rotated.</span><span class="lang-zh" lang="zh-Hant">刪除的私鑰仍留在專案的 git 歷史與先前的副本中。資料夾掃描已找不到它，但真實的金鑰仍要撤銷或更換。</span></li>
-          <li><span class="lang-en">Only the source folder was checked. The service was not run, no container image was built and no website was tested.</span><span class="lang-zh" lang="zh-Hant">這次只檢查原始碼資料夾：沒有執行服務、沒有建置容器映像，也沒有測試網站。</span></li>
-          <li><span class="lang-en">7 problems remain, and the new debug setting must be turned off before deployment.</span><span class="lang-zh" lang="zh-Hant">仍有 7 個問題，新開啟的除錯設定也必須在部署前關閉。</span></li>
+          <li><span class="lang-en">The deleted key is still in the project's git history and in any earlier copy. The folder scan no longer finds it, but a real key must still be revoked or rotated.</span><span class="lang-ja" lang="ja">削除したキーは Git 履歴や以前のコピーには残っています。フォルダー検査で検出されなくても、本物のキーなら無効化や更新が必要です。</span><span class="lang-zh" lang="zh-Hant">刪除的私鑰仍留在專案的 git 歷史與先前的副本中。資料夾掃描已找不到它，但真實的金鑰仍要撤銷或更換。</span></li>
+          <li><span class="lang-en">Only the source folder was checked. The service was not run, no container image was built and no website was tested.</span><span class="lang-ja" lang="ja">調べたのはソースフォルダーのみです。サービスの起動、コンテナーイメージの作成、ウェブサイトの検査は行っていません。</span><span class="lang-zh" lang="zh-Hant">這次只檢查原始碼資料夾：沒有執行服務、沒有建置容器映像，也沒有測試網站。</span></li>
+          <li><span class="lang-en">7 problems remain, and the new debug setting must be turned off before deployment.</span><span class="lang-ja" lang="ja">7 件の問題が残り、新しいデバッグ設定もデプロイ前に無効化する必要があります。</span><span class="lang-zh" lang="zh-Hant">仍有 7 個問題，新開啟的除錯設定也必須在部署前關閉。</span></li>
         </ul>
       </section>
 
       <section class="section demo-step" id="downloads">
         <p class="eyebrow">07</p>
-        <h2><span class="lang-en">Read both reports</span><span class="lang-zh" lang="zh-Hant">閱讀兩次掃描的報告</span></h2>
-        <p><span class="lang-en">Both reports were saved from the app with sensitive identifiers hidden, so the asset is named Asset 1.</span><span class="lang-zh" lang="zh-Hant">兩份報告都從程式儲存，並遮罩敏感識別資訊，所以資產名稱顯示為「Asset 1」。</span></p>
+        <h2><span class="lang-en">Read both reports</span><span class="lang-ja" lang="ja">両方のレポートを読む</span><span class="lang-zh" lang="zh-Hant">閱讀兩次掃描的報告</span></h2>
+        <p><span class="lang-en">Both reports were saved from the app with sensitive identifiers hidden, so the asset is named Asset 1.</span><span class="lang-ja" lang="ja">両レポートはアプリで識別情報を隠して保存したため、資産名は「Asset 1」です。レポートと記録画像は英語で表示します。</span><span class="lang-zh" lang="zh-Hant">兩份報告都從程式儲存，並遮罩敏感識別資訊，所以資產名稱顯示為「Asset 1」。</span></p>
         <div class="sample-downloads">
           <article class="sample-card">
-            <p class="eyebrow"><span class="lang-en">Scan 1 / before the fix</span><span class="lang-zh" lang="zh-Hant">第 1 次掃描 / 修正前</span></p>
-            <h3><span class="lang-en">13 problems</span><span class="lang-zh" lang="zh-Hant">13 個問題</span></h3>
-            <p><span class="lang-en">From 26 findings: 1 Critical, 5 High, 3 Medium, 2 Low and 2 without a scanner rating.</span><span class="lang-zh" lang="zh-Hant">來自 26 筆發現：1 個重大、5 個高、3 個中、2 個低，另有 2 個掃描工具未評等。</span></p>
+            <p class="eyebrow"><span class="lang-en">Scan 1 / before the fix</span><span class="lang-ja" lang="ja">1 回目 / 修正前</span><span class="lang-zh" lang="zh-Hant">第 1 次掃描 / 修正前</span></p>
+            <h3><span class="lang-en">13 problems</span><span class="lang-ja" lang="ja">13 件の問題</span><span class="lang-zh" lang="zh-Hant">13 個問題</span></h3>
+            <p><span class="lang-en">From 26 findings: 1 Critical, 5 High, 3 Medium, 2 Low and 2 without a scanner rating.</span><span class="lang-ja" lang="ja">26 検出を集約：緊急 1、高 5、中 3、低 2、スキャナー評価なし 2。</span><span class="lang-zh" lang="zh-Hant">來自 26 筆發現：1 個重大、5 個高、3 個中、2 個低，另有 2 個掃描工具未評等。</span></p>
             <div class="button-row">
-              <a class="button button-primary" href="demos/check-fixes/scan1-before-fix-en.html" data-href-en="demos/check-fixes/scan1-before-fix-en.html" data-href-zh="demos/check-fixes/scan1-before-fix-zh-TW.html"><span class="lang-en">Read report →</span><span class="lang-zh" lang="zh-Hant">閱讀報告 →</span></a>
-              <a class="button button-secondary" href="demos/check-fixes/scan1-before-fix-en.html" data-href-en="demos/check-fixes/scan1-before-fix-en.html" data-href-zh="demos/check-fixes/scan1-before-fix-zh-TW.html" download><span class="lang-en">Download HTML</span><span class="lang-zh" lang="zh-Hant">下載 HTML</span></a>
+              <a class="button button-primary" href="demos/check-fixes/scan1-before-fix-en.html" data-href-en="demos/check-fixes/scan1-before-fix-en.html" data-href-zh="demos/check-fixes/scan1-before-fix-zh-TW.html"><span class="lang-en">Read report →</span><span class="lang-ja" lang="ja">レポートを読む（英語）→</span><span class="lang-zh" lang="zh-Hant">閱讀報告 →</span></a>
+              <a class="button button-secondary" href="demos/check-fixes/scan1-before-fix-en.html" data-href-en="demos/check-fixes/scan1-before-fix-en.html" data-href-zh="demos/check-fixes/scan1-before-fix-zh-TW.html" download><span class="lang-en">Download HTML</span><span class="lang-ja" lang="ja">HTML を保存（英語）</span><span class="lang-zh" lang="zh-Hant">下載 HTML</span></a>
             </div>
           </article>
           <article class="sample-card">
-            <p class="eyebrow"><span class="lang-en">Scan 2 / after the fix</span><span class="lang-zh" lang="zh-Hant">第 2 次掃描 / 修正後</span></p>
-            <h3><span class="lang-en">8 problems</span><span class="lang-zh" lang="zh-Hant">8 個問題</span></h3>
-            <p><span class="lang-en">From 16 findings: 0 Critical, 1 High, 4 Medium, 2 Low and 1 without a scanner rating. The report opens with what changed since Scan 1.</span><span class="lang-zh" lang="zh-Hant">來自 16 筆發現：0 個重大、1 個高、4 個中、2 個低，另有 1 個掃描工具未評等。報告開頭先說明與第 1 次掃描相比的變化。</span></p>
+            <p class="eyebrow"><span class="lang-en">Scan 2 / after the fix</span><span class="lang-ja" lang="ja">2 回目 / 修正後</span><span class="lang-zh" lang="zh-Hant">第 2 次掃描 / 修正後</span></p>
+            <h3><span class="lang-en">8 problems</span><span class="lang-ja" lang="ja">8 件の問題</span><span class="lang-zh" lang="zh-Hant">8 個問題</span></h3>
+            <p><span class="lang-en">From 16 findings: 0 Critical, 1 High, 4 Medium, 2 Low and 1 without a scanner rating. The report opens with what changed since Scan 1.</span><span class="lang-ja" lang="ja">16 検出を集約：緊急 0、高 1、中 4、低 2、スキャナー評価なし 1。冒頭に 1 回目からの変化を表示します。</span><span class="lang-zh" lang="zh-Hant">來自 16 筆發現：0 個重大、1 個高、4 個中、2 個低，另有 1 個掃描工具未評等。報告開頭先說明與第 1 次掃描相比的變化。</span></p>
             <div class="button-row">
-              <a class="button button-primary" href="demos/check-fixes/scan2-after-fix-en.html" data-href-en="demos/check-fixes/scan2-after-fix-en.html" data-href-zh="demos/check-fixes/scan2-after-fix-zh-TW.html"><span class="lang-en">Read report →</span><span class="lang-zh" lang="zh-Hant">閱讀報告 →</span></a>
-              <a class="button button-secondary" href="demos/check-fixes/scan2-after-fix-en.html" data-href-en="demos/check-fixes/scan2-after-fix-en.html" data-href-zh="demos/check-fixes/scan2-after-fix-zh-TW.html" download><span class="lang-en">Download HTML</span><span class="lang-zh" lang="zh-Hant">下載 HTML</span></a>
+              <a class="button button-primary" href="demos/check-fixes/scan2-after-fix-en.html" data-href-en="demos/check-fixes/scan2-after-fix-en.html" data-href-zh="demos/check-fixes/scan2-after-fix-zh-TW.html"><span class="lang-en">Read report →</span><span class="lang-ja" lang="ja">レポートを読む（英語）→</span><span class="lang-zh" lang="zh-Hant">閱讀報告 →</span></a>
+              <a class="button button-secondary" href="demos/check-fixes/scan2-after-fix-en.html" data-href-en="demos/check-fixes/scan2-after-fix-en.html" data-href-zh="demos/check-fixes/scan2-after-fix-zh-TW.html" download><span class="lang-en">Download HTML</span><span class="lang-ja" lang="ja">HTML を保存（英語）</span><span class="lang-zh" lang="zh-Hant">下載 HTML</span></a>
             </div>
           </article>
         </div>
-        <p class="download-note"><span class="lang-en">How these files were made: <a href="https://github.com/teddashh/ai-security-scanner/blob/main/docs/demos/check-fixes/README.md">README</a> · File checksums: <a href="demos/check-fixes/SHA256SUMS.txt">SHA256SUMS.txt</a></span><span class="lang-zh" lang="zh-Hant">製作方式：<a href="https://github.com/teddashh/ai-security-scanner/blob/main/docs/demos/check-fixes/README.zh-TW.md">說明文件</a> · 檔案雜湊值：<a href="demos/check-fixes/SHA256SUMS.txt">SHA256SUMS.txt</a></span></p>
+        <p class="download-note"><span class="lang-en">How these files were made: <a href="https://github.com/teddashh/ai-security-scanner/blob/main/docs/demos/check-fixes/README.md">README</a> · File checksums: <a href="demos/check-fixes/SHA256SUMS.txt">SHA256SUMS.txt</a></span><span class="lang-ja" lang="ja">ファイルの作成方法： <a href="https://github.com/teddashh/ai-security-scanner/blob/main/docs/demos/check-fixes/README.md">README</a> · ファイルのチェックサム： <a href="demos/check-fixes/SHA256SUMS.txt">SHA256SUMS.txt</a></span><span class="lang-zh" lang="zh-Hant">製作方式：<a href="https://github.com/teddashh/ai-security-scanner/blob/main/docs/demos/check-fixes/README.zh-TW.md">說明文件</a> · 檔案雜湊值：<a href="demos/check-fixes/SHA256SUMS.txt">SHA256SUMS.txt</a></span></p>
       </section>
     </main>
 
     <footer class="site-footer">
       <div class="footer-inner">
-        <p><span class="lang-en">ai-security-scanner · development builds bca90a8, e663b0a and dff42c2 · 2026-10-07</span><span class="lang-zh" lang="zh-Hant">ai-security-scanner · 開發版本 bca90a8、e663b0a 與 dff42c2 · 2026-10-07</span></p>
-        <p><a href="index.html" data-href-en="index.html" data-href-zh="index.html?lang=zh-TW"><span class="lang-en">Back to the project</span><span class="lang-zh" lang="zh-Hant">回到專案首頁</span></a></p>
+        <p><span class="lang-en">ai-security-scanner · development builds bca90a8, e663b0a and dff42c2 · 2026-10-07</span><span class="lang-ja" lang="ja">ai-security-scanner · 開発ビルド bca90a8、e663b0a、dff42c2 · 2026-10-07</span><span class="lang-zh" lang="zh-Hant">ai-security-scanner · 開發版本 bca90a8、e663b0a 與 dff42c2 · 2026-10-07</span></p>
+        <p><a href="index.html" data-href-en="index.html" data-href-zh="index.html?lang=zh-TW"><span class="lang-en">Back to the project</span><span class="lang-ja" lang="ja">プロジェクトのホームへ</span><span class="lang-zh" lang="zh-Hant">回到專案首頁</span></a></p>
       </div>
     </footer>
     <script src="project-site.js" defer></script>

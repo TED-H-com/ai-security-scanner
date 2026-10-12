@@ -12,8 +12,9 @@ function filterScanners() {
   }
   for (const group of document.querySelectorAll('[data-group]')) group.hidden = ![...group.querySelectorAll('.scanner-entry')].some(entry => !entry.hidden);
   const chinese = document.documentElement.dataset.lang === 'zh-TW';
-  count.textContent = chinese ? `${visible} / ${entries.length} 個掃描器` : `${visible} / ${entries.length} scanners`;
-  for (const option of category.options) option.textContent = chinese ? option.dataset.labelZh : option.dataset.labelEn;
+  const japanese = document.documentElement.dataset.lang === 'ja';
+  count.textContent = chinese ? `${visible} / ${entries.length} 個掃描器` : japanese ? `${visible} / ${entries.length} 件のスキャナー` : `${visible} / ${entries.length} scanners`;
+  for (const option of category.options) option.textContent = chinese ? option.dataset.labelZh : japanese ? option.dataset.labelJa : option.dataset.labelEn;
   document.querySelector('#scanner-empty').hidden = visible !== 0;
 }
 function revealLinkedScanner() {

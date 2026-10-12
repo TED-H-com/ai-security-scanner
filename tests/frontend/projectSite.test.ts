@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import test from "node:test";
+import { JSDOM } from "jsdom";
 
 type CatalogEngine = {
   id: string;
@@ -103,35 +104,38 @@ test("the project site stays local, responsive, bilingual, and GitHub Pages read
   assert.equal(packageMetadata.homepage, "https://teddashh.github.io/ai-security-scanner/");
 });
 
-test("tool cards and both READMEs use each scanner introduction", async () => {
-  const [catalogSource, contentSource, site, readme, readmeZh] = await Promise.all([
+test("tool cards and all three READMEs use each scanner introduction", async () => {
+  const [catalogSource, contentSource, site, readme, readmeZh, readmeJa, japaneseSource] = await Promise.all([
     workspaceFile("engines/catalog.json"),
     workspaceFile("docs/scanner-guide.content.json"),
     workspaceFile("docs/index.html"),
     workspaceFile("README.md"),
     workspaceFile("README.zh-TW.md"),
+    workspaceFile("README.ja.md"),
+    workspaceFile("docs/locales/ja.json"),
   ]);
   const catalog = JSON.parse(catalogSource) as CatalogEngine[];
   const content = JSON.parse(contentSource) as {
     scanners: Array<{ id: string; introduction: { en: string; "zh-TW": string } }>;
   };
   const integrated = catalog.filter((engine) => engine.status === "integrated");
-  const unescapeHtml = (value: string) =>
-    value.replaceAll("&amp;", "&").replaceAll("&lt;", "<").replaceAll("&gt;", ">");
+  const dom = new JSDOM(site);
+  const japanese = JSON.parse(japaneseSource) as Record<string, string>;
 
   assert.equal(integrated.length, 25);
   for (const engine of integrated) {
     const entry = content.scanners.find((scanner) => scanner.id === engine.id);
     assert.ok(entry?.introduction.en && entry.introduction["zh-TW"], `${engine.id} introduction`);
-    const card = site.match(
-      new RegExp(
-        `<article class="tool-card" data-tool="${engine.id}">[\\s\\S]*?<p(?: class="tool-desc")?><span class="lang-en">([\\s\\S]*?)</span><span class="lang-zh" lang="zh-Hant">([\\s\\S]*?)</span></p>`,
-      ),
-    );
+    const card = dom.window.document.querySelector(`[data-tool="${engine.id}"] > p:not(.tool-kind)`);
     assert.ok(card, `${engine.id} card paragraph`);
-    assert.equal(unescapeHtml(card[1]), entry.introduction.en, `${engine.id} English card`);
-    assert.equal(unescapeHtml(card[2]), entry.introduction["zh-TW"], `${engine.id} Chinese card`);
+    assert.equal(card.querySelector('.lang-en')?.textContent, entry.introduction.en, `${engine.id} English card`);
+    assert.equal(card.querySelector('.lang-zh')?.textContent, entry.introduction["zh-TW"], `${engine.id} Chinese card`);
+    assert.ok(japanese[entry.introduction.en], `${engine.id} Japanese introduction`);
+    assert.equal(card.querySelector('.lang-ja')?.textContent, japanese[entry.introduction.en], `${engine.id} Japanese card`);
     assert.ok(readme.includes(entry.introduction.en), `${engine.id} English README`);
     assert.ok(readmeZh.includes(entry.introduction["zh-TW"]), `${engine.id} Chinese README`);
+    assert.ok(readmeJa.includes(japanese[entry.introduction.en]!), `${engine.id} Japanese README`);
+    assert.ok(readmeJa.includes(engine.repository_url), `${engine.id} Japanese upstream link`);
   }
+  dom.window.close();
 });

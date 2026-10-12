@@ -33,6 +33,10 @@ test("Japanese is selectable alongside both original languages and persists afte
 test("Japanese start page has a complete locale object without falling into Chinese copy", () => {
   const view = render(<StartPage locale="ja" copy={startPageCopy.ja} nativeMode
     onStartLocalhostQuickScan={() => {}} onChoose={() => {}} />);
-  expect(view.container.textContent).toContain("Security checks");
+  expect(screen.getByRole("heading", { name: "セキュリティチェック" })).toBeTruthy();
+  expect(screen.getByRole("button", { name: "自分の環境をスキャン" })).toBeTruthy();
+  expect(screen.getByRole("button", { name: "ウェブサイトをチェック" })).toBeTruthy();
+  expect(screen.getByRole("button", { name: "コード・AI プロジェクトをチェック" })).toBeTruthy();
+  expect(view.container.textContent).not.toContain("Security checks");
   expect(view.container.textContent).not.toContain("資安檢查");
 });

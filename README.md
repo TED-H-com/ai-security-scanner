@@ -1,6 +1,6 @@
 # ai-security-scanner
 
-[Project website](https://teddashh.github.io/ai-security-scanner/) · [繁體中文](README.zh-TW.md) · [Documentation](docs/README.md) · [Downloads](https://github.com/teddashh/ai-security-scanner/releases)
+[Project website](https://teddashh.github.io/ai-security-scanner/) · [繁體中文](README.zh-TW.md) · [Documentation](docs/README.md) · [Downloads](https://github.com/teddashh/ai-security-scanner/releases) · [日本語](README.ja.md)
 
 *A local-first security assessment workbench: choose what to check and get one traceable report you can act on and hand over, without managing a toolchain yourself.*
 
@@ -16,6 +16,10 @@ Choose what to check in the desktop app. It selects suitable security tools and 
 4. When the scan ends, open **Results**. Choose **Save or share report**, then **Save HTML report** to save a report you can open in a browser.
 
 The first scan may take longer while tools download. Later scans can use those tools again. The [walkthrough](docs/getting-started.md#from-new-scan-to-an-html-report) shows each screen.
+
+## Languages
+
+Japanese UI support is available on `main` in **Settings → 日本語**, with the choice saved across restarts. It is not yet included in the published v0.5.0 installers. Untranslated explanations fall back to English; HTML exports from the Japanese UI are in English. See the [Japanese README](README.ja.md) and [Japanese website](https://teddashh.github.io/ai-security-scanner/?lang=ja).
 
 ## New in v0.5.0
 

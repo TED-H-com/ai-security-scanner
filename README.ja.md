@@ -1,0 +1,187 @@
+# ai-security-scanner
+
+[プロジェクトサイト](https://teddashh.github.io/ai-security-scanner/?lang=ja) · [English](README.md) · [繁體中文](README.zh-TW.md) · [ドキュメント（英語）](docs/README.md) · [ダウンロード](https://github.com/teddashh/ai-security-scanner/releases)
+
+*ローカルで動くセキュリティ評価アプリ。チェックするものを選ぶと、根拠をたどれる 1 つのレポートにまとめ、次の対応や引き継ぎを助けます。ツール群を自分で管理する必要はありません。*
+
+コード、ウェブサイト、社内システムのセキュリティ問題を見つけ、対応が必要な項目、その理由、次にすることを確認できます。
+
+デスクトップアプリで対象を選ぶと、適切なツールを選んで結果をまとめます。1 つのフォルダーやサイトから始めることも、IT 環境の複数の資産をまとめて調べることもできます。
+
+## 最初のスキャン
+
+1. Windows・macOS・Linux 向けの [v0.5.0 をダウンロード](https://github.com/teddashh/ai-security-scanner/releases/tag/v0.5.0)し、[インストール手順（英語）](docs/getting-started.md#install)に従います。スキャンツールはアプリが準備するため、Docker は不要です。
+2. アプリで **Scan my environment**（自分の環境をスキャン）、**Check a website**（ウェブサイトをチェック）、**Check code or an AI project**（コード・AI プロジェクトをチェック）を選び、フォルダー、URL、社内システムを追加します。
+3. 表示された対象とチェックを確認します。ネットワーク対象をスキャンする権限があることを確認し、アプリ画面でスキャンを開始します。
+4. 終了後に **Results**（結果）を開き、**Save or share report** → **Save HTML report** を選びます。保存した HTML はブラウザーで開けます。
+
+最初はツールのダウンロードで時間がかかる場合があります。次回以降は準備済みのツールを再利用できます。[画面ごとの手順（英語）](docs/getting-started.md#from-new-scan-to-an-html-report)も参照してください。
+
+## 日本語について
+
+`main` ブランチでは、**Settings → 日本語** で画面の言語を選べます。選択は再起動後も保存されます。この追加は公開済みの v0.5.0 インストーラーにはまだ含まれていません。
+
+未翻訳の動的な説明や上流ツールの出力は英語で表示される場合があります。日本語の画面から保存する HTML レポートは英語です。レポート本体は現在、英語と繁体字中国語に対応しています。
+
+日本語 UI の初期翻訳は [@kieiken](https://github.com/kieiken) の [PR #69](https://github.com/teddashh/ai-security-scanner/pull/69) による貢献です。
+
+## v0.5.0 の新機能
+
+- 関連する検出結果を 1 つの問題カードにまとめ、詳細で元の証拠を確認できます。
+- **Check fixes** で更新後のフォルダーを選び直し、今回は検出されない問題、残った問題、新規の問題、一部だけ修正された問題を比較できます。
+- クラウドの案内、進捗、スキャナーのバージョン表示を改善しました。英語・繁体字中国語のガイドと、[実際の修正前後の比較例](https://teddashh.github.io/ai-security-scanner/check-fixes-demo.html?lang=ja)もあります。
+
+v0.4.1 以降の完成済みの更新をまとめ、Linux のビルドと依存関係のセキュリティ修正も含みます。[変更点の詳細（英語）](docs/release/v0.5.0.md)。
+
+## 何をチェックできる？
+
+| 選択するもの | わかること |
+| --- | --- |
+| AI プロジェクトを含むプロジェクトフォルダー | 対応するファイルのパスワード・キーの露出、危険なコード、脆弱なパッケージ、安全でない設定。プロジェクトは調査用にコピーし、実行・変更しません。 |
+| ウェブサイト・API | 許可されたサイトの既知の脆弱性や情報の露出。開始前に示すアドレスと制限の範囲でチェックします。 |
+| 社内システム | 許可されたホスト・ポートで利用できるサービスと、適用できるチェックが見つけた問題。開放ポートだけでは脆弱性とはしません。 |
+| クラウドアカウント・Microsoft 365 | 対応するアカウント・アクセス設定の問題。AWS・Azure・GCP は現在、特定の ID・権限設定を対象とし、クラウド全体の監査ではありません。 |
+| デプロイファイル・コンテナー・Kubernetes | 対応するファイルやイメージ内の、既知のパッケージ脆弱性や安全でない設定。実行できるチェックは入力に応じて変わります。 |
+
+任意の AI チェックでは、対応ワークフローの構成一覧、MCP 設定の検査、許可された 1 つのモデル接続先の試験を行えます。モデル試験は固定プロンプト 54 件を送り、プロバイダーの料金が発生する場合があります。開始前に制限を確認します。[スキャン範囲（英語）](docs/scanning-scope.md)。
+
+## 行動につながるレポート
+
+最初に対応すべき問題から確認できます。各問題は、影響するシステムやファイル、重要な理由、実行できる次の手順を示します。技術的な詳細には、調査・修正担当者のために元の証拠、評価、推奨事項を保持します。
+
+チェックした範囲と未検査の範囲もわかります。1 つのチェックが失敗しても、完了した結果は残ります。「問題なし」は完了したチェックについての結果で、すべてのリスクがないという意味ではありません。アプリは修正方法を提案しますが、自動で修正はしません。
+
+レポートを再度開く、比較可能なスキャン同士を比べる、英語・繁体字中国語の HTML を共有する、といった操作ができます。識別情報を隠さないエクスポートでは、元のスキャナーレポートを末尾に ZIP で添付できます。[結果の読み方と共有（英語）](docs/results-and-exports.md)。
+
+### サンプルを見る
+
+[英語のサンプルレポートを開く](https://teddashh.github.io/ai-security-scanner/samples/v0.4.0/sample-report-redacted-en.html)、または[言語と開示範囲を選ぶ](https://teddashh.github.io/ai-security-scanner/sample-reports.html?lang=ja)。
+
+25 個のツールの模擬データで、62 件の検出結果と 42 件の資産情報を紹介しています。実在する企業の安全性ではなくレポートの形式を示す例です。資産情報はセキュリティ問題とは分けて表示します。[サンプルの作成方法（英語）](docs/samples/v0.4.0/README.md)。
+
+実際のスキャンについては、[プロジェクトを修正して再確認した例](https://teddashh.github.io/ai-security-scanner/check-fixes-demo.html?lang=ja)をご覧ください。修正前 13 件、修正後 8 件の問題と、その変化を確認できます。
+
+## Claude Code・Codex に手伝ってもらう
+
+自分のコンピューター上で動くアシスタントは、インストール、準備の確認、結果の説明、レポートの保存を手伝えます。対象の選択、スキャンの開始・一時停止・再開はデスクトップアプリで行います。
+
+このリポジトリをアシスタントで開き、次のように依頼してください。
+
+> ai-security-scanner スキルを使ってアプリをインストールし、最初のスキャンの手順を案内して、完了後の HTML レポートを保存してください。
+
+[Claude Code 用スキル](.claude/skills/ai-security-scanner/SKILL.md)・[Codex 用スキル](.codex/skills/ai-security-scanner/SKILL.md)を利用できます。別の場所で動くアシスタントは手順とリンクを案内できますが、お使いのコンピューターに直接インストールはできません。[アシスタントの設定（英語）](docs/getting-started.md#use-with-an-agent-skill)。
+
+## データとアクセス
+
+プロジェクト、検出結果、証拠は自分のコンピューターに保存します。ローカルのコード検査はプロジェクトをアップロード・実行しません。ウェブ・クラウド検査は、許可したサービスに接続します。HTML の保存はローカルファイルの作成であり、共有するかは自分で決められます。
+
+クラウドへのログインと権限は別です。ログインが期限切れでも、設定時に作った権限は残る場合があります。Microsoft 365 の任意の[クリーンアップスクリプト](cloud-setup/README.md#english-quick-reference)は、選択したスキャンの終了を待ち、レポートを保存して、記録した設定変更を削除します。AWS にも[一時アクセスと対応するクリーンアップ](cloud-setup/README.md#aws-專用存取與清理)があります。実行ウィンドウは開いたままにしてください。管理者のログインが切れた場合は再ログインが必要になることがあります。これらはデスクトップの既定手順ではなく任意の方法で、記録されていない過去の AWS・Azure 権限は削除しません。
+
+## レポートを支えるツール
+
+25 個のオープンソースツールを統合しています。検出ルールは各ツールのものを使い、アプリが結果の整理と次の行動の説明を担当します。[スキャナーガイド](https://teddashh.github.io/ai-security-scanner/scanner-guide.html?lang=ja)で用途、制限、バージョンを確認できます。
+
+<details>
+<summary>25 個のツールの役割</summary>
+
+### リポジトリ・依存関係・IaC
+
+**[Semgrep](https://github.com/semgrep/semgrep)** — Semgrep は、プロジェクトをコンパイル・実行せずにソースコードを調べる、広く使われているオープンソースの静的解析（SAST）ツールです。文字列だけでなく構文木を解析するため、改行や空白、変数名が異なる同じ構造も検出できます。本アプリの Community Edition では、信頼できないデータの追跡は 1 つの関数内に限られます。同梱のセキュリティルールで、危険なコマンド呼び出しやユーザー入力から作るデータベースクエリなどを調べます。最新のルール登録簿全体を実行するものではありません。
+
+**[Gitleaks](https://github.com/gitleaks/gitleaks)** — Gitleaks は、ファイルに埋め込まれたパスワード、API キー、トークンなどを探す、広く使われているオープンソースのツールです。既知のキー形式のほか、周囲の語句や値のランダムさを使うルールもあります。上流版は Git 履歴も調べられますが、本アプリでは現在のファイルの読み取り専用コピーだけを調べます。削除済みの Git 履歴の検索や認証情報の有効性確認は行わず、レポートには機密情報の値を表示しません。
+
+**[TruffleHog](https://github.com/trufflesecurity/trufflehog)** — TruffleHog は、API キーやトークンなどを専用の検出器で探す、広く使われているオープンソースのツールです。Gitleaks と異なる検出器で現在のファイルを確認します。上流版は Git 履歴の検索や実サービスでのキーの有効性確認もできますが、本アプリはネットワークを無効にして、現在のファイルの読み取り専用コピーのみを調べます。検出はキーが今も使える証明ではなく、レポートには値を表示しません。
+
+**[Trivy](https://github.com/aquasecurity/trivy)** — Aqua Security の Trivy は、ソフトウェアパッケージの既知の脆弱性を調べるオープンソースのツールです。対応する依存関係ファイルや Java JAR などを読み、バージョンを脆弱性データベースの CVE などと照合します。修正版が記録されていれば併せて表示します。上流版は設定や機密情報も調べられますが、本アプリは同梱データベースによる脆弱性チェックのみを実行します。コンテナー内は OS パッケージが対象で、アプリのライブラリは Grype が担当します。
+
+**[Grype](https://github.com/anchore/grype)** — Anchore の Grype は、パッケージ名とバージョンを脆弱性データベースに照合し、CVE や GitHub のアドバイザリ、記録があれば修正版を報告するオープンソースのツールです。選択したプロジェクトやコンテナー内の、OS パッケージとアプリのライブラリを調べます。Trivy と同じ問題を検出しても、どのツールが何を報告したかを残します。本アプリは同梱データベースを使い、レジストリからの取得やコンテナーの実行は行いません。
+
+**[Checkov](https://github.com/bridgecrewio/checkov)** — Checkov は、Terraform、CloudFormation、Dockerfile などの Infrastructure as Code（IaC）を調べるオープンソースのツールです。単なる文字列ではなく、リソースとその関係を読み取り、セキュリティポリシーに照らしてデプロイ前の設定リスクを見つけます。本アプリは選択したプロジェクトの読み取り専用コピーを使います。クラウドへの接続、外部ポリシーの取得、設定の適用は行わず、結果は実環境ではなくファイルについての評価です。
+
+**[KICS](https://github.com/Checkmarx/kics)** — Checkmarx の KICS は、Terraform、CloudFormation、Kubernetes マニフェスト、Dockerfile などをクエリで調べ、問題のファイルと行を示すオープンソースの IaC スキャナーです。同梱ルールはファイル内のパスワードやキーも検出します。Checkov とは独立したクエリで、別の観点から設定リスクを確認できます。本アプリは読み取り専用コピーと同梱クエリを使い、クラウドへの接続や追加クエリの取得は行いません。
+
+**[Syft](https://github.com/anchore/syft)** — Anchore の Syft は、プロジェクトやコンテナー内のライブラリ、OS パッケージなどを列挙するソフトウェア部品表（SBOM）作成ツールです。認識した部品の名前、バージョン、種類を記録し、脆弱性チェックの対象を把握しやすくします。一覧自体は脆弱性レポートではありません。本アプリはネットワーク接続なしで読み取り専用コピーを調べ、レジストリからイメージを取得しません。既知の脆弱性は Trivy と Grype が調べます。
+
+The released catalog pins the Grype image to **`0.117.0-4`**, digest `sha256:56b0d675…`. It can scan local repository dependencies for known vulnerabilities; a controlled repository scan recorded **81 Grype findings**. That is a fixture result, not an expected count for every project. See the [exact pin and recorded result](docs/engine-catalog.md#grype-repository-support).
+
+### ウェブサイト・社内システム
+
+**[Nuclei](https://github.com/projectdiscovery/nuclei)** · [Nuclei Templates](https://github.com/projectdiscovery/nuclei-templates) — ProjectDiscovery の Nuclei は、既知の露出や脆弱性の特徴を記したテンプレートを使う、広く利用されているオープンソースのスキャナーです。サイトの技術構成を識別して適切なテンプレートを選びます。本アプリでは既定のウェブチェックとして、同梱テンプレートで許可された 1 つのオリジンに読み取り専用のリクエストを送ります。ログイン、フォーム送信、ファジング、攻撃の実行、ブラウザー操作、外部へのコールバックは行いません。URL にパスを入力しても、そのパスだけには限定されません。
+
+**[ZAP](https://github.com/zaproxy/zaproxy)** — ZAP（Zed Attack Proxy、旧称 OWASP ZAP）は、広く使われているオープンソースのウェブセキュリティスキャナーです。上流版はプロキシ、巡回、能動的な攻撃テストも備えますが、受動ルールは応答のヘッダーや Cookie を読むだけです。本アプリでは Nuclei を補う任意のチェックとして、許可された 1 サイトを制限内で巡回し、セキュリティヘッダーや Cookie 設定を調べます。ログイン、フォーム送信、攻撃用データの送信、サイト外への移動は行いません。既定は Nuclei です。
+
+**[Greenbone OpenVAS Scanner](https://github.com/greenbone/openvas-scanner)** — Greenbone OpenVAS は、Greenbone が管理するオープンソースのネットワーク脆弱性スキャナーです。固定した Community Feed のチェックを使い、まずポートのサービスを識別してから、適用できる検査を実行します。単なる接続確認ではわからない、社内機器やサーバーの既知の問題を調べられます。本アプリは許可されたホストとポートのみが対象です。ログイン、内部調査、パスワード推測、既定アカウントの試行、障害を起こすチェックは行いません。サービスを識別できず検査できない場合は、未検査として表示します。
+
+**[Naabu](https://github.com/projectdiscovery/naabu)** — ProjectDiscovery の Naabu は、TCP 接続を受け付けるポートを見つけるオープンソースのツールです。通常の TCP 接続に成功したポートを開放中として記録し、後続のセキュリティチェックの準備に使います。上流版には他の調査方式もありますが、本アプリは許可された正確なアドレスとポートにのみ接続します。周辺ホストの追加や UDP スキャンは行いません。開放ポートは資産情報であり、それだけで脆弱性とは判断しません。
+
+**[httpx](https://github.com/projectdiscovery/httpx)** — ProjectDiscovery の httpx は、通常の HTTP リクエストでウェブサービスの応答、ステータスコードなどを記録するオープンソースのツールです。同名の Python ライブラリではありません。ポート確認だけではわからない情報を集め、セキュリティ検査の前にサービスの応答を確認します。上流版は多様な調査ができますが、本アプリは許可された正確なサービスだけに接続し、巡回やログインは行いません。結果はサービスの資産情報で、脆弱性の検出結果ではありません。
+
+### クラウド・Microsoft 365
+
+**[Prowler](https://github.com/prowler-cloud/prowler)** — Prowler は、クラウドの API を使い、チェック名、対象リソース、問題、修正方法を記録するオープンソースの評価ツールです。上流版は幅広いサービスや基準に対応しますが、本アプリでは ID・アクセス管理（IAM）を限定して調べます。1 回につき、許可された AWS アカウントの IAM、Azure サブスクリプションの IAM、GCP プロジェクトの特定の IAM チェック 4 項目のいずれかが対象です。他のサービスやアカウントは含まず、合格は認証取得を意味しません。
+
+**[ScoutSuite](https://github.com/nccgroup/ScoutSuite)** — NCC Group の ScoutSuite は、クラウド API から設定を読み、ルールが危険と判断した設定と理由を示すオープンソースのツールです。Prowler を補う別の観点から IAM 設定を確認できます。上流版は複数クラウドに対応しますが、本アプリは許可された 1 つの AWS アカウントの IAM ルールのみを実行します。他のクラウドや AWS サービスは対象外です。収集した設定すべてが問題になるわけではなく、ルールが指摘したものだけを検出結果として扱います。
+
+**[Cloudsplaining](https://github.com/salesforce/cloudsplaining)** — Salesforce の Cloudsplaining は、AWS IAM ポリシーの過剰な権限を調べるオープンソースのツールです。アカウントの認可情報から、リソース制限のない操作を抽出し、権限昇格、データ持ち出し、リソース公開、インフラ変更などに分類して、ポリシーと操作を示します。本アプリでは許可された 1 つの AWS アカウントを分析します。結果は見直しの根拠であり、業務上の必要性や実際の悪用可能性を断定せず、ポリシーも変更しません。
+
+**[CloudQuery](https://github.com/cloudquery/cloudquery)** — CloudQuery は、クラウド API の情報を、後で検索や比較ができる構造化テーブルへコピーするオープンソースのツールです。取得元・出力先のプラグインで行を統一形式に揃えます。本アプリは許可された AWS アカウントの、アカウント情報、ユーザー、グループ、ロール、ポリシー、パスワードポリシー、認証情報レポートという固定の IAM テーブルを収集します。結果は検査の背景を示す資産一覧で、脆弱性とは区別します。AWS 全サービスの一覧ではありません。
+
+**[Steampipe](https://github.com/turbot/steampipe)** — Turbot の Steampipe は、クラウド API を SQL テーブルとして扱えるオープンソースのツールです。プロバイダーのプラグインごとに参照できるサービスや列が決まります。本アプリでは、許可された 1 つの AWS アカウントに対して固定の IAM ユーザークエリを実行し、セキュリティチェックと照合できる一覧を作ります。ユーザーの危険性を判定するものではありません。既成のセキュリティベンチマークや、ユーザーが入力した SQL は実行しません。
+
+**[ScubaGear](https://github.com/cisagov/ScubaGear)** — 米国 CISA の ScubaGear は、Microsoft 365 テナントを SCuBA の安全な設定基準に照らして確認するオープンソースのツールです。本アプリは、Microsoft の商用クラウド上にある許可された 1 テナントについて、ログインと ID を管理する Entra ID の基準を調べます。上流版が扱う Exchange、SharePoint など他のサービスは対象外です。合格はコンプライアンス認証ではありません。評価できなかった項目は、合格にせず表示します。
+
+**[Maester](https://github.com/maester365/maester)** — Maester は、Microsoft 365 のセキュリティ設定をテストする、PowerShell 製のオープンソースのフレームワークです。各テストが求める安全な設定に、テナントが合うかを記録します。本アプリは許可された 1 テナントの固定された Entra ID テストを実行し、長時間・プレビュー・他サービスを必要とするテストは除外します。Exchange Online や持ち込みスクリプトは対象外です。スキップしたテストを合格にせず、人の判断が必要な項目を確認待ちとして表示します。
+
+### Kubernetes
+
+**[Kubescape](https://github.com/kubescape/kubescape)** — Kubescape は、Kubernetes の YAML・JSON をリソースとして読み、NSA・CISA の指針に基づく固定の強化基準と照合するオープンソースのツールです。リソースと不合格のコントロールを示します。上流版は稼働中クラスターやイメージも調べられますが、本アプリは選択した設定スナップショットをオフラインで調べます。稼働中クラスターへ接続せず、デプロイ済みの状態との一致やコンテナーパッケージは確認しません。
+
+**[kube-bench](https://github.com/aquasecurity/kube-bench)** — Aqua Security の kube-bench は、Kubernetes ノードの設定ファイルやプロセス情報を CIS Kubernetes Benchmark と照合し、合格・不合格・警告を示すオープンソースのツールです。警告は、自動で得られない情報や人の判断が必要なことを示します。上流版は稼働中ノードやコントロールプレーンも調べますが、本アプリは保存したノード情報のみでノード向けチェックを実行します。稼働中ホストへのログインやコントロールプレーンのチェックは行いません。
+
+### AI ワークフロー・MCP 設定
+
+**[Agentic Radar](https://github.com/splx-ai/agentic-radar)** — Agentic Radar は、AI エージェントのプロジェクトを読み、エージェント、ツール、MCP サーバーの関係を可視化するオープンソースのツールです。LangGraph、CrewAI、n8n、OpenAI Agents、AutoGen から対応フレームワークを選びます。MCP は AI アプリが外部ツールを呼ぶための標準プロトコルです。上流版には広いリスク分析機能もありますが、本アプリは保存したコピーの構成一覧のみを作ります。ワークフローの実行、モデルへの接続、セキュリティ問題の判定は行いません。
+
+**[Garak](https://github.com/NVIDIA/garak)** — NVIDIA の Garak は、テスト用プロンプトを送り、応答を検出器で評価する、広く使われているオープンソースの LLM 脆弱性スキャナーです。本アプリは、ルール無視を促す DAN と端末エスケープ文字の出力を促す ANSI の固定プロンプト 54 件を、許可された 1 つの OpenAI 互換 HTTPS チャット API とモデルに送ります。任意のチェックで、自分で開始します。問題がなくても、このテスト範囲だけの結果です。プロバイダーの料金が発生する場合があります。API キーはその実行だけで使い、スキャンやレポートに保存しません。
+
+**[MCP Armor](https://github.com/aira-security/mcp-armor)** — MCP Armor は、AI アプリの外部ツール接続先を定義する MCP 設定を調べるオープンソースのツールです。キーなどの機密情報の直書きと、過剰なツールコマンドや権限をチェックし、検出した機密情報の値はレポートに表示しません。上流版はサーバーへの接続やモデルを使うテストもできますが、本アプリは保存したプロジェクト内の選択した設定ファイルだけを読みます。MCP サーバーの起動・接続やモデルの読み込みは行わず、実行中サーバーの制御を検証するものではありません。
+
+調査、資産一覧、SBOM 作成、ローカルホストの TCP 接続確認は、脆弱性の結果と明確に分けます。固定バージョン、ライセンス、プロファイル、実行範囲は[エンジン一覧（英語）](docs/engine-catalog.md)に記録しています。
+
+正確な範囲とプロファイルの動作は[スキャン範囲（英語）](docs/scanning-scope.md)をご覧ください。
+
+評価中のツールは別管理で、スキャンには利用できません。
+
+
+</details>
+
+## 関連情報
+
+- [はじめに（英語）](docs/getting-started.md)
+- [スキャン範囲（英語）](docs/scanning-scope.md)
+- [結果の読み方・共有（英語）](docs/results-and-exports.md)
+- [開発状況（英語）](docs/development-status.md)
+- [v0.5.0 の変更（英語）](docs/release/v0.5.0.md) · [v0.3.1 の変更（英語）](docs/release/v0.3.1.md)
+- [貢献方法（英語）](CONTRIBUTING.md) · [貢献者](CONTRIBUTORS.md) · [セキュリティ方針（英語）](SECURITY.md)
+
+## 開発
+
+Node.js 24 以降、Rust 1.98、Tauri が必要とする各 OS の依存関係が必要です。
+
+```sh
+npm ci
+npm run typecheck
+npm run test:frontend
+npm run test:component
+npm run build
+cargo test --locked --workspace --no-default-features --features cli
+npm run tauri dev
+```
+
+`npm run dev` はサンプルデータを使うブラウザープレビューです。実際のデスクトップスキャンは Tauri アプリから実行します。
+
+`npm run upstream:refresh -- --engine <id>` は、オフラインのアダプター更新提案を作成します。`npm run upstream:propose -- --bundle <path>` で再検証できます。既定は決定的な `mechanical` 方式で、AI を使う場合は `--provider cli --ai-cli <executable>` を明示します。`--open-pr`・`--no-open-pr` はリポジトリに変更を提案するかを記録します。これらは手動実行用のコマンドを表示するだけで、実行しません。[エンジンの保守（英語）](docs/engine-maintenance.md)に手順があります。
+
+## ライセンス
+
+プロジェクトのソースは [Apache-2.0](LICENSE) です。外部エンジン・データには各ライセンスが適用されます。[THIRD_PARTY.md](THIRD_PARTY.md)をご覧ください。
