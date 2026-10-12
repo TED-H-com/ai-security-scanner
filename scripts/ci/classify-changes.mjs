@@ -6,7 +6,8 @@ import { pathToFileURL } from "node:url";
 const FRONTEND_PATHS = [
   // Public report downloads and scanner profiles have executable frontend contracts.
   /^docs\/(?:index\.html|project-site\.(?:css|js)|showcase\.css|scanner-guide(?:[.\/]|$)|sample-reports\.html|samples\/|tool-stars\.json$)/,
-  /^scripts\/build-public-showcase\.mjs$/,
+  /^scripts\/(?:build-public-showcase|localize-public-site)\.mjs$/,
+  /^docs\/(?:site-language\.js|locales\/|check-fixes-demo\.html$)/,
   /^src-tauri\/tests\/fixtures\/adapters\//,
   /^docs\/research\/fixtures\/(?:mcp-armor|agentic-radar)\//,
   /^src\//,
