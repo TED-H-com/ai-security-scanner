@@ -1,6 +1,6 @@
 import type { Locale } from "./i18n";
 
-/** Closed locale coordinate accepted by the native HTML report renderer. */
+/** Native reports support English and Traditional Chinese; Japanese UI exports English. */
 export type ReportLocale = "en" | "zh-Hant";
 
 export const reportLocaleForUiLocale = (locale: Locale): ReportLocale =>

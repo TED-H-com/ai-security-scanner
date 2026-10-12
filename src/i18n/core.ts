@@ -1,7 +1,9 @@
-import { en } from "./locales/en";
-import { zhTW } from "./locales/zh-TW";
+import { ja } from "./locales/ja.ts";
+import { jaInline } from "./locales/ja-inline.ts";
+import { en } from "./locales/en.ts";
+import { zhTW } from "./locales/zh-TW.ts";
 
-export const supportedLocales = ["en", "zh-TW"] as const;
+export const supportedLocales = ["en", "zh-TW", "ja"] as const;
 export type Locale = (typeof supportedLocales)[number];
 export type TranslationKey = keyof typeof en;
 export type InterpolationValue = string | number;
@@ -58,6 +60,7 @@ export const localeStorageKey = "ai-security-scanner.locale";
 const translations: Record<Locale, Record<TranslationKey, string>> = {
   en,
   "zh-TW": zhTW,
+  ja,
 };
 
 let activeLocale: Locale = "zh-TW";
@@ -69,6 +72,7 @@ export const normalizeLocale = (value: string | undefined | null): Locale | unde
   if (!value) return undefined;
   const normalized = value.trim().replaceAll("_", "-").toLowerCase();
   if (normalized === "en" || normalized.startsWith("en-")) return "en";
+  if (normalized === "ja" || normalized.startsWith("ja-")) return "ja";
   if (normalized === "zh" || normalized.startsWith("zh-")) return "zh-TW";
   return undefined;
 };
@@ -125,6 +129,21 @@ export const setActiveLocale = (locale: Locale): void => {
   activeLocale = locale;
 };
 
+/** Missing Japanese UI copy falls back to English, including inherited property names. */
+export const japaneseText = (english: string): string =>
+  Object.hasOwn(jaInline, english) ? jaInline[english]! : english;
+
+/** Translate nested, language-specific UI objects without changing technical keys. */
+export const localizeJapanese = <T>(value: T): T => {
+  if (typeof value === "string") return japaneseText(value) as T;
+  if (Array.isArray(value)) return value.map(localizeJapanese) as T;
+  if (value && typeof value === "object") {
+    return Object.fromEntries(Object.entries(value).map(([key, entry]) =>
+      [key, localizeJapanese(entry)])) as T;
+  }
+  return value;
+};
+
 const interpolate = (message: string, parameters?: Record<string, InterpolationValue>): string =>
   message.replace(/\{([A-Za-z][A-Za-z0-9_]*)\}/gu, (placeholder, name: string) => {
     const value = parameters?.[name];
@@ -152,7 +171,7 @@ export const translateBilingualText = <const Copy extends BilingualText>(
   locale: Locale,
   copy: Copy,
   ...arguments_: BilingualTextArguments<Copy>
-): string => interpolate(locale === "en" ? copy.en : copy.zhTW, arguments_[0]);
+): string => interpolate(locale === "zh-TW" ? copy.zhTW : locale === "ja" ? japaneseText(copy.en) : copy.en, arguments_[0]);
 
 const asDate = (value: Date | string | number): Date | undefined => {
   const date = value instanceof Date ? value : new Date(value);

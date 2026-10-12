@@ -1,3 +1,4 @@
+import { localizeJapanese, type Locale } from "../i18n/core";
 import { useMemo } from "react";
 
 import type { ScannerSetupBlocker } from "../scanReadiness";
@@ -17,7 +18,7 @@ import { Icon } from "./Icon";
 
 import "../runtime-setup-assistant.css";
 
-type RuntimeSetupLocale = "en" | "zh-TW";
+type RuntimeSetupLocale = Locale;
 
 interface RuntimeSetupAssistantProps {
   locale: RuntimeSetupLocale;
@@ -82,7 +83,7 @@ interface RuntimeAssistantCopy {
   actions: Record<ManagedRuntimeSetupNextAction, RuntimeActionCopy>;
 }
 
-const copy: Record<RuntimeSetupLocale, RuntimeAssistantCopy> = {
+const copyBase: Record<Exclude<Locale, "ja">, RuntimeAssistantCopy> = {
   en: {
     eyebrow: "ADVANCED LOCAL SCAN SETUP",
     title: "Preparing the local scan tools you requested",
@@ -263,8 +264,14 @@ const copy: Record<RuntimeSetupLocale, RuntimeAssistantCopy> = {
   },
 };
 
+
+const copy: Record<Locale, RuntimeAssistantCopy> = {
+  ...copyBase,
+  ja: localizeJapanese(copyBase.en),
+};
+
 const byteCount = (value: number, locale: RuntimeSetupLocale): string =>
-  `${new Intl.NumberFormat(locale).format(value)} ${locale === "en" ? (value === 1 ? "byte" : "bytes") : "位元組"}`;
+  `${new Intl.NumberFormat(locale).format(value)} ${locale === "ja" ? "バイト" : locale !== "zh-TW" ? (value === 1 ? "byte" : "bytes") : "位元組"}`;
 
 export function RuntimeSetupAssistant({
   locale,

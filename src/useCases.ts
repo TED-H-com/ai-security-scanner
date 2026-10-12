@@ -1,3 +1,4 @@
+import { localizeJapanese, type Locale } from "./i18n/core.ts";
 import type { IconName } from "./components/Icon";
 import type { Provider } from "./providerAuthorizationPolicy";
 import type { AssessmentActivity, AssessmentIntent, CloudPlatform, KnownAssetKind } from "./types";
@@ -136,7 +137,7 @@ export const useCaseDefinitions = [
   },
 ] as const satisfies readonly UseCaseDefinition[];
 
-export const startPageCopy: Record<"en" | "zh-TW", StartPageCopy> = {
+const startPageCopyBase: Record<Exclude<Locale, "ja">, StartPageCopy> = {
   en: {
     eyebrow: "Start with what matters",
     title: "What do you want to protect first?",
@@ -355,6 +356,12 @@ export const startPageCopy: Record<"en" | "zh-TW", StartPageCopy> = {
       },
     },
   },
+};
+
+
+export const startPageCopy: Record<Locale, StartPageCopy> = {
+  ...startPageCopyBase,
+  ja: localizeJapanese(startPageCopyBase.en),
 };
 
 export const useCaseById = (id: UseCaseId): UseCaseDefinition => {

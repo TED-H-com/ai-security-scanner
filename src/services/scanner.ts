@@ -1,3 +1,4 @@
+import { translateBilingualText } from "../i18n/core";
 import { invoke as tauriInvoke } from "@tauri-apps/api/core";
 import { listen, type UnlistenFn } from "@tauri-apps/api/event";
 import { open, save } from "@tauri-apps/plugin-dialog";
@@ -188,7 +189,7 @@ const errorMessage = (error: unknown): string => {
 };
 
 const serviceText = (en: string, zhTW: string): string =>
-  getActiveLocale() === "en" ? en : zhTW;
+  translateBilingualText(getActiveLocale(), { en, zhTW });
 
 const nativeResult = <T,>(data: T): ServiceResult<T> => ({ data, mode: "native" });
 

@@ -17,6 +17,7 @@ import {
   persistLocalePreference,
   readLocalePreference,
   setActiveLocale,
+  supportedLocales,
   translate,
   translateBilingualText,
   type BilingualTextTranslator,
@@ -55,7 +56,7 @@ export function I18nProvider({ children }: { children: ReactNode }) {
 
   const setLocale = useCallback((nextLocale: Locale) => setLocaleState(nextLocale), []);
   const toggleLocale = useCallback(
-    () => setLocaleState((current) => current === "en" ? "zh-TW" : "en"),
+    () => setLocaleState((current) => supportedLocales[(supportedLocales.indexOf(current) + 1) % supportedLocales.length]!),
     [],
   );
 
@@ -65,7 +66,9 @@ export function I18nProvider({ children }: { children: ReactNode }) {
       "content",
       locale === "en"
         ? "Find security issues across websites, cloud, code, and internal systems—from one simple local app."
-        : "用一個簡單的本機工具，掃描網站、雲端、程式碼與內部系統的資安問題。",
+        : locale === "ja"
+          ? "シンプルなローカルアプリで、ウェブサイト、クラウド、コード、社内システムのセキュリティ問題を確認できます。"
+          : "用一個簡單的本機工具，掃描網站、雲端、程式碼與內部系統的資安問題。",
     );
     persistLocalePreference(window.localStorage, locale);
   }, [locale]);

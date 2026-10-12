@@ -1,3 +1,4 @@
+import { localizeJapanese, type Locale } from "../i18n/core";
 import { useEffect, useState, type ReactNode } from "react";
 
 import { Icon } from "../components/Icon";
@@ -16,7 +17,7 @@ import {
 import "../start-page.css";
 
 interface StartPageProps {
-  locale: "en" | "zh-TW";
+  locale: Locale;
   copy: StartPageCopy;
   setup?: ReactNode;
   setupFocusKey?: number;
@@ -48,7 +49,7 @@ interface MarketingCopy {
   cards: Record<UseCaseId, { title?: string; outcome: string; timing?: string; action: string }>;
 }
 
-const marketingCopy: Record<"en" | "zh-TW", MarketingCopy> = {
+const marketingCopyBase: Record<Exclude<Locale, "ja">, MarketingCopy> = {
   en: {
     title: "Security checks",
     description: "Scan repositories, websites or APIs, and specific internal systems together. Get one prioritized result organized by asset.",
@@ -175,6 +176,12 @@ const marketingCopy: Record<"en" | "zh-TW", MarketingCopy> = {
       },
     },
   },
+};
+
+
+const marketingCopy: Record<Locale, MarketingCopy> = {
+  ...marketingCopyBase,
+  ja: localizeJapanese(marketingCopyBase.en),
 };
 
 export function StartPage({

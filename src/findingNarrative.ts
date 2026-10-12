@@ -1,3 +1,4 @@
+import type { Locale } from "./i18n/core";
 import type {
   AwsIamPolicyFindingDetails,
   BeginnerCoverageStatus,
@@ -126,16 +127,16 @@ const REMEDY_ENGLISH: Record<FindingFamily, string> = {
 };
 
 /** The secret family's remedy, with the period the report prints. */
-export const exposedCredentialNextStep = (locale: "en" | "zh-TW"): string =>
-  locale === "en" ? EXPOSED_CREDENTIAL_NEXT_STEP_ENGLISH : EXPOSED_CREDENTIAL_NEXT_STEP_ZH_HANT;
+export const exposedCredentialNextStep = (locale: Locale): string =>
+  locale !== "zh-TW" ? EXPOSED_CREDENTIAL_NEXT_STEP_ENGLISH : EXPOSED_CREDENTIAL_NEXT_STEP_ZH_HANT;
 
 const IAM_PRINCIPAL_PREVIEW_LIMIT = 6;
 
 const iamPrincipalLabels = (
   details: AwsIamPolicyFindingDetails,
-  locale: "en" | "zh-TW",
+  locale: Locale,
 ): string[] => {
-  const [role, group, user] = locale === "en"
+  const [role, group, user] = locale !== "zh-TW"
     ? ["role", "group", "user"]
     : ["角色", "群組", "使用者"];
   return [
@@ -152,17 +153,17 @@ const iamPrincipalLabels = (
  */
 const iamPrincipalSummary = (
   details: AwsIamPolicyFindingDetails,
-  locale: "en" | "zh-TW",
+  locale: Locale,
 ): { text: string; count: number } | undefined => {
   const labels = iamPrincipalLabels(details, locale);
   if (labels.length === 0) return undefined;
   const count = labels.length;
   const retained = labels
     .slice(0, IAM_PRINCIPAL_PREVIEW_LIMIT)
-    .join(locale === "en" ? ", " : "、");
+    .join(locale !== "zh-TW" ? ", " : "、");
   const omitted = Math.max(0, count - IAM_PRINCIPAL_PREVIEW_LIMIT);
   if (omitted === 0) return { text: retained, count };
-  if (locale !== "en") return { text: `${retained}，以及另外 ${omitted} 個主體`, count };
+  if (locale === "zh-TW") return { text: `${retained}，以及另外 ${omitted} 個主體`, count };
   return {
     text: omitted === 1
       ? `${retained}, and 1 more principal`
@@ -173,11 +174,11 @@ const iamPrincipalSummary = (
 
 export const awsIamPolicySourceLabel = (
   source: AwsIamPolicyFindingDetails["policySource"],
-  locale: "en" | "zh-TW",
+  locale: Locale,
 ): string => {
-  if (source === "aws_managed") return locale === "en" ? "AWS-managed" : "AWS 受管";
-  if (source === "customer_managed") return locale === "en" ? "Customer-managed" : "客戶受管";
-  return locale === "en" ? "Inline" : "內嵌";
+  if (source === "aws_managed") return locale !== "zh-TW" ? "AWS-managed" : "AWS 受管";
+  if (source === "customer_managed") return locale !== "zh-TW" ? "Customer-managed" : "客戶受管";
+  return locale !== "zh-TW" ? "Inline" : "內嵌";
 };
 
 const awsIamPolicyActionZhTW = (details: AwsIamPolicyFindingDetails): string => {
@@ -306,26 +307,26 @@ export const findingSeverityIsUnrated = (options: {
 );
 
 export const findingConfidencePresentation = (
-  locale: "en" | "zh-TW",
+  locale: Locale,
   confidenceLabel: string,
   confidenceBasisCode: ConfidenceBasisCode | undefined,
   priorityReasons: readonly string[],
 ): string => {
   if (confidenceBasisCode) {
     if (confidenceBasisCode === "missing_detection_quality_score") {
-      return locale === "en"
+      return locale !== "zh-TW"
         ? `${confidenceLabel} — scanner did not report detection quality`
         : `${confidenceLabel} — 掃描工具未提供偵測品質`;
     }
     const basis = CONFIDENCE_BASIS[confidenceBasisCode];
     if (!basis) return confidenceLabel;
-    return locale === "en"
+    return locale !== "zh-TW"
       ? `${confidenceLabel} — this product's rating from ${CONFIDENCE_BASIS_ENGLISH[confidenceBasisCode]}`
       : `${confidenceLabel} — 本產品依據${basis}評定`;
   }
   const source = sourceConfidence(priorityReasons);
   if (!source) return confidenceLabel;
-  return locale === "en"
+  return locale !== "zh-TW"
     ? `${confidenceLabel} — engine rating: ${source}`
     : `${confidenceLabel} — 來源工具評定：${source}`;
 };
@@ -363,9 +364,9 @@ const EXPERT: Record<string, string> = {
 
 export const localizedExpertType = (
   expert: string,
-  locale: "en" | "zh-TW",
+  locale: Locale,
 ): string => {
-  if (locale === "en") return expert;
+  if (locale !== "zh-TW") return expert;
   // A name from a build this one has never seen still has to say something, and
   // a general answer beats a confidently wrong one. Kept identical to the Rust
   // fallback rather than sniffed here: two surfaces guessing differently about
@@ -448,7 +449,7 @@ const withoutConfidenceMethodology = (english: string): string => {
 };
 
 export const findingSummarySentence = (
-  locale: "en" | "zh-TW",
+  locale: Locale,
   options: {
     englishFallback: string;
     severity?: Severity;
@@ -468,7 +469,7 @@ export const findingSummarySentence = (
     .replace("a credential detector match that this product does not verify", "a credential detector match")
     .replace("an unverified credential detector match", "a credential detector match")
     .replace("an unverified pattern or detector match", "a pattern or detector match");
-  if (locale === "en") return englishFallback;
+  if (locale !== "zh-TW") return englishFallback;
   const { severityLabel, severityBasisCode } = options;
   const unratedSeverity = options.severity !== undefined && findingSeverityIsUnrated({
     severity: options.severity,
@@ -535,7 +536,7 @@ const directLegacyImpact = (english: string): string => {
 
 /** The direct possible impact and case context. */
 export const findingImpactSentence = (
-  locale: "en" | "zh-TW",
+  locale: Locale,
   options: {
     englishFallback: string;
     severity?: Severity;
@@ -547,11 +548,11 @@ export const findingImpactSentence = (
   },
 ): string => {
   const consequence = options.family
-    ? (locale === "en" ? CONSEQUENCE_ENGLISH[options.family] : CONSEQUENCE[options.family])
+    ? (locale !== "zh-TW" ? CONSEQUENCE_ENGLISH[options.family] : CONSEQUENCE[options.family])
     : undefined;
   if (!consequence) return directLegacyImpact(options.englishFallback);
-  const context = locale === "en" ? CONTEXT_ENGLISH : CONTEXT;
-  const ending = locale === "en" ? "." : "。";
+  const context = locale !== "zh-TW" ? CONTEXT_ENGLISH : CONTEXT;
+  const ending = locale !== "zh-TW" ? "." : "。";
   return `${consequence}${ending}${(options.contextFactors ?? [])
     .map((factor) => context[factor] ?? "")
     .join("")}`;
@@ -570,13 +571,13 @@ export const ENGLISH_ROLLBACK =
 
 /** "Before any manual change, preserve ... and document a tested restoration path." */
 export const findingRollbackSentence = (
-  locale: "en" | "zh-TW",
+  locale: Locale,
   english: string,
 ): string => {
   const normalized = english.trim() === "Before any manual change, preserve the current approved configuration and document a tested restoration path."
     ? ENGLISH_ROLLBACK
     : english;
-  if (locale === "en" || normalized.trim() !== ENGLISH_ROLLBACK) return normalized;
+  if (locale !== "zh-TW" || normalized.trim() !== ENGLISH_ROLLBACK) return normalized;
   return "變更前先保存目前設定，並測試還原路徑。";
 };
 
@@ -596,7 +597,7 @@ const OPAQUE_RULE_ID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f
  * evidence, and the reader recognises the title.
  */
 export const findingVerificationSentence = (
-  locale: "en" | "zh-TW",
+  locale: Locale,
   english: string,
   title?: string,
 ): string => {
@@ -618,7 +619,7 @@ export const findingVerificationSentence = (
   if (!engine || !rule) return english;
   const trimmedTitle = title?.trim();
   const namedTitle = trimmedTitle && OPAQUE_RULE_ID.test(rule) ? trimmedTitle : undefined;
-  if (locale === "en") {
+  if (locale !== "zh-TW") {
     return namedTitle
       ? `Rerun ${engine} with the same scope after the change and confirm that “${namedTitle}” is no longer reported.`
       : `Rerun ${engine} with the same scope after the change and confirm that source rule ${rule} is no longer reported.`;
@@ -636,12 +637,12 @@ export const findingVerificationSentence = (
  * a pass. Other families keep the engine's own title.
  */
 export const findingHeadline = (
-  locale: "en" | "zh-TW",
+  locale: Locale,
   title: string,
   family?: FindingFamily,
 ): string => {
   if (family !== "microsoft365") return title;
-  return locale === "en" ? `Requirement not met: ${title}` : `未符合要求：${title}`;
+  return locale !== "zh-TW" ? `Requirement not met: ${title}` : `未符合要求：${title}`;
 };
 
 /**
@@ -652,17 +653,17 @@ export const findingHeadline = (
  * still has to receive in its own place.
  */
 export const stepGroupLead = (
-  locale: "en" | "zh-TW",
+  locale: Locale,
   count: number,
   sharedFix: boolean,
   reason: string,
 ): string => {
   if (sharedFix) {
-    return locale === "en"
+    return locale !== "zh-TW"
       ? `${count} problems name this same fix. The first is ${reason}`
       : `有 ${count} 項問題指向同一個修復方式，第一項是 ${reason}`;
   }
-  return locale === "en"
+  return locale !== "zh-TW"
     ? `${count} related problems call for this kind of change; each needs its own fix. The first is ${reason}`
     : `有 ${count} 項相關問題需要這類處理，每一項都要分別修正；第一項是 ${reason}`;
 };
@@ -675,19 +676,19 @@ export const stepGroupLead = (
  * a rerun of the same scan.
  */
 export const stepConfirmation = (
-  locale: "en" | "zh-TW",
+  locale: Locale,
   verification: string | undefined,
   title: string,
   problems: number,
 ): string => {
   if (problems > 1) {
-    return locale === "en"
+    return locale !== "zh-TW"
       ? "Rerun the same scan after the changes and confirm these problems are no longer reported."
       : "修正後以相同範圍重新掃描，確認這些問題不再被回報。";
   }
   const guidance = verification?.trim();
   if (guidance) return findingVerificationSentence(locale, guidance, title);
-  return locale === "en"
+  return locale !== "zh-TW"
     ? "Rerun the same scan after the change and confirm this problem is no longer reported."
     : "修正後以相同範圍重新掃描，確認這項問題不再被回報。";
 };
@@ -776,7 +777,7 @@ export const PASSWORD_EXPIRY_ORDER_REASON =
  * be inventing that account.
  */
 export const findingPriorityReason = (
-  locale: "en" | "zh-TW",
+  locale: Locale,
   english: string,
 ): string => {
   const UNRATED_PREFIX = "Severity remains Unknown because ";
@@ -798,7 +799,7 @@ export const findingPriorityReason = (
           .replace("an unverified credential detector match", "a credential detector match")
           .replace("an unverified pattern or detector match", "a pattern or detector match");
   const trimmed = normalized.trim();
-  if (locale === "en") return normalized;
+  if (locale !== "zh-TW") return normalized;
   if (trimmed === PASSWORD_COMPOSITION_ORDER_REASON)
     return "處理順序比嚴重程度所示更後面。CIS AWS Foundations Benchmark v1.2.0 要求這項字元規則，但之後的 CIS 版本已移除，NIST SP 800-63B-4 也要求不要強制混合字元類型。請先確認密碼長度與 MFA；只有在必須通過的稽核仍要求這項規則時，才需要變更。";
   if (trimmed === PASSWORD_EXPIRY_ORDER_REASON)
@@ -885,7 +886,7 @@ export const priorityGuidanceReason = (reasons: readonly string[]): string | und
  * At most three groups; an empty list produces no line.
  */
 export const benchmarkLine = (
-  locale: "en" | "zh-TW",
+  locale: Locale,
   engine: string,
   benchmarks: readonly BenchmarkReference[],
 ): string | undefined => {
@@ -904,14 +905,14 @@ export const benchmarkLine = (
   const hidden = groups.length - shown.length;
   const body = shown.map((group) => {
     const versions = group.versions.join("/");
-    return locale === "en"
+    return locale !== "zh-TW"
       ? `${group.name} ${versions} item ${group.reference}`
       : `${group.name} ${versions} 第 ${group.reference} 項`;
-  }).join(locale === "en" ? "; " : "；");
+  }).join(locale !== "zh-TW" ? "; " : "；");
   const more = hidden > 0
-    ? (locale === "en" ? ` and ${hidden} more` : `，另有 ${hidden} 項`)
+    ? (locale !== "zh-TW" ? ` and ${hidden} more` : `，另有 ${hidden} 項`)
     : "";
-  const reportedBy = locale === "en"
+  const reportedBy = locale !== "zh-TW"
     ? ` (reported by ${engine})`
     : `（${engine} 回報）`;
   return `${body}${more}${reportedBy}`;
@@ -927,12 +928,12 @@ export const benchmarkLine = (
  * asset. Legacy English wording is normalized before it is displayed.
  */
 export const findingUnattributedGap = (
-  locale: "en" | "zh-TW",
+  locale: Locale,
   engineId: string,
   unattributed: UnattributedResults,
   english: { dimension: string; reason: string; nextAction: string },
 ): { dimension: string; reason: string; nextAction: string } => {
-  if (locale === "en") return english;
+  if (locale !== "zh-TW") return english;
   const { provider, identifier, discardedResults } = unattributed;
   return {
     dimension: `${engineId}：針對 ${provider} ${identifier} 的結果`,
@@ -991,15 +992,15 @@ const taskStateCheck = (dimension: string): [string, boolean] | undefined => {
  */
 export const localizedCoverageDimension = (
   dimension: string,
-  locale: "en" | "zh-TW",
+  locale: Locale,
 ): string => {
   const taskState = taskStateCheck(dimension);
   if (taskState) {
     const [check, whole] = taskState;
-    if (locale === "en") return whole ? check : `${check}: unfinished part`;
+    if (locale !== "zh-TW") return whole ? check : `${check}: unfinished part`;
     return whole ? `${check} 檢查` : `${check} 未完成的部分`;
   }
-  if (locale === "en") return dimension;
+  if (locale !== "zh-TW") return dimension;
   const lower = dimension.toLocaleLowerCase("en");
 
   const noVerdictSeparators = [": no verdict for ", ": manual review for "];
@@ -1730,10 +1731,10 @@ const COVERAGE_GAP_PROSE: ReadonlyArray<readonly [string, string]> = [
  * support-end date, or refused-connection count kept verbatim.
  */
 export const coverageGapProse = (
-  locale: "en" | "zh-TW",
+  locale: Locale,
   english: string,
 ): string => {
-  if (locale === "en") return english;
+  if (locale !== "zh-TW") return english;
   const trimmed = english.trim();
   const reviewBase = "Maester evaluated this control but did not return a pass or fail verdict.";
   const reviewDetailPrefix = `${reviewBase} Upstream detail: `;
@@ -1825,7 +1826,7 @@ export const unevaluatedControlItemsZhTW = (items: string): string => items
  * with no code to remove passes through `coverageGapProse` unchanged.
  */
 export const coverageGapProseWithoutDiagnosticCode = (
-  locale: "en" | "zh-TW",
+  locale: Locale,
   english: string,
 ): string => {
   const withCode = /^(.*\.) Diagnostic code: (.+)\.$/u.exec(english.trim());
@@ -1909,11 +1910,11 @@ const TESTED_OBSERVATION_PROSE: ReadonlyArray<readonly [string, string]> = [
 
 /** A tested-dimension observation in the reader's language. */
 export const testedObservationProse = (
-  locale: "en" | "zh-TW",
+  locale: Locale,
   english: string,
 ): string => {
   const trimmed = english.trim();
-  if (locale === "en") return trimmed;
+  if (locale !== "zh-TW") return trimmed;
   return (
     TESTED_OBSERVATION_PROSE.find(
       ([candidate]) => candidate === trimmed,
@@ -2063,10 +2064,10 @@ export const testedValueZhHant = (
 
 /** A tested-dimension value in the reader's language. */
 export const localizedTestedValue = (
-  locale: "en" | "zh-TW",
+  locale: Locale,
   dimension: string,
   value: string,
-): string => (locale === "en" ? value : testedValueZhHant(dimension, value) ?? value);
+): string => (locale !== "zh-TW" ? value : testedValueZhHant(dimension, value) ?? value);
 
 /** Fixed coverage-ledger explanations shared by the screen and case export. */
 const COVERAGE_RECORD_DETAIL_PROSE: ReadonlyArray<readonly [string, string]> = [
@@ -2486,18 +2487,18 @@ export const controlMappingRationaleZhHant = (
 
 export const localizedControlMappingRationale = (
   rationale: string,
-  locale: "en" | "zh-TW",
+  locale: Locale,
 ): string =>
-  locale === "en"
+  locale !== "zh-TW"
     ? rationale
     : (controlMappingRationaleZhHant(rationale) ?? rationale);
 
 /** A stored coverage-record explanation in the reader's language. */
 export const localizedCoverageRecordDetail = (
   detail: string,
-  locale: "en" | "zh-TW",
+  locale: Locale,
 ): string =>
-  locale === "en" ? detail : (translateCoverageRecordDetail(detail) ?? detail);
+  locale !== "zh-TW" ? detail : (translateCoverageRecordDetail(detail) ?? detail);
 
 const DATA_QUALITY_WARNING_PROSE: ReadonlyArray<readonly [string, string]> = [
   [
@@ -2538,8 +2539,8 @@ const translateDataQualityWarning = (english: string): string | undefined => {
 
 export const localizedDataQualityWarning = (
   warning: string,
-  locale: "en" | "zh-TW",
-): string => locale === "en" ? warning : (translateDataQualityWarning(warning) ?? warning);
+  locale: Locale,
+): string => locale !== "zh-TW" ? warning : (translateDataQualityWarning(warning) ?? warning);
 
 /** Next action when every attached check failed to produce observations. */
 export const INCOMPLETE_CHECK_CONFIRM_ACTION =
@@ -2571,7 +2572,7 @@ export const findingUnconfirmedByCoverage = (
 
 /** The direct recommended action for the finding family. */
 export const findingActionSentence = (
-  locale: "en" | "zh-TW",
+  locale: Locale,
   options: {
     englishFallback: string;
     family?: FindingFamily;
@@ -2597,7 +2598,7 @@ export const findingActionSentence = (
     const direct = options.englishFallback.slice(at + marker.length).trim();
     return direct ? direct[0]!.toLocaleUpperCase("en") + direct.slice(1) : options.englishFallback;
   }
-  if (locale === "en") return `${REMEDY_ENGLISH[options.family]}.`;
+  if (locale !== "zh-TW") return `${REMEDY_ENGLISH[options.family]}.`;
   return `${remedy}。`;
 };
 
@@ -2614,7 +2615,7 @@ export const findingActionSentence = (
  * steps, not a fabricated code-label fallback.
  */
 export const beginnerStepAction = (
-  locale: "en" | "zh-TW",
+  locale: Locale,
   step: {
     action: string;
     code?: BeginnerNextActionCode;
@@ -2659,7 +2660,7 @@ export const beginnerStepAction = (
       reference.detailsFrozen === true && reference.engineId === "cloudsplaining")
     .map((reference) => reference.scannerDetails?.awsIamPolicy)
     .find((details) => details !== undefined);
-  const composed = locale === "en" && !derivedFrom
+  const composed = locale !== "zh-TW" && !derivedFrom
     ? step.action
     : findingActionSentence(locale, {
       englishFallback: step.action,
@@ -2724,7 +2725,7 @@ export const requestedLimitParts = (
  */
 export const localizedRequestedLimitKind = (
   kind: string,
-  locale: "en" | "zh-TW",
+  locale: Locale,
 ): string => {
   const label = requestedLimitKindZh(kind);
   if (locale === "zh-TW") return label ?? `本輪使用的限制：${kind}`;
@@ -2746,9 +2747,9 @@ export const localizedRequestedLimitKind = (
  */
 export const localizedRequestedLimitName = (
   name: string,
-  locale: "en" | "zh-TW",
+  locale: Locale,
 ): string => {
-  if (locale === "en") return name;
+  if (locale !== "zh-TW") return name;
   const { holder, kind } = requestedLimitParts(name);
   return withIdentifier(localizedRequestedLimitKind(kind, locale), holder);
 };
@@ -2768,9 +2769,9 @@ const REQUEST_RATE_MIDDLE = [
 export const localizedRequestedLimitValue = (
   name: string,
   value: string,
-  locale: "en" | "zh-TW",
+  locale: Locale,
 ): string => {
-  if (locale === "en") return value;
+  if (locale !== "zh-TW") return value;
   for (const [englishUnit, chineseUnit] of REQUESTED_LIMIT_VALUE_UNITS) {
     const match = value.match(new RegExp(`^(\\d+)${englishUnit}$`, "u"));
     if (match?.[1]) return `${match[1]}${chineseUnit}`;
@@ -2847,7 +2848,7 @@ const resourceLabel = (part: string, path: string): string => {
  * URLs, endpoints, package coordinates, and other non-path locations are
  * returned untouched.
  */
-export const findingLocationText = (locale: "en" | "zh-TW", raw: string): string => {
+export const findingLocationText = (locale: Locale, raw: string): string => {
   const trimmed = raw.trim();
   const [, path, line, column, resource] = LOCATION_COORDINATE_FORM.exec(trimmed) ?? [];
   if (!path || (!line && !column && !resource)) {
@@ -2858,11 +2859,11 @@ export const findingLocationText = (locale: "en" | "zh-TW", raw: string): string
   const pathText = reportFilePath(path);
   const parts = [pathText];
   if (line && column) {
-    parts.push(locale === "en" ? `line ${line}, column ${column}` : `第 ${line} 行第 ${column} 欄`);
+    parts.push(locale !== "zh-TW" ? `line ${line}, column ${column}` : `第 ${line} 行第 ${column} 欄`);
   } else if (line) {
-    parts.push(locale === "en" ? `line ${line}` : `第 ${line} 行`);
+    parts.push(locale !== "zh-TW" ? `line ${line}` : `第 ${line} 行`);
   } else if (column) {
-    parts.push(locale === "en" ? `column ${column}` : `第 ${column} 欄`);
+    parts.push(locale !== "zh-TW" ? `column ${column}` : `第 ${column} 欄`);
   }
   if (resource) {
     const resourceParts = resource
@@ -2883,7 +2884,7 @@ export const findingLocationText = (locale: "en" | "zh-TW", raw: string): string
  * card's findings, so it is left out. Any other location reads as in
  * `findingLocationText`.
  */
-export const findingLineText = (locale: "en" | "zh-TW", raw: string): string => {
+export const findingLineText = (locale: Locale, raw: string): string => {
   const [, path, line] = LOCATION_COORDINATE_FORM.exec(raw.trim()) ?? [];
   return findingLocationText(locale, path && line ? `${path}:line=${line}` : raw);
 };

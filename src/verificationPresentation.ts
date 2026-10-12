@@ -1,3 +1,4 @@
+import type { Locale } from "./i18n/core";
 import type { FindingDiffReasonCode } from "./types";
 
 export interface ComparisonLimitation {
@@ -168,10 +169,10 @@ const reasonZhTW = (reason: FindingDiffReasonPresentation, withCoordinates: bool
 
 /** A stored finding-comparison explanation in the reader's language. */
 export const verificationDiffExplanation = (
-  locale: "en" | "zh-TW",
+  locale: Locale,
   diff: FindingDiffPresentationInput,
 ): string => {
-  if (locale === "en") return diff.explanation;
+  if (locale !== "zh-TW") return diff.explanation;
 
   const reasons = (diff.changeReasons ?? []).map((reason) => reasonZhTW(reason, true)).join("；");
   switch (diff.comparisonStatus) {

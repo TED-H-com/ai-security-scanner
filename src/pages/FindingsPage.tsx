@@ -825,7 +825,7 @@ const testedStatusCopy = (status: BeginnerCoverageStatus) => {
 
 const gapNextActionProse = (
   gap: BeginnerMasterReport["coverageGaps"][number],
-  locale: "en" | "zh-TW",
+  locale: Locale,
 ): string => {
   if (gap.unattributed) {
     return findingUnattributedGap(
@@ -840,11 +840,11 @@ const gapNextActionProse = (
 
 const localizedCheckName = (
   checkId: string,
-  locale: "en" | "zh-TW",
+  locale: Locale,
   engine?: ScanRun["engineRuns"][number],
 ): string => {
   if (engine && isExactBuiltInLocalhostQuickScanEngine(engine) && engine.taskKind.kind === "built_in_localhost_tcp") {
-    return `${locale === "en" ? "Local connection check" : "本機連線檢查"} · 127.0.0.1:${engine.taskKind.port}`;
+    return `${locale !== "zh-TW" ? "Local connection check" : "本機連線檢查"} · 127.0.0.1:${engine.taskKind.port}`;
   }
   if (engine?.engineName.trim()) return engine.engineName.trim();
   return checkId;
@@ -860,7 +860,7 @@ const localizedCheckName = (
  */
 const coverageGapDimensionLabel = (
   gap: BeginnerMasterReport["coverageGaps"][number],
-  locale: "en" | "zh-TW",
+  locale: Locale,
   run: ScanRun | undefined,
   unattributedDimension?: string,
 ): string => {
@@ -886,7 +886,7 @@ const coverageGapDimensionLabel = (
 const stepCoverageNames = (
   step: BeginnerMasterReport["nextSteps"][number],
   report: BeginnerMasterReport,
-  locale: "en" | "zh-TW",
+  locale: Locale,
   run: ScanRun | undefined,
 ): string[] => {
   if (step.findingId || step.unattributed) return [];
@@ -925,11 +925,11 @@ const stepCoverageNames = (
 const actionAbout = (
   action: string,
   about: readonly string[],
-  locale: "en" | "zh-TW",
+  locale: Locale,
 ): string => {
   if (about.length === 0 || !action.trim()) return action;
-  const named = about.join(locale === "en" ? "; " : "；");
-  if (locale === "en") {
+  const named = about.join(locale !== "zh-TW" ? "; " : "；");
+  if (locale !== "zh-TW") {
     return action.endsWith(".") ? `${action.slice(0, -1)} (${named}).` : `${action} (${named})`;
   }
   return action.endsWith("。") ? `${action.slice(0, -1)}（${named}）。` : `${action}（${named}）`;
@@ -947,14 +947,14 @@ const testedValueText = (
   engine: ScanRun["engineRuns"][number] | undefined,
   dimension: string,
   value: string,
-  locale: "en" | "zh-TW",
+  locale: Locale,
 ): string => {
   const localhost = localhostTestedDimensionValue(engine, dimension, value, locale);
   return localhost === value ? localizedTestedValue(locale, dimension, value) : localhost;
 };
 
-const localizedAssetKind = (kind: string, locale: "en" | "zh-TW"): string => {
-  if (locale === "en") return kind.replaceAll("_", " ");
+const localizedAssetKind = (kind: string, locale: Locale): string => {
+  if (locale !== "zh-TW") return kind.replaceAll("_", " ");
   return ({
     web_service: "網站或本機服務",
     host: "伺服器或工作站",
@@ -970,7 +970,7 @@ const localizedAssetKind = (kind: string, locale: "en" | "zh-TW"): string => {
 
 const requestedTargetQualifier = (
   target: BeginnerRequestedTarget | undefined,
-  locale: "en" | "zh-TW",
+  locale: Locale,
 ): string | undefined => {
   const availability = target?.labelAvailability ?? "unavailable";
   const qualifier = availability === "current_case_fallback"
@@ -979,12 +979,12 @@ const requestedTargetQualifier = (
       ? copy.unavailableProvenance
       : undefined;
   if (!qualifier) return undefined;
-  return locale === "en" ? qualifier.en : qualifier.zhTW;
+  return locale !== "zh-TW" ? qualifier.en : qualifier.zhTW;
 };
 
 const requestedTargetLabel = (
   target: BeginnerRequestedTarget,
-  locale: "en" | "zh-TW",
+  locale: Locale,
 ): string => {
   const label = target.label ?? target.assetId;
   const qualifier = requestedTargetQualifier(target, locale);
@@ -994,7 +994,7 @@ const requestedTargetLabel = (
 const requestedTargetLabelById = (
   assetId: string,
   targetById: ReadonlyMap<string, BeginnerRequestedTarget>,
-  locale: "en" | "zh-TW",
+  locale: Locale,
 ): string => {
   const target = targetById.get(assetId);
   if (target) return requestedTargetLabel(target, locale);
@@ -1004,7 +1004,7 @@ const requestedTargetLabelById = (
 const requestedTargetListLabel = (
   assetIds: readonly string[],
   targetById: ReadonlyMap<string, BeginnerRequestedTarget>,
-  locale: "en" | "zh-TW",
+  locale: Locale,
 ): string => {
   const groups: Array<{ qualifier?: string; labels: string[] }> = [];
   const groupByQualifier = new Map<string | undefined, { qualifier?: string; labels: string[] }>();
@@ -1019,8 +1019,8 @@ const requestedTargetListLabel = (
     }
     group.labels.push(target?.label ?? assetId);
   }
-  const itemSeparator = locale === "en" ? ", " : "、";
-  const groupSeparator = locale === "en" ? "; " : "；";
+  const itemSeparator = locale !== "zh-TW" ? ", " : "、";
+  const groupSeparator = locale !== "zh-TW" ? "; " : "；";
   return groups.map(({ qualifier, labels }) => {
     const joined = labels.join(itemSeparator);
     return qualifier ? `${joined} (${qualifier})` : joined;
@@ -1036,7 +1036,7 @@ const requestedTargetListLabel = (
 const networkScopeTargetLabel = (
   scope: BeginnerMasterReport["actual"]["networkScopes"][number],
   targetById: ReadonlyMap<string, BeginnerRequestedTarget>,
-  locale: "en" | "zh-TW",
+  locale: Locale,
 ): string => {
   const target = targetById.get(scope.targetAssetId);
   if (target?.label) return requestedTargetLabel(target, locale);
@@ -1241,7 +1241,7 @@ const readableReference = (reference: string): string => {
  * full-width colon carries its own spacing and takes none.
  */
 const adviceLabel = (locale: Locale, label: string): ReactNode =>
-  locale === "en" ? (
+  locale !== "zh-TW" ? (
     <>
       <strong>{label}:</strong>{" "}
     </>
@@ -1524,11 +1524,11 @@ const historyDateTime: Intl.DateTimeFormatOptions = {
 const projectReportFindings = (
   report: BeginnerMasterReport,
   canonicalFindings: Finding[],
-  locale: "en" | "zh-TW",
+  locale: Locale,
 ): Finding[] => {
   const canonicalById = new Map(canonicalFindings.map((finding) => [finding.id, finding]));
   const targetById = new Map(report.requested.targets.map((target) => [target.assetId, target]));
-  const frozenEvidenceSummaryUnavailable = locale === "en"
+  const frozenEvidenceSummaryUnavailable = locale !== "zh-TW"
     ? copy.frozenEvidenceSummaryUnavailable.en
     : copy.frozenEvidenceSummaryUnavailable.zhTW;
   return report.findings.map((frozen, index) => {
@@ -1583,7 +1583,7 @@ const projectReportFindings = (
       fingerprint: frozen.fingerprint,
       assetId: frozen.targetAssetIds[0] ?? current?.assetId ?? "unknown-target",
       assetIds: [...frozen.targetAssetIds],
-      assetName: targetLabel || current?.assetName || (locale === "en" ? "Recorded target" : "已記錄目標"),
+      assetName: targetLabel || current?.assetName || (locale !== "zh-TW" ? "Recorded target" : "已記錄目標"),
       title: frozen.title,
       summary: frozen.plainLanguageRisk,
       impact: frozen.possibleImpact,
@@ -1658,8 +1658,8 @@ function BeginnerReportOverview({ report, run }: { report: BeginnerMasterReport;
   // space in Traditional Chinese (an ASCII colon plus space is not how a
   // Chinese-reading label ends). Every other label on this page keeps its
   // literal ": " regardless of locale.
-  const firstLayerLabelColon = locale === "en" ? ":" : "：";
-  const firstLayerLabelGap = locale === "en" ? " " : "";
+  const firstLayerLabelColon = locale !== "zh-TW" ? ":" : "：";
+  const firstLayerLabelGap = locale !== "zh-TW" ? " " : "";
   const firstLayerLabelSeparator = `${firstLayerLabelColon}${firstLayerLabelGap}`;
   const securityFindingIds = new Set(
     report.findings.filter(isSecurityFinding).map((finding) => finding.findingId),
@@ -1792,7 +1792,7 @@ function BeginnerReportOverview({ report, run }: { report: BeginnerMasterReport;
         orderedNextSteps.length - 1,
       )
     : text(copy.noNextStep);
-  const inlineSeparator = locale === "en" ? "; " : "；";
+  const inlineSeparator = locale !== "zh-TW" ? "; " : "；";
   const requestedTargetsSummary = report.requested.targets.length > 0
     ? requestedTargetListLabel(
         report.requested.targets.map((target) => target.assetId),
@@ -1871,7 +1871,7 @@ function BeginnerReportOverview({ report, run }: { report: BeginnerMasterReport;
         const target = report.requested.targets.find((candidate) => candidate.assetId === assetId);
         return target?.label ? [target.label] : [];
       })
-      .join(locale === "en" ? ", " : "、");
+      .join(locale !== "zh-TW" ? ", " : "、");
     const checkPrefix = `${targets ? `${targets} · ` : ""}${checkLabel} · ${text(testedStatusCopy(check.status))}`;
     if (check.testedDimensions.length === 0) {
       testedCheckSummaries.push(`${checkPrefix} · ${text(copy.checkDimensionsUnavailable)}`);
@@ -1920,8 +1920,8 @@ function BeginnerReportOverview({ report, run }: { report: BeginnerMasterReport;
   }
   const testedNetworkScopeSummaries = testedNetworkScopes.map((scope) => {
     const target = networkScopeTargetLabel(scope, targetById, locale);
-    const addresses = scope.addressRanges.join(locale === "en" ? ", " : "、");
-    const ports = scope.portRanges.join(locale === "en" ? ", " : "、");
+    const addresses = scope.addressRanges.join(locale !== "zh-TW" ? ", " : "、");
+    const ports = scope.portRanges.join(locale !== "zh-TW" ? ", " : "、");
     return `${target}: ${addresses} · ${scope.transport.toUpperCase()} ${ports} · ${text(reportStageCopy(scope.stage))} · ${text(testedStatusCopy(scope.outcome))}`;
   });
   const coherentLocalhostObservation = localhostSummary
@@ -1999,7 +1999,7 @@ function BeginnerReportOverview({ report, run }: { report: BeginnerMasterReport;
     if (!first) return "";
     const more = locations.length - 1;
     if (more === 0) return first;
-    return locale === "en"
+    return locale !== "zh-TW"
       ? `${first} and ${formatNumber(more)} more`
       : `${first}，另有 ${formatNumber(more)} 處`;
   };
@@ -2124,7 +2124,7 @@ function BeginnerReportOverview({ report, run }: { report: BeginnerMasterReport;
                     <strong>{localizedRequestedLimitKind(limit.kind, locale)}</strong>
                     <span>{localizedRequestedLimitValue(limit.name, limit.value, locale)}</span>
                     {limit.holders.length > 0 && (
-                      <small>{limit.holders.join(locale === "en" ? ", " : "、")}</small>
+                      <small>{limit.holders.join(locale !== "zh-TW" ? ", " : "、")}</small>
                     )}
                   </li>
                 ))}
@@ -2198,8 +2198,8 @@ function BeginnerReportOverview({ report, run }: { report: BeginnerMasterReport;
                   <li key={`${scope.taskId}-${scope.workUnitId}`}>
                     <strong>{networkScopeTargetLabel(scope, targetById, locale)}</strong>
                     <span>{scope.target}</span>
-                    <span>{text(copy.networkAddresses)}: {scope.addressRanges.join(locale === "en" ? ", " : "、")}</span>
-                    <span>{text(copy.networkPorts)}: {scope.transport.toUpperCase()} {scope.portRanges.join(locale === "en" ? ", " : "、")}</span>
+                    <span>{text(copy.networkAddresses)}: {scope.addressRanges.join(locale !== "zh-TW" ? ", " : "、")}</span>
+                    <span>{text(copy.networkPorts)}: {scope.transport.toUpperCase()} {scope.portRanges.join(locale !== "zh-TW" ? ", " : "、")}</span>
                     <span>{text(copy.stage)}: {text(reportStageCopy(scope.stage))}</span>
                     <span>{text(copy.networkResult)}: {text(testedStatusCopy(scope.outcome))}</span>
                   </li>
@@ -2255,8 +2255,8 @@ function BeginnerReportOverview({ report, run }: { report: BeginnerMasterReport;
                   <li key={`${scope.taskId}-${scope.workUnitId}`}>
                     <strong>{networkScopeTargetLabel(scope, targetById, locale)}</strong>
                     <span>{scope.target}</span>
-                    <span>{text(copy.networkAddresses)}: {scope.addressRanges.join(locale === "en" ? ", " : "、")}</span>
-                    <span>{text(copy.networkPorts)}: {scope.transport.toUpperCase()} {scope.portRanges.join(locale === "en" ? ", " : "、")}</span>
+                    <span>{text(copy.networkAddresses)}: {scope.addressRanges.join(locale !== "zh-TW" ? ", " : "、")}</span>
+                    <span>{text(copy.networkPorts)}: {scope.transport.toUpperCase()} {scope.portRanges.join(locale !== "zh-TW" ? ", " : "、")}</span>
                     <span>{text(copy.stage)}: {text(reportStageCopy(scope.stage))}</span>
                     <span>{text(copy.networkResult)}: {text(testedStatusCopy(scope.outcome))}</span>
                   </li>
@@ -2467,7 +2467,7 @@ export function FindingsPage({
     () => hasTypedInventory ? [] : resultRecords.filter(isExposureObservation),
     [hasTypedInventory, resultRecords],
   );
-  const collationLocale = locale === "en" ? "en" : "zh-Hant";
+  const collationLocale = locale === "zh-TW" ? "zh-Hant" : locale;
   const [query, setQuery] = useState("");
   const [severity, setSeverity] = useState<Severity | "all">("all");
   const [workflow, setWorkflow] = useState<FindingWorkflowState | "all">("all");
@@ -2856,7 +2856,7 @@ export function FindingsPage({
           ].filter(Boolean).join(" · ")}</span>
         </div>
         <small>{text(copy.inventorySources, { count: formatNumber(item.sources.length) })} · {
-          sourceEngines.join(locale === "en" ? ", " : "、")
+          sourceEngines.join(locale !== "zh-TW" ? ", " : "、")
         }</small>
       </article>
     );
@@ -3254,7 +3254,7 @@ export function FindingsPage({
                 <span className="priority-card__target">
                   <span><strong>{text(copy.affectedTarget)}</strong>{finding.assetName}</span>
                   {locations.length > 0 && (
-                    <span><strong>{text(copy.reportedLocation)}</strong>{locations.join(locale === "en" ? "; " : "；")}</span>
+                    <span><strong>{text(copy.reportedLocation)}</strong>{locations.join(locale !== "zh-TW" ? "; " : "；")}</span>
                   )}
                 </span>
                 <span className="priority-card__guidance">

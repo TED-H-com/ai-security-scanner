@@ -22,7 +22,7 @@ export function SettingsPage({
   onOpenNewScan,
   onOpenProjects,
 }: SettingsPageProps) {
-  const { text } = useI18n();
+  const { text, t } = useI18n();
   const runtimePresentation = getSettingsRuntimePresentation(mode, runtimeAvailable);
   const runtimeSummary = {
     demo: {
@@ -75,6 +75,15 @@ export function SettingsPage({
           >
             <Icon name="check" size={18} />
             <strong>繁體中文</strong>
+          </button>
+          <button
+            className={`settings-choice${locale === "ja" ? " settings-choice--selected" : ""}`}
+            type="button"
+            aria-pressed={locale === "ja"}
+            onClick={() => onLocaleChange("ja")}
+          >
+            <Icon name="check" size={18} />
+            <strong>{t("language.japanese")}</strong>
           </button>
         </div>
       </section>

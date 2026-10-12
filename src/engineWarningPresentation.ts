@@ -1,3 +1,4 @@
+import type { Locale } from "./i18n/core";
 import { UNEVALUATED_CONTROL_KINDS, unevaluatedControlItemsZhTW } from "./findingNarrative.ts";
 
 /**
@@ -622,9 +623,9 @@ export const recognizedEngineWarningZhTW = (warning: string): string | undefined
   return undefined;
 };
 
-export const localizedEngineWarning = (warning: string, locale: "en" | "zh-TW"): string => {
+export const localizedEngineWarning = (warning: string, locale: Locale): string => {
   const normalized = normalizeLegacyEngineWarning(warning);
-  return locale === "en"
+  return locale !== "zh-TW"
     ? directEngineWarningEnglish(normalized)
     : recognizedEngineWarningZhTW(normalized) ?? directEngineWarningEnglish(normalized);
 };

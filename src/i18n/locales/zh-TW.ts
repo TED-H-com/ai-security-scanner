@@ -4,6 +4,7 @@ export const zhTW = {
   "language.label": "語言",
   "language.english": "English",
   "language.traditionalChinese": "繁體中文",
+  "language.japanese": "日本語",
 
   "shell.skipToContent": "跳到主要內容",
   "shell.primaryNavigation": "主要導覽",

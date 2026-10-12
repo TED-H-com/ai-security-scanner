@@ -250,3 +250,36 @@ test("every managed-runtime warning stays concise and action-led", () => {
     "掃描工具狀態：尚未就緒。",
   );
 });
+
+
+test("Japanese has the same central keys and interpolation parameters", () => {
+  assert.deepEqual(Object.keys(i18n.localeMessages.ja).sort(), Object.keys(i18n.localeMessages.en).sort());
+  for (const key of i18n.messageKeys) {
+    assert.deepEqual(placeholders(i18n.localeMessages.ja[key]), placeholders(i18n.localeMessages.en[key]), key);
+  }
+  assert.equal(i18n.translate("ja", "language.japanese"), "日本語");
+});
+
+test("Japanese preference is normalized, persisted, and used for document and Intl formatting", () => {
+  assert.equal(i18n.resolveLocalePreference("ja_JP", ["en-US"]), "ja");
+  assert.equal(i18n.resolveLocalePreference(null, ["ja-JP", "en-US"]), "ja");
+  assert.equal(i18n.normalizeLocale(" JA-jp "), "ja");
+  const values = new Map<string, string>();
+  const storage = { getItem: (key: string) => values.get(key) ?? null, setItem: (key: string, value: string) => { values.set(key, value); } };
+  i18n.persistLocalePreference(storage, "ja");
+  assert.equal(i18n.readLocalePreference(storage, ["en"]), "ja");
+  const document = { documentElement: { lang: "" } };
+  i18n.applyDocumentLocale(document, "ja");
+  assert.equal(document.documentElement.lang, "ja");
+  assert.equal(i18n.formatLocaleNumber("ja", 1234567), new Intl.NumberFormat("ja").format(1234567));
+});
+
+test("Japanese inline copy interpolates translated messages and falls back to English safely", () => {
+  assert.equal(i18n.translateBilingualText("ja", { en: "Settings", zhTW: "設定" }), "設定");
+  assert.equal(i18n.translateBilingualText("ja", { en: "Working on {action}", zhTW: "正在處理 {action}" }, { action: "テスト" }), "テストを実行中");
+  for (const en of ["Untranslated {target}", "constructor", "__proto__", "toString"]) {
+    const copy = { en, zhTW: "中国語" };
+    assert.equal(i18n.translateBilingualText("ja", copy, { target: "example.com" }), en.replace("{target}", "example.com"));
+  }
+  assert.deepEqual(i18n.localizeJapanese({ title: "Settings", nested: ["Untranslated", "Language"] }), { title: "設定", nested: ["Untranslated", "言語"] });
+});
