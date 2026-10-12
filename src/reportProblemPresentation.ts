@@ -48,7 +48,7 @@ export function projectProblemRows<T extends ProblemFinding>(
 }
 
 export function problemGroupTitle(group: BeginnerReportProblemGroup, locale: Locale): string {
-  if (locale === "en") return group.title;
+  if (locale !== "zh-TW") return group.title;
   switch (group.kind) {
     case "iam_password_policy": return "IAM 密碼政策需要調整";
     case "root_account_usage": return "最近使用過 root 帳號";
@@ -64,16 +64,16 @@ export function problemGroupTitle(group: BeginnerReportProblemGroup, locale: Loc
 export function problemGroupAction(group: BeginnerReportProblemGroup | undefined, locale: Locale): string | undefined {
   switch (group?.kind) {
     case "iam_password_policy":
-      if (group.lowerPriorityMembers === "partial") return locale === "en"
+      if (group.lowerPriorityMembers === "partial") return locale !== "zh-TW"
         ? "Review the account's IAM password policy. Fix the failed length or reuse settings first; change the character-mix or expiry settings only if an audit you must pass still requires them."
         : "檢查帳號的 IAM 密碼政策：先調整未通過的長度或重複使用設定；字元組成或到期設定，只有在必須通過的稽核仍要求時才需要變更。";
-      if (group.lowerPriorityMembers === "all") return locale === "en"
+      if (group.lowerPriorityMembers === "all") return locale !== "zh-TW"
         ? "Change these IAM password policy settings only if an audit you must pass still requires them; NIST SP 800-63B-4 says not to require character mixes or scheduled expiry."
         : "只有在必須通過的稽核仍要求時，才需要變更這些 IAM 密碼政策設定；NIST SP 800-63B-4 要求不要強制混合字元類型或定期到期。";
-      return locale === "en"
+      return locale !== "zh-TW"
         ? "Review the account's IAM password policy and address each failed setting."
         : "檢查帳號的 IAM 密碼政策，並調整每項未通過的設定。";
-    case "root_account_usage": return locale === "en"
+    case "root_account_usage": return locale !== "zh-TW"
       ? "Review each scanner's root-usage window and use an IAM role for routine work."
       : "檢查各掃描工具記錄的 root 使用時間範圍，日常工作改用 IAM role。";
     case "exposed_secret": return exposedCredentialNextStep(locale);
@@ -86,13 +86,13 @@ export function problemGroupAction(group: BeginnerReportProblemGroup | undefined
 export function problemGroupImpact(group: BeginnerReportProblemGroup | undefined, locale: Locale): string | undefined {
   switch (group?.kind) {
     case "iam_password_policy":
-      if (group.lowerPriorityMembers === "all") return locale === "en"
+      if (group.lowerPriorityMembers === "all") return locale !== "zh-TW"
         ? "CIS AWS Foundations Benchmark v1.2.0 lists these settings; current guidance does not treat their absence as a weakness."
         : "CIS AWS Foundations Benchmark v1.2.0 列出這些設定；現行指引不把缺少這些設定視為弱點。";
-      return locale === "en"
+      return locale !== "zh-TW"
         ? "Weak password settings increase the risk of unauthorized access to IAM users."
         : "較弱的密碼設定會增加 IAM 使用者遭未授權存取的風險。";
-    case "root_account_usage": return locale === "en"
+    case "root_account_usage": return locale !== "zh-TW"
       ? "Root-account activity uses permissions with broad control of this AWS account."
       : "root 帳號的活動會使用可廣泛控制此 AWS 帳號的權限。";
     case "vulnerable_dependency":

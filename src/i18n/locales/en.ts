@@ -2,6 +2,7 @@ export const en = {
   "language.label": "Language",
   "language.english": "English",
   "language.traditionalChinese": "繁體中文",
+  "language.japanese": "日本語",
 
   "shell.skipToContent": "Skip to main content",
   "shell.primaryNavigation": "Primary navigation",

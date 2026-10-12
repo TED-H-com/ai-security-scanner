@@ -536,6 +536,10 @@ export function ExportPage({ workspace, selectedRunId, runningScanResultsPending
         description={text(copy.description)}
       />
 
+      {locale === "ja" && (
+        <InlineNotice tone="info" title="レポートは英語で保存されます" />
+      )}
+
       {runningScanResultsPending && (
         <InlineNotice tone="info" title={text(copy.finishedRunWhileScanning)} />
       )}

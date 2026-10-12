@@ -9,6 +9,7 @@ import {
 
 test("the UI locale maps to the closed native HTML report locale", () => {
   assert.equal(reportLocaleForUiLocale("en"), "en");
+  assert.equal(reportLocaleForUiLocale("ja"), "en");
   assert.equal(reportLocaleForUiLocale("zh-TW"), "zh-Hant");
   assert.equal(isReportLocale("en"), true);
   assert.equal(isReportLocale("zh-Hant"), true);

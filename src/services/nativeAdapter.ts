@@ -1,3 +1,4 @@
+import { translateBilingualText } from "../i18n/core";
 import { agenticRadarFramework } from "../agenticRadarProfile";
 import { validatedModelEndpoint } from "../garakProfile";
 import type {
@@ -107,10 +108,10 @@ import { useCaseById } from "../useCases";
 import type { UseCaseId } from "../useCases";
 
 const adapterText = (en: string, zhTW: string): string =>
-  getActiveLocale() === "en" ? en : zhTW;
+  translateBilingualText(getActiveLocale(), { en, zhTW });
 
 const localizedList = (values: string[]): string =>
-  values.join(getActiveLocale() === "en" ? ", " : "、");
+  values.join(getActiveLocale() !== "zh-TW" ? ", " : "、");
 
 /** Snake-case DTOs emitted by src-tauri/src/domain.rs. */
 export interface NativeCaseSummary {

@@ -23,7 +23,7 @@ const DEMO_NOTICE =
 
 export { DEMO_NOTICE };
 
-export const getDemoNotice = (): string => getActiveLocale() === "en"
+export const getDemoNotice = (): string => getActiveLocale() !== "zh-TW"
   ? "Synthetic sample data for preview."
   : DEMO_NOTICE;
 
@@ -122,7 +122,7 @@ const demoEnglishTranslations: Record<string, string> = {
 };
 
 const localizeBuiltInDemo = <T,>(value: T): T => {
-  if (getActiveLocale() !== "en") return clone(value);
+  if (getActiveLocale() === "zh-TW") return clone(value);
   const visit = (candidate: unknown): unknown => {
     if (typeof candidate === "string") return demoEnglishTranslations[candidate] ?? candidate;
     if (Array.isArray(candidate)) return candidate.map(visit);
@@ -1353,10 +1353,10 @@ const storedWorkspace = (storedCase: StoredDemoCase): CaseWorkspace => {
   const locale = getActiveLocale();
   const knownAssets = safeKnownAssets(storedCase.knownAssets);
   const sourceId = `${storedCase.id}-source-user-declared`;
-  const sourceLabel = locale === "en"
+  const sourceLabel = locale !== "zh-TW"
     ? "Known assets entered in the scan project"
     : "掃描專案中輸入的已知項目";
-  const coverageDetail = locale === "en"
+  const coverageDetail = locale !== "zh-TW"
     ? "Saved from project setup. Permission status: unconfirmed. Scan status: not started."
     : "由專案設定保存。掃描權限：未確認。掃描狀態：未開始。";
   const sources: ConnectedSource[] = knownAssets.length > 0
