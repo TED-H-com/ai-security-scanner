@@ -10,7 +10,7 @@ Choose what to check in the desktop app. It selects suitable security tools and 
 
 ## Run your first scan
 
-1. [Download v0.5.0](https://github.com/teddashh/ai-security-scanner/releases/tag/v0.5.0) for Windows, macOS or Linux and [follow the install steps](docs/getting-started.md#install). The app prepares its scanning tools; you do not need to install Docker.
+1. [Download v0.5.1](https://github.com/teddashh/ai-security-scanner/releases/tag/v0.5.1) for Windows, macOS or Linux and [follow the install steps](docs/getting-started.md#install). The app prepares its scanning tools; you do not need to install Docker.
 2. Open the app and choose **Scan my environment**, **Check a website**, or **Check code or an AI project**. Add the folders, URLs or internal systems you want to check.
 3. Review the listed targets and checks. Confirm that you may scan any network targets, then start the scan in the app window.
 4. When the scan ends, open **Results**. Choose **Save or share report**, then **Save HTML report** to save a report you can open in a browser.
@@ -19,7 +19,15 @@ The first scan may take longer while tools download. Later scans can use those t
 
 ## Languages
 
-Japanese UI support is available on `main` in **Settings → 日本語**, with the choice saved across restarts. It is not yet included in the published v0.5.0 installers. Untranslated explanations fall back to English; HTML exports from the Japanese UI are in English. See the [Japanese README](README.ja.md) and [Japanese website](https://teddashh.github.io/ai-security-scanner/?lang=ja).
+Japanese UI support is included in v0.5.1. Choose **Settings → 日本語**; the choice is saved across restarts. Untranslated explanations fall back to English; HTML exports from the Japanese UI are in English. See the [Japanese README](README.ja.md) and [Japanese website](https://teddashh.github.io/ai-security-scanner/?lang=ja).
+
+## New in v0.5.1
+
+- Japanese UI is included in the desktop installers. Choose **Settings → 日本語**; your choice is saved across restarts.
+- Adds a Japanese README and website, with introductions for all 25 scanners.
+- Includes [@kieiken](https://github.com/kieiken)'s [#69](https://github.com/teddashh/ai-security-scanner/pull/69) and fills translation gaps in onboarding and runtime setup.
+
+[Read the v0.5.1 changes](docs/release/v0.5.1.md).
 
 ## New in v0.5.0
 
@@ -157,7 +165,7 @@ Tools still under evaluation are tracked separately and are not available for sc
 - [Scan coverage](docs/scanning-scope.md)
 - [Reading and sharing results](docs/results-and-exports.md)
 - [Current development status](docs/development-status.md)
-- [Changes in v0.5.0](docs/release/v0.5.0.md) · [Earlier changes in v0.3.1](docs/release/v0.3.1.md)
+- [Changes in v0.5.1](docs/release/v0.5.1.md) · [Changes in v0.5.0](docs/release/v0.5.0.md) · [Earlier changes in v0.3.1](docs/release/v0.3.1.md)
 - [Contributing](CONTRIBUTING.md) · [Contributors](CONTRIBUTORS.md) · [Security policy](SECURITY.md)
 
 ## Development

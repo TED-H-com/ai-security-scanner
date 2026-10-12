@@ -10,20 +10,28 @@
 
 ## 最初のスキャン
 
-1. Windows・macOS・Linux 向けの [v0.5.0 をダウンロード](https://github.com/teddashh/ai-security-scanner/releases/tag/v0.5.0)し、[インストール手順（英語）](docs/getting-started.md#install)に従います。スキャンツールはアプリが準備するため、Docker は不要です。
-2. アプリで **Scan my environment**（自分の環境をスキャン）、**Check a website**（ウェブサイトをチェック）、**Check code or an AI project**（コード・AI プロジェクトをチェック）を選び、フォルダー、URL、社内システムを追加します。
+1. Windows・macOS・Linux 向けの [v0.5.1 をダウンロード](https://github.com/teddashh/ai-security-scanner/releases/tag/v0.5.1)し、[インストール手順（英語）](docs/getting-started.md#install)に従います。スキャンツールはアプリが準備するため、Docker は不要です。
+2. **Settings → 日本語** で日本語に切り替えます。**自分の環境をスキャン**、**ウェブサイトをチェック**、**コード・AI プロジェクトをチェック**を選び、フォルダー、URL、社内システムを追加します。
 3. 表示された対象とチェックを確認します。ネットワーク対象をスキャンする権限があることを確認し、アプリ画面でスキャンを開始します。
-4. 終了後に **Results**（結果）を開き、**Save or share report** → **Save HTML report** を選びます。保存した HTML はブラウザーで開けます。
+4. 終了後に**結果**を開き、**レポートを保存・共有**を選びます。形式を **HTML レポート**にして保存すると、ブラウザーで開けます。
 
 最初はツールのダウンロードで時間がかかる場合があります。次回以降は準備済みのツールを再利用できます。[画面ごとの手順（英語）](docs/getting-started.md#from-new-scan-to-an-html-report)も参照してください。
 
 ## 日本語について
 
-`main` ブランチでは、**Settings → 日本語** で画面の言語を選べます。選択は再起動後も保存されます。この追加は公開済みの v0.5.0 インストーラーにはまだ含まれていません。
+v0.5.1 のインストーラーに日本語 UI が含まれています。**Settings → 日本語** で画面の言語を選べます。選択は再起動後も保存されます。
 
 未翻訳の動的な説明や上流ツールの出力は英語で表示される場合があります。日本語の画面から保存する HTML レポートは英語です。レポート本体は現在、英語と繁体字中国語に対応しています。
 
 日本語 UI の初期翻訳は [@kieiken](https://github.com/kieiken) の [PR #69](https://github.com/teddashh/ai-security-scanner/pull/69) による貢献です。
+
+## v0.5.1 の新機能
+
+- デスクトップアプリで日本語を選べるようになりました。**Settings → 日本語** で切り替えると、再起動後も設定が保存されます。
+- 日本語 README と Web サイトを追加し、全 25 スキャナーの紹介を日本語で読めるようにしました。
+- [@kieiken](https://github.com/kieiken) さんの [#69](https://github.com/teddashh/ai-security-scanner/pull/69) の翻訳を取り込み、初期設定とスキャン環境の準備に残っていた未翻訳箇所も補いました。
+
+[変更点の詳細](docs/release/v0.5.1.ja.md)。
 
 ## v0.5.0 の新機能
 
@@ -102,7 +110,7 @@ v0.4.1 以降の完成済みの更新をまとめ、Linux のビルドと依存�
 
 **[Syft](https://github.com/anchore/syft)** — Anchore の Syft は、プロジェクトやコンテナー内のライブラリ、OS パッケージなどを列挙するソフトウェア部品表（SBOM）作成ツールです。認識した部品の名前、バージョン、種類を記録し、脆弱性チェックの対象を把握しやすくします。一覧自体は脆弱性レポートではありません。本アプリはネットワーク接続なしで読み取り専用コピーを調べ、レジストリからイメージを取得しません。既知の脆弱性は Trivy と Grype が調べます。
 
-The released catalog pins the Grype image to **`0.117.0-4`**, digest `sha256:56b0d675…`. It can scan local repository dependencies for known vulnerabilities; a controlled repository scan recorded **81 Grype findings**. That is a fixture result, not an expected count for every project. See the [exact pin and recorded result](docs/engine-catalog.md#grype-repository-support).
+公開カタログでは、Grype イメージを **`0.117.0-4`**、digest `sha256:56b0d675…` に固定しています。ローカルリポジトリーの依存関係にある既知の脆弱性を調べられます。検証用リポジトリーのスキャンでは **81 件の Grype 検出結果**を記録しました。これはテスト用データに対する結果で、すべてのプロジェクトで同じ件数が出るという意味ではありません。[固定バージョンと検証結果（英語）](docs/engine-catalog.md#grype-repository-support)を参照してください。
 
 ### ウェブサイト・社内システム
 
@@ -161,7 +169,7 @@ The released catalog pins the Grype image to **`0.117.0-4`**, digest `sha256:56b
 - [スキャン範囲（英語）](docs/scanning-scope.md)
 - [結果の読み方・共有（英語）](docs/results-and-exports.md)
 - [開発状況（英語）](docs/development-status.md)
-- [v0.5.0 の変更（英語）](docs/release/v0.5.0.md) · [v0.3.1 の変更（英語）](docs/release/v0.3.1.md)
+- [v0.5.1 の変更](docs/release/v0.5.1.ja.md) · [v0.5.0 の変更（英語）](docs/release/v0.5.0.md) · [v0.3.1 の変更（英語）](docs/release/v0.3.1.md)
 - [貢献方法（英語）](CONTRIBUTING.md) · [貢献者](CONTRIBUTORS.md) · [セキュリティ方針（英語）](SECURITY.md)
 
 ## 開発

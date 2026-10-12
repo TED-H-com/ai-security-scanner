@@ -2,7 +2,7 @@
 
 [繁體中文](development-status.zh-TW.md) · [Documentation](README.md)
 
-_Updated 2026-10-08._
+_Updated 2026-10-12._
 
 This page summarizes current engineering status for contributors. It is not a product specification
 or release declaration. [The product specification](product-spec.md) remains the source of truth for
@@ -10,9 +10,9 @@ product behavior, and the [current product review](product-audit.md) tracks the 
 
 ## At a glance
 
-- [v0.5.0 consolidated stable release](release/v0.5.0.md) is published as stable/latest for Windows, macOS and Linux. It collects all 32 commits after the v0.4.1 source: problem cards, Check fixes comparisons, folder reselection, latest-scan counts, cloud guidance, scanner details, bilingual guides and the real scan example, plus Linux build fixes and two dependency security updates. Public bytes, source provenance, updater signatures, exact-source CI and CodeQL passed; platform observations and limitations remain in the release record.
+- [v0.5.1 Japanese support](release/v0.5.1.md) is the current stable/latest release for Windows, macOS and Linux. It packages the Japanese UI, README and website, including follow-up onboarding translations. Public bytes, updater signatures, source CI and CodeQL passed; exact evidence and platform limitations are in the release record.
 
-- The previous stable release, [v0.4.1](release/v0.4.1.md), retains its original installer and updater observations.
+- The earlier stable release, [v0.4.1](release/v0.4.1.md), retains its original installer and updater observations.
 - The released desktop includes Prowler failure headlines, approved AWS report grouping, reconnect-and-rescan, blocked-scan continuations, Semgrep `1.174.0-4`, and explicit kube-bench/KICS incomplete-coverage handling.
 - A fresh owner-signed-in Microsoft 365 live rerun remains unobserved. Garak model checks and Agentic Radar offline inventory are optionally dispatchable in v0.4.0.
 - The paired repository [Agent Skills](getting-started.md#use-with-an-agent-skill) install the
