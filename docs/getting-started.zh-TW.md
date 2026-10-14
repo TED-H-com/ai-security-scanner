@@ -32,13 +32,13 @@ AWS 或 Microsoft 365 的唯讀連線過期時，掃描結果會提供**重新�
 
 ## 安裝
 
-從[發布頁](https://github.com/teddashh/ai-security-scanner/releases/tag/v0.5.1)下載適合你電腦的 **v0.5.1 正式版**：
+從[發布頁](https://github.com/TED-H-com/ai-security-scanner/releases/tag/v0.5.1)下載適合你電腦的 **v0.5.1 正式版**：
 
 | 電腦 | 安裝檔 | 第一次開啟前 |
 | --- | --- | --- |
-| macOS（Apple 晶片或 Intel） | [ai-security-scanner_0.5.1_universal.dmg](https://github.com/teddashh/ai-security-scanner/releases/download/v0.5.1/ai-security-scanner_0.5.1_universal.dmg) | 把應用程式拖進**應用程式**資料夾。此版本未經 Apple 公證，開啟前先在「終端機」執行一次 `xattr -dr com.apple.quarantine /Applications/ai-security-scanner.app`。 |
-| Windows x86-64 | [ai-security-scanner_0.5.1_x64-setup.exe](https://github.com/teddashh/ai-security-scanner/releases/download/v0.5.1/ai-security-scanner_0.5.1_x64-setup.exe) 或 [MSI](https://github.com/teddashh/ai-security-scanner/releases/download/v0.5.1/ai-security-scanner_0.5.1_x64_en-US.msi) | 安裝檔未簽章。SmartScreen 警告時，選**其他資訊 → 仍要執行**。Windows 要求安裝或更新 WSL 時請允許。 |
-| Debian 或 Ubuntu x86-64 | [ai-security-scanner_0.5.1_amd64.deb](https://github.com/teddashh/ai-security-scanner/releases/download/v0.5.1/ai-security-scanner_0.5.1_amd64.deb) | 以 `sudo apt install ./ai-security-scanner_0.5.1_amd64.deb` 安裝。 |
+| macOS（Apple 晶片或 Intel） | [ai-security-scanner_0.5.1_universal.dmg](https://github.com/TED-H-com/ai-security-scanner/releases/download/v0.5.1/ai-security-scanner_0.5.1_universal.dmg) | 把應用程式拖進**應用程式**資料夾。此版本未經 Apple 公證，開啟前先在「終端機」執行一次 `xattr -dr com.apple.quarantine /Applications/ai-security-scanner.app`。 |
+| Windows x86-64 | [ai-security-scanner_0.5.1_x64-setup.exe](https://github.com/TED-H-com/ai-security-scanner/releases/download/v0.5.1/ai-security-scanner_0.5.1_x64-setup.exe) 或 [MSI](https://github.com/TED-H-com/ai-security-scanner/releases/download/v0.5.1/ai-security-scanner_0.5.1_x64_en-US.msi) | 安裝檔未簽章。SmartScreen 警告時，選**其他資訊 → 仍要執行**。Windows 要求安裝或更新 WSL 時請允許。 |
+| Debian 或 Ubuntu x86-64 | [ai-security-scanner_0.5.1_amd64.deb](https://github.com/TED-H-com/ai-security-scanner/releases/download/v0.5.1/ai-security-scanner_0.5.1_amd64.deb) | 以 `sudo apt install ./ai-security-scanner_0.5.1_amd64.deb` 安裝。 |
 
 安裝完成後啟動 **ai-security-scanner**。第一次需要掃描時，應用程式會自行準備掃描環境，不需要另外安裝 Docker。
 
@@ -127,7 +127,7 @@ AWS 和 Microsoft 365 可以用腳本完成步驟 1。腳本會以英文印出�
 - **AWS：**在管理 IAM Identity Center 的帳號的 AWS 主控台開啟 CloudShell，執行：
 
   ```sh
-  curl -fsSLO https://raw.githubusercontent.com/teddashh/ai-security-scanner/main/cloud-setup/aws-read-only.sh
+  curl -fsSLO https://raw.githubusercontent.com/TED-H-com/ai-security-scanner/main/cloud-setup/aws-read-only.sh
   bash aws-read-only.sh
   ```
 
@@ -135,7 +135,7 @@ AWS 和 Microsoft 365 可以用腳本完成步驟 1。腳本會以英文印出�
 - **Microsoft 365：**在 Windows 的 PowerShell 執行下列指令。打開腳本印出的 Microsoft 網頁，輸入它給的代碼，再以全域管理員身分登入。macOS 或 Linux 請改用 `pwsh`（PowerShell 7）執行腳本。
 
   ```powershell
-  Invoke-WebRequest https://raw.githubusercontent.com/teddashh/ai-security-scanner/main/cloud-setup/microsoft365-read-only.ps1 -OutFile microsoft365-read-only.ps1 -UseBasicParsing
+  Invoke-WebRequest https://raw.githubusercontent.com/TED-H-com/ai-security-scanner/main/cloud-setup/microsoft365-read-only.ps1 -OutFile microsoft365-read-only.ps1 -UseBasicParsing
   powershell -ExecutionPolicy Bypass -File .\microsoft365-read-only.ps1
   ```
 

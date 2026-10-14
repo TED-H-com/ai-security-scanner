@@ -4,11 +4,10 @@ import { createHash } from "node:crypto";
 import { spawnSync } from "node:child_process";
 import { lstat, readdir, readFile, realpath } from "node:fs/promises";
 import path from "node:path";
+import { pathToFileURL } from "node:url";
 import { isDeepStrictEqual } from "node:util";
 
-const REPOSITORY = "teddashh/ai-security-scanner";
-const RUN_URL_PREFIX = `https://github.com/${REPOSITORY}/actions/runs/`;
-const ATTESTATION_URL_PREFIX = `https://github.com/${REPOSITORY}/attestations/`;
+import { publicationOrigin, validateRepositoryId, certificateOriginMatches, provenanceOriginMatches, validateImageSourceLabels } from "../publication-origins.mjs";
 const DIGEST_PATTERN = /^sha256:[0-9a-f]{64}$/u;
 const HASH_PATTERN = /^[0-9a-f]{64}$/u;
 const REVISION_PATTERN = /^[0-9a-f]{40}$/u;
@@ -106,10 +105,10 @@ function sha256(bytes) {
   return createHash("sha256").update(bytes).digest("hex");
 }
 
-function imageFor(engine) {
+function imageFor(engine, origin) {
   return engine === "egress-gateway"
-    ? "ghcr.io/teddashh/ai-security-scanner-egress-gateway"
-    : `ghcr.io/teddashh/ai-security-scanner-engine-${engine}`;
+    ? `${origin.namespace}/ai-security-scanner-egress-gateway`
+    : `${origin.namespace}/ai-security-scanner-engine-${engine}`;
 }
 
 function parseCli(argv) {
@@ -360,7 +359,11 @@ function validateGatewayTransformations(transformations, sourceRevision, platfor
   }
 }
 
-function validateProvenancePredicate(predicate, { spec, sourceRevision, runId, attempt }) {
+export function validateProvenancePredicate(predicate, { spec, sourceRevision, runId, attempt, origin }) {
+  const REPOSITORY = origin.repository;
+  const RUN_URL_PREFIX = `https://github.com/${REPOSITORY}/actions/runs/`;
+  validateRepositoryId(predicate);
+  assert(provenanceOriginMatches(predicate, origin), "provenance repository mismatch");
   const buildDefinition = object(predicate.buildDefinition, "provenance build definition");
   assert(
     buildDefinition.buildType === "https://actions.github.io/buildtypes/workflow/v1",
@@ -394,6 +397,25 @@ function validateProvenancePredicate(predicate, { spec, sourceRevision, runId, a
   );
 }
 
+export function validateVerifiedCertificate(certificate, { image, spec, sourceRevision, runId, attempt }) {
+  const { repository: REPOSITORY } = publicationOrigin(image);
+  const signerIdentity = `https://github.com/${REPOSITORY}/${spec.workflow}@refs/heads/main`;
+  const invocation = `https://github.com/${REPOSITORY}/actions/runs/${runId}/attempts/${attempt}`;
+  validateRepositoryId(certificate);
+  assert(certificateOriginMatches(certificate, publicationOrigin(image)), "verified certificate owner mismatch");
+  assert(certificate.sourceRepositoryURI === `https://github.com/${REPOSITORY}`, "verified certificate repository mismatch");
+  assert(certificate.sourceRepositoryDigest === sourceRevision, "verified certificate source digest mismatch");
+  assert(certificate.sourceRepositoryRef === "refs/heads/main", "verified certificate source ref mismatch");
+  assert(certificate.githubWorkflowRepository === REPOSITORY, "verified certificate workflow repository mismatch");
+  assert(certificate.githubWorkflowSHA === sourceRevision, "verified certificate workflow digest mismatch");
+  assert(certificate.buildSignerURI === signerIdentity, "verified certificate signer identity mismatch");
+  assert(certificate.buildSignerDigest === sourceRevision, "verified certificate signer digest mismatch");
+  assert(certificate.subjectAlternativeName === signerIdentity, "verified certificate subject identity mismatch");
+  assert(certificate.runInvocationURI === invocation, "verified certificate run identity mismatch");
+  assert(certificate.runnerEnvironment === "github-hosted", "verified certificate runner is not GitHub-hosted");
+  assert(certificate.sourceRepositoryVisibilityAtSigning === "public", "verified certificate did not record a public source repository");
+}
+
 function verifyBundleCryptographically({
   bundlePath,
   image,
@@ -404,9 +426,8 @@ function verifyBundleCryptographically({
   runId,
   attempt,
 }) {
+  const { repository: REPOSITORY } = publicationOrigin(image);
   const signerWorkflow = `${REPOSITORY}/${spec.workflow}`;
-  const signerIdentity = `https://github.com/${signerWorkflow}@refs/heads/main`;
-  const invocation = `${RUN_URL_PREFIX}${runId}/attempts/${attempt}`;
   const result = spawnSync("gh", [
     "attestation", "verify", `oci://${image}@${digest}`,
     "--bundle", bundlePath,
@@ -435,17 +456,7 @@ function verifyBundleCryptographically({
   assert(Array.isArray(records) && records.length === 1, "GitHub attestation verifier returned an unexpected record set");
   const verification = object(records[0]?.verificationResult, "cryptographic verification result");
   const certificate = object(verification.signature?.certificate, "verified signing certificate");
-  assert(certificate.sourceRepositoryURI === `https://github.com/${REPOSITORY}`, "verified certificate repository mismatch");
-  assert(certificate.sourceRepositoryDigest === sourceRevision, "verified certificate source digest mismatch");
-  assert(certificate.sourceRepositoryRef === "refs/heads/main", "verified certificate source ref mismatch");
-  assert(certificate.githubWorkflowRepository === REPOSITORY, "verified certificate workflow repository mismatch");
-  assert(certificate.githubWorkflowSHA === sourceRevision, "verified certificate workflow digest mismatch");
-  assert(certificate.buildSignerURI === signerIdentity, "verified certificate signer identity mismatch");
-  assert(certificate.buildSignerDigest === sourceRevision, "verified certificate signer digest mismatch");
-  assert(certificate.subjectAlternativeName === signerIdentity, "verified certificate subject identity mismatch");
-  assert(certificate.runInvocationURI === invocation, "verified certificate run identity mismatch");
-  assert(certificate.runnerEnvironment === "github-hosted", "verified certificate runner is not GitHub-hosted");
-  assert(certificate.sourceRepositoryVisibilityAtSigning === "public", "verified certificate did not record a public source repository");
+  validateVerifiedCertificate(certificate, { image, spec, sourceRevision, runId, attempt });
   assert(
     Array.isArray(verification.verifiedTimestamps)
       && verification.verifiedTimestamps.some((timestamp) => timestamp?.type === "Tlog"),
@@ -453,6 +464,9 @@ function verifyBundleCryptographically({
   );
   const statement = object(verification.statement, "cryptographically verified statement");
   assert(statement.predicateType === predicateType, "cryptographically verified predicate mismatch");
+  if (predicateType === PROVENANCE_PREDICATE) validateProvenancePredicate(statement.predicate, {
+    spec, sourceRevision, runId, attempt, origin: publicationOrigin(image),
+  });
   const subject = Array.isArray(statement.subject)
     ? statement.subject.find((candidate) => candidate?.name === image)
     : undefined;
@@ -467,7 +481,11 @@ async function verifySupplyChain({ files, engine, spec, sourceRevision, runId, a
     "generator", "sbomTransformations", "imageBuild", "platforms", "attestations",
     "verification", "checksumsFile",
   ], "supply-chain manifest");
-  const image = imageFor(engine);
+  const origin = publicationOrigin(evidence.image, evidence.verification?.repository);
+  const REPOSITORY = origin.repository;
+  const RUN_URL_PREFIX = `https://github.com/${REPOSITORY}/actions/runs/`;
+  const ATTESTATION_URL_PREFIX = `https://github.com/${REPOSITORY}/attestations/`;
+  const image = imageFor(engine, origin);
   assert(evidence.schemaVersion === 1, "supply-chain schemaVersion must be 1");
   assert(evidence.engine === engine, "supply-chain engine mismatch");
   assert(evidence.image === image, "supply-chain image repository mismatch");
@@ -522,6 +540,7 @@ async function verifySupplyChain({ files, engine, spec, sourceRevision, runId, a
       assert(sha256(bytes) === sbom.sha256, `SBOM hash mismatch: ${sbom.file}`);
       const document = await readJson(files, relative, "SBOM");
       object(document, `SBOM document ${sbom.file}`);
+      validateImageSourceLabels(document.metadata, origin);
       sboms.set(expected.format, sbom);
       sbomDocuments.set(sbom.file, document);
     }
@@ -605,6 +624,7 @@ async function verifySupplyChain({ files, engine, spec, sourceRevision, runId, a
     if (expected.key === "provenance") {
       validateProvenancePredicate(statement.predicate, {
         spec,
+        origin,
         sourceRevision,
         runId,
         attempt,
@@ -803,11 +823,13 @@ async function verifyPublicationArtifact(args) {
   };
 }
 
-try {
-  const args = parseCli(process.argv.slice(2));
-  const payload = await verifyPublicationArtifact(args);
-  process.stdout.write(`${JSON.stringify(payload)}\n`);
-} catch (error) {
-  process.stderr.write(`publication artifact verification failed: ${error instanceof Error ? error.message : String(error)}\n`);
-  process.exitCode = 1;
+if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
+  try {
+    const args = parseCli(process.argv.slice(2));
+    const payload = await verifyPublicationArtifact(args);
+    process.stdout.write(`${JSON.stringify(payload)}\n`);
+  } catch (error) {
+    process.stderr.write(`publication artifact verification failed: ${error instanceof Error ? error.message : String(error)}\n`);
+    process.exitCode = 1;
+  }
 }

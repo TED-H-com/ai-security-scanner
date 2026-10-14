@@ -1,6 +1,6 @@
 # ai-security-scanner
 
-[專案網站](https://teddashh.github.io/ai-security-scanner/?lang=zh-TW) · [English](README.md) · [使用說明](docs/README.zh-TW.md) · [下載](https://github.com/teddashh/ai-security-scanner/releases) · [日本語](README.ja.md)
+[專案網站](https://ted-h-com.github.io/ai-security-scanner/?lang=zh-TW) · [English](README.md) · [使用說明](docs/README.zh-TW.md) · [下載](https://github.com/TED-H-com/ai-security-scanner/releases) · [日本語](README.ja.md)
 
 *本機優先的整合式資安評估工作台：選好要檢查的資產，就能拿到一份可追溯、能直接交付並照著處理的報告，不必自己管理整套掃描工具。*
 
@@ -10,11 +10,11 @@
 
 ## 介面語言
 
-v0.5.1 安裝版已加入日文介面，可在 **設定 → 日本語** 選擇，重新啟動後仍會保留。未翻譯的說明會顯示英文；日文介面匯出的 HTML 報告目前使用英文。另有 [日文 README](README.ja.md) 與[日文網站](https://teddashh.github.io/ai-security-scanner/?lang=ja)。
+v0.5.1 安裝版已加入日文介面，可在 **設定 → 日本語** 選擇，重新啟動後仍會保留。未翻譯的說明會顯示英文；日文介面匯出的 HTML 報告目前使用英文。另有 [日文 README](README.ja.md) 與[日文網站](https://ted-h-com.github.io/ai-security-scanner/?lang=ja)。
 
 ## 完成第一次掃描
 
-1. [下載 v0.5.1](https://github.com/teddashh/ai-security-scanner/releases/tag/v0.5.1)，依你的 Windows、macOS 或 Linux 電腦[完成安裝](docs/getting-started.zh-TW.md#安裝)。程式會準備掃描工具，不需要另外安裝 Docker。
+1. [下載 v0.5.1](https://github.com/TED-H-com/ai-security-scanner/releases/tag/v0.5.1)，依你的 Windows、macOS 或 Linux 電腦[完成安裝](docs/getting-started.zh-TW.md#安裝)。程式會準備掃描工具，不需要另外安裝 Docker。
 2. 開啟程式，選擇**掃描公司環境**、**檢查網站**或**檢查程式碼或 AI 專案**，加入想檢查的資料夾、網址或內部系統。
 3. 確認畫面列出的目標與檢查內容。網站及內部系統必須是你有權檢查的對象，再從應用程式視窗開始掃描。
 4. 掃描結束後，打開**掃描結果**。按**保存或分享報告**，再儲存 **HTML 報告**，就能用瀏覽器閱讀。
@@ -25,7 +25,7 @@ v0.5.1 安裝版已加入日文介面，可在 **設定 → 日本語** 選擇�
 
 - 安裝版加入日文介面，可從 **設定 → 日本語** 切換，重新啟動後仍會保留。
 - 新增日文 README 與網站，涵蓋全部 25 個掃描工具介紹。
-- 納入 [@kieiken](https://github.com/kieiken) 的 [#69](https://github.com/teddashh/ai-security-scanner/pull/69)，並補齊首頁與掃描環境準備的日文。
+- 納入 [@kieiken](https://github.com/kieiken) 的 [#69](https://github.com/TED-H-com/ai-security-scanner/pull/69)，並補齊首頁與掃描環境準備的日文。
 
 [查看 v0.5.1 更新](docs/release/v0.5.1.zh-TW.md)。
 
@@ -33,7 +33,7 @@ v0.5.1 安裝版已加入日文介面，可在 **設定 → 日本語** 選擇�
 
 - 相關發現合併成一張問題卡，展開細節仍可查看原始證據。
 - 用**確認修復**重新選取修改後的資料夾，比對這次沒有再看到、仍然存在與新增的問題，也能看出部分修復的情況。
-- 改善雲端說明、進度與工具版本資訊，補齊中英文指南及[真實修復前後範例](https://teddashh.github.io/ai-security-scanner/check-fixes-demo.html?lang=zh-TW)。
+- 改善雲端說明、進度與工具版本資訊，補齊中英文指南及[真實修復前後範例](https://ted-h-com.github.io/ai-security-scanner/check-fixes-demo.html?lang=zh-TW)。
 
 本版收納 v0.4.1 之後所有已完成更新，並包含 Linux 建置與依賴安全修正。[查看完整更新](docs/release/v0.5.0.zh-TW.md)。
 
@@ -59,11 +59,11 @@ v0.5.1 安裝版已加入日文介面，可在 **設定 → 日本語** 選擇�
 
 ### 先看看報告長什麼樣
 
-[打開範例報告](https://teddashh.github.io/ai-security-scanner/samples/v0.4.0/sample-report-redacted-zh-TW.html)，或[選擇其他語言與顯示方式](https://teddashh.github.io/ai-security-scanner/sample-reports.html?lang=zh-TW)。
+[打開範例報告](https://ted-h-com.github.io/ai-security-scanner/samples/v0.4.0/sample-report-redacted-zh-TW.html)，或[選擇其他語言與顯示方式](https://ted-h-com.github.io/ai-security-scanner/sample-reports.html?lang=zh-TW)。
 
 範例使用模擬資料，包含 25 個工具的 62 筆發現與 42 筆盤點紀錄。它用來展示報告，不代表任何真實公司的安全狀況。盤點紀錄會另外列出，不算成安全問題。[範例製作方式](docs/samples/v0.4.0/README.zh-TW.md)。
 
-想看真實掃描，請看[修正專案後再檢查一次](https://teddashh.github.io/ai-security-scanner/check-fixes-demo.html?lang=zh-TW)：修正前 13 個問題、修正後 8 個，以及兩次之間的變化。
+想看真實掃描，請看[修正專案後再檢查一次](https://ted-h-com.github.io/ai-security-scanner/check-fixes-demo.html?lang=zh-TW)：修正前 13 個問題、修正後 8 個，以及兩次之間的變化。
 
 ## 請 Claude Code 或 Codex 幫忙
 
@@ -83,7 +83,7 @@ v0.5.1 安裝版已加入日文介面，可在 **設定 → 日本語** 選擇�
 
 ## 報告背後有哪些工具？
 
-程式整合了 25 個開源工具。各工具負責原本的安全檢查，程式再整理結果、說明處理順序。想了解用途、限制與版本，可以閱讀[工具指南](https://teddashh.github.io/ai-security-scanner/scanner-guide.html?lang=zh-TW)。
+程式整合了 25 個開源工具。各工具負責原本的安全檢查，程式再整理結果、說明處理順序。想了解用途、限制與版本，可以閱讀[工具指南](https://ted-h-com.github.io/ai-security-scanner/scanner-guide.html?lang=zh-TW)。
 
 <details>
 <summary>這 25 個工具各自在做什麼</summary>

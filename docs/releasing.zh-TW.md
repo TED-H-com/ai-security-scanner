@@ -6,13 +6,15 @@
 
 ## 目前發布版本
 
-[v0.5.1](https://github.com/teddashh/ai-security-scanner/releases/tag/v0.5.1) 是目前的 **stable／latest** 桌面版本，於 2026-10-12 發布，涵蓋 **Linux、macOS、Windows**，新增日文介面。[候選 38280286730](https://github.com/teddashh/ai-security-scanner/actions/runs/38280286730) 建置精確來源 `0405fecbf3435d16da176fc5be2ab14fcb4c962f`；[發布流程 38286089269](https://github.com/teddashh/ai-security-scanner/actions/runs/38286089269) 經正常 `release-publication` 核准後直接發布凍結檔案。全部 49 個公開檔案均符合凍結檢查碼，來源證明與更新簽章也驗證通過。見[交付紀錄](release/v0.5.1.zh-TW.md)。
+[v0.5.1](https://github.com/TED-H-com/ai-security-scanner/releases/tag/v0.5.1) 是目前的 **stable／latest** 桌面版本，於 2026-10-12 發布，涵蓋 **Linux、macOS、Windows**，新增日文介面。[候選 38280286730](https://github.com/teddashh/ai-security-scanner/actions/runs/38280286730) 建置精確來源 `0405fecbf3435d16da176fc5be2ab14fcb4c962f`；[發布流程 38286089269](https://github.com/teddashh/ai-security-scanner/actions/runs/38286089269) 經正常 `release-publication` 核准後直接發布凍結檔案。全部 49 個公開檔案均符合凍結檢查碼，來源證明與更新簽章也驗證通過。見[交付紀錄](release/v0.5.1.zh-TW.md)。
 
 GitHub 記錄 `prerelease: false`；metadata 記錄 `releaseChannel: stable`、`stableTarget: 0.5.1`。macOS 與 Windows NSIS 有更新目標，Debian 與 MSI 沒有。Windows 安裝檔未簽章，macOS 未公證；Windows 生命週期／資料保留與精確候選新手真人操作仍未觀察，macOS qualification 主機也未觀察 managed runtime 執行。不提供 AppImage 與 RPM。
 
 前一個正式版 [v0.5.0](release/v0.5.0.zh-TW.md) 與更早版本保留原始檔案及觀察。
 
 ## 版本身分
+
+每個 `latest.json` 更新檔案 URL 都必須使用 `https://github.com/teddashh/ai-security-scanner/releases/download/v<version>/<file>`，以支援 <= 0.5.1 的既有安裝；GitHub 會將此舊路徑重新導向目前的儲存庫，且絕不可重新建立 `teddashh/ai-security-scanner`。
 
 `package.json`、`package-lock.json`、`src-tauri/tauri.conf.json`、Rust package 與 release-owned runtime manifests 使用同一個 numeric SemVer。每個公開版本使用新的 immutable `vX.Y.Z` tag。
 

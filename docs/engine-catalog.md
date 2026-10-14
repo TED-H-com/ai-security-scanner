@@ -97,7 +97,7 @@ The source and license below identify the pinned engine family. Exact release, s
 
 ### Grype repository support
 
-The source catalog at [commit 3990168](https://github.com/teddashh/ai-security-scanner/commit/3990168be5154804c8a70c97f8c8f6e827221cbc) pins
+The source catalog at [commit 3990168](https://github.com/TED-H-com/ai-security-scanner/commit/3990168be5154804c8a70c97f8c8f6e827221cbc) pins
 `ghcr.io/teddashh/ai-security-scanner-engine-grype:0.117.0-4` to
 `sha256:56b0d675e3b8d539890e853699c114493a72a54cca0bbe254eceee7ec2b4c517`.
 The launcher accepts repository working-tree snapshots, allowing upstream Grype to report known

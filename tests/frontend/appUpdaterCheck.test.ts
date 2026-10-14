@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 
 import { build } from "esbuild";
+import { UPDATER_DOWNLOAD_REPOSITORY } from "../../scripts/publication-origins.mjs";
 
 const VERSION = "1.0.0";
 const SIGNATURE = "A".repeat(96);
@@ -10,7 +11,7 @@ const CURRENT_VERSION = "0.1.8";
 const windowsPayloads = () => {
   const entry = {
     signature: SIGNATURE,
-    url: `https://github.com/teddashh/ai-security-scanner/releases/download/v${VERSION}/ai-security-scanner_${VERSION}_x64-setup.exe`,
+    url: `https://github.com/${UPDATER_DOWNLOAD_REPOSITORY}/releases/download/v${VERSION}/ai-security-scanner_${VERSION}_x64-setup.exe`,
   };
   return {
     "windows-x86_64": entry,

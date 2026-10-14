@@ -47,7 +47,7 @@
     "createUpdaterArtifacts": true,
     "publisher": "ai-security-scanner contributors",
     "copyright": "Copyright 2026 Ted Huang and ai-security-scanner contributors",
-    "homepage": "https://github.com/teddashh/ai-security-scanner",
+    "homepage": "https://github.com/TED-H-com/ai-security-scanner",
     "license": "Apache-2.0",
     "licenseFile": "../LICENSE",
     "category": "DeveloperTool",
@@ -70,7 +70,7 @@
     "updater": {
       "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IEIyQzI1RTVEMTJCMzJCRkUKUldUK0s3TVNYVjdDc3M2QU9nbGdqRTNQVStNR3hRQStuZEFQNStac2Y2U0FsQmZ5cjB5UTNHUmIK",
       "endpoints": [
-        "https://github.com/teddashh/ai-security-scanner/releases/latest/download/latest.json"
+        "https://github.com/TED-H-com/ai-security-scanner/releases/latest/download/latest.json"
       ],
       "windows": {
         "installMode": "passive"

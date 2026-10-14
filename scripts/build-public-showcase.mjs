@@ -6,8 +6,12 @@ import { fileURLToPath } from 'node:url';
 import { addJapanese } from './localize-public-site.mjs';
 
 const root = fileURLToPath(new URL('../', import.meta.url));
-const repo = 'https://github.com/teddashh/ai-security-scanner';
-const site = 'https://teddashh.github.io/ai-security-scanner/';
+import { PUBLICATION_ORIGINS, CURRENT_PUBLICATION_ORIGIN } from "./publication-origins.mjs";
+const repo = `https://github.com/${CURRENT_PUBLICATION_ORIGIN.repository}`;
+// Reproduce the checksummed v0.4.0 samples with their recorded links.
+const sampleRepo = `https://github.com/${PUBLICATION_ORIGINS[0].repository}`;
+const sampleSite = `https://${PUBLICATION_ORIGINS[0].repository.replace("/", ".github.io/")}/`;
+const site = 'https://ted-h-com.github.io/ai-security-scanner/';
 const languages = ['en', 'zh-TW'];
 const fields = {
   introduction: ['About this tool', '工具介紹'],
@@ -100,8 +104,8 @@ function downloads(prefix='samples/v0.4.0/') {
 function appendix(content, sources, generation, lang) {
   const t = pair => pick(pair,lang);
   return `<section class="sample-sources" id="sample-sources"><h2>${t(['Sample sources · all 25 adapters','範例來源 · 全部 25 個 adapter'])}</h2><p>${t(['Representative upstream-format inputs were processed by the production adapters, saved as a terminal case and exported through the standard report service. Execution was simulated; no customer system or live model was contacted. The source table and sample label were added for this public edition; the standard report body is unchanged.','具代表性的上游格式輸入，經由正式 adapter 處理、儲存成結束狀態案件，再透過標準報告服務匯出。執行過程為模擬，未連接客戶系統或即時模型。此公開版加上來源表及範例標記；標準報告本文未修改。'])}</p><p>${t(['62 original findings and 42 inventory observations. Related findings can share a problem card; inventory is not counted as a vulnerability. The scenario intentionally includes incomplete coverage.','共 62 筆原始發現與 42 筆盤點觀察。相關發現可共用一張問題卡；盤點不計為漏洞。此情境刻意包含未完整涵蓋的檢查。'])}</p>
-${sources.scanners.map(s=>{const entry=content.scanners.find(e=>e.id===s.id);const counts=generation.sources.find(e=>e.engineId===s.id);return `<article id="sample-source-${s.id}"><h3>${escape(s.displayName)}</h3><p>${escape(entry.purpose[lang])}</p><p><strong>${t(['Results:','結果：'])}</strong> ${counts.findings} ${t(['findings','筆發現'])} · ${counts.inventoryObservations} ${t(['inventory observations','筆盤點觀察'])} · ${escape(t(format(s)))}</p><p><strong>${t(['Included version:','提供版本：'])}</strong> ${escape(s.engineVersion)} · ${t(['Image','映像'])} ${escape(s.image.tag)} · ${t(['Source date','來源日期'])} ${s.upstreamRevisionDate.slice(0,10)} · adapter ${s.adapterVersion}</p><p>${link(`${site}scanner-guide.html${lang==='en'?'':'?lang=zh-TW'}#${s.id}`,t(['Purpose, enabled features & SWOT','用途、啟用功能與 SWOT']))} · ${link(`${repo}/blob/${content.releaseSourceCommit}/${s.fixturePath}`,t(['Input format example','輸入格式範例']))}</p></article>`;}).join('')}
-<p>${link(`${repo}/tree/main/docs/samples/v0.4.0`,t(['Generation method, source manifest and file hashes','產製方式、來源清單與檔案雜湊']))}</p></section>`;
+${sources.scanners.map(s=>{const entry=content.scanners.find(e=>e.id===s.id);const counts=generation.sources.find(e=>e.engineId===s.id);return `<article id="sample-source-${s.id}"><h3>${escape(s.displayName)}</h3><p>${escape(entry.purpose[lang])}</p><p><strong>${t(['Results:','結果：'])}</strong> ${counts.findings} ${t(['findings','筆發現'])} · ${counts.inventoryObservations} ${t(['inventory observations','筆盤點觀察'])} · ${escape(t(format(s)))}</p><p><strong>${t(['Included version:','提供版本：'])}</strong> ${escape(s.engineVersion)} · ${t(['Image','映像'])} ${escape(s.image.tag)} · ${t(['Source date','來源日期'])} ${s.upstreamRevisionDate.slice(0,10)} · adapter ${s.adapterVersion}</p><p>${link(`${sampleSite}scanner-guide.html${lang==='en'?'':'?lang=zh-TW'}#${s.id}`,t(['Purpose, enabled features & SWOT','用途、啟用功能與 SWOT']))} · ${link(`${sampleRepo}/blob/${content.releaseSourceCommit}/${s.fixturePath}`,t(['Input format example','輸入格式範例']))}</p></article>`;}).join('')}
+<p>${link(`${sampleRepo}/tree/main/docs/samples/v0.4.0`,t(['Generation method, source manifest and file hashes','產製方式、來源清單與檔案雜湊']))}</p></section>`;
 }
 function decorate(original, entry, content, sources, generation) {
   const lang=entry.locale;const t=pair=>pick(pair,lang);

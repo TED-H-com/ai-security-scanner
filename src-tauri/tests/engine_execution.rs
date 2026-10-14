@@ -24,6 +24,8 @@ mod managed_runtime;
 mod naabu_work_plan;
 #[path = "../src/orchestrator.rs"]
 mod orchestrator;
+#[path = "../src/publication_origins.rs"]
+mod publication_origins;
 #[path = "../src/process_lease.rs"]
 mod process_lease;
 // Included so `container_runtime` can import the ZAP plan constants the same

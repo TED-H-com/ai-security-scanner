@@ -1,13 +1,13 @@
 # 標準報告範例 · v0.4.0
 
-[English](README.md) · [在網站閱讀](https://teddashh.github.io/ai-security-scanner/sample-reports.html?lang=zh-TW)
+[English](README.md) · [在網站閱讀](https://ted-h-com.github.io/ai-security-scanner/sample-reports.html?lang=zh-TW)
 
 公開快照：**2026 年 10 月 4 日**，產品 **v0.4.0**。提供兩種揭露程度，各有英文與繁體中文。皆為獨立 HTML，可在瀏覽器閱讀、儲存或列印。
 
 | 版本 | 繁體中文 | English |
 | --- | --- | --- |
-| 遮蔽版 | [閱讀](https://teddashh.github.io/ai-security-scanner/samples/v0.4.0/sample-report-redacted-zh-TW.html) · [從 GitHub 下載](https://raw.githubusercontent.com/teddashh/ai-security-scanner/main/docs/samples/v0.4.0/sample-report-redacted-zh-TW.html) | [閱讀](https://teddashh.github.io/ai-security-scanner/samples/v0.4.0/sample-report-redacted-en.html) · [從 GitHub 下載](https://raw.githubusercontent.com/teddashh/ai-security-scanner/main/docs/samples/v0.4.0/sample-report-redacted-en.html) |
-| 完整揭露版 | [閱讀](https://teddashh.github.io/ai-security-scanner/samples/v0.4.0/sample-report-full-zh-TW.html) · [從 GitHub 下載](https://raw.githubusercontent.com/teddashh/ai-security-scanner/main/docs/samples/v0.4.0/sample-report-full-zh-TW.html) | [閱讀](https://teddashh.github.io/ai-security-scanner/samples/v0.4.0/sample-report-full-en.html) · [從 GitHub 下載](https://raw.githubusercontent.com/teddashh/ai-security-scanner/main/docs/samples/v0.4.0/sample-report-full-en.html) |
+| 遮蔽版 | [閱讀](https://ted-h-com.github.io/ai-security-scanner/samples/v0.4.0/sample-report-redacted-zh-TW.html) · [從 GitHub 下載](https://raw.githubusercontent.com/TED-H-com/ai-security-scanner/main/docs/samples/v0.4.0/sample-report-redacted-zh-TW.html) | [閱讀](https://ted-h-com.github.io/ai-security-scanner/samples/v0.4.0/sample-report-redacted-en.html) · [從 GitHub 下載](https://raw.githubusercontent.com/TED-H-com/ai-security-scanner/main/docs/samples/v0.4.0/sample-report-redacted-en.html) |
+| 完整揭露版 | [閱讀](https://ted-h-com.github.io/ai-security-scanner/samples/v0.4.0/sample-report-full-zh-TW.html) · [從 GitHub 下載](https://raw.githubusercontent.com/TED-H-com/ai-security-scanner/main/docs/samples/v0.4.0/sample-report-full-zh-TW.html) | [閱讀](https://ted-h-com.github.io/ai-security-scanner/samples/v0.4.0/sample-report-full-en.html) · [從 GitHub 下載](https://raw.githubusercontent.com/TED-H-com/ai-security-scanner/main/docs/samples/v0.4.0/sample-report-full-en.html) |
 
 全部 **25 個 adapter** 都有可見結果：**62 筆原始發現及 42 筆盤點觀察**。標準報告將相關發現整理為 56 張問題卡。CloudQuery、Steampipe、Naabu、httpx、Syft 與 Agentic Radar 僅提供盤點。範例也包含未完整完成的檢查，保留其他已完成結果，不把盤點當成漏洞，也不宣稱全部通過。
 
@@ -22,7 +22,7 @@
 3. [網站產製程式](../../../scripts/build-public-showcase.mjs) 加入可見的範例標記及掃描器來源／用途附錄。**標準報告本文維持逐位元組相同。** `standardExportSha256` 是原始匯出雜湊，`sha256` 是下載版雜湊。移除三個 `public-sample` 註解界定的附加區塊，即可還原原始雜湊。範例專用附錄不宣稱是已安裝 v0.4.0 匯出器的功能。
 4. [manifest.json](manifest.json) 記錄各掃描器結果數、輸入範例路徑與雜湊、版本及各檔案雜湊。[SHA256SUMS.txt](SHA256SUMS.txt) 用於驗證四份下載。輸入範例雜湊對應情境替換前的範本，報告內證據雜湊對應替換後的實際輸入位元組。範例中的執行時間與環境紀錄為模擬，不是即時掃描證據。
 
-報告實作與引擎目錄來自 [v0.4.0 原始碼快照](https://github.com/teddashh/ai-security-scanner/tree/335d0666bdc63eb86e6c8c4cddeae110db893397)。公開產生器及呈現附加內容在本儲存庫維護。[掃描器指南](../../scanner-guide.zh-TW.md) 記錄全部工具的來源日期、啟用功能、排除項目、選用原因與 SWOT。
+報告實作與引擎目錄來自 [v0.4.0 原始碼快照](https://github.com/TED-H-com/ai-security-scanner/tree/335d0666bdc63eb86e6c8c4cddeae110db893397)。公開產生器及呈現附加內容在本儲存庫維護。[掃描器指南](../../scanner-guide.zh-TW.md) 記錄全部工具的來源日期、啟用功能、排除項目、選用原因與 SWOT。
 
 ## 重現及更新
 

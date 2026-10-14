@@ -2,7 +2,7 @@
 
 Product v0.4.0 · released and reviewed 2026-10-04.
 
-[Interactive website](https://teddashh.github.io/ai-security-scanner/scanner-guide.html) · [Sample reports](samples/v0.4.0/README.md)
+[Interactive website](https://ted-h-com.github.io/ai-security-scanner/scanner-guide.html) · [Sample reports](samples/v0.4.0/README.md)
 
 SWOT is the project team’s assessment. Enabled features describe this product profile, not the whole upstream platform. Source dates are commit dates, not release dates. Opportunities are possible uses, not promised functionality.
 
@@ -10,7 +10,7 @@ SWOT is the project team’s assessment. Enabled features describe this product 
 
 Lists selected AWS identities and permission policies. This inventory is kept separate from security findings.
 
-[Upstream](https://github.com/cloudquery/cloudquery) · [README @ e27e4ab](https://github.com/cloudquery/cloudquery/blob/e27e4ab61ad85479a5d53dae9b08440bc63e72b3/README.md) · [Integration and update notes](https://github.com/teddashh/ai-security-scanner/blob/335d0666bdc63eb86e6c8c4cddeae110db893397/docs/engines/cloudquery.md)
+[Upstream](https://github.com/cloudquery/cloudquery) · [README @ e27e4ab](https://github.com/cloudquery/cloudquery/blob/e27e4ab61ad85479a5d53dae9b08440bc63e72b3/README.md) · [Integration and update notes](https://github.com/TED-H-com/ai-security-scanner/blob/335d0666bdc63eb86e6c8c4cddeae110db893397/docs/engines/cloudquery.md)
 
 ### About this tool
 
@@ -78,7 +78,7 @@ Image identity: `ghcr.io/teddashh/ai-security-scanner-engine-cloudquery:2.0.31-a
 
 Lists AWS users and selected account settings so you can review who has access.
 
-[Upstream](https://github.com/turbot/steampipe) · [README @ 71fa72f](https://github.com/turbot/steampipe/blob/71fa72fc9ce33897bcb0bd0c9ebf09b867b881cf/README.md) · [Integration and update notes](https://github.com/teddashh/ai-security-scanner/blob/335d0666bdc63eb86e6c8c4cddeae110db893397/docs/engines/steampipe.md)
+[Upstream](https://github.com/turbot/steampipe) · [README @ 71fa72f](https://github.com/turbot/steampipe/blob/71fa72fc9ce33897bcb0bd0c9ebf09b867b881cf/README.md) · [Integration and update notes](https://github.com/TED-H-com/ai-security-scanner/blob/335d0666bdc63eb86e6c8c4cddeae110db893397/docs/engines/steampipe.md)
 
 ### About this tool
 
@@ -146,7 +146,7 @@ Image identity: `ghcr.io/teddashh/ai-security-scanner-engine-steampipe:2.4.5-6@s
 
 Checks selected identity and permission settings in an approved AWS account, Azure subscription or GCP project.
 
-[Upstream](https://github.com/prowler-cloud/prowler) · [README @ 40ecbd0](https://github.com/prowler-cloud/prowler/blob/40ecbd035e5541bf099917c5033cceb8959c4737/README.md) · [Integration and update notes](https://github.com/teddashh/ai-security-scanner/blob/335d0666bdc63eb86e6c8c4cddeae110db893397/docs/engines/prowler.md)
+[Upstream](https://github.com/prowler-cloud/prowler) · [README @ 40ecbd0](https://github.com/prowler-cloud/prowler/blob/40ecbd035e5541bf099917c5033cceb8959c4737/README.md) · [Integration and update notes](https://github.com/TED-H-com/ai-security-scanner/blob/335d0666bdc63eb86e6c8c4cddeae110db893397/docs/engines/prowler.md)
 
 ### About this tool
 
@@ -214,7 +214,7 @@ Image identity: `ghcr.io/teddashh/ai-security-scanner-engine-prowler:5.39.1-7@sh
 
 Checks selected AWS identity and access settings. This app uses a limited part of ScoutSuite.
 
-[Upstream](https://github.com/nccgroup/ScoutSuite) · [README @ 7909f2f](https://github.com/nccgroup/ScoutSuite/blob/7909f2fc6186063e5c9e7ddef8c4d7d1072c8f3d/README.md) · [Integration and update notes](https://github.com/teddashh/ai-security-scanner/blob/335d0666bdc63eb86e6c8c4cddeae110db893397/docs/engines/scoutsuite.md)
+[Upstream](https://github.com/nccgroup/ScoutSuite) · [README @ 7909f2f](https://github.com/nccgroup/ScoutSuite/blob/7909f2fc6186063e5c9e7ddef8c4d7d1072c8f3d/README.md) · [Integration and update notes](https://github.com/TED-H-com/ai-security-scanner/blob/335d0666bdc63eb86e6c8c4cddeae110db893397/docs/engines/scoutsuite.md)
 
 ### About this tool
 
@@ -282,7 +282,7 @@ Image identity: `ghcr.io/teddashh/ai-security-scanner-engine-scoutsuite:5.14.0-6
 
 Reviews collected AWS permission policies for access that may be broader than needed.
 
-[Upstream](https://github.com/salesforce/cloudsplaining) · [README @ 75a67ea](https://github.com/salesforce/cloudsplaining/blob/75a67ea9cb6d0fdf35ff185d08dad0d45587e6f7/README.md) · [Integration and update notes](https://github.com/teddashh/ai-security-scanner/blob/335d0666bdc63eb86e6c8c4cddeae110db893397/docs/engines/cloudsplaining.md)
+[Upstream](https://github.com/salesforce/cloudsplaining) · [README @ 75a67ea](https://github.com/salesforce/cloudsplaining/blob/75a67ea9cb6d0fdf35ff185d08dad0d45587e6f7/README.md) · [Integration and update notes](https://github.com/TED-H-com/ai-security-scanner/blob/335d0666bdc63eb86e6c8c4cddeae110db893397/docs/engines/cloudsplaining.md)
 
 ### About this tool
 
@@ -350,7 +350,7 @@ Image identity: `ghcr.io/teddashh/ai-security-scanner-engine-cloudsplaining:0.9.
 
 Compares supported Microsoft 365 settings with CISA security guidance.
 
-[Upstream](https://github.com/cisagov/ScubaGear) · [README @ 4d34e9a](https://github.com/cisagov/ScubaGear/blob/4d34e9a48e38ce5c2e14c0fdfbaee53e57594ae2/README.md) · [Integration and update notes](https://github.com/teddashh/ai-security-scanner/blob/335d0666bdc63eb86e6c8c4cddeae110db893397/docs/engines/scubagear.md)
+[Upstream](https://github.com/cisagov/ScubaGear) · [README @ 4d34e9a](https://github.com/cisagov/ScubaGear/blob/4d34e9a48e38ce5c2e14c0fdfbaee53e57594ae2/README.md) · [Integration and update notes](https://github.com/TED-H-com/ai-security-scanner/blob/335d0666bdc63eb86e6c8c4cddeae110db893397/docs/engines/scubagear.md)
 
 ### About this tool
 
@@ -418,7 +418,7 @@ Image identity: `ghcr.io/teddashh/ai-security-scanner-engine-scubagear:1.8.0-8@s
 
 Tests supported Microsoft 365 security settings and explains which checks need attention.
 
-[Upstream](https://github.com/maester365/maester) · [README @ 6bf1d98](https://github.com/maester365/maester/blob/6bf1d98f094fc7a68e449d2f40f73ef820b72ee3/README.md) · [Integration and update notes](https://github.com/teddashh/ai-security-scanner/blob/335d0666bdc63eb86e6c8c4cddeae110db893397/docs/engines/maester.md)
+[Upstream](https://github.com/maester365/maester) · [README @ 6bf1d98](https://github.com/maester365/maester/blob/6bf1d98f094fc7a68e449d2f40f73ef820b72ee3/README.md) · [Integration and update notes](https://github.com/TED-H-com/ai-security-scanner/blob/335d0666bdc63eb86e6c8c4cddeae110db893397/docs/engines/maester.md)
 
 ### About this tool
 
@@ -486,7 +486,7 @@ Image identity: `ghcr.io/teddashh/ai-security-scanner-engine-maester:2.0.0-9@sha
 
 Shows which approved ports accept connections. An open port is information to investigate, not proof of a vulnerability.
 
-[Upstream](https://github.com/projectdiscovery/naabu) · [README @ 5a0ca8b](https://github.com/projectdiscovery/naabu/blob/5a0ca8bde91b5bb16213e9e8b5c6871eac954bd8/README.md) · [Integration and update notes](https://github.com/teddashh/ai-security-scanner/blob/335d0666bdc63eb86e6c8c4cddeae110db893397/docs/engines/naabu.md)
+[Upstream](https://github.com/projectdiscovery/naabu) · [README @ 5a0ca8b](https://github.com/projectdiscovery/naabu/blob/5a0ca8bde91b5bb16213e9e8b5c6871eac954bd8/README.md) · [Integration and update notes](https://github.com/TED-H-com/ai-security-scanner/blob/335d0666bdc63eb86e6c8c4cddeae110db893397/docs/engines/naabu.md)
 
 ### About this tool
 
@@ -554,7 +554,7 @@ Image identity: `ghcr.io/teddashh/ai-security-scanner-engine-naabu:2.6.1-7@sha25
 
 Checks whether a selected web service responds and records basic response information. It does not assess vulnerabilities.
 
-[Upstream](https://github.com/projectdiscovery/httpx) · [README @ 13037dd](https://github.com/projectdiscovery/httpx/blob/13037dd08b9715cfbd960a70ae1edfef6686a857/README.md) · [Integration and update notes](https://github.com/teddashh/ai-security-scanner/blob/335d0666bdc63eb86e6c8c4cddeae110db893397/docs/engines/httpx.md)
+[Upstream](https://github.com/projectdiscovery/httpx) · [README @ 13037dd](https://github.com/projectdiscovery/httpx/blob/13037dd08b9715cfbd960a70ae1edfef6686a857/README.md) · [Integration and update notes](https://github.com/TED-H-com/ai-security-scanner/blob/335d0666bdc63eb86e6c8c4cddeae110db893397/docs/engines/httpx.md)
 
 ### About this tool
 
@@ -622,7 +622,7 @@ Image identity: `ghcr.io/teddashh/ai-security-scanner-engine-httpx:1.10.0-7@sha2
 
 Identifies website technologies, then runs suitable read-only checks within the approved address and limits.
 
-[Upstream](https://github.com/projectdiscovery/nuclei) · [README @ a8c88fe](https://github.com/projectdiscovery/nuclei/blob/a8c88feb4a1c8e961b7902534ce3af97e9d524a4/README.md) · [Integration and update notes](https://github.com/teddashh/ai-security-scanner/blob/335d0666bdc63eb86e6c8c4cddeae110db893397/docs/engines/nuclei.md)
+[Upstream](https://github.com/projectdiscovery/nuclei) · [README @ a8c88fe](https://github.com/projectdiscovery/nuclei/blob/a8c88feb4a1c8e961b7902534ce3af97e9d524a4/README.md) · [Integration and update notes](https://github.com/TED-H-com/ai-security-scanner/blob/335d0666bdc63eb86e6c8c4cddeae110db893397/docs/engines/nuclei.md)
 
 ### About this tool
 
@@ -690,7 +690,7 @@ Image identity: `ghcr.io/teddashh/ai-security-scanner-engine-nuclei:3.11.1-7@sha
 
 Identifies services on approved hosts and ports, then runs the security checks that apply.
 
-[Upstream](https://github.com/greenbone/openvas-scanner) · [README @ 26465a1](https://github.com/greenbone/openvas-scanner/blob/26465a11ff0e6a98d60a253265fab5974fc757b6/README.md) · [Integration and update notes](https://github.com/teddashh/ai-security-scanner/blob/335d0666bdc63eb86e6c8c4cddeae110db893397/docs/engines/greenbone.md)
+[Upstream](https://github.com/greenbone/openvas-scanner) · [README @ 26465a1](https://github.com/greenbone/openvas-scanner/blob/26465a11ff0e6a98d60a253265fab5974fc757b6/README.md) · [Integration and update notes](https://github.com/TED-H-com/ai-security-scanner/blob/335d0666bdc63eb86e6c8c4cddeae110db893397/docs/engines/greenbone.md)
 
 ### About this tool
 
@@ -758,7 +758,7 @@ Image identity: `ghcr.io/teddashh/ai-security-scanner-engine-greenbone:23.50.24-
 
 Visits pages on one approved website and checks the responses. It does not submit forms or send attack payloads.
 
-[Upstream](https://github.com/zaproxy/zaproxy) · [README @ 2665d97](https://github.com/zaproxy/zaproxy/blob/2665d972f6d587ba4773a95053ac39af3fdf8df9/README.md) · [Integration and update notes](https://github.com/teddashh/ai-security-scanner/blob/335d0666bdc63eb86e6c8c4cddeae110db893397/docs/engines/zap.md)
+[Upstream](https://github.com/zaproxy/zaproxy) · [README @ 2665d97](https://github.com/zaproxy/zaproxy/blob/2665d972f6d587ba4773a95053ac39af3fdf8df9/README.md) · [Integration and update notes](https://github.com/TED-H-com/ai-security-scanner/blob/335d0666bdc63eb86e6c8c4cddeae110db893397/docs/engines/zap.md)
 
 ### About this tool
 
@@ -826,7 +826,7 @@ Image identity: `ghcr.io/zaproxy/zaproxy:2.17.0@sha256:781a2bdaea47324e7bab583e2
 
 Finds risky patterns in code, using the rule set included with this version.
 
-[Upstream](https://github.com/semgrep/semgrep) · [README @ a0c13f3](https://github.com/semgrep/semgrep/blob/a0c13f304151e531c7e7c00838076211a07a790c/README.md) · [Integration and update notes](https://github.com/teddashh/ai-security-scanner/blob/335d0666bdc63eb86e6c8c4cddeae110db893397/docs/engines/semgrep.md)
+[Upstream](https://github.com/semgrep/semgrep) · [README @ a0c13f3](https://github.com/semgrep/semgrep/blob/a0c13f304151e531c7e7c00838076211a07a790c/README.md) · [Integration and update notes](https://github.com/TED-H-com/ai-security-scanner/blob/335d0666bdc63eb86e6c8c4cddeae110db893397/docs/engines/semgrep.md)
 
 ### About this tool
 
@@ -894,7 +894,7 @@ Image identity: `ghcr.io/teddashh/ai-security-scanner-engine-semgrep:1.174.0-4@s
 
 Looks for passwords and keys left in project files. Values are hidden in the report.
 
-[Upstream](https://github.com/gitleaks/gitleaks) · [README @ 83d9cd6](https://github.com/gitleaks/gitleaks/blob/83d9cd684c87d95d656c1458ef04895a7f1cbd8e/README.md) · [Integration and update notes](https://github.com/teddashh/ai-security-scanner/blob/335d0666bdc63eb86e6c8c4cddeae110db893397/docs/engines/gitleaks.md)
+[Upstream](https://github.com/gitleaks/gitleaks) · [README @ 83d9cd6](https://github.com/gitleaks/gitleaks/blob/83d9cd684c87d95d656c1458ef04895a7f1cbd8e/README.md) · [Integration and update notes](https://github.com/TED-H-com/ai-security-scanner/blob/335d0666bdc63eb86e6c8c4cddeae110db893397/docs/engines/gitleaks.md)
 
 ### About this tool
 
@@ -962,7 +962,7 @@ Image identity: `ghcr.io/teddashh/ai-security-scanner-engine-gitleaks:8.30.1-2@s
 
 Looks for exposed secrets in local files. It does not try the credentials against a live service.
 
-[Upstream](https://github.com/trufflesecurity/trufflehog) · [README @ 3ab759f](https://github.com/trufflesecurity/trufflehog/blob/3ab759fef4bb5935d4fe9ac68b503d05346b8364/README.md) · [Integration and update notes](https://github.com/teddashh/ai-security-scanner/blob/335d0666bdc63eb86e6c8c4cddeae110db893397/docs/engines/trufflehog.md)
+[Upstream](https://github.com/trufflesecurity/trufflehog) · [README @ 3ab759f](https://github.com/trufflesecurity/trufflehog/blob/3ab759fef4bb5935d4fe9ac68b503d05346b8364/README.md) · [Integration and update notes](https://github.com/TED-H-com/ai-security-scanner/blob/335d0666bdc63eb86e6c8c4cddeae110db893397/docs/engines/trufflehog.md)
 
 ### About this tool
 
@@ -1030,7 +1030,7 @@ Image identity: `ghcr.io/teddashh/ai-security-scanner-engine-trufflehog:3.97.0-3
 
 Checks supported deployment and infrastructure files for unsafe settings.
 
-[Upstream](https://github.com/bridgecrewio/checkov) · [README @ 0604e97](https://github.com/bridgecrewio/checkov/blob/0604e97b0f77c89a8c6c1fe2219c3d251cbb9789/README.md) · [Integration and update notes](https://github.com/teddashh/ai-security-scanner/blob/335d0666bdc63eb86e6c8c4cddeae110db893397/docs/engines/checkov.md)
+[Upstream](https://github.com/bridgecrewio/checkov) · [README @ 0604e97](https://github.com/bridgecrewio/checkov/blob/0604e97b0f77c89a8c6c1fe2219c3d251cbb9789/README.md) · [Integration and update notes](https://github.com/TED-H-com/ai-security-scanner/blob/335d0666bdc63eb86e6c8c4cddeae110db893397/docs/engines/checkov.md)
 
 ### About this tool
 
@@ -1098,7 +1098,7 @@ Image identity: `ghcr.io/teddashh/ai-security-scanner-engine-checkov:3.3.13-1@sh
 
 Looks for unsafe settings in files that describe how your systems are deployed.
 
-[Upstream](https://github.com/Checkmarx/kics) · [README @ e1f23ca](https://github.com/Checkmarx/kics/blob/e1f23cad9640f55b963f22a116b04906b8c16ac6/README.md) · [Integration and update notes](https://github.com/teddashh/ai-security-scanner/blob/335d0666bdc63eb86e6c8c4cddeae110db893397/docs/engines/kics.md)
+[Upstream](https://github.com/Checkmarx/kics) · [README @ e1f23ca](https://github.com/Checkmarx/kics/blob/e1f23cad9640f55b963f22a116b04906b8c16ac6/README.md) · [Integration and update notes](https://github.com/TED-H-com/ai-security-scanner/blob/335d0666bdc63eb86e6c8c4cddeae110db893397/docs/engines/kics.md)
 
 ### About this tool
 
@@ -1166,7 +1166,7 @@ Image identity: `checkmarx/kics:v2.1.20@sha256:3e5a268eb8adda2e5a483c9359ddfc4cd
 
 Checks supported project and container packages against the included vulnerability database.
 
-[Upstream](https://github.com/aquasecurity/trivy) · [README @ e1fd17a](https://github.com/aquasecurity/trivy/blob/e1fd17a0ea4a8cf24bc4b4dd7e2cfbf4bb31b994/README.md) · [Integration and update notes](https://github.com/teddashh/ai-security-scanner/blob/335d0666bdc63eb86e6c8c4cddeae110db893397/docs/engines/trivy.md)
+[Upstream](https://github.com/aquasecurity/trivy) · [README @ e1fd17a](https://github.com/aquasecurity/trivy/blob/e1fd17a0ea4a8cf24bc4b4dd7e2cfbf4bb31b994/README.md) · [Integration and update notes](https://github.com/TED-H-com/ai-security-scanner/blob/335d0666bdc63eb86e6c8c4cddeae110db893397/docs/engines/trivy.md)
 
 ### About this tool
 
@@ -1234,7 +1234,7 @@ Image identity: `ghcr.io/teddashh/ai-security-scanner-engine-trivy:0.74.0-4@sha2
 
 Finds known vulnerabilities in supported project and container packages using the included database.
 
-[Upstream](https://github.com/anchore/grype) · [README @ b5fa92b](https://github.com/anchore/grype/blob/b5fa92bbcbef655497e3be840a2f718380e2cdd3/README.md) · [Integration and update notes](https://github.com/teddashh/ai-security-scanner/blob/335d0666bdc63eb86e6c8c4cddeae110db893397/docs/engines/grype.md)
+[Upstream](https://github.com/anchore/grype) · [README @ b5fa92b](https://github.com/anchore/grype/blob/b5fa92bbcbef655497e3be840a2f718380e2cdd3/README.md) · [Integration and update notes](https://github.com/TED-H-com/ai-security-scanner/blob/335d0666bdc63eb86e6c8c4cddeae110db893397/docs/engines/grype.md)
 
 ### About this tool
 
@@ -1302,7 +1302,7 @@ Image identity: `ghcr.io/teddashh/ai-security-scanner-engine-grype:0.117.0-4@sha
 
 Lists the software components in your project or container. The list helps you track what is installed.
 
-[Upstream](https://github.com/anchore/syft) · [README @ 2293641](https://github.com/anchore/syft/blob/2293641e3bd628a01bb37639318d62c0ebe89b39/README.md) · [Integration and update notes](https://github.com/teddashh/ai-security-scanner/blob/335d0666bdc63eb86e6c8c4cddeae110db893397/docs/engines/syft.md)
+[Upstream](https://github.com/anchore/syft) · [README @ 2293641](https://github.com/anchore/syft/blob/2293641e3bd628a01bb37639318d62c0ebe89b39/README.md) · [Integration and update notes](https://github.com/TED-H-com/ai-security-scanner/blob/335d0666bdc63eb86e6c8c4cddeae110db893397/docs/engines/syft.md)
 
 ### About this tool
 
@@ -1370,7 +1370,7 @@ Image identity: `ghcr.io/teddashh/ai-security-scanner-engine-syft:1.51.0-1@sha25
 
 Checks the Kubernetes configuration files you select, without connecting to a running cluster.
 
-[Upstream](https://github.com/kubescape/kubescape) · [README @ 469969f](https://github.com/kubescape/kubescape/blob/469969f6bebf46bef5e808b91a4bb46fb2bbf4ed/README.md) · [Integration and update notes](https://github.com/teddashh/ai-security-scanner/blob/335d0666bdc63eb86e6c8c4cddeae110db893397/docs/engines/kubescape.md)
+[Upstream](https://github.com/kubescape/kubescape) · [README @ 469969f](https://github.com/kubescape/kubescape/blob/469969f6bebf46bef5e808b91a4bb46fb2bbf4ed/README.md) · [Integration and update notes](https://github.com/TED-H-com/ai-security-scanner/blob/335d0666bdc63eb86e6c8c4cddeae110db893397/docs/engines/kubescape.md)
 
 ### About this tool
 
@@ -1438,7 +1438,7 @@ Image identity: `ghcr.io/teddashh/ai-security-scanner-engine-kubescape:4.0.12-3@
 
 Checks a saved copy of node settings against CIS guidance. It does not inspect a live host with administrator access.
 
-[Upstream](https://github.com/aquasecurity/kube-bench) · [README @ 9f133cb](https://github.com/aquasecurity/kube-bench/blob/9f133cb7509ce1dbedfc860e94474588000e25ac/README.md) · [Integration and update notes](https://github.com/teddashh/ai-security-scanner/blob/335d0666bdc63eb86e6c8c4cddeae110db893397/docs/engines/kube-bench.md)
+[Upstream](https://github.com/aquasecurity/kube-bench) · [README @ 9f133cb](https://github.com/aquasecurity/kube-bench/blob/9f133cb7509ce1dbedfc860e94474588000e25ac/README.md) · [Integration and update notes](https://github.com/TED-H-com/ai-security-scanner/blob/335d0666bdc63eb86e6c8c4cddeae110db893397/docs/engines/kube-bench.md)
 
 ### About this tool
 
@@ -1506,7 +1506,7 @@ Image identity: `ghcr.io/teddashh/ai-security-scanner-engine-kube-bench:0.16.0-4
 
 Sends 54 fixed test prompts to one approved model service. Review the request limits and provider charges before starting.
 
-[Upstream](https://github.com/NVIDIA/garak) · [README @ 93aa9cd](https://github.com/NVIDIA/garak/blob/93aa9cdec309ec4170559676f1826ea2a679920c/README.md) · [Integration and update notes](https://github.com/teddashh/ai-security-scanner/blob/335d0666bdc63eb86e6c8c4cddeae110db893397/docs/engines/garak.md)
+[Upstream](https://github.com/NVIDIA/garak) · [README @ 93aa9cd](https://github.com/NVIDIA/garak/blob/93aa9cdec309ec4170559676f1826ea2a679920c/README.md) · [Integration and update notes](https://github.com/TED-H-com/ai-security-scanner/blob/335d0666bdc63eb86e6c8c4cddeae110db893397/docs/engines/garak.md)
 
 ### About this tool
 
@@ -1574,7 +1574,7 @@ Image identity: `ghcr.io/teddashh/ai-security-scanner-engine-garak:0.17.0-1@sha2
 
 Maps agents, tools and connections in supported AI workflows without running them.
 
-[Upstream](https://github.com/splx-ai/agentic-radar) · [README @ 65a7e4b](https://github.com/splx-ai/agentic-radar/blob/65a7e4bd01e2034c7cb52e9620eeed287688cc53/README.md) · [Integration and update notes](https://github.com/teddashh/ai-security-scanner/blob/335d0666bdc63eb86e6c8c4cddeae110db893397/docs/engines/agentic-radar.md)
+[Upstream](https://github.com/splx-ai/agentic-radar) · [README @ 65a7e4b](https://github.com/splx-ai/agentic-radar/blob/65a7e4bd01e2034c7cb52e9620eeed287688cc53/README.md) · [Integration and update notes](https://github.com/TED-H-com/ai-security-scanner/blob/335d0666bdc63eb86e6c8c4cddeae110db893397/docs/engines/agentic-radar.md)
 
 ### About this tool
 
@@ -1642,7 +1642,7 @@ Image identity: `ghcr.io/teddashh/ai-security-scanner-engine-agentic-radar:0.14.
 
 Checks a selected MCP configuration for exposed keys and overly broad tool permissions. It does not start or contact MCP servers.
 
-[Upstream](https://github.com/aira-security/mcp-armor) · [README @ 6af4cee](https://github.com/aira-security/mcp-armor/blob/6af4cee4665ab6242f02a88952f9127b6a04922a/README.md) · [Integration and update notes](https://github.com/teddashh/ai-security-scanner/blob/335d0666bdc63eb86e6c8c4cddeae110db893397/docs/engines/mcp-armor.md)
+[Upstream](https://github.com/aira-security/mcp-armor) · [README @ 6af4cee](https://github.com/aira-security/mcp-armor/blob/6af4cee4665ab6242f02a88952f9127b6a04922a/README.md) · [Integration and update notes](https://github.com/TED-H-com/ai-security-scanner/blob/335d0666bdc63eb86e6c8c4cddeae110db893397/docs/engines/mcp-armor.md)
 
 ### About this tool
 

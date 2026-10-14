@@ -1317,6 +1317,9 @@ export function validateFinalizedPublicationMappingSources(finalizer, verifier) 
         "publishedName,",
         "publishedReleaseAssetName(file.relative)",
         "release checksum publication filename collision",
+        'import { UPDATER_DOWNLOAD_REPOSITORY } from "../publication-origins.mjs"',
+        '`https://github.com/${UPDATER_DOWNLOAD_REPOSITORY}/releases/download/${tag}/${encodeURIComponent(updater.payloadFile)}`',
+        "platforms: finalizedUpdaterPlatforms(selections, tag)",
       ],
     ],
     [
@@ -1328,6 +1331,10 @@ export function validateFinalizedPublicationMappingSources(finalizer, verifier) 
         '["path", "publishedName", "bytes", "sha256"]',
         "record.publishedName === publishedReleaseAssetName(record.path)",
         "actualByPublishedName.get(publishedName)",
+        'import { PUBLICATION_ORIGINS, UPDATER_DOWNLOAD_REPOSITORY } from "../publication-origins.mjs"',
+        'PUBLICATION_ORIGINS.some(({ repository }) => releaseMetadata.sourceRepository === `https://github.com/${repository}`)',
+        '`https://github.com/${UPDATER_DOWNLOAD_REPOSITORY}/releases/download/${tag}/${encodeURIComponent(updaterRecord.payloadFile)}`',
+        "latestRecord.url === expectedUrl",
       ],
     ],
   ]) {
@@ -1697,7 +1704,7 @@ async function main() {
   assert(cargoLockPackageVersion(cargoLock) === version, "Cargo.lock package version is out of sync");
   assert(packageJson.license === "Apache-2.0", "package.json license must be Apache-2.0");
   assert(
-    packageJson.repository?.url === "git+https://github.com/teddashh/ai-security-scanner.git",
+    packageJson.repository?.url === "git+https://github.com/TED-H-com/ai-security-scanner.git",
     "package repository metadata is incorrect",
   );
   assert(tauri.productName === "ai-security-scanner", "Tauri product name is incorrect");
@@ -1718,7 +1725,7 @@ async function main() {
   );
   assert(
     JSON.stringify(tauri.plugins?.updater?.endpoints) ===
-      JSON.stringify(["https://github.com/teddashh/ai-security-scanner/releases/latest/download/latest.json"]),
+      JSON.stringify(["https://github.com/TED-H-com/ai-security-scanner/releases/latest/download/latest.json"]),
     "Tauri updater endpoint must be the fixed HTTPS GitHub Release manifest",
   );
   assert(

@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://github.com/teddashh/ai-security-scanner/blob/main/docs/release/engine-image-supply-chain.schema.json",
+  "$id": "https://github.com/TED-H-com/ai-security-scanner/blob/main/docs/release/engine-image-supply-chain.schema.json",
   "title": "ai-security-scanner managed engine image supply-chain evidence",
   "type": "object",
   "additionalProperties": false,
@@ -99,6 +99,7 @@
     "checksumsFile": { "const": "SHA256SUMS.txt" }
   },
   "allOf": [
+    { "$ref": "#/$defs/publicationOrigin" },
     {
       "if": {
         "properties": { "engine": { "const": "egress-gateway" } },
@@ -123,6 +124,88 @@
     }
   ],
   "$defs": {
+    "publicationSourceRepository": {
+      "oneOf": [
+        { "$ref": "#/$defs/publicationOrigin/oneOf/0/properties/sourceRepository" },
+        { "$ref": "#/$defs/publicationOrigin/oneOf/1/properties/sourceRepository" }
+      ]
+    },
+    "publicationOrigin": {
+      "oneOf": [
+        {
+          "type": "object",
+          "properties": {
+            "sourceRepository": { "const": "https://github.com/teddashh/ai-security-scanner" },
+            "image": {
+              "pattern": "^ghcr\\.io/teddashh/ai-security-scanner-(?:engine-[a-z0-9-]+|egress-gateway)$"
+            },
+            "verification": {
+              "properties": {
+                "repository": {
+                  "const": "teddashh/ai-security-scanner"
+                },
+                "workflowRun": {
+                  "type": "string",
+                  "pattern": "^https://github\\.com/teddashh/ai\\-security\\-scanner/actions/runs/[1-9][0-9]*$"
+                }
+              }
+            },
+            "attestations": {
+              "items": {
+                "properties": {
+                  "subject": {
+                    "properties": {
+                      "name": {
+                        "pattern": "^ghcr\\.io/teddashh/ai-security-scanner-(?:engine-[a-z0-9-]+|egress-gateway)$"
+                      }
+                    }
+                  },
+                  "attestationUrl": {
+                    "pattern": "^https://github\\.com/teddashh/ai\\-security\\-scanner/attestations/[1-9][0-9]*$"
+                  }
+                }
+              }
+            }
+          }
+        },
+        {
+          "type": "object",
+          "properties": {
+            "sourceRepository": { "const": "https://github.com/TED-H-com/ai-security-scanner" },
+            "image": {
+              "pattern": "^ghcr\\.io/ted\\-h\\-com/ai-security-scanner-(?:engine-[a-z0-9-]+|egress-gateway)$"
+            },
+            "verification": {
+              "properties": {
+                "repository": {
+                  "const": "TED-H-com/ai-security-scanner"
+                },
+                "workflowRun": {
+                  "type": "string",
+                  "pattern": "^https://github\\.com/TED\\-H\\-com/ai\\-security\\-scanner/actions/runs/[1-9][0-9]*$"
+                }
+              }
+            },
+            "attestations": {
+              "items": {
+                "properties": {
+                  "subject": {
+                    "properties": {
+                      "name": {
+                        "pattern": "^ghcr\\.io/ted\\-h\\-com/ai-security-scanner-(?:engine-[a-z0-9-]+|egress-gateway)$"
+                      }
+                    }
+                  },
+                  "attestationUrl": {
+                    "pattern": "^https://github\\.com/TED\\-H\\-com/ai\\-security\\-scanner/attestations/[1-9][0-9]*$"
+                  }
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
     "digest": { "type": "string", "pattern": "^sha256:[0-9a-f]{64}$" },
     "hash": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
     "sbom": {

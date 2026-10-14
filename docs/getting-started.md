@@ -32,13 +32,13 @@ When an AWS or Microsoft 365 read-only connection expires, Results offers **Reco
 
 ## Install
 
-Download the **v0.5.1 stable release** for your computer from the [release page](https://github.com/teddashh/ai-security-scanner/releases/tag/v0.5.1):
+Download the **v0.5.1 stable release** for your computer from the [release page](https://github.com/TED-H-com/ai-security-scanner/releases/tag/v0.5.1):
 
 | Computer | Installer | First launch |
 | --- | --- | --- |
-| macOS, Apple silicon or Intel | [ai-security-scanner_0.5.1_universal.dmg](https://github.com/teddashh/ai-security-scanner/releases/download/v0.5.1/ai-security-scanner_0.5.1_universal.dmg) | Drag the app into **Applications**. It is not notarized, so run `xattr -dr com.apple.quarantine /Applications/ai-security-scanner.app` once in Terminal before opening it. |
-| Windows x86-64 | [ai-security-scanner_0.5.1_x64-setup.exe](https://github.com/teddashh/ai-security-scanner/releases/download/v0.5.1/ai-security-scanner_0.5.1_x64-setup.exe) or the [MSI](https://github.com/teddashh/ai-security-scanner/releases/download/v0.5.1/ai-security-scanner_0.5.1_x64_en-US.msi) | The installer is unsigned. If SmartScreen warns, select **More info → Run anyway**. If Windows asks to install or update WSL, allow it. |
-| Debian or Ubuntu x86-64 | [ai-security-scanner_0.5.1_amd64.deb](https://github.com/teddashh/ai-security-scanner/releases/download/v0.5.1/ai-security-scanner_0.5.1_amd64.deb) | Install with `sudo apt install ./ai-security-scanner_0.5.1_amd64.deb`. |
+| macOS, Apple silicon or Intel | [ai-security-scanner_0.5.1_universal.dmg](https://github.com/TED-H-com/ai-security-scanner/releases/download/v0.5.1/ai-security-scanner_0.5.1_universal.dmg) | Drag the app into **Applications**. It is not notarized, so run `xattr -dr com.apple.quarantine /Applications/ai-security-scanner.app` once in Terminal before opening it. |
+| Windows x86-64 | [ai-security-scanner_0.5.1_x64-setup.exe](https://github.com/TED-H-com/ai-security-scanner/releases/download/v0.5.1/ai-security-scanner_0.5.1_x64-setup.exe) or the [MSI](https://github.com/TED-H-com/ai-security-scanner/releases/download/v0.5.1/ai-security-scanner_0.5.1_x64_en-US.msi) | The installer is unsigned. If SmartScreen warns, select **More info → Run anyway**. If Windows asks to install or update WSL, allow it. |
+| Debian or Ubuntu x86-64 | [ai-security-scanner_0.5.1_amd64.deb](https://github.com/TED-H-com/ai-security-scanner/releases/download/v0.5.1/ai-security-scanner_0.5.1_amd64.deb) | Install with `sudo apt install ./ai-security-scanner_0.5.1_amd64.deb`. |
 
 Launch **ai-security-scanner** after installation. The app prepares its own scanning runtime the first time a scan needs it; Docker is not required.
 
@@ -127,7 +127,7 @@ For AWS and Microsoft 365, a script can do step 1 for you. It prints the step 2 
 - **AWS:** in the AWS console of the account that manages IAM Identity Center, open CloudShell and run:
 
   ```sh
-  curl -fsSLO https://raw.githubusercontent.com/teddashh/ai-security-scanner/main/cloud-setup/aws-read-only.sh
+  curl -fsSLO https://raw.githubusercontent.com/TED-H-com/ai-security-scanner/main/cloud-setup/aws-read-only.sh
   bash aws-read-only.sh
   ```
 
@@ -135,7 +135,7 @@ For AWS and Microsoft 365, a script can do step 1 for you. It prints the step 2 
 - **Microsoft 365:** on Windows, run these in PowerShell. Open the Microsoft page the script prints, enter its code, and sign in as a Global Administrator. On macOS or Linux, run the script with `pwsh` (PowerShell 7).
 
   ```powershell
-  Invoke-WebRequest https://raw.githubusercontent.com/teddashh/ai-security-scanner/main/cloud-setup/microsoft365-read-only.ps1 -OutFile microsoft365-read-only.ps1 -UseBasicParsing
+  Invoke-WebRequest https://raw.githubusercontent.com/TED-H-com/ai-security-scanner/main/cloud-setup/microsoft365-read-only.ps1 -OutFile microsoft365-read-only.ps1 -UseBasicParsing
   powershell -ExecutionPolicy Bypass -File .\microsoft365-read-only.ps1
   ```
 

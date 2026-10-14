@@ -10305,6 +10305,12 @@ fn engine_unavailable(
             "No built runtime image is recorded for this pinned source revision.".into(),
         ));
     };
+    if crate::publication_origins::validate_engine_publication(image).is_err() {
+        return Some((
+            "runtime_image_origin_invalid",
+            "The runtime image publication origin is invalid.".into(),
+        ));
+    }
     if image.repository.trim().is_empty()
         || image
             .digest
@@ -28845,6 +28851,33 @@ mod tests {
         let path = root.join(format!("{}.json", plan.case_id));
         fs::write(&path, serde_json::to_vec_pretty(plan).unwrap()).unwrap();
         path
+    }
+
+    #[test]
+    fn publication_origin_dispatch_accepts_both_pairs_and_refuses_mixed_identities() {
+        let registry = EngineRegistry::load_builtin().unwrap();
+        let adapters = crate::adapters::builtin_adapter_registry().unwrap();
+        for (namespace, repository) in crate::publication_origins::PUBLICATION_ORIGINS {
+            let mut manifest = registry.get("gitleaks").unwrap().clone();
+            let image = manifest.image.as_mut().unwrap();
+            image.repository = format!("{namespace}/ai-security-scanner-engine-gitleaks");
+            image.signature_identity = Some(format!(
+                "https://github.com/{repository}/.github/workflows/engine-image-gitleaks.yml@refs/heads/main"
+            ));
+            assert!(engine_unavailable(&manifest, &adapters).is_none());
+            let other = crate::publication_origins::PUBLICATION_ORIGINS
+                .iter()
+                .find(|(_, repo)| *repo != repository)
+                .unwrap()
+                .1;
+            manifest.image.as_mut().unwrap().signature_identity = Some(format!(
+                "https://github.com/{other}/.github/workflows/engine-image-gitleaks.yml@refs/heads/main"
+            ));
+            assert_eq!(
+                engine_unavailable(&manifest, &adapters).unwrap().0,
+                "runtime_image_origin_invalid"
+            );
+        }
     }
 
     fn comparison_scope_manifest() -> EngineManifest {

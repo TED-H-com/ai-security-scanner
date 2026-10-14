@@ -5,6 +5,7 @@ import { existsSync, readFileSync, readdirSync } from "node:fs";
 import { basename, resolve, sep } from "node:path";
 import { parse as parseYaml } from "yaml";
 
+import { PUBLICATION_ORIGINS, publicationOrigin, publicationRunId } from "./publication-origins.mjs";
 import { validateProwlerCatalogContract } from "./prowler-catalog-contract.mjs";
 import { isPendingImageReplacement } from "./engine-image-replacement.mjs";
 
@@ -87,7 +88,12 @@ const managedM365Contracts = new Map([
   }],
 ]);
 const managedM365Ids = new Set(managedM365Contracts.keys());
-const managedImageRepositoryPrefix = "ghcr.io/teddashh/ai-security-scanner-engine-";
+function managedRepository(engine, plan) {
+  const image = engine?.image?.repository ?? plan?.final_artifact?.repository;
+  // Upstream-only engines also visit pending-plan predicates.
+  const origin = PUBLICATION_ORIGINS.find(({ namespace }) => image?.startsWith(`${namespace}/`));
+  return `${(origin ?? PUBLICATION_ORIGINS[0]).namespace}/ai-security-scanner-engine-${engine?.id}`;
+}
 const managedLocalSmokeOutputFiles = new Map([
   ["semgrep", "semgrep.json"],
   ["trufflehog", "trufflehog.jsonl"],
@@ -493,12 +499,12 @@ function validateManagedImageEvidence(catalogEntries) {
        isPendingMcpArmorPublication(plan, engine) || isPendingLocalK8sPublication(plan, engine)
         ? plan.final_artifact.repository
         : undefined);
-    if (typeof repository !== "string" || !repository.startsWith(managedImageRepositoryPrefix)) continue;
+    if (typeof repository !== "string" || !PUBLICATION_ORIGINS.some(({ namespace }) => repository.startsWith(`${namespace}/ai-security-scanner-engine-`))) continue;
     catalogManagedIds.push(engine.id);
     if (upstreamImageOnlyIds.has(engine.id)) {
       errors.push(`catalog:${engine.id}.image.repository: upstream-only engine must not be counted as a project-managed image`);
     }
-    const expectedRepository = `${managedImageRepositoryPrefix}${engine.id}`;
+    const expectedRepository = managedRepository(engine, plan);
     if (repository !== expectedRepository) {
       errors.push(`catalog:${engine.id}.image.repository: project-managed image must be exactly ${expectedRepository}`);
     }
@@ -961,6 +967,14 @@ function validateImage(image, path, {
   if (typeof image.repository !== "string" || image.repository.includes("@") || /\s/.test(image.repository)) {
     errors.push(`${path}.repository: invalid repository`);
   }
+  if (image.signature_identity || image.repository?.split("/").at(-1)?.startsWith("ai-security-scanner-engine-")) {
+    try {
+      const origin = publicationOrigin(image.repository);
+      if (image.signature_identity && !image.signature_identity.startsWith(`https://github.com/${origin.repository}/.github/workflows/`)) {
+        errors.push(`${path}: mixed publication origin`);
+      }
+    } catch { errors.push(`${path}: unrecognized publication origin`); }
+  }
   const normalizedTag = typeof image.tag === "string" ? image.tag.toLowerCase() : "";
   if (allowFloatingDigestPinnedAlias && image.tag && !/[${}]/.test(image.tag)) {
     // Greenbone's community registry keeps only rolling tags. The recorded
@@ -1037,9 +1051,8 @@ function validatePublishedManagedEvidence(
   { requireManagedSmoke = false } = {},
 ) {
   const publication = plan.publication;
-  const runMatch = typeof publication?.workflow_run === "string"
-    ? /^https:\/\/github\.com\/teddashh\/ai-security-scanner\/actions\/runs\/([1-9][0-9]*)$/.exec(publication.workflow_run)
-    : null;
+  const runId = publicationRunId(plan.final_artifact?.repository, publication?.workflow_run);
+  const runMatch = runId ? [publication.workflow_run, runId] : null;
   if (!runMatch) {
     errors.push(`${planRelative}: publication.workflow_run must identify one exact ai-security-scanner Actions run`);
   }
@@ -1158,7 +1171,7 @@ function validateExactDeclaredBaseImages(recipe, dockerfileText, planRelative, {
 }
 
 function validatePublishedManagedBasics(plan, planRelative, engine, contract, command, network) {
-  const expectedRepository = `${managedImageRepositoryPrefix}${engine.id}`;
+  const expectedRepository = managedRepository(engine, plan);
   if (plan.plan_kind !== contract.planKind) {
     errors.push(`${planRelative}: published ${engine.id} plan kind must be ${contract.planKind}`);
   }
@@ -1449,7 +1462,7 @@ function validateGreenboneBuildClosure(plan, planRelative, dockerfileText) {
 }
 
 function isPendingGreenbonePublication(plan, engine) {
-  const expectedRepository = `${managedImageRepositoryPrefix}greenbone`;
+  const expectedRepository = managedRepository(engine, plan);
   return engine?.id === "greenbone" && plan?.publish_state === "publication_in_progress" &&
     plan.publication === null && deepEqual(plan.blockers, [greenbonePublicationBlocker]) &&
     plan.final_artifact?.repository === expectedRepository &&
@@ -2152,7 +2165,7 @@ function validateUnpublishedManagedBuild(
 }
 
 function isPendingManagedCandidate(plan, engine, contract, artifactState) {
-  const expectedRepository = `${managedImageRepositoryPrefix}${engine.id}`;
+  const expectedRepository = managedRepository(engine, plan);
   return Boolean(contract) && plan?.publish_state === "publication_in_progress" &&
     plan.publication === null && engine.distribution_mode === "pull_pinned_image" && engine.image === null &&
     engine.default_enabled === false && engine.status === "experimental" &&
@@ -2198,7 +2211,7 @@ function validatePendingManagedCandidate(plan, planRelative, engine, contract) {
 
 function isPendingMcpArmorPublication(plan, engine) {
   const contract = managedLocalK8sContracts.get("mcp-armor");
-  const expectedRepository = `${managedImageRepositoryPrefix}mcp-armor`;
+  const expectedRepository = managedRepository(engine, plan);
   return engine?.id === "mcp-armor" && plan?.publish_state === "publication_in_progress" &&
     plan.publication === null && engine.distribution_mode === "pull_pinned_image" && engine.image === null &&
     engine.default_enabled === false && engine.status === "experimental" &&
@@ -2265,7 +2278,7 @@ function isPendingGarakPublication(plan, engine) {
     plan.publication === null && engine.image === null && engine.distribution_mode === "pull_pinned_image" &&
     engine.status === "experimental" && engine.default_enabled === false && engine.compatibility?.runnable === false &&
     engine.compatibility?.artifact_state === "managed_build_plan" && plan.blockers?.length === 1 &&
-    plan.final_artifact?.repository === `${managedImageRepositoryPrefix}garak` &&
+    plan.final_artifact?.repository === managedRepository(engine, plan) &&
     plan.final_artifact?.tag === "0.17.0-1" && plan.final_artifact?.digest === null &&
     engine.provenance?.engine?.artifact_source_revision === null &&
     engine.provenance?.engine?.source_association === "source_build_required";
@@ -2274,7 +2287,7 @@ function isPendingGarakPublication(plan, engine) {
 function validateGarakImage(plan, planRelative, engine) {
   const tag = "0.17.0-1";
   const sourceRevision = "93aa9cdec309ec4170559676f1826ea2a679920c";
-  const repository = `${managedImageRepositoryPrefix}garak`;
+  const repository = managedRepository(engine, plan);
   const recipe = plan.build_recipe;
   const dockerfileRelative = "engines/images/garak/Dockerfile";
   const dockerfilePath = resolve(root, dockerfileRelative);
@@ -2367,7 +2380,7 @@ function validateGarakImage(plan, planRelative, engine) {
 
 function isPendingManagedExternalPublication(plan, engine) {
   const contract = managedExternalContracts.get(engine.id);
-  const expectedRepository = `${managedImageRepositoryPrefix}${engine.id}`;
+  const expectedRepository = managedRepository(engine, plan);
   return Boolean(contract) && plan?.publish_state === "publication_in_progress" &&
     plan.publication === null && engine.distribution_mode === "pull_pinned_image" && engine.image === null &&
     engine.default_enabled === false && engine.status === "experimental" &&
@@ -2381,7 +2394,7 @@ function isPendingManagedExternalPublication(plan, engine) {
 
 function validateManagedExternalImage(plan, planRelative, engine) {
   const contract = managedExternalContracts.get(engine.id);
-  const expectedRepository = `${managedImageRepositoryPrefix}${engine.id}`;
+  const expectedRepository = managedRepository(engine, plan);
   if (!contract) {
     errors.push(`${planRelative}: managed external engine has no reviewed artifact contract`);
     return;
@@ -2492,7 +2505,7 @@ function validateManagedExternalImage(plan, planRelative, engine) {
 
 function isPendingM365Publication(plan, engine) {
   const contract = managedM365Contracts.get(engine.id);
-  const expectedRepository = `${managedImageRepositoryPrefix}${engine.id}`;
+  const expectedRepository = managedRepository(engine, plan);
   return Boolean(contract) && plan?.publish_state === "publication_in_progress" &&
     plan.publication === null && engine.distribution_mode === "pull_pinned_image" && engine.image === null &&
     engine.default_enabled === false && engine.status === "experimental" &&
@@ -2506,7 +2519,7 @@ function isPendingM365Publication(plan, engine) {
 
 function validateManagedM365Image(plan, planRelative, engine) {
   const contract = managedM365Contracts.get(engine.id);
-  const expectedRepository = `${managedImageRepositoryPrefix}${engine.id}`;
+  const expectedRepository = managedRepository(engine, plan);
   if (!contract) {
     errors.push(`${planRelative}: managed Microsoft 365 engine has no reviewed artifact contract`);
     return;
@@ -2877,7 +2890,7 @@ for (const engine of Array.isArray(catalog) ? catalog : []) {
   const pendingGreenbonePublication = isPendingGreenbonePublication(plan, engine);
   const replacementContract = managedLocalK8sContracts.get(engine.id);
   const pendingImageReplacement = isPendingImageReplacement(plan, engine, replacementContract);
-  const expectedManagedRepository = `${managedImageRepositoryPrefix}${engine.id}`;
+  const expectedManagedRepository = managedRepository(engine, plan);
   if (engine.distribution_mode === "pull_pinned_image" || engine.distribution_mode === "bundled_image") {
     if (engine.image !== null) {
       validateImage(engine.image, `${label}.image`);

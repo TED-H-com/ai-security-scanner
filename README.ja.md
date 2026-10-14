@@ -1,6 +1,6 @@
 # ai-security-scanner
 
-[プロジェクトサイト](https://teddashh.github.io/ai-security-scanner/?lang=ja) · [English](README.md) · [繁體中文](README.zh-TW.md) · [ドキュメント（英語）](docs/README.md) · [ダウンロード](https://github.com/teddashh/ai-security-scanner/releases)
+[プロジェクトサイト](https://ted-h-com.github.io/ai-security-scanner/?lang=ja) · [English](README.md) · [繁體中文](README.zh-TW.md) · [ドキュメント（英語）](docs/README.md) · [ダウンロード](https://github.com/TED-H-com/ai-security-scanner/releases)
 
 *ローカルで動くセキュリティ評価アプリ。チェックするものを選ぶと、根拠をたどれる 1 つのレポートにまとめ、次の対応や引き継ぎを助けます。ツール群を自分で管理する必要はありません。*
 
@@ -10,7 +10,7 @@
 
 ## 最初のスキャン
 
-1. Windows・macOS・Linux 向けの [v0.5.1 をダウンロード](https://github.com/teddashh/ai-security-scanner/releases/tag/v0.5.1)し、[インストール手順（英語）](docs/getting-started.md#install)に従います。スキャンツールはアプリが準備するため、Docker は不要です。
+1. Windows・macOS・Linux 向けの [v0.5.1 をダウンロード](https://github.com/TED-H-com/ai-security-scanner/releases/tag/v0.5.1)し、[インストール手順（英語）](docs/getting-started.md#install)に従います。スキャンツールはアプリが準備するため、Docker は不要です。
 2. **Settings → 日本語** で日本語に切り替えます。**自分の環境をスキャン**、**ウェブサイトをチェック**、**コード・AI プロジェクトをチェック**を選び、フォルダー、URL、社内システムを追加します。
 3. 表示された対象とチェックを確認します。ネットワーク対象をスキャンする権限があることを確認し、アプリ画面でスキャンを開始します。
 4. 終了後に**結果**を開き、**レポートを保存・共有**を選びます。形式を **HTML レポート**にして保存すると、ブラウザーで開けます。
@@ -23,13 +23,13 @@ v0.5.1 のインストーラーに日本語 UI が含まれています。**Sett
 
 未翻訳の動的な説明や上流ツールの出力は英語で表示される場合があります。日本語の画面から保存する HTML レポートは英語です。レポート本体は現在、英語と繁体字中国語に対応しています。
 
-日本語 UI の初期翻訳は [@kieiken](https://github.com/kieiken) の [PR #69](https://github.com/teddashh/ai-security-scanner/pull/69) による貢献です。
+日本語 UI の初期翻訳は [@kieiken](https://github.com/kieiken) の [PR #69](https://github.com/TED-H-com/ai-security-scanner/pull/69) による貢献です。
 
 ## v0.5.1 の新機能
 
 - デスクトップアプリで日本語を選べるようになりました。**Settings → 日本語** で切り替えると、再起動後も設定が保存されます。
 - 日本語 README と Web サイトを追加し、全 25 スキャナーの紹介を日本語で読めるようにしました。
-- [@kieiken](https://github.com/kieiken) さんの [#69](https://github.com/teddashh/ai-security-scanner/pull/69) の翻訳を取り込み、初期設定とスキャン環境の準備に残っていた未翻訳箇所も補いました。
+- [@kieiken](https://github.com/kieiken) さんの [#69](https://github.com/TED-H-com/ai-security-scanner/pull/69) の翻訳を取り込み、初期設定とスキャン環境の準備に残っていた未翻訳箇所も補いました。
 
 [変更点の詳細](docs/release/v0.5.1.ja.md)。
 
@@ -37,7 +37,7 @@ v0.5.1 のインストーラーに日本語 UI が含まれています。**Sett
 
 - 関連する検出結果を 1 つの問題カードにまとめ、詳細で元の証拠を確認できます。
 - **Check fixes** で更新後のフォルダーを選び直し、今回は検出されない問題、残った問題、新規の問題、一部だけ修正された問題を比較できます。
-- クラウドの案内、進捗、スキャナーのバージョン表示を改善しました。英語・繁体字中国語のガイドと、[実際の修正前後の比較例](https://teddashh.github.io/ai-security-scanner/check-fixes-demo.html?lang=ja)もあります。
+- クラウドの案内、進捗、スキャナーのバージョン表示を改善しました。英語・繁体字中国語のガイドと、[実際の修正前後の比較例](https://ted-h-com.github.io/ai-security-scanner/check-fixes-demo.html?lang=ja)もあります。
 
 v0.4.1 以降の完成済みの更新をまとめ、Linux のビルドと依存関係のセキュリティ修正も含みます。[変更点の詳細（英語）](docs/release/v0.5.0.md)。
 
@@ -63,11 +63,11 @@ v0.4.1 以降の完成済みの更新をまとめ、Linux のビルドと依存�
 
 ### サンプルを見る
 
-[英語のサンプルレポートを開く](https://teddashh.github.io/ai-security-scanner/samples/v0.4.0/sample-report-redacted-en.html)、または[言語と開示範囲を選ぶ](https://teddashh.github.io/ai-security-scanner/sample-reports.html?lang=ja)。
+[英語のサンプルレポートを開く](https://ted-h-com.github.io/ai-security-scanner/samples/v0.4.0/sample-report-redacted-en.html)、または[言語と開示範囲を選ぶ](https://ted-h-com.github.io/ai-security-scanner/sample-reports.html?lang=ja)。
 
 25 個のツールの模擬データで、62 件の検出結果と 42 件の資産情報を紹介しています。実在する企業の安全性ではなくレポートの形式を示す例です。資産情報はセキュリティ問題とは分けて表示します。[サンプルの作成方法（英語）](docs/samples/v0.4.0/README.md)。
 
-実際のスキャンについては、[プロジェクトを修正して再確認した例](https://teddashh.github.io/ai-security-scanner/check-fixes-demo.html?lang=ja)をご覧ください。修正前 13 件、修正後 8 件の問題と、その変化を確認できます。
+実際のスキャンについては、[プロジェクトを修正して再確認した例](https://ted-h-com.github.io/ai-security-scanner/check-fixes-demo.html?lang=ja)をご覧ください。修正前 13 件、修正後 8 件の問題と、その変化を確認できます。
 
 ## Claude Code・Codex に手伝ってもらう
 
@@ -87,7 +87,7 @@ v0.4.1 以降の完成済みの更新をまとめ、Linux のビルドと依存�
 
 ## レポートを支えるツール
 
-25 個のオープンソースツールを統合しています。検出ルールは各ツールのものを使い、アプリが結果の整理と次の行動の説明を担当します。[スキャナーガイド](https://teddashh.github.io/ai-security-scanner/scanner-guide.html?lang=ja)で用途、制限、バージョンを確認できます。
+25 個のオープンソースツールを統合しています。検出ルールは各ツールのものを使い、アプリが結果の整理と次の行動の説明を担当します。[スキャナーガイド](https://ted-h-com.github.io/ai-security-scanner/scanner-guide.html?lang=ja)で用途、制限、バージョンを確認できます。
 
 <details>
 <summary>25 個のツールの役割</summary>

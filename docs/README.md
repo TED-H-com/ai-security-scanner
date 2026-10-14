@@ -1,6 +1,6 @@
 # Documentation
 
-[Project website](https://teddashh.github.io/ai-security-scanner/) · [繁體中文](README.zh-TW.md)
+[Project website](https://ted-h-com.github.io/ai-security-scanner/) · [繁體中文](README.zh-TW.md)
 
 Use the shortest path that matches the task.
 

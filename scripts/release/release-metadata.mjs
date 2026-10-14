@@ -1,3 +1,4 @@
+import { publicationSourceOrigin } from "../publication-origins.mjs";
 import { WINDOWS_INSTALLED_LIFECYCLE_RECORDS } from "./windows-installed-lifecycle-evidence.mjs";
 
 export const RELEASE_PLATFORM_CATALOG = Object.freeze([
@@ -403,7 +404,7 @@ export function validateReleaseMetadataV3(metadata, expected = {}) {
   assert(metadata.tag === `v${metadata.version}`, "release metadata tag/version mismatch");
   assert(["prerelease", "stable"].includes(metadata.releaseChannel), "release metadata channel is invalid");
   assert(/^(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)$/u.test(metadata.stableTarget), "release metadata stableTarget is invalid");
-  assert(typeof metadata.sourceRepository === "string" && /^https:\/\/github\.com\//u.test(metadata.sourceRepository), "release metadata source repository is invalid");
+  publicationSourceOrigin(metadata.sourceRepository);
   assert(/^[0-9a-f]{40}$/u.test(metadata.sourceCommit), "release metadata source commit is invalid");
   assert(typeof metadata.sourceDate === "string" && !Number.isNaN(Date.parse(metadata.sourceDate)), "release metadata source date is invalid");
   assert(PUBLICATION_MODES.has(metadata.publicationMode), "release metadata publication mode is invalid");

@@ -621,6 +621,27 @@ test("checked-in publisher CLI cannot swap frozen identity, channel, or token ma
   }
 });
 
+test("finalizer and verifier require legacy updater URLs independently of the source repository", () => {
+  for (const repository of ["TED-H-com/ai-security-scanner", "unknown/ai-security-scanner"]) {
+    assert.throws(() => validateFinalizedPublicationMappingSources(
+      secureReleaseFinalizer.replace("${UPDATER_DOWNLOAD_REPOSITORY}", repository),
+      secureFinalizedReleaseVerifier,
+    ), /release finalizer publication mapping is missing/u);
+    assert.throws(() => validateFinalizedPublicationMappingSources(
+      secureReleaseFinalizer,
+      secureFinalizedReleaseVerifier.replace("${UPDATER_DOWNLOAD_REPOSITORY}", repository),
+    ), /finalized release verifier publication mapping is missing/u);
+  }
+  assert.throws(() => validateFinalizedPublicationMappingSources(
+    secureReleaseFinalizer,
+    secureFinalizedReleaseVerifier.replace("latestRecord.url === expectedUrl", "latestRecord.url.startsWith(expectedUrl)"),
+  ), /finalized release verifier publication mapping is missing/u);
+  assert.throws(() => validateFinalizedPublicationMappingSources(
+    secureReleaseFinalizer,
+    secureFinalizedReleaseVerifier.replace("releaseMetadata.sourceRepository ===", "releaseMetadata.sourceRepository !=="),
+  ), /finalized release verifier publication mapping is missing/u);
+});
+
 test("finalizer, verifier, and publisher share one explicit nested publication-name mapping", () => {
   assert.doesNotThrow(() => validateReleaseAssetNamingSource(secureReleaseAssetNaming));
   assert.doesNotThrow(() =>

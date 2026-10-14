@@ -125,7 +125,7 @@ async function main() {
     dataLicense: "CC0-1.0",
     SPDXID: "SPDXRef-DOCUMENT",
     name: `${prefix}-sbom`,
-    documentNamespace: `https://github.com/teddashh/ai-security-scanner/releases/${prefix}/${manifestSha256}`,
+    documentNamespace: `https://github.com/TED-H-com/ai-security-scanner/releases/${prefix}/${manifestSha256}`,
     creationInfo: { created: new Date(0).toISOString(), creators: ["Tool: ai-security-scanner-runtime-evidence-1"] },
     packages: manifest.components.map((component) => ({
       SPDXID: `SPDXRef-${component.id.replace(/[^A-Za-z0-9.-]/gu, "-")}`,

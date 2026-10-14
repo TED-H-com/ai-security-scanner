@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://github.com/teddashh/ai-security-scanner/blob/main/docs/release/windows-installed-lifecycle-evidence.schema.json",
+  "$id": "https://github.com/TED-H-com/ai-security-scanner/blob/main/docs/release/windows-installed-lifecycle-evidence.schema.json",
   "title": "ai-security-scanner Windows installed-app lifecycle evidence",
   "description": "One strict, redacted record for one canonical Windows lifecycle row and boundary. The checked-in JavaScript validator additionally enforces the exact ordered case/check registry and exact-candidate bindings.",
   "type": "object",

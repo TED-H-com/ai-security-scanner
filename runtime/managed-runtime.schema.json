@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://github.com/teddashh/ai-security-scanner/runtime/managed-runtime.schema.json",
+  "$id": "https://github.com/TED-H-com/ai-security-scanner/runtime/managed-runtime.schema.json",
   "title": "ai-security-scanner managed runtime bundle manifest",
   "type": "object",
   "additionalProperties": false,

@@ -13,6 +13,8 @@ import {
   writeFile,
 } from "node:fs/promises";
 import path from "node:path";
+import { fileURLToPath } from "node:url";
+import { UPDATER_DOWNLOAD_REPOSITORY } from "../publication-origins.mjs";
 import { PROJECT_ROOT, isSemver, readJson, runMain, sha256File, toPosix } from "./lib.mjs";
 import { createPlatformQualification } from "./platform-qualification.mjs";
 import { createReleaseCandidateLock } from "./release-candidate-lock.mjs";
@@ -105,7 +107,7 @@ async function createFixtureSymlink(target, link) {
   }
 }
 
-async function createPlatformFixture(
+export async function createPlatformFixture(
   root,
   platform,
   kinds,
@@ -329,7 +331,7 @@ async function recursiveRegularFiles(root, directory = root) {
   return output;
 }
 
-async function resealFinalizedFixture(directory) {
+export async function resealFinalizedFixture(directory) {
   const releaseMetadata = await readJson(path.join(directory, "release-metadata.json"));
   const platformManifests = (await readdir(directory))
     .filter((name) => /^installers-(?:linux-x86_64|macos-universal|windows-x86_64)\.json$/u.test(name));
@@ -379,7 +381,7 @@ async function resealFinalizedFixture(directory) {
   );
 }
 
-async function createQualificationFixture(output, platform, installerType) {
+export async function createQualificationFixture(output, platform, installerType) {
   const runtimeManifestFile = path.join(output, `managed-runtime-${platform}.manifest.json`);
   const runtimeManifest = await readJson(runtimeManifestFile);
   const manifestSha256 = await sha256File(runtimeManifestFile);
@@ -970,7 +972,7 @@ async function main() {
         tag: TAG,
         releaseChannel: "prerelease",
         stableTarget: "0.2.0",
-        sourceRepository: "https://github.com/teddashh/ai-security-scanner",
+        sourceRepository: "https://github.com/TED-H-com/ai-security-scanner",
         sourceCommit: COMMIT,
         sourceDate: "2026-08-24T00:00:00Z",
         publicationMode: "commit-bound-qc",
@@ -1010,6 +1012,18 @@ async function main() {
       "--tauri-config", tauriConfig,
     ]);
     const scopedAllMetadata = await readJson(path.join(scopedAllOutput, "release-metadata.json"));
+    const scopedAllLatest = await readJson(path.join(scopedAllOutput, "latest.json"));
+    for (const platform of scopedAllMetadata.distribution.platforms) {
+      for (const { artifact } of platform.installers.filter(({ availability }) => availability === "offered")) {
+        if (artifact.updater.state !== "signed") continue;
+        const expectedUrl = `https://github.com/${UPDATER_DOWNLOAD_REPOSITORY}/releases/download/${TAG}/${encodeURIComponent(artifact.updater.payloadFile)}`;
+        for (const target of artifact.updater.targetKeys) {
+          if (scopedAllLatest.platforms[target]?.url !== expectedUrl) {
+            throw new Error(`finalization changed the legacy updater download path for ${target}`);
+          }
+        }
+      }
+    }
     const scopedAllOffered = scopedAllMetadata.distribution.platforms.flatMap(({ installers }) =>
       installers.filter(({ availability }) => availability === "offered"));
     if (
@@ -1212,7 +1226,7 @@ async function main() {
       tag: TAG,
       releaseChannel: "prerelease",
       stableTarget: "0.2.0",
-      sourceRepository: "https://github.com/teddashh/ai-security-scanner",
+      sourceRepository: "https://github.com/TED-H-com/ai-security-scanner",
       sourceCommit: COMMIT,
       sourceDate: "2026-08-24T00:00:00Z",
       publicationMode,
@@ -1651,4 +1665,6 @@ async function main() {
   }
 }
 
-runMain(main);
+if (path.resolve(process.argv[1] ?? "") === path.resolve(fileURLToPath(import.meta.url))) {
+  runMain(main);
+}

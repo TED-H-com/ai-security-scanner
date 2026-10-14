@@ -23,7 +23,7 @@ concurrency:
 
 env:
   ENGINE: garak
-  IMAGE: ghcr.io/teddashh/ai-security-scanner-engine-garak
+  IMAGE: ghcr.io/ted-h-com/ai-security-scanner-engine-garak
   IMAGE_TAG: 0.17.0-1
 
 jobs:
@@ -79,6 +79,7 @@ jobs:
           file: engines/images/garak/Dockerfile
           platforms: linux/amd64,linux/arm64
           push: true
+          labels: org.opencontainers.image.source=https://github.com/${{ github.repository }}
           tags: ${{ env.IMAGE }}:${{ steps.guard.outputs.candidate_tag }}
           provenance: false
           sbom: false
@@ -91,8 +92,9 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          package="${IMAGE#ghcr.io/teddashh/}"
-          gh api --method PATCH "/user/packages/container/${package}" -f visibility=public
+          registry_repository="${IMAGE#ghcr.io/}"
+          package="${registry_repository#*/}"
+          gh api --method PATCH "/orgs/TED-H-com/packages/container/${package}" -f visibility=public
 
       - name: Verify both platforms and genuine native TLS probes
         id: verify

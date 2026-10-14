@@ -295,6 +295,9 @@ fn supported_coordinate(raw_id: &str) -> Option<&'static str> {
 }
 
 fn validate_release_contract(manifest: &EngineManifest) -> AppResult<()> {
+    if let Some(image) = &manifest.image {
+        crate::publication_origins::validate_engine_publication(image)?;
+    }
     let fail =
         |message: &str| AppError::EngineRegistry(format!("engine {}: {message}", manifest.id));
     if manifest.schema_version != "2.0.0" {
@@ -851,6 +854,22 @@ mod tests {
                 registry.admission_issues()
             );
             assert!(serde_json::to_value(registry.admission_issues()).is_ok());
+        }
+    }
+
+    #[test]
+    fn registry_publication_origin_checks_apply_to_each_pair() {
+        let registry = EngineRegistry::load_builtin().unwrap();
+        for (namespace, repository) in crate::publication_origins::PUBLICATION_ORIGINS {
+            let mut manifest = registry.get("gitleaks").unwrap().clone();
+            let image = manifest.image.as_mut().unwrap();
+            image.repository = format!("{namespace}/ai-security-scanner-engine-gitleaks");
+            image.signature_identity = Some(format!(
+                "https://github.com/{repository}/.github/workflows/engine-image-gitleaks.yml@refs/heads/main"
+            ));
+            validate_release_contract(&manifest).unwrap();
+            manifest.image.as_mut().unwrap().signature_identity = Some("https://github.com/unknown/ai-security-scanner/.github/workflows/build.yml@refs/heads/main".into());
+            assert!(validate_release_contract(&manifest).is_err());
         }
     }
 

@@ -1,3 +1,4 @@
+import { publicationOrigin } from "../publication-origins.mjs";
 import { lstat } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -49,7 +50,6 @@ const QUALIFICATION_SCHEMA_VERSION = 3;
 const MACOS_HOSTED_LIMITATION = "github_hosted_macos_nested_virtualization_unsupported";
 const MAX_QUALIFICATION_DOCUMENT_BYTES = 1024 * 1024;
 const MAX_CONTAINER_REPORT_BYTES = 1024 * 1024;
-const GATEWAY_IMAGE_REPOSITORY = "ghcr.io/teddashh/ai-security-scanner-egress-gateway";
 // Keep gateway publication provenance aligned with gateway_release.rs.
 // A new desktop version does not require republishing unchanged gateway bytes.
 const GATEWAY_PUBLICATION_TAG = "0.3.0-1";
@@ -260,7 +260,7 @@ function gatewayImageFromReleaseManifest(manifest, version) {
     "managed egress gateway image",
   );
   assert(
-    manifest.image.repository === GATEWAY_IMAGE_REPOSITORY,
+    manifest.image.repository === `${publicationOrigin(manifest.image.repository).namespace}/ai-security-scanner-egress-gateway`,
     "managed egress gateway manifest repository is not release-owned",
   );
   assert(
