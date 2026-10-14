@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://github.com/teddashh/ai-security-scanner/blob/main/mappings/control-mappings.schema.json",
+  "$id": "https://github.com/TED-H-com/ai-security-scanner/blob/main/mappings/control-mappings.schema.json",
   "title": "ai-security-scanner evidence-to-control mapping catalog",
   "type": "object",
   "additionalProperties": false,

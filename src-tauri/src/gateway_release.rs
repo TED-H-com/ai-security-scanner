@@ -6,6 +6,7 @@ const MANAGED_EGRESS_GATEWAY_MANIFEST: &str =
     include_str!("../../runtime/managed-egress-gateway.json");
 const MANIFEST_SCHEMA_VERSION: &str = "1.0.0";
 const MANIFEST_MAX_BYTES: usize = 4 * 1024;
+#[cfg(test)]
 const GATEWAY_IMAGE_REPOSITORY: &str = "ghcr.io/teddashh/ai-security-scanner-egress-gateway";
 const GATEWAY_PUBLICATION_TAG: &str = "0.3.0-1";
 
@@ -51,7 +52,7 @@ fn parse_managed_egress_gateway_manifest(bytes: &[u8]) -> AppResult<GatewayConta
             "product version does not match the compiled application",
         ));
     }
-    if manifest.image.repository != GATEWAY_IMAGE_REPOSITORY {
+    if !crate::publication_origins::validate_gateway_repository(&manifest.image.repository) {
         return Err(invalid_manifest("image repository is not release-owned"));
     }
     // A desktop release may reuse an already published gateway image.
@@ -122,6 +123,16 @@ mod tests {
                 .starts_with(&format!("{GATEWAY_IMAGE_REPOSITORY}@sha256:"))
         );
         assert!(!spec.reference().contains(GATEWAY_PUBLICATION_TAG));
+    }
+
+    #[test]
+    fn gateway_manifest_accepts_both_publication_origins() {
+        for (namespace, _) in crate::publication_origins::PUBLICATION_ORIGINS {
+            let repository = format!("{namespace}/ai-security-scanner-egress-gateway");
+            let input = manifest("").replace(GATEWAY_IMAGE_REPOSITORY, &repository);
+            let spec = parse_managed_egress_gateway_manifest(input.as_bytes()).unwrap();
+            assert_eq!(spec.repository(), repository);
+        }
     }
 
     #[test]

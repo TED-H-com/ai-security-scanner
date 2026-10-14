@@ -21,7 +21,7 @@ concurrency:
   cancel-in-progress: false
 
 env:
-  IMAGE: ghcr.io/teddashh/ai-security-scanner-engine-greenbone
+  IMAGE: ghcr.io/ted-h-com/ai-security-scanner-engine-greenbone
   IMAGE_TAG: 23.50.24-feed202610010558-1
   SOURCE_DATE_EPOCH: "1787573675"
   SCANNER_REVISION: 26465a11ff0e6a98d60a253265fab5974fc757b6
@@ -118,6 +118,7 @@ jobs:
           build-args: |
             SOURCE_DATE_EPOCH=${{ env.SOURCE_DATE_EPOCH }}
           push: false
+          labels: org.opencontainers.image.source=https://github.com/${{ github.repository }}
           load: true
           tags: greenbone-native:${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}-${{ matrix.architecture }}
           provenance: false
@@ -232,8 +233,8 @@ jobs:
           for architecture in amd64 arm64; do
             evidence="native-evidence/${architecture}/native-digest.json"
             expected_tag="native-${GITHUB_SHA}-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}-${architecture}"
-            jq -e --arg platform "linux/${architecture}" --arg revision "${GITHUB_SHA}" --arg architecture "${architecture}" --arg tag "${expected_tag}" \
-              '.schemaVersion == 1 and .platform == $platform and .sourceRevision == $revision and (.imageIdentity.id | test("^sha256:[0-9a-f]{64}$")) and .imageIdentity.architecture == $architecture and .imageIdentity.os == "linux" and (.imageIdentity.rootFsDiffIds | length > 0) and (.imageIdentity.config | type == "object") and .publishedImage.repository == "ghcr.io/teddashh/ai-security-scanner-engine-greenbone" and .publishedImage.tag == $tag and (.publishedImage.digest | test("^sha256:[0-9a-f]{64}$")) and .realScan.actionableAlarms == 1 and .realScan.adapterFindings == 1' \
+            jq -e --arg platform "linux/${architecture}" --arg revision "${GITHUB_SHA}" --arg architecture "${architecture}" --arg tag "${expected_tag}" --arg image "${IMAGE}" \
+              '.schemaVersion == 1 and .platform == $platform and .sourceRevision == $revision and (.imageIdentity.id | test("^sha256:[0-9a-f]{64}$")) and .imageIdentity.architecture == $architecture and .imageIdentity.os == "linux" and (.imageIdentity.rootFsDiffIds | length > 0) and (.imageIdentity.config | type == "object") and .publishedImage.repository == $image and .publishedImage.tag == $tag and (.publishedImage.digest | test("^sha256:[0-9a-f]{64}$")) and .realScan.actionableAlarms == 1 and .realScan.adapterFindings == 1' \
               "${evidence}"
           done
 
@@ -310,8 +311,9 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          package="${IMAGE#ghcr.io/teddashh/}"
-          gh api --method PATCH "/user/packages/container/${package}" -f visibility=public
+          registry_repository="${IMAGE#ghcr.io/}"
+          package="${registry_repository#*/}"
+          gh api --method PATCH "/orgs/TED-H-com/packages/container/${package}" -f visibility=public
 
       - name: Anonymously inspect, pull, and real-smoke the final digest
         id: anonymous

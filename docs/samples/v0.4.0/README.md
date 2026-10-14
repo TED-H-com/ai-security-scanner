@@ -1,13 +1,13 @@
 # Standard report examples · v0.4.0
 
-[繁體中文](README.zh-TW.md) · [View on the website](https://teddashh.github.io/ai-security-scanner/sample-reports.html)
+[繁體中文](README.zh-TW.md) · [View on the website](https://ted-h-com.github.io/ai-security-scanner/sample-reports.html)
 
 Published snapshot: **October 4, 2026**, product **v0.4.0**. Two disclosure levels, each in English and Traditional Chinese. These are self-contained HTML files: open in a browser, save or print.
 
 | Edition | English | 繁體中文 |
 | --- | --- | --- |
-| Redacted | [View](https://teddashh.github.io/ai-security-scanner/samples/v0.4.0/sample-report-redacted-en.html) · [Download from GitHub](https://raw.githubusercontent.com/teddashh/ai-security-scanner/main/docs/samples/v0.4.0/sample-report-redacted-en.html) | [View](https://teddashh.github.io/ai-security-scanner/samples/v0.4.0/sample-report-redacted-zh-TW.html) · [Download from GitHub](https://raw.githubusercontent.com/teddashh/ai-security-scanner/main/docs/samples/v0.4.0/sample-report-redacted-zh-TW.html) |
-| Fully disclosed | [View](https://teddashh.github.io/ai-security-scanner/samples/v0.4.0/sample-report-full-en.html) · [Download from GitHub](https://raw.githubusercontent.com/teddashh/ai-security-scanner/main/docs/samples/v0.4.0/sample-report-full-en.html) | [View](https://teddashh.github.io/ai-security-scanner/samples/v0.4.0/sample-report-full-zh-TW.html) · [Download from GitHub](https://raw.githubusercontent.com/teddashh/ai-security-scanner/main/docs/samples/v0.4.0/sample-report-full-zh-TW.html) |
+| Redacted | [View](https://ted-h-com.github.io/ai-security-scanner/samples/v0.4.0/sample-report-redacted-en.html) · [Download from GitHub](https://raw.githubusercontent.com/TED-H-com/ai-security-scanner/main/docs/samples/v0.4.0/sample-report-redacted-en.html) | [View](https://ted-h-com.github.io/ai-security-scanner/samples/v0.4.0/sample-report-redacted-zh-TW.html) · [Download from GitHub](https://raw.githubusercontent.com/TED-H-com/ai-security-scanner/main/docs/samples/v0.4.0/sample-report-redacted-zh-TW.html) |
+| Fully disclosed | [View](https://ted-h-com.github.io/ai-security-scanner/samples/v0.4.0/sample-report-full-en.html) · [Download from GitHub](https://raw.githubusercontent.com/TED-H-com/ai-security-scanner/main/docs/samples/v0.4.0/sample-report-full-en.html) | [View](https://ted-h-com.github.io/ai-security-scanner/samples/v0.4.0/sample-report-full-zh-TW.html) · [Download from GitHub](https://raw.githubusercontent.com/TED-H-com/ai-security-scanner/main/docs/samples/v0.4.0/sample-report-full-zh-TW.html) |
 
 All **25 adapters** contribute visible results: **62 original findings and 42 inventory observations**. Related findings share 56 problem cards in the standard report. Six tools provide inventory only: CloudQuery, Steampipe, Naabu, httpx, Syft and Agentic Radar. The example includes incomplete checks and retains their completed sibling results. It does not turn inventory into vulnerabilities or claim every check passed.
 
@@ -22,7 +22,7 @@ Redacted exports use the product’s `standard` redaction profile. Fully disclos
 3. The [showcase publisher](../../../scripts/build-public-showcase.mjs) adds a visible sample label and a scanner source/purpose appendix. **The standard report body stays byte-for-byte unchanged.** `standardExportSha256` is the original export hash; `sha256` is the downloadable edition’s hash. Stripping the three `public-sample` comment-delimited additions reproduces the original hash. The sample-only appendix is not presented as a feature of the installed v0.4.0 exporter.
 4. [manifest.json](manifest.json) records each scanner’s result count, input fixture path/hash, version and each file hash. [SHA256SUMS.txt](SHA256SUMS.txt) verifies the four downloads. Fixture hashes identify the template before scenario substitutions; evidence hashes inside the report identify the ingested bytes after substitution. Execution timestamps and runtime receipts in the sample are simulated, not live-scan evidence.
 
-The report implementation and engine catalog are from the [v0.4.0 source snapshot](https://github.com/teddashh/ai-security-scanner/tree/335d0666bdc63eb86e6c8c4cddeae110db893397). The public generator and presentation additions are maintained in this repository. The [scanner guide](../../scanner-guide.md) records source dates, enabled features, exclusions, selection reasons and SWOT for every tool.
+The report implementation and engine catalog are from the [v0.4.0 source snapshot](https://github.com/TED-H-com/ai-security-scanner/tree/335d0666bdc63eb86e6c8c4cddeae110db893397). The public generator and presentation additions are maintained in this repository. The [scanner guide](../../scanner-guide.md) records source dates, enabled features, exclusions, selection reasons and SWOT for every tool.
 
 ## Reproduce and update
 

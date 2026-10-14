@@ -1,6 +1,6 @@
 # ai-security-scanner
 
-[Project website](https://teddashh.github.io/ai-security-scanner/) · [繁體中文](README.zh-TW.md) · [Documentation](docs/README.md) · [Downloads](https://github.com/teddashh/ai-security-scanner/releases) · [日本語](README.ja.md)
+[Project website](https://ted-h-com.github.io/ai-security-scanner/) · [繁體中文](README.zh-TW.md) · [Documentation](docs/README.md) · [Downloads](https://github.com/TED-H-com/ai-security-scanner/releases) · [日本語](README.ja.md)
 
 *A local-first security assessment workbench: choose what to check and get one traceable report you can act on and hand over, without managing a toolchain yourself.*
 
@@ -10,7 +10,7 @@ Choose what to check in the desktop app. It selects suitable security tools and 
 
 ## Run your first scan
 
-1. [Download v0.5.1](https://github.com/teddashh/ai-security-scanner/releases/tag/v0.5.1) for Windows, macOS or Linux and [follow the install steps](docs/getting-started.md#install). The app prepares its scanning tools; you do not need to install Docker.
+1. [Download v0.5.1](https://github.com/TED-H-com/ai-security-scanner/releases/tag/v0.5.1) for Windows, macOS or Linux and [follow the install steps](docs/getting-started.md#install). The app prepares its scanning tools; you do not need to install Docker.
 2. Open the app and choose **Scan my environment**, **Check a website**, or **Check code or an AI project**. Add the folders, URLs or internal systems you want to check.
 3. Review the listed targets and checks. Confirm that you may scan any network targets, then start the scan in the app window.
 4. When the scan ends, open **Results**. Choose **Save or share report**, then **Save HTML report** to save a report you can open in a browser.
@@ -19,13 +19,13 @@ The first scan may take longer while tools download. Later scans can use those t
 
 ## Languages
 
-Japanese UI support is included in v0.5.1. Choose **Settings → 日本語**; the choice is saved across restarts. Untranslated explanations fall back to English; HTML exports from the Japanese UI are in English. See the [Japanese README](README.ja.md) and [Japanese website](https://teddashh.github.io/ai-security-scanner/?lang=ja).
+Japanese UI support is included in v0.5.1. Choose **Settings → 日本語**; the choice is saved across restarts. Untranslated explanations fall back to English; HTML exports from the Japanese UI are in English. See the [Japanese README](README.ja.md) and [Japanese website](https://ted-h-com.github.io/ai-security-scanner/?lang=ja).
 
 ## New in v0.5.1
 
 - Japanese UI is included in the desktop installers. Choose **Settings → 日本語**; your choice is saved across restarts.
 - Adds a Japanese README and website, with introductions for all 25 scanners.
-- Includes [@kieiken](https://github.com/kieiken)'s [#69](https://github.com/teddashh/ai-security-scanner/pull/69) and fills translation gaps in onboarding and runtime setup.
+- Includes [@kieiken](https://github.com/kieiken)'s [#69](https://github.com/TED-H-com/ai-security-scanner/pull/69) and fills translation gaps in onboarding and runtime setup.
 
 [Read the v0.5.1 changes](docs/release/v0.5.1.md).
 
@@ -33,7 +33,7 @@ Japanese UI support is included in v0.5.1. Choose **Settings → 日本語**; th
 
 - Read related findings as one problem card, with the original evidence available in its details.
 - Choose your updated folders again with **Check fixes** and compare problems that no longer appear, remain or are new, including partial fixes.
-- Get clearer cloud guidance, progress and scanner version information, plus bilingual guides and a [real before-and-after example](https://teddashh.github.io/ai-security-scanner/check-fixes-demo.html).
+- Get clearer cloud guidance, progress and scanner version information, plus bilingual guides and a [real before-and-after example](https://ted-h-com.github.io/ai-security-scanner/check-fixes-demo.html).
 
 This release brings together the completed updates since v0.4.1 and includes Linux build and dependency security fixes. [Read the full changes](docs/release/v0.5.0.md).
 
@@ -59,11 +59,11 @@ You can reopen reports, compare compatible scans and share an English or Traditi
 
 ### See an example
 
-[Open the example report](https://teddashh.github.io/ai-security-scanner/samples/v0.4.0/sample-report-redacted-en.html), or [choose another language or disclosure level](https://teddashh.github.io/ai-security-scanner/sample-reports.html).
+[Open the example report](https://ted-h-com.github.io/ai-security-scanner/samples/v0.4.0/sample-report-redacted-en.html), or [choose another language or disclosure level](https://ted-h-com.github.io/ai-security-scanner/sample-reports.html).
 
 These examples use simulated data: 62 findings and 42 inventory observations across all 25 tools. They show the report format, not the security of a real company. Inventory is listed separately from security problems. [How the examples were made](docs/samples/v0.4.0/README.md).
 
-For a real scan, see [a project fixed and checked again](https://teddashh.github.io/ai-security-scanner/check-fixes-demo.html): 13 problems before the fix, 8 after, and what changed between them.
+For a real scan, see [a project fixed and checked again](https://ted-h-com.github.io/ai-security-scanner/check-fixes-demo.html): 13 problems before the fix, 8 after, and what changed between them.
 
 ## Get help from Claude Code or Codex
 
@@ -83,7 +83,7 @@ Cloud sign-in and cloud permissions are separate. A login can expire while the p
 
 ## The tools behind the report
 
-The app brings together 25 open-source tools. Each keeps its own detection rules; the app organizes their results and explains what to do next. [Read the tool guide](https://teddashh.github.io/ai-security-scanner/scanner-guide.html) for uses, limits and versions.
+The app brings together 25 open-source tools. Each keeps its own detection rules; the app organizes their results and explains what to do next. [Read the tool guide](https://ted-h-com.github.io/ai-security-scanner/scanner-guide.html) for uses, limits and versions.
 
 <details>
 <summary>What each of the 25 tools does</summary>

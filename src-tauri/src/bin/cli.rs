@@ -3270,6 +3270,9 @@ fn execute_fixed_managed_container_qualification<R: ContainerRuntime>(
                 .into(),
         ));
     }
+    if let Some(image) = &manifest.image {
+        ai_security_scanner_lib::publication_origins::validate_engine_publication(image)?;
+    }
     let image = PinnedImage::from_manifest(manifest)?;
     if image.reference() != MANAGED_RUNTIME_QUALIFICATION_IMAGE {
         return Err(AppError::EngineRegistry(

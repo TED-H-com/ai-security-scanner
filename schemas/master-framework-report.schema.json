@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://github.com/teddashh/ai-security-scanner/schemas/master-framework-report.schema.json",
+  "$id": "https://github.com/TED-H-com/ai-security-scanner/schemas/master-framework-report.schema.json",
   "title": "ai-security-scanner optional Advanced framework-relationship export",
   "$comment": "This specialist export is not the beginner master report. The historical export_kind value is retained for wire compatibility only. Missing framework relationships cannot block scanning, findings, the beginner report, or a readable unsigned export.",
   "type": "object",

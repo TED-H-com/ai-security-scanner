@@ -4,9 +4,9 @@ import test from "node:test";
 import { promotePublication, publicationPreflight, recordedEngineInputIdentity } from "../../scripts/engine-image-evidence.mjs";
 import { isPendingImageReplacement } from "../../scripts/engine-image-replacement.mjs";
 
-const IMAGE = "ghcr.io/teddashh/ai-security-scanner-engine-scubagear";
+const IMAGE = "ghcr.io/ted-h-com/ai-security-scanner-engine-scubagear";
 const TAG = "1.8.0-6";
-const REPOSITORY = "teddashh/ai-security-scanner";
+const REPOSITORY = "TED-H-com/ai-security-scanner";
 const WORKFLOW_REF = `${REPOSITORY}/.github/workflows/engine-images-m365.yml@refs/heads/main`;
 const CURRENT_REVISION = "cc".repeat(20);
 const PUBLISHED_REVISION = "aa".repeat(20);
@@ -86,7 +86,7 @@ function replacementFixture() {
   const plan = recordedPlan();
   const previousArtifact = { ...plan.final_artifact };
   const previousPublication = {
-    workflow_run: "https://github.com/teddashh/ai-security-scanner/actions/runs/12345",
+    workflow_run: "https://github.com/TED-H-com/ai-security-scanner/actions/runs/12345",
     source_revision: PUBLISHED_REVISION,
     platforms: ["linux/amd64", "linux/arm64"],
     platform_digests: { "linux/amd64": INDEX_DIGEST, "linux/arm64": INDEX_DIGEST },
@@ -109,6 +109,11 @@ function replacementFixture() {
 test("a pending replacement keeps the old exact image separate from the unbuilt candidate", () => {
   const { plan, engine, contract } = replacementFixture();
   assert.equal(isPendingImageReplacement(plan, engine, contract), true);
+  const legacy = structuredClone(plan);
+  legacy.previous_artifact.repository = legacy.previous_artifact.repository.replace("ted-h-com", "teddashh");
+  legacy.previous_publication.workflow_run = legacy.previous_publication.workflow_run.replace("TED-H-com", "teddashh");
+  const legacyContract = { ...contract, previousArtifact: legacy.previous_artifact };
+  assert.equal(isPendingImageReplacement(legacy, { ...engine, image: legacy.previous_artifact }, legacyContract), true);
   for (const mutate of [
     (p, e) => { e.image = { ...e.image, tag: contract.tag }; },
     (p) => { p.final_artifact.digest = INDEX_DIGEST; },
@@ -130,6 +135,9 @@ test("replacement history cannot hide executable inputs or alter the new build i
   delete withoutHistory.previous_publication;
   const identity = recordedEngineInputIdentity(plan, binding);
   assert.deepEqual(identity, recordedEngineInputIdentity(withoutHistory, binding));
+  const legacyPlan = structuredClone(withoutHistory);
+  legacyPlan.final_artifact.repository = legacyPlan.final_artifact.repository.replace("ted-h-com", "teddashh");
+  assert.deepEqual(identity, recordedEngineInputIdentity(legacyPlan, binding));
   const changed = structuredClone(plan);
   changed.wrapper.launcher_sha256 = `sha256:${"99".repeat(32)}`;
   assert.notDeepEqual(identity, recordedEngineInputIdentity(changed, binding));

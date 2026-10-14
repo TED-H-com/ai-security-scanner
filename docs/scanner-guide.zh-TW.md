@@ -2,7 +2,7 @@
 
 產品 v0.4.0 · 發布及檢視日期 2026-10-04。
 
-[互動網站](https://teddashh.github.io/ai-security-scanner/scanner-guide.html?lang=zh-TW) · [範例報告](samples/v0.4.0/README.zh-TW.md)
+[互動網站](https://ted-h-com.github.io/ai-security-scanner/scanner-guide.html?lang=zh-TW) · [範例報告](samples/v0.4.0/README.zh-TW.md)
 
 SWOT 為專案團隊評估。啟用功能描述本產品設定，不代表完整上游平台。來源日期為提交日期，不是發布日。機會描述可能用途，不是承諾功能。
 
@@ -10,7 +10,7 @@ SWOT 為專案團隊評估。啟用功能描述本產品設定，不代表完整
 
 整理部分 AWS 身分與權限政策，作為盤點資料，和安全問題分開列出。
 
-[Upstream](https://github.com/cloudquery/cloudquery) · [README @ e27e4ab](https://github.com/cloudquery/cloudquery/blob/e27e4ab61ad85479a5d53dae9b08440bc63e72b3/README.md) · [整合與更新筆記](https://github.com/teddashh/ai-security-scanner/blob/335d0666bdc63eb86e6c8c4cddeae110db893397/docs/engines/cloudquery.md)
+[Upstream](https://github.com/cloudquery/cloudquery) · [README @ e27e4ab](https://github.com/cloudquery/cloudquery/blob/e27e4ab61ad85479a5d53dae9b08440bc63e72b3/README.md) · [整合與更新筆記](https://github.com/TED-H-com/ai-security-scanner/blob/335d0666bdc63eb86e6c8c4cddeae110db893397/docs/engines/cloudquery.md)
 
 ### 工具介紹
 
@@ -78,7 +78,7 @@ AWS API 變更、分頁失敗或唯讀權限不足都可能遺漏資源。舊依
 
 列出 AWS 使用者與部分帳號設定，方便了解哪些人可以存取。
 
-[Upstream](https://github.com/turbot/steampipe) · [README @ 71fa72f](https://github.com/turbot/steampipe/blob/71fa72fc9ce33897bcb0bd0c9ebf09b867b881cf/README.md) · [整合與更新筆記](https://github.com/teddashh/ai-security-scanner/blob/335d0666bdc63eb86e6c8c4cddeae110db893397/docs/engines/steampipe.md)
+[Upstream](https://github.com/turbot/steampipe) · [README @ 71fa72f](https://github.com/turbot/steampipe/blob/71fa72fc9ce33897bcb0bd0c9ebf09b867b881cf/README.md) · [整合與更新筆記](https://github.com/TED-H-com/ai-security-scanner/blob/335d0666bdc63eb86e6c8c4cddeae110db893397/docs/engines/steampipe.md)
 
 ### 工具介紹
 
@@ -146,7 +146,7 @@ Provider 限流、欄位或結構變更，以及 API 權限拒絕，都可能造
 
 檢查核准的 AWS 帳號、Azure 訂用帳戶或 GCP 專案中的部分身分與權限設定。
 
-[Upstream](https://github.com/prowler-cloud/prowler) · [README @ 40ecbd0](https://github.com/prowler-cloud/prowler/blob/40ecbd035e5541bf099917c5033cceb8959c4737/README.md) · [整合與更新筆記](https://github.com/teddashh/ai-security-scanner/blob/335d0666bdc63eb86e6c8c4cddeae110db893397/docs/engines/prowler.md)
+[Upstream](https://github.com/prowler-cloud/prowler) · [README @ 40ecbd0](https://github.com/prowler-cloud/prowler/blob/40ecbd035e5541bf099917c5033cceb8959c4737/README.md) · [整合與更新筆記](https://github.com/TED-H-com/ai-security-scanner/blob/335d0666bdc63eb86e6c8c4cddeae110db893397/docs/engines/prowler.md)
 
 ### 工具介紹
 
@@ -214,7 +214,7 @@ Prowler 5.39.1 針對一個精確 AWS 帳號、Azure subscription 或 GCP projec
 
 檢查部分 AWS 身分與存取設定。本程式使用的是 ScoutSuite 的部分功能。
 
-[Upstream](https://github.com/nccgroup/ScoutSuite) · [README @ 7909f2f](https://github.com/nccgroup/ScoutSuite/blob/7909f2fc6186063e5c9e7ddef8c4d7d1072c8f3d/README.md) · [整合與更新筆記](https://github.com/teddashh/ai-security-scanner/blob/335d0666bdc63eb86e6c8c4cddeae110db893397/docs/engines/scoutsuite.md)
+[Upstream](https://github.com/nccgroup/ScoutSuite) · [README @ 7909f2f](https://github.com/nccgroup/ScoutSuite/blob/7909f2fc6186063e5c9e7ddef8c4d7d1072c8f3d/README.md) · [整合與更新筆記](https://github.com/TED-H-com/ai-security-scanner/blob/335d0666bdc63eb86e6c8c4cddeae110db893397/docs/engines/scoutsuite.md)
 
 ### 工具介紹
 
@@ -282,7 +282,7 @@ AWS 回應變化可能超出固定 parser 的理解範圍；上游報告結構�
 
 分析收集到的 AWS 權限政策，找出可能給得太多的權限。
 
-[Upstream](https://github.com/salesforce/cloudsplaining) · [README @ 75a67ea](https://github.com/salesforce/cloudsplaining/blob/75a67ea9cb6d0fdf35ff185d08dad0d45587e6f7/README.md) · [整合與更新筆記](https://github.com/teddashh/ai-security-scanner/blob/335d0666bdc63eb86e6c8c4cddeae110db893397/docs/engines/cloudsplaining.md)
+[Upstream](https://github.com/salesforce/cloudsplaining) · [README @ 75a67ea](https://github.com/salesforce/cloudsplaining/blob/75a67ea9cb6d0fdf35ff185d08dad0d45587e6f7/README.md) · [整合與更新筆記](https://github.com/TED-H-com/ai-security-scanner/blob/335d0666bdc63eb86e6c8c4cddeae110db893397/docs/engines/cloudsplaining.md)
 
 ### 工具介紹
 
@@ -350,7 +350,7 @@ Cloudsplaining 專注 AWS IAM 政策分析，檢視授權資料，將高風險�
 
 依照美國 CISA 的安全建議，檢查支援的 Microsoft 365 設定。
 
-[Upstream](https://github.com/cisagov/ScubaGear) · [README @ 4d34e9a](https://github.com/cisagov/ScubaGear/blob/4d34e9a48e38ce5c2e14c0fdfbaee53e57594ae2/README.md) · [整合與更新筆記](https://github.com/teddashh/ai-security-scanner/blob/335d0666bdc63eb86e6c8c4cddeae110db893397/docs/engines/scubagear.md)
+[Upstream](https://github.com/cisagov/ScubaGear) · [README @ 4d34e9a](https://github.com/cisagov/ScubaGear/blob/4d34e9a48e38ce5c2e14c0fdfbaee53e57594ae2/README.md) · [整合與更新筆記](https://github.com/TED-H-com/ai-security-scanner/blob/335d0666bdc63eb86e6c8c4cddeae110db893397/docs/engines/scubagear.md)
 
 ### 工具介紹
 
@@ -418,7 +418,7 @@ Microsoft Graph 變更、條件式存取限制與同意權限缺漏可能中斷�
 
 檢查支援的 Microsoft 365 安全設定，列出需要注意的項目。
 
-[Upstream](https://github.com/maester365/maester) · [README @ 6bf1d98](https://github.com/maester365/maester/blob/6bf1d98f094fc7a68e449d2f40f73ef820b72ee3/README.md) · [整合與更新筆記](https://github.com/teddashh/ai-security-scanner/blob/335d0666bdc63eb86e6c8c4cddeae110db893397/docs/engines/maester.md)
+[Upstream](https://github.com/maester365/maester) · [README @ 6bf1d98](https://github.com/maester365/maester/blob/6bf1d98f094fc7a68e449d2f40f73ef820b72ee3/README.md) · [整合與更新筆記](https://github.com/TED-H-com/ai-security-scanner/blob/335d0666bdc63eb86e6c8c4cddeae110db893397/docs/engines/maester.md)
 
 ### 工具介紹
 
@@ -486,7 +486,7 @@ Graph 與 PowerShell 依賴改版可能破壞原本有效的收集路徑；即�
 
 查看核准的連接埠是否接受連線。連接埠開著值得了解，但不代表有漏洞。
 
-[Upstream](https://github.com/projectdiscovery/naabu) · [README @ 5a0ca8b](https://github.com/projectdiscovery/naabu/blob/5a0ca8bde91b5bb16213e9e8b5c6871eac954bd8/README.md) · [整合與更新筆記](https://github.com/teddashh/ai-security-scanner/blob/335d0666bdc63eb86e6c8c4cddeae110db893397/docs/engines/naabu.md)
+[Upstream](https://github.com/projectdiscovery/naabu) · [README @ 5a0ca8b](https://github.com/projectdiscovery/naabu/blob/5a0ca8bde91b5bb16213e9e8b5c6871eac954bd8/README.md) · [整合與更新筆記](https://github.com/TED-H-com/ai-security-scanner/blob/335d0666bdc63eb86e6c8c4cddeae110db893397/docs/engines/naabu.md)
 
 ### 工具介紹
 
@@ -554,7 +554,7 @@ TCP 連線無法充分說明服務身分、修補狀態或存取控制；防火�
 
 確認選定的網站服務是否回應，並記錄基本資訊；這不是漏洞檢查。
 
-[Upstream](https://github.com/projectdiscovery/httpx) · [README @ 13037dd](https://github.com/projectdiscovery/httpx/blob/13037dd08b9715cfbd960a70ae1edfef6686a857/README.md) · [整合與更新筆記](https://github.com/teddashh/ai-security-scanner/blob/335d0666bdc63eb86e6c8c4cddeae110db893397/docs/engines/httpx.md)
+[Upstream](https://github.com/projectdiscovery/httpx) · [README @ 13037dd](https://github.com/projectdiscovery/httpx/blob/13037dd08b9715cfbd960a70ae1edfef6686a857/README.md) · [整合與更新筆記](https://github.com/TED-H-com/ai-security-scanner/blob/335d0666bdc63eb86e6c8c4cddeae110db893397/docs/engines/httpx.md)
 
 ### 工具介紹
 
@@ -622,7 +622,7 @@ CDN、WAF、短暫錯誤與改變的重新導向會讓不同輪觀察不同；�
 
 先辨識網站使用的技術，再於核准的網址與限制內執行適用的唯讀檢查。
 
-[Upstream](https://github.com/projectdiscovery/nuclei) · [README @ a8c88fe](https://github.com/projectdiscovery/nuclei/blob/a8c88feb4a1c8e961b7902534ce3af97e9d524a4/README.md) · [整合與更新筆記](https://github.com/teddashh/ai-security-scanner/blob/335d0666bdc63eb86e6c8c4cddeae110db893397/docs/engines/nuclei.md)
+[Upstream](https://github.com/projectdiscovery/nuclei) · [README @ a8c88fe](https://github.com/projectdiscovery/nuclei/blob/a8c88feb4a1c8e961b7902534ce3af97e9d524a4/README.md) · [整合與更新筆記](https://github.com/TED-H-com/ai-security-scanner/blob/335d0666bdc63eb86e6c8c4cddeae110db893397/docs/engines/nuclei.md)
 
 ### 工具介紹
 
@@ -690,7 +690,7 @@ Nuclei 3.11.1 使用固定 nuclei-templates 快照及經檢視的唯讀 HTTP pro
 
 辨識核准主機與連接埠上的服務，再執行適合的安全檢查。
 
-[Upstream](https://github.com/greenbone/openvas-scanner) · [README @ 26465a1](https://github.com/greenbone/openvas-scanner/blob/26465a11ff0e6a98d60a253265fab5974fc757b6/README.md) · [整合與更新筆記](https://github.com/teddashh/ai-security-scanner/blob/335d0666bdc63eb86e6c8c4cddeae110db893397/docs/engines/greenbone.md)
+[Upstream](https://github.com/greenbone/openvas-scanner) · [README @ 26465a1](https://github.com/greenbone/openvas-scanner/blob/26465a11ff0e6a98d60a253265fab5974fc757b6/README.md) · [整合與更新筆記](https://github.com/TED-H-com/ai-security-scanner/blob/335d0666bdc63eb86e6c8c4cddeae110db893397/docs/engines/greenbone.md)
 
 ### 工具介紹
 
@@ -758,7 +758,7 @@ Feed 時效、服務指紋變化與被過濾的網路回應都會影響適用性
 
 瀏覽一個核准網站的頁面並檢查回應，不會送出表單或攻擊內容。
 
-[Upstream](https://github.com/zaproxy/zaproxy) · [README @ 2665d97](https://github.com/zaproxy/zaproxy/blob/2665d972f6d587ba4773a95053ac39af3fdf8df9/README.md) · [整合與更新筆記](https://github.com/teddashh/ai-security-scanner/blob/335d0666bdc63eb86e6c8c4cddeae110db893397/docs/engines/zap.md)
+[Upstream](https://github.com/zaproxy/zaproxy) · [README @ 2665d97](https://github.com/zaproxy/zaproxy/blob/2665d972f6d587ba4773a95053ac39af3fdf8df9/README.md) · [整合與更新筆記](https://github.com/TED-H-com/ai-security-scanner/blob/335d0666bdc63eb86e6c8c4cddeae110db893397/docs/engines/zap.md)
 
 ### 工具介紹
 
@@ -826,7 +826,7 @@ ZAP 補上回應層檢查與有界連結探索，與範本驅動的 Nuclei 互�
 
 依照本版提供的規則，找出程式碼中可能不安全的寫法。
 
-[Upstream](https://github.com/semgrep/semgrep) · [README @ a0c13f3](https://github.com/semgrep/semgrep/blob/a0c13f304151e531c7e7c00838076211a07a790c/README.md) · [整合與更新筆記](https://github.com/teddashh/ai-security-scanner/blob/335d0666bdc63eb86e6c8c4cddeae110db893397/docs/engines/semgrep.md)
+[Upstream](https://github.com/semgrep/semgrep) · [README @ a0c13f3](https://github.com/semgrep/semgrep/blob/a0c13f304151e531c7e7c00838076211a07a790c/README.md) · [整合與更新筆記](https://github.com/TED-H-com/ai-security-scanner/blob/335d0666bdc63eb86e6c8c4cddeae110db893397/docs/engines/semgrep.md)
 
 ### 工具介紹
 
@@ -894,7 +894,7 @@ Semgrep 以宣告式規則分析原始碼。語言支援、規則選擇與 Commu
 
 找出專案檔案裡可能留下的密碼與金鑰，報告會隱藏它們的內容。
 
-[Upstream](https://github.com/gitleaks/gitleaks) · [README @ 83d9cd6](https://github.com/gitleaks/gitleaks/blob/83d9cd684c87d95d656c1458ef04895a7f1cbd8e/README.md) · [整合與更新筆記](https://github.com/teddashh/ai-security-scanner/blob/335d0666bdc63eb86e6c8c4cddeae110db893397/docs/engines/gitleaks.md)
+[Upstream](https://github.com/gitleaks/gitleaks) · [README @ 83d9cd6](https://github.com/gitleaks/gitleaks/blob/83d9cd684c87d95d656c1458ef04895a7f1cbd8e/README.md) · [整合與更新筆記](https://github.com/TED-H-com/ai-security-scanner/blob/335d0666bdc63eb86e6c8c4cddeae110db893397/docs/engines/gitleaks.md)
 
 ### 工具介紹
 
@@ -962,7 +962,7 @@ Gitleaks 透過掃描器自有規則與模式背景偵測祕密。上游支援�
 
 在本機檔案裡找出可能外洩的密碼與金鑰，不會拿它們登入服務。
 
-[Upstream](https://github.com/trufflesecurity/trufflehog) · [README @ 3ab759f](https://github.com/trufflesecurity/trufflehog/blob/3ab759fef4bb5935d4fe9ac68b503d05346b8364/README.md) · [整合與更新筆記](https://github.com/teddashh/ai-security-scanner/blob/335d0666bdc63eb86e6c8c4cddeae110db893397/docs/engines/trufflehog.md)
+[Upstream](https://github.com/trufflesecurity/trufflehog) · [README @ 3ab759f](https://github.com/trufflesecurity/trufflehog/blob/3ab759fef4bb5935d4fe9ac68b503d05346b8364/README.md) · [整合與更新筆記](https://github.com/TED-H-com/ai-security-scanner/blob/335d0666bdc63eb86e6c8c4cddeae110db893397/docs/engines/trufflehog.md)
 
 ### 工具介紹
 
@@ -1030,7 +1030,7 @@ TruffleHog 為多種憑證類型提供偵測器，並支援多種來源與驗證
 
 檢查支援的部署與基礎設施設定檔，找出不安全的設定。
 
-[Upstream](https://github.com/bridgecrewio/checkov) · [README @ 0604e97](https://github.com/bridgecrewio/checkov/blob/0604e97b0f77c89a8c6c1fe2219c3d251cbb9789/README.md) · [整合與更新筆記](https://github.com/teddashh/ai-security-scanner/blob/335d0666bdc63eb86e6c8c4cddeae110db893397/docs/engines/checkov.md)
+[Upstream](https://github.com/bridgecrewio/checkov) · [README @ 0604e97](https://github.com/bridgecrewio/checkov/blob/0604e97b0f77c89a8c6c1fe2219c3d251cbb9789/README.md) · [整合與更新筆記](https://github.com/TED-H-com/ai-security-scanner/blob/335d0666bdc63eb86e6c8c4cddeae110db893397/docs/engines/checkov.md)
 
 ### 工具介紹
 
@@ -1098,7 +1098,7 @@ Checkov 對基礎設施即程式碼、容器設定與交付流程提供政策檢
 
 檢查用來部署系統的設定檔，找出可能造成風險的設定。
 
-[Upstream](https://github.com/Checkmarx/kics) · [README @ e1f23ca](https://github.com/Checkmarx/kics/blob/e1f23cad9640f55b963f22a116b04906b8c16ac6/README.md) · [整合與更新筆記](https://github.com/teddashh/ai-security-scanner/blob/335d0666bdc63eb86e6c8c4cddeae110db893397/docs/engines/kics.md)
+[Upstream](https://github.com/Checkmarx/kics) · [README @ e1f23ca](https://github.com/Checkmarx/kics/blob/e1f23cad9640f55b963f22a116b04906b8c16ac6/README.md) · [整合與更新筆記](https://github.com/TED-H-com/ai-security-scanner/blob/335d0666bdc63eb86e6c8c4cddeae110db893397/docs/engines/kics.md)
 
 ### 工具介紹
 
@@ -1166,7 +1166,7 @@ KICS 提供以查詢為基礎的基礎設施風險觀點，同時保留原生查
 
 用內附的漏洞資料庫，檢查支援的專案與容器套件。
 
-[Upstream](https://github.com/aquasecurity/trivy) · [README @ e1fd17a](https://github.com/aquasecurity/trivy/blob/e1fd17a0ea4a8cf24bc4b4dd7e2cfbf4bb31b994/README.md) · [整合與更新筆記](https://github.com/teddashh/ai-security-scanner/blob/335d0666bdc63eb86e6c8c4cddeae110db893397/docs/engines/trivy.md)
+[Upstream](https://github.com/aquasecurity/trivy) · [README @ e1fd17a](https://github.com/aquasecurity/trivy/blob/e1fd17a0ea4a8cf24bc4b4dd7e2cfbf4bb31b994/README.md) · [整合與更新筆記](https://github.com/TED-H-com/ai-security-scanner/blob/335d0666bdc63eb86e6c8c4cddeae110db893397/docs/engines/trivy.md)
 
 ### 工具介紹
 
@@ -1234,7 +1234,7 @@ Trivy 提供公告 ID、已安裝與修正版、供應商評分及套件位置�
 
 使用內附資料庫，找出支援的專案與容器套件是否有已知漏洞。
 
-[Upstream](https://github.com/anchore/grype) · [README @ b5fa92b](https://github.com/anchore/grype/blob/b5fa92bbcbef655497e3be840a2f718380e2cdd3/README.md) · [整合與更新筆記](https://github.com/teddashh/ai-security-scanner/blob/335d0666bdc63eb86e6c8c4cddeae110db893397/docs/engines/grype.md)
+[Upstream](https://github.com/anchore/grype) · [README @ b5fa92b](https://github.com/anchore/grype/blob/b5fa92bbcbef655497e3be840a2f718380e2cdd3/README.md) · [整合與更新筆記](https://github.com/TED-H-com/ai-security-scanner/blob/335d0666bdc63eb86e6c8c4cddeae110db893397/docs/engines/grype.md)
 
 ### 工具介紹
 
@@ -1302,7 +1302,7 @@ Grype 提供獨立的公告比對觀點與實用的套件修正模型。與 Triv
 
 列出專案或容器裡的軟體元件，幫你掌握用了哪些東西；清單本身不是漏洞報告。
 
-[Upstream](https://github.com/anchore/syft) · [README @ 2293641](https://github.com/anchore/syft/blob/2293641e3bd628a01bb37639318d62c0ebe89b39/README.md) · [整合與更新筆記](https://github.com/teddashh/ai-security-scanner/blob/335d0666bdc63eb86e6c8c4cddeae110db893397/docs/engines/syft.md)
+[Upstream](https://github.com/anchore/syft) · [README @ 2293641](https://github.com/anchore/syft/blob/2293641e3bd628a01bb37639318d62c0ebe89b39/README.md) · [整合與更新筆記](https://github.com/TED-H-com/ai-security-scanner/blob/335d0666bdc63eb86e6c8c4cddeae110db893397/docs/engines/syft.md)
 
 ### 工具介紹
 
@@ -1370,7 +1370,7 @@ Syft 在本產品中不產生漏洞發現。原生授權、CPE 及位置細節�
 
 檢查你選好的 Kubernetes 設定檔，不會連到正在運作的叢集。
 
-[Upstream](https://github.com/kubescape/kubescape) · [README @ 469969f](https://github.com/kubescape/kubescape/blob/469969f6bebf46bef5e808b91a4bb46fb2bbf4ed/README.md) · [整合與更新筆記](https://github.com/teddashh/ai-security-scanner/blob/335d0666bdc63eb86e6c8c4cddeae110db893397/docs/engines/kubescape.md)
+[Upstream](https://github.com/kubescape/kubescape) · [README @ 469969f](https://github.com/kubescape/kubescape/blob/469969f6bebf46bef5e808b91a4bb46fb2bbf4ed/README.md) · [整合與更新筆記](https://github.com/TED-H-com/ai-security-scanner/blob/335d0666bdc63eb86e6c8c4cddeae110db893397/docs/engines/kubescape.md)
 
 ### 工具介紹
 
@@ -1438,7 +1438,7 @@ Kubernetes API 演進及政策庫變更，可能讓舊檢查不完整或不適�
 
 依照 CIS 建議檢查節點設定的副本，不會取得管理員權限來檢查運作中的主機。
 
-[Upstream](https://github.com/aquasecurity/kube-bench) · [README @ 9f133cb](https://github.com/aquasecurity/kube-bench/blob/9f133cb7509ce1dbedfc860e94474588000e25ac/README.md) · [整合與更新筆記](https://github.com/teddashh/ai-security-scanner/blob/335d0666bdc63eb86e6c8c4cddeae110db893397/docs/engines/kube-bench.md)
+[Upstream](https://github.com/aquasecurity/kube-bench) · [README @ 9f133cb](https://github.com/aquasecurity/kube-bench/blob/9f133cb7509ce1dbedfc860e94474588000e25ac/README.md) · [整合與更新筆記](https://github.com/TED-H-com/ai-security-scanner/blob/335d0666bdc63eb86e6c8c4cddeae110db893397/docs/engines/kube-bench.md)
 
 ### 工具介紹
 
@@ -1506,7 +1506,7 @@ kube-bench 依 Kubernetes 設定及程序資訊執行基準檢查。原生結果
 
 對一個核准的模型服務送出 54 個固定測試提示。開始前請確認請求限制與服務商費用。
 
-[Upstream](https://github.com/NVIDIA/garak) · [README @ 93aa9cd](https://github.com/NVIDIA/garak/blob/93aa9cdec309ec4170559676f1826ea2a679920c/README.md) · [整合與更新筆記](https://github.com/teddashh/ai-security-scanner/blob/335d0666bdc63eb86e6c8c4cddeae110db893397/docs/engines/garak.md)
+[Upstream](https://github.com/NVIDIA/garak) · [README @ 93aa9cd](https://github.com/NVIDIA/garak/blob/93aa9cdec309ec4170559676f1826ea2a679920c/README.md) · [整合與更新筆記](https://github.com/TED-H-com/ai-security-scanner/blob/335d0666bdc63eb86e6c8c4cddeae110db893397/docs/engines/garak.md)
 
 ### 工具介紹
 
@@ -1574,7 +1574,7 @@ Garak 0.17.0 將 dan.Dan_11_0、dan.Dan_10_0、dan.Dan_9_0 與 ansiescape.AnsiEs
 
 整理支援的 AI 工作流程，讓你看懂有哪些代理、工具與連線，不會執行那些流程。
 
-[Upstream](https://github.com/splx-ai/agentic-radar) · [README @ 65a7e4b](https://github.com/splx-ai/agentic-radar/blob/65a7e4bd01e2034c7cb52e9620eeed287688cc53/README.md) · [整合與更新筆記](https://github.com/teddashh/ai-security-scanner/blob/335d0666bdc63eb86e6c8c4cddeae110db893397/docs/engines/agentic-radar.md)
+[Upstream](https://github.com/splx-ai/agentic-radar) · [README @ 65a7e4b](https://github.com/splx-ai/agentic-radar/blob/65a7e4bd01e2034c7cb52e9620eeed287688cc53/README.md) · [整合與更新筆記](https://github.com/TED-H-com/ai-security-scanner/blob/335d0666bdc63eb86e6c8c4cddeae110db893397/docs/engines/agentic-radar.md)
 
 ### 工具介紹
 
@@ -1642,7 +1642,7 @@ Agentic Radar 分析代理式工作流程，提供架構及安全分析能力。
 
 檢查選定的 MCP 設定是否留下金鑰，或給了工具過大的權限；不會啟動或連線 MCP 伺服器。
 
-[Upstream](https://github.com/aira-security/mcp-armor) · [README @ 6af4cee](https://github.com/aira-security/mcp-armor/blob/6af4cee4665ab6242f02a88952f9127b6a04922a/README.md) · [整合與更新筆記](https://github.com/teddashh/ai-security-scanner/blob/335d0666bdc63eb86e6c8c4cddeae110db893397/docs/engines/mcp-armor.md)
+[Upstream](https://github.com/aira-security/mcp-armor) · [README @ 6af4cee](https://github.com/aira-security/mcp-armor/blob/6af4cee4665ab6242f02a88952f9127b6a04922a/README.md) · [整合與更新筆記](https://github.com/TED-H-com/ai-security-scanner/blob/335d0666bdc63eb86e6c8c4cddeae110db893397/docs/engines/mcp-armor.md)
 
 ### 工具介紹
 

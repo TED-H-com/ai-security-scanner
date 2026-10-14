@@ -33,12 +33,12 @@ A `not_installed` runtime before the first scan is normal; the app prepares it w
 
 ## Install the app
 
-Install the current release, the [v0.5.1 release](https://github.com/teddashh/ai-security-scanner/releases/tag/v0.5.1), when the user asks you to; otherwise give them the link for their computer. Before opening a download, compare its SHA-256 with the matching line of `SHA256SUMS.txt` from the same release, and stop on a mismatch.
+Install the current release, the [v0.5.1 release](https://github.com/TED-H-com/ai-security-scanner/releases/tag/v0.5.1), when the user asks you to; otherwise give them the link for their computer. Before opening a download, compare its SHA-256 with the matching line of `SHA256SUMS.txt` from the same release, and stop on a mismatch.
 
 macOS, Apple silicon or Intel. The app is not notarized; the `xattr` line lets macOS open it:
 
 ```sh
-curl -fLO https://github.com/teddashh/ai-security-scanner/releases/download/v0.5.1/ai-security-scanner_0.5.1_universal.dmg
+curl -fLO https://github.com/TED-H-com/ai-security-scanner/releases/download/v0.5.1/ai-security-scanner_0.5.1_universal.dmg
 hdiutil attach -nobrowse -mountpoint /tmp/ai-security-scanner-dmg ai-security-scanner_0.5.1_universal.dmg
 cp -R /tmp/ai-security-scanner-dmg/ai-security-scanner.app /Applications/
 hdiutil detach /tmp/ai-security-scanner-dmg
@@ -49,14 +49,14 @@ open /Applications/ai-security-scanner.app
 Windows x86-64, in PowerShell. The installer is unsigned: if SmartScreen warns, the user selects **More info → Run anyway**, and allows a WSL update if Windows asks for one:
 
 ```powershell
-Invoke-WebRequest https://github.com/teddashh/ai-security-scanner/releases/download/v0.5.1/ai-security-scanner_0.5.1_x64-setup.exe -OutFile ai-security-scanner_0.5.1_x64-setup.exe
+Invoke-WebRequest https://github.com/TED-H-com/ai-security-scanner/releases/download/v0.5.1/ai-security-scanner_0.5.1_x64-setup.exe -OutFile ai-security-scanner_0.5.1_x64-setup.exe
 Start-Process .\ai-security-scanner_0.5.1_x64-setup.exe
 ```
 
 Debian or Ubuntu x86-64. `sudo` needs the user's password, so the user runs the second line:
 
 ```sh
-curl -fLO https://github.com/teddashh/ai-security-scanner/releases/download/v0.5.1/ai-security-scanner_0.5.1_amd64.deb
+curl -fLO https://github.com/TED-H-com/ai-security-scanner/releases/download/v0.5.1/ai-security-scanner_0.5.1_amd64.deb
 sudo apt install ./ai-security-scanner_0.5.1_amd64.deb
 ```
 

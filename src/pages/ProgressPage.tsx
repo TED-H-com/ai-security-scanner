@@ -90,7 +90,7 @@ interface ProgressPageProps {
   onSelectRun?: (runId: string) => void;
 }
 
-const PRODUCT_RELEASES = "https://github.com/teddashh/ai-security-scanner/releases";
+const PRODUCT_RELEASES = "https://github.com/TED-H-com/ai-security-scanner/releases";
 const installerBlockers = new Set<ScanReadinessBlocker>([
   "no_runnable_authorized_targets",
   "egress_gateway_unavailable",

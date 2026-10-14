@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://github.com/teddashh/ai-security-scanner/blob/main/engines/compatibility.schema.json",
+  "$id": "https://github.com/TED-H-com/ai-security-scanner/blob/main/engines/compatibility.schema.json",
   "title": "ai-security-scanner engine compatibility catalog",
   "description": "Per-engine release, provenance, safety, and runtime compatibility contract. Catalog cardinality is not a product-readiness claim: each present entry is admitted independently.",
   "type": "array",

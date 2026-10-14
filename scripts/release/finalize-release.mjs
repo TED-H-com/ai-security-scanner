@@ -1,5 +1,6 @@
 import { copyFile, lstat, mkdir, readdir, readFile } from "node:fs/promises";
 import path from "node:path";
+import { fileURLToPath } from "node:url";
 import {
   PROJECT_ROOT,
   assertSafeRelativePath,
@@ -32,6 +33,7 @@ import {
   validateReleaseMetadataV3,
 } from "./release-metadata.mjs";
 import { publishedReleaseAssetName } from "./release-asset-name.mjs";
+import { UPDATER_DOWNLOAD_REPOSITORY } from "../publication-origins.mjs";
 
 const PUBLICATION_MODES = new Set(["commit-bound-qc", "public-github-release"]);
 
@@ -133,7 +135,7 @@ const RELEASE_COPY = new Map([
         "preserved.",
         "",
         "For Windows installed-app testing, use the exact published installer bytes and follow the",
-        "[external qualification plan](https://github.com/teddashh/ai-security-scanner/blob/v0.1.9/docs/release/windows-external-qualification-plan.md).",
+        "[external qualification plan](https://github.com/TED-H-com/ai-security-scanner/blob/v0.1.9/docs/release/windows-external-qualification-plan.md).",
         "",
       ],
     },
@@ -379,7 +381,7 @@ const RELEASE_COPY = new Map([
         "- Choose **Settings → 日本語**. The app remembers your language across restarts.",
         "- Japanese translations cover navigation, scan setup, results, settings, and the runtime setup assistant. Missing explanations fall back to English; HTML reports exported from the Japanese UI currently use English.",
         "- A Japanese README and website include all 25 scanner introductions, search, language switching, and links to existing English sample reports.",
-        "- Thanks to [@kieiken](https://github.com/kieiken) for the Japanese UI contribution in [#69](https://github.com/teddashh/ai-security-scanner/pull/69). This release also fills gaps in onboarding and runtime setup translations.",
+        "- Thanks to [@kieiken](https://github.com/kieiken) for the Japanese UI contribution in [#69](https://github.com/TED-H-com/ai-security-scanner/pull/69). This release also fills gaps in onboarding and runtime setup translations.",
         "",
         "### 日本語",
         "",
@@ -388,7 +390,7 @@ const RELEASE_COPY = new Map([
         "- **Settings → 日本語** で切り替えられます。選択した言語は再起動後も保存されます。",
         "- ナビゲーション、スキャンの設定、結果、設定画面、スキャン環境の準備を日本語で表示します。未翻訳の説明は英語で表示され、日本語 UI からエクスポートする HTML レポートも現時点では英語です。",
         "- 日本語の README と Web サイトを追加しました。全 25 スキャナーの紹介、検索、言語切り替えに対応し、既存の英語のサンプルレポートを参照できます。",
-        "- [@kieiken](https://github.com/kieiken) さんの [#69](https://github.com/teddashh/ai-security-scanner/pull/69) の翻訳を取り込み、初期設定とスキャン環境の準備に残っていた未翻訳箇所も補いました。",
+        "- [@kieiken](https://github.com/kieiken) さんの [#69](https://github.com/TED-H-com/ai-security-scanner/pull/69) の翻訳を取り込み、初期設定とスキャン環境の準備に残っていた未翻訳箇所も補いました。",
         "",
         "### 繁體中文",
         "",
@@ -739,6 +741,18 @@ function unavailable(installer, reason) {
   installer.availability = "not-offered";
   installer.reason = reason;
   installer.artifact = null;
+}
+
+export function finalizedUpdaterPlatforms(selections, tag) {
+  const platforms = {};
+  for (const { updater } of selections.filter(({ updater }) => updater)) {
+    const url = `https://github.com/${UPDATER_DOWNLOAD_REPOSITORY}/releases/download/${tag}/${encodeURIComponent(updater.payloadFile)}`;
+    for (const target of updater.targetKeys) {
+      assert(!platforms[target], `duplicate updater target key: ${target}`);
+      platforms[target] = { url, signature: updater.signature };
+    }
+  }
+  return platforms;
 }
 
 async function scopedFinalizeMain() {
@@ -1228,20 +1242,12 @@ async function scopedFinalizeMain() {
   await writeJsonAtomic(path.join(output, spdxName), spdx);
   await writeJsonAtomic(path.join(output, "release-metadata.json"), finalized);
 
-  const updatePlatforms = {};
-  for (const selection of selections.filter(({ updater }) => updater)) {
-    const url = `https://github.com/teddashh/ai-security-scanner/releases/download/${tag}/${encodeURIComponent(selection.updater.payloadFile)}`;
-    for (const target of selection.updater.targetKeys) {
-      assert(!updatePlatforms[target], `duplicate updater target key: ${target}`);
-      updatePlatforms[target] = { url, signature: selection.updater.signature };
-    }
-  }
   await writeJsonAtomic(path.join(output, "latest.json"), {
     version,
     tag,
     notes: releaseCopyFor(version).updaterNotes,
     pub_date: metadata.sourceDate,
-    platforms: updatePlatforms,
+    platforms: finalizedUpdaterPlatforms(selections, tag),
   });
 
   const offeredLines = finalized.distribution.platforms.flatMap((platform) =>
@@ -1360,4 +1366,6 @@ async function scopedFinalizeMain() {
   );
 }
 
-runMain(scopedFinalizeMain);
+if (path.resolve(process.argv[1] ?? "") === path.resolve(fileURLToPath(import.meta.url))) {
+  runMain(scopedFinalizeMain);
+}

@@ -808,3 +808,48 @@ test("publication verifier rejects unsafe checksum paths and symlinks", async (t
   assert.match(result.stderr, /contains a symlink/u);
   assert.equal(result.stdout, "");
 });
+
+// Recreate signed fixture payloads and receipts after an origin change, so the
+// refusal is attributable to publication policy rather than stale checksums.
+async function changeArtifactOrigin(root, engine, namespace, sourceRepository) {
+  for (const name of await regularFiles(root)) {
+    if (!name.endsWith(".json")) continue;
+    const file = path.join(root, name);
+    let text = await readFile(file, "utf8");
+    text = text.replaceAll("ghcr.io/teddashh/", `${namespace}/`)
+      .replaceAll(repository, sourceRepository);
+    const value = JSON.parse(text);
+    if (value.dsseEnvelope) {
+      const payload = Buffer.from(value.dsseEnvelope.payload, "base64").toString("utf8")
+        .replaceAll("ghcr.io/teddashh/", `${namespace}/`)
+        .replaceAll(repository, sourceRepository);
+      value.dsseEnvelope.payload = Buffer.from(payload).toString("base64");
+    }
+    await writeJson(file, value);
+  }
+  const manifest = path.join(root, engine, `${engine}-image-supply-chain.json`);
+  const evidence = JSON.parse(await readFile(manifest, "utf8"));
+  for (const platform of evidence.platforms) for (const sbom of platform.sboms) {
+    Object.assign(sbom, await fileRecord(path.join(root, engine, sbom.file)));
+  }
+  for (const record of evidence.attestations) {
+    const receipt = await fileRecord(path.join(root, engine, record.bundleFile));
+    record.bundleSha256 = receipt.sha256; record.bundleSizeBytes = receipt.sizeBytes;
+  }
+  await writeJson(manifest, evidence); await sealNested(root, engine); await sealRoot(root);
+}
+
+test("publication artifact accepts current origin and rejects both mixed pairs and unknown owner", async (t) => {
+  for (const [namespace, sourceRepository, passes] of [
+    ["ghcr.io/ted-h-com", "TED-H-com/ai-security-scanner", true],
+    ["ghcr.io/ted-h-com", "teddashh/ai-security-scanner", false],
+    ["ghcr.io/teddashh", "TED-H-com/ai-security-scanner", false],
+    ["ghcr.io/unknown", "unknown/ai-security-scanner", false],
+  ]) {
+    const artifact = await createArtifact(t, "httpx");
+    await changeArtifactOrigin(artifact, "httpx", namespace, sourceRepository);
+    const result = runVerifier("httpx", artifact);
+    assert.equal(result.status === 0, passes, result.stderr);
+    if (!passes) assert.match(result.stderr, /publication origin/u);
+  }
+});

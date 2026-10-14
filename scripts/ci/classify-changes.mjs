@@ -7,6 +7,8 @@ const FRONTEND_PATHS = [
   // Public report downloads and scanner profiles have executable frontend contracts.
   /^docs\/(?:index\.html|project-site\.(?:css|js)|showcase\.css|scanner-guide(?:[.\/]|$)|sample-reports\.html|samples\/|tool-stars\.json$)/,
   /^scripts\/(?:build-public-showcase|localize-public-site)\.mjs$/,
+  // The updater manifest and frontend tests read the shared publication origins.
+  /^scripts\/publication-origins\.(?:mjs|d\.mts)$/,
   /^docs\/(?:site-language\.js|locales\/|check-fixes-demo\.html$)/,
   /^src-tauri\/tests\/fixtures\/adapters\//,
   /^docs\/research\/fixtures\/(?:mcp-armor|agentic-radar)\//,
@@ -116,6 +118,8 @@ const DESKTOP_PATHS = [
 const ENGINE_PATHS = [
   /^scripts\/engine-image-replacement\.mjs$/,
   /^scripts\/select-local-engine-publication\.mjs$/,
+  // Engine evidence and catalog validation read the shared publication origins.
+  /^scripts\/publication-origins\.(?:mjs|d\.mts)$/,
   /^engines\//,
   /^tests\/engines\//,
   /^scripts\/(?:validate-engine-|prowler-catalog-contract\.mjs$|prepare-offline-engine-data\.mjs$|lock-upstreams\.mjs$|engine-image-evidence\.mjs$|generate-oci-layout-fixture\.mjs$)/,
@@ -137,6 +141,8 @@ const RELEASE_CONTRACT_PATHS = [
   /^scripts\/verify-vendored-glib\.sh$/,
   /^scripts\/release\//,
   /^tests\/release\//,
+  // Release scripts and tests read the shared publication origins.
+  /^scripts\/publication-origins\.(?:mjs|d\.mts)$/,
   /^\.github\/workflows\/(?:release|promote-release|windows-external-evidence)\.ya?ml$/,
   /^docs\/release\/[^/]+\.schema\.json$/,
   /^runtime\//,
@@ -152,7 +158,7 @@ const WINDOWS_RUNTIME_PATHS = [
   /^src-tauri\/windows\//,
   /^src-tauri\/binaries\//,
   /^src-tauri\/(?:Cargo\.toml|app-icon\.svg$|build\.rs|icons\/|tauri\.conf\.json$)/,
-  /^src-tauri\/src\/(?:lib\.rs$|startup_failure\.rs$|bootstrap\.rs$|bootstrap\/|container_runtime\.rs$|export_identity\.rs$|gateway_release\.rs$|managed_network\.rs$|managed_runtime\.rs$|product_uninstall\.rs$|runtime\.rs$|runtime_health_monitor\.rs$|bin\/(?:bootstrap_broker|cli|egress_gateway)\.rs$)/,
+  /^src-tauri\/src\/(?:lib\.rs$|startup_failure\.rs$|bootstrap\.rs$|bootstrap\/|container_runtime\.rs$|export_identity\.rs$|gateway_release\.rs$|managed_network\.rs$|managed_runtime\.rs$|product_uninstall\.rs$|publication_origins\.rs$|runtime\.rs$|runtime_health_monitor\.rs$|bin\/(?:bootstrap_broker|cli|egress_gateway)\.rs$)/,
   /^scripts\/release\/(?:build-sidecar|stage-sidecar|generate-runtime-evidence|validate-windows-nsis-template|windows-nsis-[^/]+-evidence)\.mjs$/,
   /^scripts\/release\/qualify-windows[^/]*\.ps1$/,
 ];

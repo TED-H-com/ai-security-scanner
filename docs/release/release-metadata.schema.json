@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://github.com/teddashh/ai-security-scanner/blob/main/docs/release/release-metadata.schema.json",
+  "$id": "https://github.com/TED-H-com/ai-security-scanner/blob/main/docs/release/release-metadata.schema.json",
   "title": "ai-security-scanner artifact-scoped release metadata",
   "type": "object",
   "additionalProperties": false,
@@ -28,7 +28,7 @@
     "tag": { "type": "string", "pattern": "^v(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)$" },
     "releaseChannel": { "enum": ["prerelease", "stable"] },
     "stableTarget": { "$ref": "#/$defs/semver" },
-    "sourceRepository": { "type": "string", "format": "uri", "pattern": "^https://github\\.com/" },
+    "sourceRepository": { "$ref": "engine-image-supply-chain.schema.json#/$defs/publicationSourceRepository" },
     "sourceCommit": { "type": "string", "pattern": "^[0-9a-f]{40}$" },
     "sourceDate": { "type": "string", "format": "date-time" },
     "publicationMode": { "enum": ["commit-bound-qc", "public-github-release"] },

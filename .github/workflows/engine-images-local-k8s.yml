@@ -127,6 +127,7 @@ jobs:
           file: engines/images/semgrep/Dockerfile
           platforms: linux/${{ matrix.arch }}
           push: false
+          labels: org.opencontainers.image.source=https://github.com/${{ github.repository }}
           load: true
           tags: aiss-local/semgrep-combined${{ matrix.arch == 'arm64' && '-arm64' || '' }}:review
           provenance: false
@@ -173,7 +174,7 @@ jobs:
       fail-fast: false
       matrix: ${{ fromJSON(needs.changes.outputs.matrix) }}
     env:
-      IMAGE: ghcr.io/teddashh/ai-security-scanner-engine-${{ matrix.engine }}
+      IMAGE: ghcr.io/ted-h-com/ai-security-scanner-engine-${{ matrix.engine }}
       IMAGE_TAG: ${{ matrix.tag }}
     steps:
       - name: Require both native Semgrep verifications before publication
@@ -226,6 +227,7 @@ jobs:
           file: ${{ matrix.dockerfile }}
           platforms: linux/amd64,linux/arm64
           push: true
+          labels: org.opencontainers.image.source=https://github.com/${{ github.repository }}
           tags: ${{ env.IMAGE }}:${{ steps.guard.outputs.candidate_tag }}
           provenance: false
           sbom: false
@@ -241,8 +243,9 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          package="${IMAGE#ghcr.io/teddashh/}"
-          gh api --method PATCH "/user/packages/container/${package}" -f visibility=public
+          registry_repository="${IMAGE#ghcr.io/}"
+          package="${registry_repository#*/}"
+          gh api --method PATCH "/orgs/TED-H-com/packages/container/${package}" -f visibility=public
 
       - name: Download the actual amd64 native verification receipt
         if: matrix.engine == 'semgrep'

@@ -3,6 +3,7 @@ import { readFileSync } from "node:fs";
 import test from "node:test";
 
 import { build } from "esbuild";
+import { CURRENT_PUBLICATION_ORIGIN, UPDATER_DOWNLOAD_REPOSITORY } from "../../scripts/publication-origins.mjs";
 
 import {
   resolveAppUpdaterRuntime,
@@ -15,7 +16,7 @@ const SIGNATURE = "A".repeat(96);
 
 const payload = (name: string, signature = SIGNATURE) => ({
   signature,
-  url: `https://github.com/teddashh/ai-security-scanner/releases/download/v${VERSION}/${name}`,
+  url: `https://github.com/${UPDATER_DOWNLOAD_REPOSITORY}/releases/download/v${VERSION}/${name}`,
 });
 
 const windowsPayloads = () => {
@@ -53,8 +54,18 @@ const validates = (platforms: Record<string, unknown>, runtime: AppUpdaterRuntim
   assert.doesNotThrow(() => validateAppUpdateManifest(candidate(platforms), runtime));
 };
 
-test("Windows accepts its signed current and fallback payload without Linux or macOS", () => {
+test("Windows accepts current and legacy signed payloads without Linux or macOS", () => {
   validates(windowsPayloads(), resolveAppUpdaterRuntime("windows", "x86_64"));
+  const current = windowsPayloads();
+  for (const entry of Object.values(current)) {
+    entry.url = entry.url.replace(UPDATER_DOWNLOAD_REPOSITORY, CURRENT_PUBLICATION_ORIGIN.repository);
+  }
+  validates(current, resolveAppUpdaterRuntime("windows", "x86_64"));
+  const mixed = windowsPayloads();
+  mixed["windows-x86_64-nsis"].url = mixed["windows-x86_64-nsis"].url.replace(
+    UPDATER_DOWNLOAD_REPOSITORY, CURRENT_PUBLICATION_ORIGIN.repository,
+  );
+  assert.throws(() => validateAppUpdateManifest(candidate(mixed), resolveAppUpdaterRuntime("windows", "x86_64")), /same signed payload/u);
 });
 
 test("Linux and each macOS architecture validate only the payloads that runtime can select", () => {
@@ -74,6 +85,23 @@ test("an unrelated platform entry cannot block a valid current-platform update",
     ...windowsPayloads(),
     "linux-x86_64": { signature: "bad", url: "http://untrusted.invalid/update" },
   }, resolveAppUpdaterRuntime("windows", "x86_64"));
+});
+
+test("updater downloads accept only the two known owner/repository pairs", () => {
+  for (const repository of [
+    "unknown/ai-security-scanner",
+    "teddashh/other-repository",
+    "TED-H-com/other-repository",
+  ]) {
+    const platforms = windowsPayloads();
+    for (const entry of Object.values(platforms)) {
+      entry.url = entry.url.replace(UPDATER_DOWNLOAD_REPOSITORY, repository);
+    }
+    assert.throws(
+      () => validateAppUpdateManifest(candidate(platforms), resolveAppUpdaterRuntime("windows", "x86_64")),
+      /untrusted download location/u,
+    );
+  }
 });
 
 test("a required current-platform entry or fallback must be present and bind identical bytes", () => {

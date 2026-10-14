@@ -236,6 +236,11 @@ pub struct GatewayContainerSpec {
 impl GatewayContainerSpec {
     pub fn new(repository: impl Into<String>, digest: impl Into<String>) -> AppResult<Self> {
         let repository = repository.into();
+        if !crate::publication_origins::validate_gateway_repository(&repository) {
+            return Err(AppError::EngineRegistry(
+                "unrecognized gateway publication origin".into(),
+            ));
+        }
         let digest = digest.into();
         let image = PinnedImage::new(&repository, &digest)?;
         let reference = image.reference();
@@ -7004,6 +7009,26 @@ mod tests {
         fs::create_dir(&policies).expect("policy directory");
         fs::create_dir(&registry).expect("registry directory");
         (temporary, gateway, artifacts, policies, registry)
+    }
+
+    #[test]
+    fn gateway_container_spec_requires_an_allowed_publication_origin() {
+        for (namespace, _) in crate::publication_origins::PUBLICATION_ORIGINS {
+            assert!(
+                GatewayContainerSpec::new(
+                    format!("{namespace}/ai-security-scanner-egress-gateway"),
+                    format!("sha256:{}", "d".repeat(64))
+                )
+                .is_ok()
+            );
+        }
+        assert!(
+            GatewayContainerSpec::new(
+                "ghcr.io/unknown/ai-security-scanner-egress-gateway",
+                format!("sha256:{}", "d".repeat(64))
+            )
+            .is_err()
+        );
     }
 
     fn gateway_container_spec() -> GatewayContainerSpec {

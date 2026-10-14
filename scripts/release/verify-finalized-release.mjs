@@ -23,6 +23,7 @@ import {
   windowsExternalEvidenceImporterIdentity,
 } from "./windows-external-evidence.mjs";
 import { publishedReleaseAssetName } from "./release-asset-name.mjs";
+import { PUBLICATION_ORIGINS, UPDATER_DOWNLOAD_REPOSITORY } from "../publication-origins.mjs";
 
 function assert(condition, message) {
   if (!condition) {
@@ -229,6 +230,10 @@ async function main() {
   }
 
   const releaseMetadata = await readJson(path.join(directory, "release-metadata.json"));
+  assert(
+    PUBLICATION_ORIGINS.some(({ repository }) => releaseMetadata.sourceRepository === `https://github.com/${repository}`),
+    "finalized release source repository is not a known publication origin",
+  );
   validateReleaseMetadataV3(releaseMetadata, {
     releaseState: "finalized",
     version,
@@ -406,7 +411,7 @@ async function main() {
           signature: signatureActual.absolute,
         }]);
         const expectedUrl =
-          `https://github.com/teddashh/ai-security-scanner/releases/download/${tag}/${encodeURIComponent(updaterRecord.payloadFile)}`;
+          `https://github.com/${UPDATER_DOWNLOAD_REPOSITORY}/releases/download/${tag}/${encodeURIComponent(updaterRecord.payloadFile)}`;
         for (const target of artifact.updater.targetKeys) {
           assert(!updaterTargets.has(target), `duplicate finalized updater target: ${target}`);
           updaterTargets.add(target);

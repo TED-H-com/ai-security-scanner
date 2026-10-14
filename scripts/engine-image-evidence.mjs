@@ -12,6 +12,7 @@ import {
 import os from "node:os";
 import path from "node:path";
 import { pathToFileURL } from "node:url";
+import { CURRENT_PUBLICATION_ORIGIN, publicationOrigin, validateRepositoryId, certificateOriginMatches, provenanceOriginMatches, validateImageSourceLabels } from "./publication-origins.mjs";
 import { validateReplacementHistory } from "./engine-image-replacement.mjs";
 
 import {
@@ -49,9 +50,9 @@ const PREDICATES = Object.freeze({
 const CLOUD_ENGINE_IDS = Object.freeze(["cloudquery", "prowler", "cloudsplaining", "scoutsuite", "steampipe"]);
 const GATEWAY_SCRATCH_SBOM = Object.freeze({
   engine: "egress-gateway",
-  image: "ghcr.io/teddashh/ai-security-scanner-egress-gateway",
+  image: `${CURRENT_PUBLICATION_ORIGIN.namespace}/ai-security-scanner-egress-gateway`,
   componentName: "ai-security-scanner-egress-gateway",
-  source: "https://github.com/teddashh/ai-security-scanner",
+  source: `https://github.com/${CURRENT_PUBLICATION_ORIGIN.repository}`,
   title: "ai-security-scanner managed egress gateway",
   license: "Apache-2.0",
   fileNames: Object.freeze([
@@ -238,7 +239,9 @@ async function inspectGhcrTag({ image, tag, username, token, fetchImpl = fetch }
   return { state: "present", digest, platformDigests };
 }
 
-function matchingVerifiedProvenance(records, { image, digest, sourceRevision, repository, workflowRef }) {
+export function matchingVerifiedProvenance(records, { image, digest, sourceRevision, repository, workflowRef }) {
+  const origin = publicationOrigin(image, repository);
+  assert(workflowRef.startsWith(`${repository}/.github/workflows/`) && workflowRef.includes("@refs/heads/"), "workflow ref does not identify the publication repository");
   const expectedRepositoryUrl = `https://github.com/${repository}`;
   const expectedSigner = `https://github.com/${workflowRef}`;
   const expectedSourceRef = workflowRef.slice(workflowRef.indexOf("@") + 1);
@@ -246,6 +249,16 @@ function matchingVerifiedProvenance(records, { image, digest, sourceRevision, re
     const result = record?.verificationResult;
     const statement = result?.statement;
     const certificate = result?.signature?.certificate;
+    validateRepositoryId(certificate);
+    validateRepositoryId(statement?.predicate);
+    if (!certificateOriginMatches(certificate, origin) || !provenanceOriginMatches(statement?.predicate, origin)) return false;
+    if (certificate?.sourceRepositoryRef !== undefined && certificate.sourceRepositoryRef !== expectedSourceRef) return false;
+    if (certificate?.runInvocationURI !== undefined && !certificate.runInvocationURI.startsWith(`${expectedRepositoryUrl}/actions/runs/`)) return false;
+    const workflow = statement?.predicate?.buildDefinition?.externalParameters?.workflow;
+    if (workflow && (workflow.repository !== expectedRepositoryUrl || `${repository}/${workflow.path}@${workflow.ref}` !== workflowRef)) return false;
+    const details = statement?.predicate?.runDetails;
+    if (details?.builder && details.builder.id !== expectedSigner) return false;
+    if (certificate?.subjectAlternativeName !== undefined && certificate.subjectAlternativeName !== expectedSigner) return false;
     if (statement?.predicateType !== PREDICATES.provenance) return false;
     if (!statement.subject?.some((subject) =>
       subject?.name === image && subject?.digest?.sha256 === digestHex(digest))) return false;
@@ -275,7 +288,7 @@ function verifiedProvenanceSourceRevision(records, { image, digest, repository, 
 }
 
 function verifyPublishedProvenance({ image, digest, repository, workflowRef, exec = execFileSync }) {
-  assert(/^[A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+$/u.test(repository), `invalid GitHub repository: ${repository}`);
+  publicationOrigin(image, repository);
   assert(workflowRef.startsWith(`${repository}/.github/workflows/`) && workflowRef.includes("@refs/heads/"), "workflow ref does not identify this repository's branch workflow");
   let output;
   try {
@@ -331,8 +344,11 @@ function managedEngineFromImage(image) {
 function validateEnginePlanBinding(plan, { engine, image, tag, label }) {
   assert(plan && typeof plan === "object" && !Array.isArray(plan), `${label} engine input plan is not an object`);
   assert(plan.engine_id === engine, `${label} engine input plan does not identify ${engine}`);
+  // Plans retain published pins; a new workflow may build the same package in the current namespace.
+  publicationOrigin(plan.final_artifact?.repository);
+  publicationOrigin(image);
   assert(
-    plan.final_artifact?.repository === image && plan.final_artifact?.tag === tag,
+    plan.final_artifact.repository.split("/").at(-1) === image.split("/").at(-1) && plan.final_artifact?.tag === tag,
     `${label} engine input plan does not bind ${image}:${tag}`,
   );
 }
@@ -457,8 +473,10 @@ function publicationInputs(args) {
   assert(SOURCE_REVISION_PATTERN.test(sourceRevision), `invalid source revision: ${sourceRevision}`);
   assert(sourceRevision === process.env.GITHUB_SHA, "source revision does not match the executing workflow commit");
   assert(typeof token === "string" && token.length > 0, "GHCR_TOKEN is required");
-  const { owner } = registryCoordinates(image);
-  assert(repository.startsWith(`${owner}/`), "managed image owner does not match the GitHub repository owner");
+  const origin = publicationOrigin(image, repository);
+  validateRepositoryId({ repository_id: process.env.GITHUB_REPOSITORY_ID });
+  assert(origin === CURRENT_PUBLICATION_ORIGIN, "new publications require the current origin");
+  assert(workflowRef.startsWith(`${repository}/.github/workflows/`) && workflowRef.includes("@refs/heads/"), "workflow ref does not identify the publication repository");
   return { image, tag, sourceRevision, repository, workflowRef, username, token };
 }
 
@@ -771,7 +789,7 @@ function normalizeGatewayScratchCycloneDx({
   if (Object.hasOwn(cycloneDxDocument, "components")) return false;
 
   assert(
-    engine === GATEWAY_SCRATCH_SBOM.engine && image === GATEWAY_SCRATCH_SBOM.image,
+    engine === GATEWAY_SCRATCH_SBOM.engine && image === `${publicationOrigin(image).namespace}/ai-security-scanner-egress-gateway`,
     "CycloneDX component inventory is missing",
   );
   assert(TAG_PATTERN.test(tag), "gateway scratch component version tag is invalid");
@@ -817,7 +835,7 @@ function normalizeGatewayScratchCycloneDx({
     "gateway scratch normalization refuses to discard CycloneDX dependencies",
   );
   for (const [label, value] of [
-    ["org.opencontainers.image.source", GATEWAY_SCRATCH_SBOM.source],
+    ["org.opencontainers.image.source", `https://github.com/${publicationOrigin(image).repository}`],
     ["org.opencontainers.image.title", GATEWAY_SCRATCH_SBOM.title],
     ["org.opencontainers.image.licenses", GATEWAY_SCRATCH_SBOM.license],
   ]) {
@@ -837,7 +855,7 @@ function normalizeGatewayScratchCycloneDx({
     licenses: [{ license: { id: GATEWAY_SCRATCH_SBOM.license } }],
     externalReferences: [{
       type: "vcs",
-      url: `${GATEWAY_SCRATCH_SBOM.source}/tree/${sourceRevision}`,
+      url: `https://github.com/${publicationOrigin(image).repository}/tree/${sourceRevision}`,
     }],
     properties: [
       { name: "ai-security-scanner:component:source-revision", value: sourceRevision },
@@ -963,6 +981,8 @@ async function createPreparedEvidence({ engine, image, tag, indexDigest, sourceR
   if (process.env.GITHUB_SHA) {
     assert(sourceRevision === process.env.GITHUB_SHA, "source revision does not match the executing workflow commit");
   }
+  publicationOrigin(image, process.env.GITHUB_REPOSITORY);
+  validateRepositoryId({ repository_id: process.env.GITHUB_REPOSITORY_ID });
   await mkdir(outputRoot, { recursive: true });
 
   const platforms = [];
@@ -985,6 +1005,8 @@ async function createPreparedEvidence({ engine, image, tag, indexDigest, sourceR
       cycloneDxFile,
     });
     if (transformation) sbomTransformations.push(transformation);
+    const cycloneDxDocument = await readJson(cycloneDxFile);
+    validateImageSourceLabels(cycloneDxDocument.metadata, publicationOrigin(image));
     const spdxRecord = await sbomRecord(
       outputRoot,
       `${prefix}.spdx.json`,
@@ -1042,7 +1064,7 @@ async function createPreparedEvidence({ engine, image, tag, indexDigest, sourceR
     platforms,
     attestations: [],
     verification: {
-      repository: process.env.GITHUB_REPOSITORY ?? null,
+      repository: publicationOrigin(image, process.env.GITHUB_REPOSITORY).repository,
       workflowRun:
         process.env.GITHUB_SERVER_URL && process.env.GITHUB_REPOSITORY && process.env.GITHUB_RUN_ID
           ? `${process.env.GITHUB_SERVER_URL}/${process.env.GITHUB_REPOSITORY}/actions/runs/${process.env.GITHUB_RUN_ID}`
@@ -1078,6 +1100,10 @@ async function copyAndValidateBundle({ source, destination, image, digest, predi
   const subject = statement?.subject?.find((candidate) => candidate?.name === image);
   assert(subject, `attestation does not name ${image}`);
   assert(subject.digest?.sha256 === digestHex(digest), "attestation subject digest is incorrect");
+  if (predicateType === PREDICATES.provenance) {
+    validateRepositoryId(statement.predicate);
+    assert(provenanceOriginMatches(statement.predicate, publicationOrigin(image)), "provenance repository mismatch");
+  }
   if (predicate) assert(isDeepStrictEqual(statement.predicate, predicate), "attested SBOM differs from the downloadable SBOM");
   await copyFile(source, destination);
   const metadata = await stat(destination);
@@ -1090,6 +1116,7 @@ async function finalizeEvidence(args) {
   const evidence = await readJson(manifest);
   assert(evidence?.schemaVersion === 1 && evidence.attestations?.length === 0, "prepared engine evidence is invalid or already finalized");
 
+  publicationOrigin(evidence.image, evidence.verification?.repository);
   const specifications = [
     {
       key: "provenance",
@@ -1285,8 +1312,8 @@ async function selfTest() {
   const root = await mkdtemp(path.join(os.tmpdir(), "ai-security-scanner-engine-evidence-"));
   try {
     const engine = "fixture-engine";
-    const image = "ghcr.io/example/fixture-engine";
-    const repository = process.env.GITHUB_REPOSITORY ?? "example/repository";
+    const image = `${CURRENT_PUBLICATION_ORIGIN.namespace}/fixture-engine`;
+    const repository = process.env.GITHUB_REPOSITORY ?? CURRENT_PUBLICATION_ORIGIN.repository;
     const indexDigest = `sha256:${"11".repeat(32)}`;
     const platformDigests = new Map([
       ["linux/amd64", `sha256:${"22".repeat(32)}`],

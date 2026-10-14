@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://github.com/teddashh/ai-security-scanner/blob/main/docs/usability/session-evidence.schema.json",
+  "$id": "https://github.com/TED-H-com/ai-security-scanner/blob/main/docs/usability/session-evidence.schema.json",
   "title": "ai-security-scanner Advanced AWS IAM-naive session evidence",
   "description": "Feature-specific evidence for the optional Advanced AWS journey. It is not first-value, universal first-run, or whole-product release evidence.",
   "type": "object",

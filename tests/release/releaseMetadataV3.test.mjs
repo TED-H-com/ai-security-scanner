@@ -17,7 +17,7 @@ const identity = {
   tag: "v0.1.8",
   releaseChannel: "prerelease",
   stableTarget: "0.2.0",
-  sourceRepository: "https://github.com/teddashh/ai-security-scanner",
+  sourceRepository: "https://github.com/TED-H-com/ai-security-scanner",
   sourceCommit: "01".repeat(20),
   sourceDate: "2026-08-30T00:00:00Z",
   publicationMode: "commit-bound-qc",
@@ -140,6 +140,14 @@ function finalizedWindowsMetadata(candidateArtifact = artifact()) {
 }
 
 test("prepared v3 metadata records a requested Windows subset without global security claims", () => {
+  for (const owner of ["teddashh", "TED-H-com"]) {
+    const paired = windowsOnlyPrepared();
+    paired.sourceRepository = `https://github.com/${owner}/ai-security-scanner`;
+    validateReleaseMetadataV3(paired);
+  }
+  const unknown = windowsOnlyPrepared();
+  unknown.sourceRepository = "https://github.com/unknown/ai-security-scanner";
+  assert.throws(() => validateReleaseMetadataV3(unknown), /publication source repository/u);
   const metadata = windowsOnlyPrepared();
   assert.equal(metadata.schemaVersion, 3);
   assert.equal(metadata.releaseState, "prepared");

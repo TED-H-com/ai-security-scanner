@@ -212,7 +212,7 @@ async function main() {
   const repository =
     typeof args.get("repository") === "string"
       ? args.get("repository")
-      : "teddashh/ai-security-scanner";
+      : "TED-H-com/ai-security-scanner";
   if (!/^[A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+$/u.test(repository)) {
     throw new Error("repository must be an owner/name pair");
   }

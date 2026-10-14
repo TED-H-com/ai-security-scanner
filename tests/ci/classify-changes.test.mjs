@@ -289,6 +289,19 @@ test("platform startup, installer and managed-runtime inputs schedule their focu
   assert.equal(result.windows_runtime, true);
   assert.equal(result.engine, false);
   assert.equal(result.release_contract, false);
+
+  // Shared publication origins are read by the gateway and managed network.
+  assert.deepEqual(classifyChangedPaths(["src-tauri/src/publication_origins.rs"]), {
+    changed_path_count: 1,
+    docs_only: false,
+    frontend: false,
+    rust_core: true,
+    desktop: true,
+    engine: false,
+    framework: false,
+    release_contract: false,
+    windows_runtime: true,
+  });
 });
 
 test("the vendored Linux desktop security patch runs its provenance and build gates", () => {
@@ -306,7 +319,7 @@ test("the vendored Linux desktop security patch runs its provenance and build ga
   );
 });
 
-test("shared Node dependency changes exercise every Node and desktop packaging consumer", () => {
+test("shared Node dependencies and publication origins exercise their consumers", () => {
   const result = classifyChangedPaths(["package-lock.json"]);
   assert.equal(result.frontend, true);
   assert.equal(result.desktop, true);
@@ -315,6 +328,23 @@ test("shared Node dependency changes exercise every Node and desktop packaging c
   assert.equal(result.release_contract, true);
   assert.equal(result.windows_runtime, true);
   assert.equal(result.rust_core, false);
+
+  for (const path of [
+    "scripts/publication-origins.mjs",
+    "scripts/publication-origins.d.mts",
+  ]) {
+    assert.deepEqual(classifyChangedPaths([path]), {
+      changed_path_count: 1,
+      docs_only: false,
+      frontend: true,
+      rust_core: false,
+      desktop: false,
+      engine: true,
+      framework: false,
+      release_contract: true,
+      windows_runtime: false,
+    }, path);
+  }
 });
 
 test("every frozen-release workflow and release schema schedules release-contract tests", () => {

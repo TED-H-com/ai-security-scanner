@@ -1,3 +1,5 @@
+import { PUBLICATION_ORIGINS } from "../../scripts/publication-origins.mjs";
+
 export interface AppUpdateManifestCandidate {
   version: string;
   rawJson: Record<string, unknown>;
@@ -12,7 +14,7 @@ interface RequiredPayloadGroup {
   suffix: string;
 }
 
-const EXPECTED_RELEASE_PATH = ["teddashh", "ai-security-scanner", "releases", "download"] as const;
+const EXPECTED_RELEASE_PATH = ["ai-security-scanner", "releases", "download"] as const;
 const RELEASE_VERSION = /^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:-[0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*)?(?:\+[0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*)?$/u;
 
 const normalizePlatform = (
@@ -136,7 +138,8 @@ const validatePayloadEntry = (
     url.search !== "" ||
     url.hash !== "" ||
     pathParts.length !== 6 ||
-    EXPECTED_RELEASE_PATH.some((part, index) => pathParts[index] !== part) ||
+    !PUBLICATION_ORIGINS.some((origin) => origin.repository === `${pathParts[0]}/${pathParts[1]}`) ||
+    EXPECTED_RELEASE_PATH.some((part, index) => pathParts[index + 1] !== part) ||
     pathParts[4] !== `v${version}` ||
     !/^[A-Za-z0-9][A-Za-z0-9._+-]{0,254}$/u.test(payloadName) ||
     !payloadName.includes(version) ||

@@ -101,7 +101,7 @@ test("the project site stays local, responsive, bilingual, and GitHub Pages read
   assert.doesNotMatch(script, /innerHTML|document\.write/u);
 
   const packageMetadata = JSON.parse(packageSource) as { homepage?: string };
-  assert.equal(packageMetadata.homepage, "https://teddashh.github.io/ai-security-scanner/");
+  assert.equal(packageMetadata.homepage, "https://ted-h-com.github.io/ai-security-scanner/");
 });
 
 test("tool cards and all three READMEs use each scanner introduction", async () => {
