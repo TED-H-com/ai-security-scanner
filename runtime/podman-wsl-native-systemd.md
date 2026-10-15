@@ -31,7 +31,7 @@ The build uses no downloaded Go modules. Windows builds and independent Linux
 cross-builds must produce the exact same executable. Linux cross-building also
 requires `git`, `tar`, and `unzip`.
 
-The manifest identifies the component as `5.8.2+wsl-systemd.1` and includes the
+The manifest identifies the component as `5.8.2-wsl-systemd.1` and includes the
 source archive, patch, and complete build-input record. Podman's reported API
 version remains 5.8.2. The machine OS image and upstream Windows helper binaries
 retain their existing locked identities. The changed manifest selects a separate
@@ -54,3 +54,8 @@ check: the original installer had prepopulated its different, unpatched manifest
 cache before the diagnostic override was selected. This probe does not qualify
 the rebuilt installers or desktop. The normal Windows qualification now retains
 the idle and restart checks and must pass against one rebuilt, anchored payload.
+
+The component version uses the runtime reader's existing version vocabulary.
+CI and candidate preparation pass the complete staged bundle through the actual
+built CLI with a fresh temporary data directory. This verifies runtime manifest
+admission in addition to the vendor's hashes and build-time desktop anchor.

@@ -323,6 +323,13 @@ jobs:
         if: matrix.platform == 'windows-x86_64'
         run: npm run desktop:prepare-sidecar -- --target x86_64-pc-windows-msvc
 
+      - name: Admit the complete Windows runtime through the built CLI
+        if: matrix.platform == 'windows-x86_64'
+        run: >-
+          node scripts/release/verify-runtime-consumer.mjs
+          --cli src-tauri/binaries/ai-security-scanner-cli-x86_64-pc-windows-msvc.exe
+          --bundle runtime/staged/managed-runtime
+
       - name: Build the application once without installers
         id: build_unbundled
         shell: bash
@@ -495,7 +502,7 @@ jobs:
           )
           if [[ "${RELEASE_PLATFORM}" == "windows-x86_64" ]]; then
             runtime_evidence_args+=(
-              --expected-manifest-sha256 c30195e26367a8612d600383e181e232bd9cd87a7e36332cc288aacca6b17833
+              --expected-manifest-sha256 83a4f0106c5c1be17e515db9f86f32d9e43fc4563d85473b400e3df6efe240e3
             )
           fi
           node scripts/release/generate-runtime-evidence.mjs "${runtime_evidence_args[@]}"
