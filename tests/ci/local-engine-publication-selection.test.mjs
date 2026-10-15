@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { selectLocalEnginePublication } from "../../scripts/select-local-engine-publication.mjs";
+import { publishedTagFromPlan, selectLocalEnginePublication } from "../../scripts/select-local-engine-publication.mjs";
 
 const ids = ["semgrep", "trufflehog", "trivy", "grype", "kubescape", "kube-bench"];
 const matrix = ids.map((engine) => ({ engine, tag: "1.0.0-1", dockerfile: `engines/images/${engine}/Dockerfile` }));
@@ -14,6 +14,22 @@ test("only an explicitly new immutable tag is selected after shared input edits"
 
 test("a pin-only follow-up selects no publication", () => {
   assert.deepEqual(selectLocalEnginePublication(matrix, tags), []);
+});
+
+test("a pending plan selects its candidate until verified publication is activated", () => {
+  const plan = {
+    publish_state: "publication_in_progress",
+    previous_artifact: { tag: "1.0.0-1" },
+    final_artifact: { tag: "1.0.0-2", digest: null },
+  };
+  const candidate = structuredClone(matrix);
+  candidate[0].tag = plan.final_artifact.tag;
+  assert.deepEqual(selectLocalEnginePublication(candidate, { ...tags, semgrep: publishedTagFromPlan(plan) })
+    .map(({ engine }) => engine), ["semgrep"]);
+  plan.publish_state = "published_managed_artifact";
+  assert.deepEqual(selectLocalEnginePublication(candidate, { ...tags, semgrep: publishedTagFromPlan(plan) }), []);
+  assert.equal(publishedTagFromPlan({ publish_state: "publication_in_progress", final_artifact: { tag: "1.0.0-1" } }), "");
+  assert.throws(() => publishedTagFromPlan({ publish_state: "unknown" }), /unsupported publication plan state/u);
 });
 
 test("a manual verification or publication selects exactly one named engine", () => {
