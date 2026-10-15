@@ -69,7 +69,9 @@ ENV BC_ENABLE_PERSIST_GRAPHS="false" \
     XDG_CACHE_HOME="/tmp/ai-security-scanner-cache"
 
 RUN --mount=type=bind,from=build,source=/,target=/mnt/build,ro \
-    tar --extract --file=/mnt/build/tmp/install.tar --directory=/usr/local \
+    python -m pip uninstall --yes wheel packaging \
+    && tar --extract --file=/mnt/build/tmp/install.tar --directory=/usr/local \
+    && python -m pip check \
     && install -D -m 0644 /mnt/build/src/LICENSE /usr/share/licenses/checkov/LICENSE \
     && install -D -m 0444 /mnt/build/tmp/requirements.lock /usr/share/licenses/checkov/runtime-requirements.lock \
     && mkdir -p /workspace \

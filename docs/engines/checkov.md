@@ -79,3 +79,7 @@ Follow [section 4](../engine-maintenance.md#4-updating-an-engine), then:
 ## 2026-10-14 source update
 
 The replacement recipe targets `3.3.29-1` at upstream commit `e40023ab262c7c8b7b0a8f0975072b42d1b601f9`. The catalog still names the previously published image until replacement publication is verified. See the [batch update record](updates/2026-10-14.md) for changed inputs, retained rules and verification.
+
+## 2026-10-15 runtime dependency correction
+
+The first 3.3.29 candidate's `pip check` found two mismatches despite a successful native scan: the upstream lock retains `bc-detect-secrets` 1.5.50 while the release declares 1.5.52, and the Python base image retains packaging 26.3 metadata over the installed 23.2 requirement. The source preparer now binds the declared secrets dependency to the verified wheel SHA-256 `772353c949a131b7b5efd2b20473e0128af9c25ea27cdb15a3a6a6727ca73c4e`; the original upstream lock remains untouched and checksum-bound. The runtime layer removes the base's wheel/packaging distributions before extracting the 99-entry locked installation, and requires `python -m pip check` to pass. No Checkov detector or finding normalization is patched.
