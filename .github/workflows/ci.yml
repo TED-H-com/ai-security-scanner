@@ -245,7 +245,7 @@ jobs:
           --manifest runtime/staged/managed-runtime/manifest.json
           --out target/ci-managed-runtime-evidence
           --platform windows-x86_64
-          --expected-manifest-sha256 a8112473e5d87655e6145ea5f6cff569c872329d2ec14bfb9463078abcb60e3a
+          --expected-manifest-sha256 c30195e26367a8612d600383e181e232bd9cd87a7e36332cc288aacca6b17833
       - name: Build and stage required Windows sidecars
         run: npm run desktop:prepare-sidecar -- --target x86_64-pc-windows-msvc
       - name: Test the installer runtime-cache coordinator and build trust anchor
