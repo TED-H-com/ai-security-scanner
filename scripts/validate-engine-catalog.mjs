@@ -8,6 +8,7 @@ import { parse as parseYaml } from "yaml";
 import { PUBLICATION_ORIGINS, publicationOrigin, publicationRunId } from "./publication-origins.mjs";
 import { validateProwlerCatalogContract } from "./prowler-catalog-contract.mjs";
 import { isPendingImageReplacement, pendingUpstreamBuild } from "./engine-image-replacement.mjs";
+import { LOCAL_BUILD_GUARD, LOCAL_IMAGE_DIGEST, validateSemgrepNativePublication } from "./semgrep-native-publication-contract.mjs";
 
 const root = resolve(import.meta.dirname, "..");
 const catalogPath = resolve(root, "engines/catalog.json");
@@ -591,6 +592,7 @@ function validateManagedImageEvidence(catalogEntries) {
     errors.push(`${localK8sWorkflowRelative}: Semgrep requires native verification on both architectures before publication, with sibling engines independent`);
   }
   const localPublishSteps = localK8sWorkflow?.jobs?.publish?.steps;
+  errors.push(...validateSemgrepNativePublication(localK8sWorkflow));
   const localVerifyStep = Array.isArray(localPublishSteps)
     ? localPublishSteps.find((step) => step?.id === "verify")
     : undefined;
@@ -707,7 +709,9 @@ function validateManagedImageEvidence(catalogEntries) {
         if (buildStep?.with?.push === true) {
           const guardIndex = steps.findIndex((candidate, index) =>
             index < buildIndex && candidate?.uses === "./.github/actions/engine-image-evidence/publication-guard");
-          if (guardIndex < 0 || buildStep?.if !== "steps.guard.outputs.should_build == 'true'" ||
+          const requiredGuard = relative === localK8sWorkflowRelative && jobId === "publish"
+            ? LOCAL_BUILD_GUARD : "steps.guard.outputs.should_build == 'true'";
+          if (guardIndex < 0 || buildStep?.if !== requiredGuard ||
               buildStep?.with?.tags !== "${{ env.IMAGE }}:${{ steps.guard.outputs.candidate_tag }}") {
             errors.push(`${label}: publishing build must be guarded and write only its run-unique candidate tag`);
           }
@@ -766,6 +770,10 @@ function validateManagedImageEvidence(catalogEntries) {
               `\${{ steps.${id}.outputs.digest }}`,
               `\${{ steps.guard.outputs.digest || steps.${id}.outputs.digest }}`,
             ]);
+          if (relative === localK8sWorkflowRelative && jobId === "publish" &&
+              steps.some((step, index) => index < evidenceIndex && step.id === "semgrep_image")) {
+            expectedDigestInputs.push(LOCAL_IMAGE_DIGEST);
+          }
           if (!expectedDigestInputs.includes(evidenceStep?.with?.digest)) {
             errors.push(`${label}: digest must reference a preceding publication step output`);
           }

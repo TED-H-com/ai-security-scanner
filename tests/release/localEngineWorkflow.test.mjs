@@ -6,6 +6,7 @@ import { spawnSync } from "node:child_process";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { parse } from "yaml";
+import { validateSemgrepNativePublication } from "../../scripts/semgrep-native-publication-contract.mjs";
 
 test("a failed native Semgrep validation stops its own publication and leaves sibling jobs independent", () => {
   const workflow = parse(readFileSync(new URL("../../.github/workflows/engine-images-local-k8s.yml", import.meta.url), "utf8"));
@@ -46,6 +47,7 @@ test("manual native verification cannot publish an image, rules cache or build-r
 
 test("Semgrep publication consumes both same-attempt native image artifacts without rebuilding", () => {
   const workflow = parse(readFileSync(new URL("../../.github/workflows/engine-images-local-k8s.yml", import.meta.url), "utf8"));
+  assert.deepEqual(validateSemgrepNativePublication(workflow), []);
   const publish = workflow.jobs.publish;
   const build = publish.steps.find((step) => step.id === "build");
   assert.match(build.if, /matrix\.engine != 'semgrep'/u);
@@ -63,6 +65,19 @@ test("Semgrep publication consumes both same-attempt native image artifacts with
   for (const step of publish.steps.filter((step) => ["./.github/actions/engine-image-evidence", "./.github/actions/engine-image-evidence/promote"].includes(step.uses))) {
     assert.match(step.with.digest, /steps\.semgrep_image\.outputs\.digest/u);
     assert.ok(publish.steps.indexOf(step) > publish.steps.indexOf(verify));
+  }
+});
+
+test("engine admission rejects an unguarded handoff, another attempt or an unrelated evidence digest", () => {
+  for (const mutation of ["guard", "attempt", "digest", "verify-mode", "rebuild"]) {
+    const workflow = parse(readFileSync(new URL("../../.github/workflows/engine-images-local-k8s.yml", import.meta.url), "utf8"));
+    const steps = workflow.jobs.publish.steps;
+    if (mutation === "guard") steps.find((step) => step.id === "semgrep_image").if = "matrix.engine == 'semgrep'";
+    if (mutation === "attempt") steps.find((step) => step.name === "Download the tested arm64 image").with.name = "semgrep-native-image-arm64-${{ github.run_id }}-1";
+    if (mutation === "digest") steps.find((step) => step.uses === "./.github/actions/engine-image-evidence").with.digest = "${{ steps.unverified.outputs.digest }}";
+    if (mutation === "verify-mode") workflow.jobs["semgrep-native-verify"].steps.find((step) => step.name === "Transfer the tested native image to publication").if = "success()";
+    if (mutation === "rebuild") steps.find((step) => step.id === "build").if = "steps.guard.outputs.should_build == 'true'";
+    assert.ok(validateSemgrepNativePublication(workflow).length > 0, mutation);
   }
 });
 
