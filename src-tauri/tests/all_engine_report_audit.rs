@@ -2702,27 +2702,21 @@ fn every_integrated_engine_lands_in_one_terminal_report() {
             // reports and a short commit here. The full source@ pin stays in
             // the technical detail.
             let source_scanners = [
-                (
-                    "trufflehog",
-                    "TruffleHog",
-                    "3.97.0",
-                    "3ab759fef4bb5935d4fe9ac68b503d05346b8364",
-                ),
-                (
-                    "kube-bench",
-                    "kube-bench",
-                    "0.16.0",
-                    "9f133cb7509ce1dbedfc860e94474588000e25ac",
-                ),
-                (
-                    "semgrep",
-                    "Semgrep",
-                    "1.174.0",
-                    "a0c13f304151e531c7e7c00838076211a07a790c",
-                ),
+                ("trufflehog", "TruffleHog"),
+                ("kube-bench", "kube-bench"),
+                ("semgrep", "Semgrep"),
             ];
             let mut source_rows = Vec::new();
-            for (engine_id, display, reported, commit) in source_scanners {
+            for (engine_id, display) in source_scanners {
+                let manifest = engines.get(engine_id).expect("catalog source scanner");
+                let reported = manifest
+                    .reported_version
+                    .as_deref()
+                    .expect("reported version");
+                let commit = manifest
+                    .source_revision
+                    .as_deref()
+                    .expect("source revision");
                 let check = report
                     .actual
                     .checks
@@ -2759,7 +2753,10 @@ fn every_integrated_engine_lands_in_one_terminal_report() {
                 let knowledge_date = knowledge_date
                     .as_deref()
                     .unwrap_or_else(|| panic!("{display} knowledge date"));
-                assert_eq!(knowledge_date, "2026-08-24", "{display} knowledge date");
+                assert_eq!(
+                    knowledge_date, manifest.compatibility.knowledge_date,
+                    "{display} knowledge date"
+                );
                 let short_commit = &commit[..7];
                 let short_en = format!("{reported} (source {short_commit})");
                 let exact_en = format!("{reported} (source@{commit})");
