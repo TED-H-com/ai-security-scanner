@@ -61,14 +61,14 @@
   "dockerfile": {
     "emitted": true,
     "path": "engines/images/grype/Dockerfile",
-    "sha256": "sha256:e2605217065e8941e783709e07c2cd826753a4b6f98102f946161cb03cbc5c2f",
+    "sha256": "sha256:7f3d405ab25fcdd507f15c64136636965f321b7840d070478cef0a5921c39949",
     "reason": null
   },
   "wrapper": {
     "required": true,
     "strategy": "Invoke the pinned source build against a typed read-only repository or OCI workspace and its embedded checksum-verified vulnerability database; Grype receives dir:/workspace or oci-dir:/workspace without product-owned package filtering.",
     "entrypoint": "/usr/local/bin/ai-security-scanner-engine-entrypoint",
-    "launcher_sha256": "sha256:3bb1f2f6d0e20f53ec2d1f8dd79f17cb9a8db235f6bb337a646e6f13fef196b3"
+    "launcher_sha256": "sha256:fc81ca1d8703978576d7c2b79a1723777a69f8852fabb86902737b8f517e9399"
   },
   "command": [
     "--engine",

@@ -5,7 +5,7 @@ import test from "node:test";
 const root = new URL("../../", import.meta.url);
 const read = (path) => readFileSync(new URL(path, root), "utf8");
 
-test("offline launcher digests match the exact files checked during image assembly", () => {
+test("offline launcher digests and size bounds match image assembly", () => {
   const launcher = read("engines/images/local-launcher/main.go");
   const files = [
     ["trivy", "trivyDBSHA256", "/rootfs/opt/ai-security-scanner/trivy-cache/db/trivy.db"],
@@ -28,4 +28,10 @@ test("offline launcher digests match the exact files checked during image assemb
     assert.ok(checksumAdd || dockerfile.includes(`${digest}  ${path}`),
       `${engine}: build-time ${path} and runtime ${constant} disagree`);
   }
+  const grypeLimit = launcher.match(/\bgrypeDBMaxBytes\s*=\s*(\d+)/u)?.[1];
+  assert.ok(grypeLimit, "Grype must bound its pinned database separately from other immutable inputs");
+  assert.match(launcher, /verifyFile\("\/opt\/ai-security-scanner\/grype-db\/6\/vulnerability\.db", grypeDBSHA256, grypeDBMaxBytes\)/u);
+  assert.ok(read("engines/images/grype/Dockerfile").includes(
+    `test "$(stat -c '%s' /rootfs/opt/ai-security-scanner/grype-db/6/vulnerability.db)" = ${grypeLimit}`),
+    "Grype's build-verified database size must match its runtime bound");
 });

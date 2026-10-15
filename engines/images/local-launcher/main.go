@@ -461,7 +461,7 @@ func verifyEngineInputs(engineID string, inputProfile string, workspace string) 
 		}
 		return verifyFile("/opt/ai-security-scanner/trivy-cache/java-db/metadata.json", trivyJavaMetadataSHA256, 64*1024)
 	case "grype":
-		return verifyFile("/opt/ai-security-scanner/grype-db/6/vulnerability.db", grypeDBSHA256, maxImmutableBytes)
+		return verifyFile("/opt/ai-security-scanner/grype-db/6/vulnerability.db", grypeDBSHA256, grypeDBMaxBytes)
 	case "kubescape":
 		for path, digest := range map[string]string{
 			"/opt/ai-security-scanner/kubescape-artifacts/nsa.json":             kubescapeNSASHA256,
@@ -914,6 +914,7 @@ const (
 	trivyJavaDBSHA256           = "c26ec91db03a11014dfa45909d2b5275c0e34c2dee276363bc0c9693375acc25"
 	trivyJavaMetadataSHA256     = "486b01dacad2d0f5dc28006fef82f501249f8be922e2f6f037a61152b567f24d"
 	grypeDBSHA256               = "8be8779b1b6fd721e6127c092bd25d5875e25cd511def5d9e7d026fb45189058"
+	grypeDBMaxBytes             = 2460639232
 	kubescapeNSASHA256          = "80e23ca99be3e5bb0f80d968b32ae27b7dada39f9b12b9e3abffea8680ac7737"
 	kubescapeControlsSHA256     = "6b78fae941db97d00780898da40581168303985e6dae0c74799f2c0a6ff5a8b6"
 	kubescapeExceptionsSHA256   = "d0b662af82db3fd6b2d8a242e1c7a46f47941ac7c298c2525481f817d928ddc3"

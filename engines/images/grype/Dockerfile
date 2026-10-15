@@ -43,6 +43,7 @@ RUN echo '30d8bcd3c09e03c9f734c522e104c1387e285e3f6e33da2ee7b55f521daadb3f  /tmp
     && zstd --decompress --stdout /tmp/grype-db.tar.zst > /tmp/grype-db.tar \
     && tar -xf /tmp/grype-db.tar -C /rootfs/opt/ai-security-scanner/grype-db/6 \
     && echo '8be8779b1b6fd721e6127c092bd25d5875e25cd511def5d9e7d026fb45189058  /rootfs/opt/ai-security-scanner/grype-db/6/vulnerability.db' | sha256sum -c - \
+    && test "$(stat -c '%s' /rootfs/opt/ai-security-scanner/grype-db/6/vulnerability.db)" = 2460639232 \
     && cp /tmp/grype-import.json /rootfs/opt/ai-security-scanner/grype-db/6/import.json \
     && chmod -R a-w /rootfs/opt/ai-security-scanner/grype-db
 

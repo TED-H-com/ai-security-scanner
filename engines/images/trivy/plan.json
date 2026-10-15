@@ -81,7 +81,7 @@
     "required": true,
     "strategy": "Invoke the pinned source build with its non-overlapping filesystem lockfile and rootfs individual-package analyzer profiles for repository and IaC working trees, plus an OS-package profile for single-image OCI layouts; checksum-verified standard vulnerability and Java index databases are embedded while every update path remains disabled.",
     "entrypoint": "/usr/local/bin/ai-security-scanner-engine-entrypoint",
-    "launcher_sha256": "sha256:3bb1f2f6d0e20f53ec2d1f8dd79f17cb9a8db235f6bb337a646e6f13fef196b3"
+    "launcher_sha256": "sha256:fc81ca1d8703978576d7c2b79a1723777a69f8852fabb86902737b8f517e9399"
   },
   "analysis_profile": {
     "scanner": "vulnerability",
