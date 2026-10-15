@@ -1,5 +1,5 @@
 diff --git a/pkg/machine/wsl/declares.go b/pkg/machine/wsl/declares.go
-index aed26c9..8ccae74 100644
+index aed26c9..06bfa30 100644
 --- a/pkg/machine/wsl/declares.go
 +++ b/pkg/machine/wsl/declares.go
 @@ -11,7 +11,7 @@ const (
@@ -11,7 +11,7 @@ index aed26c9..8ccae74 100644
  
  # Using iptables until we fix nftables on WSL:
  # https://github.com/containers/podman/issues/25201
-@@ -47,49 +47,17 @@ const sudoers = `%wheel        ALL=(ALL)       NOPASSWD: ALL
+@@ -47,49 +47,15 @@ const sudoers = `%wheel        ALL=(ALL)       NOPASSWD: ALL
  `
  
  const bootstrap = `#!/bin/bash
@@ -19,10 +19,8 @@ index aed26c9..8ccae74 100644
 -nohup unshare --kill-child --fork --pid --mount --mount-proc --propagation shared /lib/systemd/systemd >/dev/null 2>&1 &
 -sleep 0.1
 +timeout 60 systemctl is-system-running --wait >/dev/null 2>&1 || true
-+# Native systemd services do not keep a WSL distribution alive. Retain one
-+# non-systemd process for this machine's lifetime; poweroff/terminate owns it.
++# The Windows-side WSL keeper uses these fixed guest executables.
 +test -x /usr/bin/flock && test -x /usr/bin/sleep || exit 1
-+nohup /usr/bin/flock --nonblock /run/podman-wsl-keepalive.lock /usr/bin/sleep infinity </dev/null >/dev/null 2>&1 &
  `
  
 -const wslmotd = `
@@ -147,7 +145,7 @@ index bf763b2..c8cdc54 100644
  
  func terminateDist(dist string) error {
 diff --git a/pkg/machine/wsl/stubber.go b/pkg/machine/wsl/stubber.go
-index 47edd27..56e2277 100644
+index 47edd27..cee1af2 100644
 --- a/pkg/machine/wsl/stubber.go
 +++ b/pkg/machine/wsl/stubber.go
 @@ -3,11 +3,9 @@
@@ -162,7 +160,37 @@ index 47edd27..56e2277 100644
  
  	"github.com/containers/podman/v5/pkg/machine/env"
  	"github.com/containers/podman/v5/pkg/machine/wsl/wutil"
-@@ -235,10 +233,6 @@ func (w WSLStubber) State(mc *vmconfigs.MachineConfig, _ bool) (define.Status, e
+@@ -213,14 +211,27 @@ func (w WSLStubber) StartVM(mc *vmconfigs.MachineConfig) (func() error, func() e
+ 
+ 	err := wslInvoke(dist, "/root/bootstrap")
+ 	if err != nil {
+-		err = fmt.Errorf("the WSL bootstrap script failed: %w", err)
++		return nil, nil, fmt.Errorf("the WSL bootstrap script failed: %w", err)
++	}
++
++	// Native systemd services alone do not retain a Windows WSL client. Keep
++	// one hidden client attached to this exact guest until poweroff/terminate.
++	// A guest-local lock makes repeated starts reuse the existing keeper; no
++	// persisted host PID or name-based process termination is needed.
++	keeper := wutil.SilentExecCmd("--user", "root", "--distribution", dist, "--exec",
++		"/usr/bin/flock", "--nonblock", "/run/podman-wsl-keepalive.lock", "/usr/bin/sleep", "infinity")
++	if err := keeper.Start(); err != nil {
++		return nil, nil, fmt.Errorf("starting the WSL machine lifetime client: %w", err)
++	}
++	if err := keeper.Process.Release(); err != nil {
++		return nil, nil, fmt.Errorf("releasing the WSL machine lifetime client: %w", err)
+ 	}
+ 
+ 	readyFunc := func() error {
+ 		return nil
+ 	}
+ 
+-	return nil, readyFunc, err
++	return nil, readyFunc, nil
+ }
+ 
+ func (w WSLStubber) State(mc *vmconfigs.MachineConfig, _ bool) (define.Status, error) {
+@@ -235,10 +246,6 @@ func (w WSLStubber) State(mc *vmconfigs.MachineConfig, _ bool) (define.Status, e
  }
  
  func (w WSLStubber) StopVM(mc *vmconfigs.MachineConfig, _ bool) error {
@@ -173,7 +201,7 @@ index 47edd27..56e2277 100644
  	if running, err := isRunning(mc.Name); !running {
  		return err
  	}
-@@ -254,23 +248,9 @@ func (w WSLStubber) StopVM(mc *vmconfigs.MachineConfig, _ bool) error {
+@@ -254,23 +261,9 @@ func (w WSLStubber) StopVM(mc *vmconfigs.MachineConfig, _ bool) error {
  		fmt.Fprintf(os.Stderr, "Could not stop API forwarding service (win-sshproxy.exe): %s\n", err.Error())
  	}
  
@@ -200,7 +228,7 @@ index 47edd27..56e2277 100644
  	}
  
  	return terminateDist(dist)
-@@ -287,6 +267,11 @@ func (w WSLStubber) UpdateSSHPort(mc *vmconfigs.MachineConfig, port int) error {
+@@ -287,6 +280,11 @@ func (w WSLStubber) UpdateSSHPort(mc *vmconfigs.MachineConfig, port int) error {
  		return fmt.Errorf("could not change SSH port for guest OS: %w", err)
  	}
  

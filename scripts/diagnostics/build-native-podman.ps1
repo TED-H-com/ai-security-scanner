@@ -19,7 +19,7 @@ if ($LASTEXITCODE -ne 0) { throw "Source extraction failed." }
 & "$env:SystemRoot/System32/tar.exe" -xf $goArchive -C $root
 if ($LASTEXITCODE -ne 0) { throw "Go extraction failed." }
 $patch = (Resolve-Path runtime/podman-wsl-native-systemd.patch).Path
-if ((Get-FileHash -LiteralPath $patch -Algorithm SHA256).Hash.ToLowerInvariant() -cne "182ebe36f578861a3db729efc26938542ba096776a63a3f275c73ee3c9a4d736") {
+if ((Get-FileHash -LiteralPath $patch -Algorithm SHA256).Hash.ToLowerInvariant() -cne "0df7db8c6f6eb7d172b4e0bc17420e80da3d979090178586193fabeb4ccd514e") {
   throw "Source patch differs."
 }
 $source = Join-Path $root "podman-5b263b5f5b48004a87caac44e67349a8266d9ef4"
@@ -45,7 +45,7 @@ try {
   & (Join-Path $root "go/bin/go.exe") build -mod=vendor -trimpath -buildvcs=false -tags "remote exclude_graphdriver_btrfs containers_image_openpgp" -ldflags "-s -w -buildid= -X github.com/containers/podman/v5/libpod/define.gitCommit=5b263b5f5b48004a87caac44e67349a8266d9ef4 -X github.com/containers/podman/v5/libpod/define.buildInfo=0 -X github.com/containers/podman/v5/libpod/define.buildOrigin=ai-security-scanner-native-wsl-systemd" -o $output ./cmd/podman
   if ($LASTEXITCODE -ne 0) { throw "Patched client build failed." }
   $digest = (Get-FileHash -LiteralPath $output -Algorithm SHA256).Hash.ToLowerInvariant()
-  if ($digest -cne "2056df0f31b9eca44363679182413a2703ee36bd7e6024b2653b11357f1771d6") {
+  if ($digest -cne "7fcf04af2896503991da8ab7e926ab42d42c64565cfd8e5704937d260628cf64") {
     throw "Windows build differs from the independently cross-compiled client: $digest"
   }
   Write-Output "Windows and Linux cross-builds produced the same patched client: $digest"
