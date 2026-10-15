@@ -6,6 +6,17 @@ import { pathToFileURL } from "node:url";
 
 const ENGINE_IDS = ["semgrep", "trufflehog", "trivy", "grype", "kubescape", "kube-bench"];
 
+export function publishedTagFromPlan(plan) {
+  assert.ok(["published_managed_artifact", "publication_in_progress"].includes(plan.publish_state), "unsupported publication plan state");
+  // A pending final_artifact is the candidate. Only the retained artifact has
+  // already been published, so it is the baseline for selecting a new tag.
+  const tag = plan.publish_state === "published_managed_artifact"
+    ? plan.final_artifact?.tag
+    : plan.previous_artifact?.tag ?? "";
+  assert.equal(typeof tag, "string", "missing recorded artifact tag");
+  return tag;
+}
+
 // A shared launcher edit does not authorize publishing every consuming image.
 // The owner assigns a new immutable tag to each intended publication first.
 export function selectLocalEnginePublication(matrix, publishedTags, requestedEngine = "") {
@@ -26,7 +37,7 @@ if (process.argv[1] && import.meta.url === pathToFileURL(resolve(process.argv[1]
   assert.ok(["push", "workflow_dispatch"].includes(process.env.EVENT_NAME), "unsupported publication event");
   const matrix = JSON.parse(process.env.LOCAL_ENGINE_MATRIX);
   const publishedTags = Object.fromEntries(ENGINE_IDS.map((engine) => [engine,
-    JSON.parse(readFileSync(`engines/images/${engine}/plan.json`, "utf8")).final_artifact.tag,
+    publishedTagFromPlan(JSON.parse(readFileSync(`engines/images/${engine}/plan.json`, "utf8"))),
   ]));
   const requested = process.env.EVENT_NAME === "workflow_dispatch" ? process.env.REQUESTED_ENGINE : "";
   assert.ok(process.env.EVENT_NAME !== "workflow_dispatch" || requested, "manual run requires an engine");

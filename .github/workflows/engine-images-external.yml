@@ -134,10 +134,13 @@ jobs:
           DIGEST: ${{ steps.guard.outputs.digest || steps.build.outputs.digest }}
           EXPECTED_VERSION: ${{ matrix.version }}
         run: |
+          scratch="$(mktemp -d "${RUNNER_TEMP}/external-engine-smoke.XXXXXX")"
+          chmod 1777 "${scratch}"
+          trap 'rm -rf -- "${scratch}"' EXIT
           docker logout ghcr.io
           docker buildx imagetools inspect "${IMAGE}@${DIGEST}"
           docker run --platform linux/amd64 --rm \
-            --tmpfs /tmp:rw,nosuid,nodev,noexec,mode=1777 \
+            --mount "type=bind,src=${scratch},dst=/tmp" \
             --entrypoint "/usr/local/bin/${{ matrix.engine }}" \
             "${IMAGE}@${DIGEST}" -version 2>&1 | grep -F "${EXPECTED_VERSION}"
 
