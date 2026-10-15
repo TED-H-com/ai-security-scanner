@@ -7,7 +7,7 @@ if (!source || !client || !output) throw new Error('source, patched client and o
 await cp(source, output, { recursive: true, errorOnExist: true, force: false });
 const bytes = await readFile(client);
 const sha256 = createHash('sha256').update(bytes).digest('hex');
-if (sha256 !== '3fafff68ac570924417e8987d806bd91af269dd34e2b90dc9a3bbf0f0a9f10e4') {
+if (sha256 !== '2056df0f31b9eca44363679182413a2703ee36bd7e6024b2653b11357f1771d6') {
   throw new Error('patched client differs');
 }
 await copyFile(client, join(output, 'bin/podman.exe'));

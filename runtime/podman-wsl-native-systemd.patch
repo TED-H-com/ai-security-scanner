@@ -1,5 +1,5 @@
 diff --git a/pkg/machine/wsl/declares.go b/pkg/machine/wsl/declares.go
-index aed26c9..9b3bf95 100644
+index aed26c9..8ccae74 100644
 --- a/pkg/machine/wsl/declares.go
 +++ b/pkg/machine/wsl/declares.go
 @@ -11,7 +11,7 @@ const (
@@ -11,7 +11,7 @@ index aed26c9..9b3bf95 100644
  
  # Using iptables until we fix nftables on WSL:
  # https://github.com/containers/podman/issues/25201
-@@ -47,49 +47,13 @@ const sudoers = `%wheel        ALL=(ALL)       NOPASSWD: ALL
+@@ -47,49 +47,17 @@ const sudoers = `%wheel        ALL=(ALL)       NOPASSWD: ALL
  `
  
  const bootstrap = `#!/bin/bash
@@ -19,6 +19,10 @@ index aed26c9..9b3bf95 100644
 -nohup unshare --kill-child --fork --pid --mount --mount-proc --propagation shared /lib/systemd/systemd >/dev/null 2>&1 &
 -sleep 0.1
 +timeout 60 systemctl is-system-running --wait >/dev/null 2>&1 || true
++# Native systemd services do not keep a WSL distribution alive. Retain one
++# non-systemd process for this machine's lifetime; poweroff/terminate owns it.
++test -x /usr/bin/flock && test -x /usr/bin/sleep || exit 1
++nohup /usr/bin/flock --nonblock /run/podman-wsl-keepalive.lock /usr/bin/sleep infinity </dev/null >/dev/null 2>&1 &
  `
  
 -const wslmotd = `

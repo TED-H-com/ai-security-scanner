@@ -65,6 +65,19 @@ jobs:
                 }
           '@
           $script = $script.Replace($failureNeedle, $failureDetails + "`n" + $failureNeedle)
+          $idleNeedle = '  $runningStatus = Invoke-Managed "running-status" @("status")'
+          if ($script.Split($idleNeedle).Count -ne 2) { throw "Idle insertion point changed." }
+          $script = $script.Replace($idleNeedle, '  Start-Sleep -Seconds 30' + "`n" + $idleNeedle)
+          $restartNeedle = '  $stoppedStatus = Invoke-Managed "stopped-status" @("status")'
+          if ($script.Split($restartNeedle).Count -ne 2) { throw "Restart insertion point changed." }
+          $restart = @'
+            $restartStatus = Invoke-Managed "restart" @("start")
+            Start-Sleep -Seconds 30
+            $restartRunning = Invoke-Managed "restart-running-status" @("status")
+            if ($restartRunning.phase -ne "running") { throw "Restart did not remain running beyond WSL idle shutdown." }
+            $restartStop = Invoke-Managed "restart-stop" @("stop")
+          '@
+          $script = $script.Replace($restartNeedle, $restartNeedle + "`n" + $restart)
           # This probe exercises the client through the explicit maintainer CLI
           # override. The installed desktop keeps its original compiled anchor.
           $desktopPattern = '(?s)  # The desktop uses this exact default LocalAppData root\..*?  \$desktopProcess\.WaitForExit\(\)'
