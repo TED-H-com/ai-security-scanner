@@ -1,6 +1,6 @@
 [package]
 name = "ai-security-scanner"
-version = "0.5.1"
+version = "0.5.2"
 description = "Guided security scans and one clear report"
 authors = ["Ted Huang and ai-security-scanner contributors"]
 edition = "2024"

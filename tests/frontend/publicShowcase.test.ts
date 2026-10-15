@@ -13,9 +13,10 @@ const samplePath = 'docs/samples/v0.4.0/';
 const inventory = new Set(['cloudquery','steampipe','naabu','httpx','syft','agentic-radar']);
 
 test('every frozen adapter has a real format fixture and an attributed sample result', async () => {
-  const [catalog, sources, generation, content] = await Promise.all([
+  const [catalog, sources, generation, content, frozenReport] = await Promise.all([
     json('engines/catalog.json'), json('docs/scanner-guide.sources.json'),
     json(samplePath+'sample-generation.json'), json('docs/scanner-guide.content.json'),
+    read(samplePath+'sample-report-full-en.html'),
   ]);
   const integrated = catalog.filter((e: any) => e.status === 'integrated');
   assert.equal(integrated.length, 25);
@@ -30,9 +31,10 @@ test('every frozen adapter has a real format fixture and an attributed sample re
     const result = generation.sources.find((s: any) => s.engineId === engine.id);
     assert.ok(result.findings + result.inventoryObservations > 0, engine.id);
     assert.equal(result.findings === 0, inventory.has(engine.id), engine.id);
-    assert.equal(source.engineVersion, engine.engine_version);
-    assert.equal(source.sourceRevision, engine.source_revision);
-    assert.equal(source.image.digest, engine.image.digest);
+    // These v0.4.0 examples retain their recorded scanner versions when the
+    // runnable catalog advances. Bind them to the checksummed frozen export.
+    assert.ok(frozenReport.includes(source.image.digest), engine.id);
+    assert.match(source.sourceRevision, /^[0-9a-f]{40}$/u);
     assert.equal(result.engineVersion, source.engineVersion);
     assert.equal(result.adapterVersion, source.adapterVersion);
     assert.equal(sha256(await read(source.fixturePath)), source.fixtureSha256);

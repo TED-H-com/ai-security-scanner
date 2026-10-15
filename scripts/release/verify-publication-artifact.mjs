@@ -20,20 +20,24 @@ const MAX_SBOM_BYTES = 16 * 1024 * 1024;
 const MAX_CHECKSUM_BYTES = 64 * 1024;
 
 const ENGINE_SPECS = Object.freeze({
+  steampipe: { tag: "2.4.7-1", group: "cloud", workflow: ".github/workflows/engine-images-cloud.yml" },
+  prowler: { tag: "5.44.0-1", group: "cloud", workflow: ".github/workflows/engine-images-cloud.yml" },
+  checkov: { tag: "3.3.29-1", group: "standalone", workflow: ".github/workflows/engine-image-checkov.yml", sourceDateEpoch: "1791891584" },
+  syft: { tag: "1.54.1-1", group: "standalone", workflow: ".github/workflows/engine-image-syft.yml" },
   naabu: { tag: "2.6.1-7", group: "external", workflow: ".github/workflows/engine-images-external.yml" },
-  httpx: { tag: "1.10.0-7", group: "external", workflow: ".github/workflows/engine-images-external.yml" },
+  httpx: { tag: "1.12.0-1", group: "external", workflow: ".github/workflows/engine-images-external.yml" },
   nuclei: { tag: "3.11.1-7", group: "external", workflow: ".github/workflows/engine-images-external.yml" },
-  semgrep: { tag: "1.174.0-4", group: "local", workflow: ".github/workflows/engine-images-local-k8s.yml", smokeFiles: ["semgrep.json"] },
-  trufflehog: { tag: "3.97.0-3", group: "local", workflow: ".github/workflows/engine-images-local-k8s.yml", smokeFiles: ["trufflehog.jsonl"] },
+  semgrep: { tag: "1.181.0-1", group: "local", workflow: ".github/workflows/engine-images-local-k8s.yml", smokeFiles: ["semgrep.json"] },
+  trufflehog: { tag: "3.99.2-1", group: "local", workflow: ".github/workflows/engine-images-local-k8s.yml", smokeFiles: ["trufflehog.jsonl"] },
   trivy: {
-    tag: "0.74.0-4",
+    tag: "0.76.0-1",
     group: "local",
     workflow: ".github/workflows/engine-images-local-k8s.yml",
-    smokeFiles: ["trivy-oci.json", "trivy-library.json"],
+    smokeFiles: ["trivy-oci.json", "trivy-library.json", "trivy-jar.json"],
   },
-  grype: { tag: "0.117.0-4", group: "local", workflow: ".github/workflows/engine-images-local-k8s.yml", smokeFiles: ["grype.json"] },
-  kubescape: { tag: "4.0.12-3", group: "local", workflow: ".github/workflows/engine-images-local-k8s.yml", smokeFiles: ["kubescape.json"] },
-  "kube-bench": { tag: "0.16.0-4", group: "local", workflow: ".github/workflows/engine-images-local-k8s.yml", smokeFiles: ["kube-bench.json"] },
+  grype: { tag: "0.120.1-1", group: "local", workflow: ".github/workflows/engine-images-local-k8s.yml", smokeFiles: ["grype.json"] },
+  kubescape: { tag: "4.0.16-1", group: "local", workflow: ".github/workflows/engine-images-local-k8s.yml", smokeFiles: ["kubescape.json"] },
+  "kube-bench": { tag: "0.16.0-5", group: "local", workflow: ".github/workflows/engine-images-local-k8s.yml", smokeFiles: ["kube-bench.json"] },
   "mcp-armor": {
     tag: "1.0.2-config-only.1",
     group: "local",
@@ -266,7 +270,7 @@ function expectedNestedFiles(engine) {
 
 function expectedArtifactFiles(engine, spec) {
   const nested = expectedNestedFiles(engine).map((file) => `${engine}/${file}`);
-  const expected = ["SHA256SUMS.txt", `${engine}/SHA256SUMS.txt`, ...nested];
+  const expected = [...(["cloud", "standalone"].includes(spec.group) ? [] : ["SHA256SUMS.txt"]), `${engine}/SHA256SUMS.txt`, ...nested];
   if (spec.group !== "gateway") expected.push(`${engine}-image-manifest.json`);
   if (spec.group === "local") {
     expected.push(`${engine}-managed-smoke/SHA256SUMS.txt`);
@@ -651,20 +655,36 @@ async function verifyRootSummary({ files, engine, spec, sourceRevision, evidence
   if (spec.group === "gateway") return undefined;
   const relative = `${engine}-image-manifest.json`;
   const summary = object(await readJson(files, relative, "root image summary"), "root image summary");
-  const common = ["schemaVersion", "engine", "image", "tag", "digest", "sourceRevision"];
+  const common = ["schemaVersion", ...(spec.group === "standalone" ? [] : ["engine"]), "image", "tag", "digest", "sourceRevision"];
   exactKeys(
     summary,
     spec.group === "local"
       ? [...common, "platformDigests", "anonymousPullVerified", "managedSmokeEvidenceSha256"]
       : spec.group === "m365"
         ? [...common, "platforms", "platformDigests", "public", "anonymousPullVerified", "smoke"]
+      : spec.group === "cloud"
+        ? [...common, "platforms", "platformDigests", "public"]
+      : spec.sourceDateEpoch
+        ? [...common, "platforms", "public", "sourceDateEpoch"]
       : [...common, "platforms", "public"],
     "root image summary",
   );
-  assert(summary.schemaVersion === 1 && summary.engine === engine, "root image summary identity mismatch");
+  assert(summary.schemaVersion === 1 && (spec.group === "standalone" || summary.engine === engine), "root image summary identity mismatch");
   assert(summary.image === evidence.image && summary.tag === evidence.tag, "root image summary repository/tag mismatch");
   assert(summary.digest === evidence.indexDigest, "root image summary index digest mismatch");
   assert(summary.sourceRevision === sourceRevision && summary.sourceRevision === evidence.sourceRevision, "root image summary source revision mismatch");
+  if (["cloud", "standalone"].includes(spec.group)) {
+    assert(summary.public === true, "root summary must record public access");
+    assert(isDeepStrictEqual(summary.platforms, PLATFORMS), "root summary platform list mismatch");
+    if (spec.sourceDateEpoch) assert(summary.sourceDateEpoch === spec.sourceDateEpoch, "root summary source epoch mismatch");
+    if (spec.group === "cloud") {
+      exactKeys(summary.platformDigests, PLATFORMS, "cloud root platform digests");
+      for (const platform of PLATFORMS) {
+        assert(summary.platformDigests[platform] === platformRecords.get(platform).digest, `cloud root platform digest mismatch: ${platform}`);
+      }
+    }
+    return undefined;
+  }
   if (spec.group === "external") {
     assert(summary.public === true, "external root summary must record public access");
     assert(isDeepStrictEqual(summary.platforms, PLATFORMS), "external root summary platform list mismatch");
@@ -758,7 +778,11 @@ async function verifyPublicationArtifact(args) {
   const expectedFiles = expectedArtifactFiles(args.engine, spec);
   equalSet(files.keys(), expectedFiles, "artifact file inventory");
   const rootCovered = expectedFiles.filter((relative) => relative !== "SHA256SUMS.txt");
-  const rootReceipt = await verifyChecksums(files, "SHA256SUMS.txt", rootCovered, { rootStyle: true });
+  // These established publishers seal the nested signed evidence; their root
+  // summaries are cross-checked against that evidence below.
+  const rootReceipt = ["cloud", "standalone"].includes(spec.group)
+    ? { receiptSha256: null, checksums: new Map() }
+    : await verifyChecksums(files, "SHA256SUMS.txt", rootCovered, { rootStyle: true });
   const nestedExpected = expectedNestedFiles(args.engine);
   const nestedReceipt = await verifyChecksums(
     files,
