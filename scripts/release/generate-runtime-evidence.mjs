@@ -13,7 +13,7 @@ import {
 
 const MANAGEMENT_CONTRACT_REVISION = "2026-08-29.1";
 const WINDOWS_X86_64_MANIFEST_SHA256 =
-  "a8112473e5d87655e6145ea5f6cff569c872329d2ec14bfb9463078abcb60e3a";
+  "c30195e26367a8612d600383e181e232bd9cd87a7e36332cc288aacca6b17833";
 
 function assert(condition, message) {
   if (!condition) throw new Error(message);

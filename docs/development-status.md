@@ -127,3 +127,5 @@ CI document and contract tests: 91 tests now include exact old-image/new-candida
 CI document and contract tests: 94 tests now include the two publication origins, refusal of mixed origins, and numeric repository ID checks.
 
 CI document and contract tests: 97 tests include upstream replacement metadata checks. The October 14 source update keeps the published catalog intact while validating new engine recipes; candidate metadata cannot change scan permissions or conceal executable build inputs. See the [upstream update record](engines/updates/2026-10-14.md) for versions and verification.
+
+CI document and contract tests: 102 tests include rejection of substituted Windows runtime source, patches, toolchains and nonreproducible build settings. The [Windows runtime source record](../runtime/podman-wsl-native-systemd.md) describes the native systemd backport and its locked build inputs.

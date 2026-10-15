@@ -1017,7 +1017,13 @@ try {
   $wslDistributionDirectory = Join-Path $providerReleaseHome "data\containers\podman\machine\wsl\wsldist"
   Assert-ManagedWslDistributionDirectory $wslDistributionDirectory "Managed WSL distribution directory"
   Assert-ManagedSshIdentity $providerReleaseHome
+  # Native WSL systemd services do not keep a distribution alive by themselves.
+  # Observe the installed client after the WSL idle grace period before executing containers.
+  Start-Sleep -Seconds 30
   $runningStatus = Invoke-Managed "running-status" @("status")
+  if ($runningStatus.phase -ne "running") {
+    throw "Managed runtime did not remain running beyond WSL idle shutdown."
+  }
   $egressQualification = Invoke-Managed "egress-qualification" @("qualify-egress")
   $containerQualification = Invoke-Managed "container-qualification" @("qualify")
 
@@ -1033,6 +1039,13 @@ try {
   $desktopProcess.WaitForExit()
 
   $stopStatus = Invoke-Managed "stop" @("stop")
+  $restartStatus = Invoke-Managed "restart" @("start")
+  Start-Sleep -Seconds 30
+  $restartRunning = Invoke-Managed "restart-running-status" @("status")
+  if ($restartRunning.phase -ne "running") {
+    throw "Restarted managed runtime did not remain running beyond WSL idle shutdown."
+  }
+  $stopStatus = Invoke-Managed "stop-after-restart" @("stop")
   $stoppedStatus = Invoke-Managed "stopped-status" @("status")
   $uninstallStatus = Invoke-Managed "uninstall-purge" @("uninstall", "--force", "--purge-image-cache")
   $managedRuntimePurgeSucceeded = $true

@@ -33,6 +33,9 @@ const APPROVED_DOWNLOAD_HOSTS = new Set([
   'github.com',
   'objects.githubusercontent.com',
   'release-assets.githubusercontent.com',
+  'codeload.github.com',
+  'go.dev',
+  'dl.google.com',
   'download.qemu.org',
   'gitlab.com',
 ]);
@@ -290,7 +293,45 @@ function validateLock(lock, targetName) {
     requireText(vfkit.source_revision, 'vfkit source revision');
     requireText(vfkit.license_spdx, 'vfkit license');
   }
+  if (targetName === 'x86_64-pc-windows-msvc') windowsPodmanBuildContract(lock);
   return { runtime, machineOs, target };
+}
+
+function windowsPodmanBuildContract(lock) {
+  const build = requireObject(lock.windows_podman_build, 'Windows Podman source build');
+  requireText(build.version, 'Windows Podman component version');
+  const source = approvedUrl(build.source_url, 'Windows Podman source URL');
+  if (source.href !== `https://github.com/podman-container-tools/podman/archive/${lock.runtime.source_revision}.tar.gz`) {
+    throw new Error('Windows Podman source must bind the exact upstream runtime revision');
+  }
+  requireSha256(build.source_sha256, 'Windows Podman source SHA-256');
+  requireSize(build.source_size_bytes, 'Windows Podman source size');
+  if (build.upstream_pull_request !== 'https://github.com/podman-container-tools/podman/pull/29837' ||
+      !/^[0-9a-f]{40}$/.test(build.upstream_patch_revision)) {
+    throw new Error('Windows Podman backport must identify its upstream change');
+  }
+  const patch = requireObject(build.patch, 'Windows Podman source patch');
+  if (patch.path !== 'podman-wsl-native-systemd.patch') throw new Error('Windows Podman patch path is unsupported');
+  requireSha256(patch.sha256, 'Windows Podman patch SHA-256');
+  requireSize(patch.size_bytes, 'Windows Podman patch size', 1024 * 1024);
+  if (!/^\d+\.\d+\.\d+$/.test(build.go_version)) throw new Error('Windows Podman Go version must be exact');
+  for (const [platform, suffix] of [['win32', 'windows-amd64.zip'], ['linux', 'linux-amd64.tar.gz']]) {
+    const toolchain = requireObject(build.go_toolchains?.[platform], `Windows Podman ${platform} build toolchain`);
+    if (approvedUrl(toolchain.url, 'Go toolchain URL').href !== `https://go.dev/dl/go${build.go_version}.${suffix}`) {
+      throw new Error('Go toolchain URL must bind its exact version and build platform');
+    }
+    requireSha256(toolchain.sha256, 'Go toolchain SHA-256');
+    requireSize(toolchain.size_bytes, 'Go toolchain size');
+  }
+  const contract = requireObject(build.build_contract, 'Windows Podman build contract');
+  if (contract.goos !== 'windows' || contract.goarch !== 'amd64' || contract.goamd64 !== 'v1' ||
+      contract.cgo_enabled !== false || contract.vendor_dependencies !== true || contract.trimpath !== true ||
+      contract.buildvcs !== false || contract.build_id !== '' || contract.build_info !== '0' ||
+      contract.build_origin !== 'ai-security-scanner-native-wsl-systemd' ||
+      JSON.stringify(contract.tags) !== JSON.stringify(['remote', 'exclude_graphdriver_btrfs', 'containers_image_openpgp'])) {
+    throw new Error('Windows Podman build must use the reviewed offline reproducible remote-client contract');
+  }
+  return build;
 }
 
 async function sha256File(path, expectedMaximum = MAX_DOWNLOAD_BYTES) {
@@ -444,7 +485,10 @@ async function extractWithTar(archive, destination, program = 'tar') {
     relative(archiveDirectory, destination).split(sep).join('/'),
     'archive extraction destination',
   );
-  const listing = await run(program, ['-tf', archiveArgument], {
+  // GNU tar cannot read the official Windows client ZIP. This also permits
+  // an independent Linux cross-build to verify the exact Windows bundle.
+  const linuxZip = process.platform === 'linux' && archive.endsWith('.zip');
+  const listing = await run(linuxZip ? 'unzip' : program, linuxZip ? ['-Z', '-1', archiveArgument] : ['-tf', archiveArgument], {
     cwd: archiveDirectory,
     maxBuffer: 64 * 1024 * 1024,
   });
@@ -453,7 +497,9 @@ async function extractWithTar(archive, destination, program = 'tar') {
     throw new Error('archive has an invalid entry count');
   }
   for (const member of members) validateArchiveMember(member, 'locked upstream archive');
-  await run(program, ['-xf', archiveArgument, '-C', destinationArgument], {
+  await run(linuxZip ? 'unzip' : program, linuxZip
+    ? ['-q', archiveArgument, '-d', destinationArgument]
+    : ['-xf', archiveArgument, '-C', destinationArgument], {
     cwd: archiveDirectory,
   });
 }
@@ -892,10 +938,17 @@ function componentInventory(lock, targetName, files, targets) {
   });
   const runtime = requireObject(lock.runtime, 'runtime lock');
   const machineOs = requireObject(lock.machine_os, 'machine OS lock');
+  const windowsBuild = targetName === 'x86_64-pc-windows-msvc' ? windowsPodmanBuildContract(lock) : undefined;
   const components = [
-    componentRecord(runtime, 'podman', 'Bundled rootless Podman machine client', select(
-      targetName === 'x86_64-pc-windows-msvc' ? 'bin/podman.exe' : 'bin/podman',
-    )),
+    windowsBuild
+      ? componentRecord(
+        { ...runtime, version: windowsBuild.version },
+        'podman',
+        'Rootless Podman client with the upstream PR 29837 native WSL systemd lifecycle backport and systemd cgroup manager; exact build inputs and patch are bundled under share/podman',
+        select('bin/podman.exe', 'share/podman/podman-wsl-native-systemd.patch', 'share/podman/windows-source-build.json'),
+        { url: windowsBuild.source_url, sha256: windowsBuild.source_sha256, size_bytes: windowsBuild.source_size_bytes },
+      )
+      : componentRecord(runtime, 'podman', 'Bundled rootless Podman machine client', select('bin/podman')),
     componentRecord(
       machineOs,
       'podman-machine-os',
@@ -994,10 +1047,77 @@ async function stageClient(lock, targetName, target, workRoot, stageRoot) {
     await extractWithTar(
       archive,
       extracted,
-      targetName === 'x86_64-pc-windows-msvc' ? windowsSystemTar() : 'tar',
+      process.platform === 'win32' ? windowsSystemTar() : 'tar',
     );
   }
-  await copyLockedClientFiles(extracted, lockedClientFiles(target), stageRoot);
+  const clientFiles = lockedClientFiles(target);
+  await copyLockedClientFiles(
+    extracted,
+    targetName === 'x86_64-pc-windows-msvc'
+      ? clientFiles.filter((file) => file.path !== 'bin/podman.exe')
+      : clientFiles,
+    stageRoot,
+  );
+  if (targetName === 'x86_64-pc-windows-msvc') {
+    await buildWindowsPodman(lock, target, workRoot, stageRoot);
+  }
+}
+
+async function buildWindowsPodman(lock, target, workRoot, stageRoot) {
+  const build = windowsPodmanBuildContract(lock);
+  if (!['win32', 'linux'].includes(process.platform) || process.arch !== 'x64') {
+    throw new Error('Windows Podman source build requires a Windows or Linux x86_64 build host');
+  }
+  const toolchain = build.go_toolchains[process.platform];
+  const sourceArchive = join(workRoot, 'podman-source.tar.gz');
+  const goArchive = join(workRoot, process.platform === 'win32' ? 'go.zip' : 'go.tar.gz');
+  await Promise.all([
+    downloadLocked(build.source_url, {
+      sha256: build.source_sha256, size_bytes: build.source_size_bytes,
+    }, sourceArchive, 'Windows Podman source'),
+    downloadLocked(toolchain.url, toolchain, goArchive, 'Go build toolchain'),
+  ]);
+  const tar = process.platform === 'win32' ? windowsSystemTar() : 'tar';
+  const sourceExtract = join(workRoot, 'podman-source');
+  const goExtract = join(workRoot, 'go-toolchain');
+  await extractWithTar(sourceArchive, sourceExtract, tar);
+  await extractWithTar(goArchive, goExtract, tar);
+  const sourceRoot = await singleDirectory(sourceExtract, 'Windows Podman source');
+  const goRoot = await singleDirectory(goExtract, 'Go build toolchain');
+  const patch = join(SCRIPT_DIRECTORY, build.patch.path);
+  await verifyLockedFile(patch, build.patch, 'Windows Podman source patch');
+  await run('git', ['apply', '--check', patch], { cwd: sourceRoot });
+  await run('git', ['apply', patch], { cwd: sourceRoot });
+  const go = join(goRoot, 'bin', process.platform === 'win32' ? 'go.exe' : 'go');
+  if (process.platform !== 'win32') await chmod(go, 0o700);
+  const revision = lock.runtime.source_revision;
+  const contract = build.build_contract;
+  const binary = join(workRoot, 'podman.exe');
+  await run(go, [
+    'build', '-mod=vendor', '-trimpath', '-buildvcs=false',
+    '-tags', contract.tags.join(' '),
+    '-ldflags', `-s -w -buildid= -X github.com/containers/podman/v5/libpod/define.gitCommit=${revision} -X github.com/containers/podman/v5/libpod/define.buildInfo=0 -X github.com/containers/podman/v5/libpod/define.buildOrigin=${contract.build_origin}`,
+    '-o', binary, './cmd/podman',
+  ], {
+    cwd: sourceRoot,
+    env: {
+      ...process.env,
+      GOOS: 'windows', GOARCH: 'amd64', GOAMD64: 'v1', CGO_ENABLED: '0',
+      GOTOOLCHAIN: 'local', GOWORK: 'off', GOENV: 'off', GOFLAGS: '',
+      GOEXPERIMENT: '', GOFIPS140: 'off', GOPROXY: 'off', GOSUMDB: 'off',
+      GOPATH: join(workRoot, 'go-path'), GOCACHE: join(workRoot, 'go-cache'), GOMAXPROCS: '4',
+    },
+  });
+  const driver = lockedClientFiles(target).find((file) => file.path === 'bin/podman.exe');
+  if (!driver) throw new Error('Windows Podman build has no locked executable identity');
+  await verifyLockedFile(binary, driver, 'Source-built Windows Podman client');
+  await copyFile(binary, join(stageRoot, 'bin', 'podman.exe'), fsConstants.COPYFILE_EXCL);
+  const sourceInfo = join(stageRoot, 'share', 'podman');
+  await mkdir(sourceInfo, { recursive: true, mode: 0o700 });
+  await copyFile(patch, join(sourceInfo, build.patch.path), fsConstants.COPYFILE_EXCL);
+  await writeFile(join(sourceInfo, 'windows-source-build.json'), `${JSON.stringify(build, null, 2)}\n`, {
+    encoding: 'utf8', flag: 'wx', mode: 0o600,
+  });
 }
 
 async function createManifest(lock, targetName, stageRoot, target) {
@@ -1087,6 +1207,10 @@ async function main() {
     requireSha256(entry.sha256, `locked client file ${index} SHA-256`);
     requireSize(entry.size_bytes, `locked client file ${index} size`, MAX_STAGED_FILE_BYTES);
   });
+  if (options.target === 'x86_64-pc-windows-msvc') {
+    const build = windowsPodmanBuildContract(lock);
+    await verifyLockedFile(join(SCRIPT_DIRECTORY, build.patch.path), build.patch, 'Windows Podman source patch');
+  }
   if (options.verifyLockOnly) {
     process.stdout.write(`managed runtime lock verified for ${options.target}\n`);
     return;
