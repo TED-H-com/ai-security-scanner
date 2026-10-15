@@ -273,6 +273,9 @@ jobs:
           WORKSPACE: ${{ matrix.workspace }}
           REVISION: ${{ github.sha }}
         run: |
+          scratch_root="$(mktemp -d "${RUNNER_TEMP}/local-engine-smoke.XXXXXX")"
+          trap 'rm -rf -- "${scratch_root}"' EXIT
+          mkdir -m 1777 "${scratch_root}/version" "${scratch_root}/scan" "${scratch_root}/library" "${scratch_root}/jar"
           docker logout ghcr.io
           raw_manifest="$(docker buildx imagetools inspect --raw "${IMAGE}@${DIGEST}")"
           amd64_digest="$(jq -er '.manifests[] | select(.platform.os == "linux" and .platform.architecture == "amd64") | .digest' <<<"${raw_manifest}")"
@@ -306,17 +309,17 @@ jobs:
           docker run --platform linux/amd64 --rm \
             --read-only --network none --cap-drop ALL \
             --security-opt no-new-privileges:true \
-            --tmpfs /tmp:rw,nosuid,nodev,noexec,mode=1777,size=1024m \
+            --mount "type=bind,src=${scratch_root}/version,dst=/tmp" \
             --entrypoint "/usr/local/bin/${ENGINE}" \
             "${IMAGE}@${DIGEST}" ${VERSION_ARGS} 2>&1 | grep -F "${EXPECTED_VERSION}"
 
-          output="$(mktemp -d)"
+          output="$(mktemp -d "${scratch_root}/output.XXXXXX")"
           docker run --platform linux/amd64 --rm \
             --read-only --network none --cap-drop ALL \
             --security-opt no-new-privileges:true \
             --user "$(id -u):$(id -g)" \
             --pids-limit 512 --memory 4g --cpus 2 \
-            --tmpfs /tmp:rw,nosuid,nodev,noexec,mode=1777,size=1024m \
+            --mount "type=bind,src=${scratch_root}/scan,dst=/tmp" \
             --mount "type=bind,src=${PWD}/${WORKSPACE},dst=/workspace,readonly" \
             --mount "type=bind,src=${output},dst=/output" \
             "${IMAGE}@${DIGEST}" \
@@ -339,13 +342,13 @@ jobs:
               '.ArtifactType == "container_image" and .Metadata.ImageID == $imageID and all((.Results // [])[]; .Class != "lang-pkgs")' \
               "${output}/${OUTPUT_FILE}" >/dev/null
 
-            library_output="$(mktemp -d)"
+            library_output="$(mktemp -d "${scratch_root}/library-output.XXXXXX")"
             docker run --platform linux/amd64 --rm \
               --read-only --network none --cap-drop ALL \
               --security-opt no-new-privileges:true \
               --user "$(id -u):$(id -g)" \
               --pids-limit 512 --memory 4g --cpus 2 \
-              --tmpfs /tmp:rw,nosuid,nodev,noexec,mode=1777,size=1024m \
+              --mount "type=bind,src=${scratch_root}/library,dst=/tmp" \
               --mount "type=bind,src=${PWD}/engines/images/trivy/testdata,dst=/workspace,readonly" \
               --mount "type=bind,src=${library_output},dst=/output" \
               "${IMAGE}@${DIGEST}" \
@@ -359,19 +362,19 @@ jobs:
               )
             ' "${library_output}/trivy.json" >/dev/null
 
-            jar_workspace="$(mktemp -d)"
+            jar_workspace="$(mktemp -d "${scratch_root}/jar-workspace.XXXXXX")"
             base64 --decode \
               engines/images/local-launcher/testdata/trivy-java-db-test.jar.base64 \
               > "${jar_workspace}/unidentified.jar"
             test "$(sha256sum "${jar_workspace}/unidentified.jar" | cut -d ' ' -f1)" = \
               "a5c71902c4d26153f1256491362dc94e6598e70e3ba06f19ee02b1dfcd392470"
-            jar_output="$(mktemp -d)"
+            jar_output="$(mktemp -d "${scratch_root}/jar-output.XXXXXX")"
             docker run --platform linux/amd64 --rm \
               --read-only --network none --cap-drop ALL \
               --security-opt no-new-privileges:true \
               --user "$(id -u):$(id -g)" \
               --pids-limit 512 --memory 4g --cpus 2 \
-              --tmpfs /tmp:rw,nosuid,nodev,noexec,mode=1777,size=1024m \
+              --mount "type=bind,src=${scratch_root}/jar,dst=/tmp" \
               --mount "type=bind,src=${jar_workspace},dst=/workspace,readonly" \
               --mount "type=bind,src=${jar_output},dst=/output" \
               "${IMAGE}@${DIGEST}" \
