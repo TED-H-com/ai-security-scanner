@@ -4,12 +4,12 @@ Collects HTTP service facts (status code, scheme, port, TLS) from one approved o
 
 | Item | Value |
 | --- | --- |
-| Upstream | [projectdiscovery/httpx](https://github.com/projectdiscovery/httpx) v1.10.0, revision `13037dd08b9715cfbd960a70ae1edfef6686a857` |
-| Image | `ghcr.io/teddashh/ai-security-scanner-engine-httpx:1.10.0-7`, built from 51b8abf for linux/amd64 and linux/arm64. The digest is pinned in `engines/catalog.json` and `plan.json` `final_artifact` |
+| Upstream | [projectdiscovery/httpx](https://github.com/projectdiscovery/httpx), version `1.12.0`, source ref `v1.12.0`, revision `4b6a9a9d476f94a4f3a630f37051f5671ecfb1f8`. |
+| Image | `ghcr.io/ted-h-com/ai-security-scanner-engine-httpx:1.12.0-1` (`plan_kind: managed_source_image`), published for linux/amd64 and linux/arm64 by [this run](https://github.com/TED-H-com/ai-security-scanner/actions/runs/38761785926) from `f4489920283b9d897a8183469c9637f778e1310f`. Exact index/platform digests and verified evidence are in `engines/catalog.json` and `plan.json`. |
 | Build inputs | `engines/images/httpx/Dockerfile` (checksum-pinned source archive, version and `go.sum` checks, `go mod verify`, the DNS patch below, `-mod=readonly`, `CGO_ENABLED=0`, `FROM scratch`), `patch_live_dns.go`, `patch_live_dns_test.go`, `SOURCE.md`, `plan.json`, and the [external launcher](external-launcher.md) |
 | Launcher | `httpxInvocation` in `engines/images/external-launcher/main.go`; command `--engine httpx --scope /run/ai-security-scanner/scope.json --output /output` |
 | Adapter | `extract_httpx_inventory` in `src-tauri/src/adapters/mod.rs` |
-| Publish workflow | `.github/workflows/engine-images-external.yml`, matrix entry `httpx` / `1.10.0-7` |
+| Publish workflow | `.github/workflows/engine-images-external.yml`, matrix entry `httpx` / `1.12.0-1` |
 
 ## Local build and update entry
 
@@ -30,9 +30,9 @@ See the [image build index](image-build-index.md) for the repeatable local build
 
 ## Downstream changes
 
-- **Post-request DNS removed** (206ed74). `patch_live_dns.go` replaces the `getDNSData(hp, onlyHost)` block in `runner/runner.go` with empty `ips4`, `ips6`, `cnames` and `resolvers`, so httpx performs no second, live DNS lookup outside the gateway. The Dockerfile checks the file's SHA-256 before (`748502c7633140c7395d73d3b7d91eaa2efa324a5567cfc7b7a57485a1f9a641`) and after (`6e8c7c8e59f6f7e574af0ff3b87cf3cd74e8e9d814618108dedeb9620fdbab95`), runs the patch tests against the pinned file, and greps that the call is gone. The patch binary accepts only `--source /src/httpx/runner/runner.go`.
+- **Post-request DNS removed** (206ed74). `patch_live_dns.go` replaces the `getDNSData(hp, onlyHost)` block in `runner/runner.go` with empty `ips4`, `ips6`, `cnames` and `resolvers`, so httpx performs no second, live DNS lookup outside the gateway. The Dockerfile checks the file's SHA-256 before (`649a47aac12f176000b3ea26fb62e1a395e30d6009fd2bee3fb5285b9943daa2`) and after (`712382a9145071c020ee4f75ac71218e8bb9687dbab5980a813a1e59a00b6cfe`), runs the patch tests against the pinned file, and greps that the call is gone. The patch binary accepts only `--source /src/httpx/runner/runner.go`.
 - **DNS fields stripped** from evidence by the launcher, as above.
-- Plan `build_recipe.patch_audit` binds the exact 1.10.0 source pin, verified pre/post hashes, source reference, no-contribution rationale, owners and dedicated patch fixtures. Upstream standalone users rely on DNS enrichment, so a general removal would be inappropriate; seek a native opt-out that preserves proxy Host/SNI before removing this guard. Reviewed 2026-10-03; recheck on the next source update or by 2026-11-01.
+- Plan `build_recipe.patch_audit` binds the exact 1.12.0 source pin, verified pre/post hashes, source reference, no-contribution rationale, owners and dedicated patch fixtures. Upstream standalone users rely on DNS enrichment, so a general removal would be inappropriate; seek a native opt-out that preserves proxy Host/SNI before removing this guard. Reviewed 2026-10-14; recheck on the next source update or by 2026-11-14.
 
 ## Lessons from real runs
 
@@ -48,9 +48,13 @@ Follow [section 4](../engine-maintenance.md#4-updating-an-engine), then:
 - **Patch first.** If the new revision changes `runner/runner.go`, the pre-patch hash check stops the build. Check whether upstream can now skip post-request DNS; if so, drop the patch and its Dockerfile steps. Otherwise re-derive `liveDNSBlock`, both hashes (in `patch_live_dns.go`, the Dockerfile and `SOURCE.md`), and run `HTTPX_PINNED_RUNNER=<runner.go> go test patch_live_dns.go patch_live_dns_test.go` (`TestPinnedSourceTransformsToTheReviewedHashWhenProvided`, `TestReviewedReplacementRemovesOnlyPostRequestLiveDNS`, `TestReviewedReplacementRejectsAbsentDuplicateAndAlreadyPatchedBlocks`, `TestPatchCLIIsBoundToThePinnedContainerPath`).
 - **Output shape.** Re-check `url`, `input`, `host`, `port`, `scheme`, `status_code`, `tls` and the DNS field names the launcher strips. Check what `host` carries through the proxy, because the adapter prefers it as the endpoint. Confirm `-no-fallback-scheme` and `-omit-body` still exist.
 - **Tests.** Launcher: `TestStaticInvocationsCarryEveryFrozenLimit`, `TestEvidenceIsReattributedAndOutOfScopeRecordsFail`. Adapter: `src-tauri/tests/adapter_fixtures.rs` with `fixtures/adapters/httpx.jsonl` (`native_fixtures_normalize_without_inventing_inventory_findings`, `inventory_fixtures_preserve_typed_upstream_facts_and_exact_provenance`, `service_inventory_uses_a_path_free_endpoint_that_report_code_can_correlate`, `secret_values_and_target_instructions_never_enter_findings`, `missing_primary_result_shapes_are_incomplete_but_known_empty_shapes_are_complete`).
-- **Hard-coded tag.** `1.10.0-7` appears in the workflow matrix, catalog `image.tag`, `plan.json` `final_artifact.tag`, the Dockerfile version label, `scripts/validate-engine-catalog.mjs`, `scripts/release/verify-publication-artifact.mjs`, `tests/release/verifyPublicationArtifact.test.mjs` and this page. A launcher change moves all three external tags ([external launcher](external-launcher.md#updating-this-engine)). `support_until` is 2026-11-22.
+- **Hard-coded tag.** `1.12.0-1` appears in the workflow matrix, catalog `image.tag`, `plan.json` `final_artifact.tag`, the Dockerfile version label, `scripts/validate-engine-catalog.mjs`, `scripts/release/verify-publication-artifact.mjs`, `tests/release/verifyPublicationArtifact.test.mjs` and this page. A launcher change moves all three external tags ([external launcher](external-launcher.md#updating-this-engine)). `support_until` is 2026-12-07.
 - **Compare with raw output.** Run the pinned image with `--entrypoint /usr/local/bin/httpx` and the launcher's flags against `<local-test-origin>`, then compare with the run's `httpx.jsonl`: the same records, with only the three scope keys added and the eleven keys above removed. Each record should appear as one service observation with the same host, port, scheme and status.
 
 ## 2026-10-14 source update
 
-The replacement recipe targets `1.12.0-1` at upstream commit `4b6a9a9d476f94a4f3a630f37051f5671ecfb1f8`. The catalog still names the previously published image until replacement publication is verified. See the [batch update record](updates/2026-10-14.md) for changed inputs, retained rules and verification.
+The replacement recipe targets `1.12.0-1` at upstream commit `4b6a9a9d476f94a4f3a630f37051f5671ecfb1f8`. The replacement is now published and pinned in the current catalog; the verified publication is recorded below. See the [batch update record](updates/2026-10-14.md) for changed inputs, retained rules and verification.
+
+## 2026-10-15 verified publication
+
+[Publication run](https://github.com/TED-H-com/ai-security-scanner/actions/runs/38761785926) binds both platform images to `f4489920283b9d897a8183469c9637f778e1310f`. Five source/SBOM attestations, four SBOMs, checksums and anonymous index, version tag, platform manifest and config bytes were independently verified before catalog activation. See the [batch verification record](updates/2026-10-14.md#verified-publication-and-catalog-activation) for native execution results and the remaining scope limits.

@@ -2,11 +2,11 @@
   "schema_version": "1.0.0",
   "engine_id": "prowler",
   "plan_kind": "managed_rebase",
-  "knowledge_date": "2026-08-24",
-  "support_until": "2026-11-22",
+  "knowledge_date": "2026-09-29",
+  "support_until": "2026-12-28",
   "maintenance_owner": "teddashh/ai-security-scanner maintainers",
   "update_procedure": "docs/engine-maintenance.md",
-  "publish_state": "publication_in_progress",
+  "publish_state": "published_managed_artifact",
   "source": {
     "repository": "https://github.com/prowler-cloud/prowler",
     "revision": "499fd637f3393b485833b08cdaf4172917c5698e",
@@ -135,9 +135,22 @@
   "final_artifact": {
     "repository": "ghcr.io/ted-h-com/ai-security-scanner-engine-prowler",
     "tag": "5.44.0-1",
-    "digest": null
+    "digest": "sha256:7efff0a702e5f3bfe97948e1f3d8c052ff73c4423c03b805ce43c14588d29698"
   },
-  "publication": null,
+  "publication": {
+    "workflow_run": "https://github.com/TED-H-com/ai-security-scanner/actions/runs/38696218276",
+    "source_revision": "14fe1359a84d00a9d397e0b721e79d95929da919",
+    "platforms": [
+      "linux/amd64",
+      "linux/arm64"
+    ],
+    "platform_digests": {
+      "linux/amd64": "sha256:d04183c3745521e93518df78e1767fb357805f997e1cf52e1adc06ab5b01b8c4",
+      "linux/arm64": "sha256:45c8d183f7c46e1d37fc9367160c67da1ccc8f92c32c05d957d14a09ca8bffe0"
+    },
+    "anonymous_pull_verified": true,
+    "evidence_artifact": "prowler-image-evidence-38696218276-2"
+  },
   "dockerfile": {
     "emitted": true,
     "path": "engines/images/prowler/Dockerfile",
@@ -419,61 +432,6 @@
           ]
         }
       ]
-    }
-  },
-  "previous_artifact": {
-    "repository": "ghcr.io/teddashh/ai-security-scanner-engine-prowler",
-    "tag": "5.39.1-7",
-    "digest": "sha256:38d9593af214ce164c78b731d1ea29abd06de6babe84b230502972f67a658450"
-  },
-  "previous_publication": {
-    "workflow_run": "https://github.com/teddashh/ai-security-scanner/actions/runs/37044614517",
-    "source_revision": "dfe8af1721cd165a629a4d438318661e940c13d8",
-    "platforms": [
-      "linux/amd64",
-      "linux/arm64"
-    ],
-    "platform_digests": {
-      "linux/amd64": "sha256:0c4eeebf1f9558c62efc0d197e9cc7d8ac2b263161a610cc00d62a8be7bd8386",
-      "linux/arm64": "sha256:ebe37071c9b98c10a0d97f6b56e1e3626ac38237a715f7fee5ddfbad90c8f3cc"
-    },
-    "anonymous_pull_verified": true,
-    "evidence_artifact": "prowler-image-evidence-37044614517-1"
-  },
-  "upstream_update": {
-    "engine_version": "5.44.0",
-    "reported_version": null,
-    "source_revision": "499fd637f3393b485833b08cdaf4172917c5698e",
-    "rule_version": "499fd637f3393b485833b08cdaf4172917c5698e",
-    "knowledge_date": "2026-09-29",
-    "support_until": "2026-12-28",
-    "engine_provenance": {
-      "version": "5.44.0",
-      "source_repository": "https://github.com/prowler-cloud/prowler",
-      "source_revision": "499fd637f3393b485833b08cdaf4172917c5698e",
-      "source_ref": "5.44.0",
-      "acquisition_source": "https://github.com/prowler-cloud/prowler/commit/499fd637f3393b485833b08cdaf4172917c5698e",
-      "artifact_source_revision": null,
-      "source_association": "source_build_required"
-    },
-    "rules_provenance": {
-      "mode": "embedded",
-      "identifier": "Prowler checks",
-      "revision": "499fd637f3393b485833b08cdaf4172917c5698e",
-      "acquisition_source": "https://github.com/prowler-cloud/prowler/commit/499fd637f3393b485833b08cdaf4172917c5698e"
-    },
-    "data_provenance": {
-      "mode": "runtime_live",
-      "identifier": "Exact-scope AWS, Azure, or GCP IAM configuration",
-      "revision": null,
-      "acquisition_source": "Provider APIs authorized by one case-scoped ephemeral AWS session, Azure ARM access token, or GCP OAuth access token"
-    },
-    "knowledge_input": {
-      "kind": "runtime_live",
-      "identifier": "Exact-scope AWS, Azure, or GCP IAM configuration",
-      "version": null,
-      "acquisition_source": "Provider APIs authorized by one case-scoped ephemeral AWS session, Azure ARM access token, or GCP OAuth access token",
-      "pin_state": "runtime_live"
     }
   }
 }

@@ -6,7 +6,7 @@
 
 One page per scanner and per shared launcher. Each page records how the product runs that engine, what the adapter keeps from its output, how to update it, and what real runs taught. Read the page before changing an engine, and add a line to its **Lessons from real runs** when a real run teaches something new.
 
-The v0.4.0 stable release integrates 25 runnable engines, including optional ZAP passive website checks, Agentic Radar offline workflow inventory and bounded Garak model checks.
+The current catalog integrates 25 runnable engines, including optional ZAP passive website checks, Agentic Radar offline workflow inventory and bounded Garak model checks.
 
 [Engine maintenance procedure](../engine-maintenance.md) is the policy. Start a rebuild or upstream update with the [image build and update notebook](image-build-index.md): it covers all 25 engines, their build contexts, rules/data preparation, coupled edits and known pitfalls, plus the gateway. Each engine page links back to that entry point.
 

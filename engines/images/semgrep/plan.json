@@ -2,11 +2,11 @@
   "schema_version": "1.0.0",
   "engine_id": "semgrep",
   "plan_kind": "managed_build",
-  "knowledge_date": "2026-08-24",
-  "support_until": "2026-11-22",
+  "knowledge_date": "2026-10-14",
+  "support_until": "2027-01-12",
   "maintenance_owner": "teddashh/ai-security-scanner maintainers",
   "update_procedure": "docs/engine-maintenance.md",
-  "publish_state": "publication_in_progress",
+  "publish_state": "published_managed_artifact",
   "source": {
     "repository": "https://github.com/semgrep/semgrep",
     "revision": "72d3525fe7e02f486428386078f192f8c4756804",
@@ -17,7 +17,7 @@
   "final_artifact": {
     "repository": "ghcr.io/ted-h-com/ai-security-scanner-engine-semgrep",
     "tag": "1.181.0-1",
-    "digest": null
+    "digest": "sha256:f52ebbc2940ef0e1b459084c85c4fbd31c2616c4c3da501f7dae246050edc122"
   },
   "build_recipe": {
     "source_revision": "72d3525fe7e02f486428386078f192f8c4756804",
@@ -201,61 +201,19 @@
     "updates": false,
     "telemetry": false
   },
-  "publication": null,
-  "previous_artifact": {
-    "repository": "ghcr.io/teddashh/ai-security-scanner-engine-semgrep",
-    "tag": "1.174.0-4",
-    "digest": "sha256:3f1a10c7bce32eae912479c5744dbb653bdfa9a4cbd3d53afd2e0a435b10fb59"
-  },
-  "previous_publication": {
-    "workflow_run": "https://github.com/teddashh/ai-security-scanner/actions/runs/37138219098",
-    "source_revision": "94af3e7c5f28fe5f442525a7b0d3aab88b5632ba",
+  "publication": {
+    "workflow_run": "https://github.com/TED-H-com/ai-security-scanner/actions/runs/38783258351",
+    "source_revision": "acfa28f9f4d904f2ee693a5ffc1d861939adb9e8",
     "platforms": [
       "linux/amd64",
       "linux/arm64"
     ],
     "platform_digests": {
-      "linux/amd64": "sha256:974a9bf30c7d0cd973893a12186b054ae48a692367c174d8514fe667fb150e41",
-      "linux/arm64": "sha256:27a6f8d42f7bbea1ee62e4a662fd4c4b591de45ac947c90c22e1f9e29438f979"
+      "linux/amd64": "sha256:ad4a535c54b9c61e5ccdd698d9114539aebbe63fe28a66073d57647fc099176b",
+      "linux/arm64": "sha256:5eeb900720d47ced6327b6c78eb4c1f461db240a7f8983c3e0ce3093e451e58c"
     },
     "anonymous_pull_verified": true,
-    "evidence_artifact": "semgrep-image-evidence-37138219098-1",
-    "managed_smoke_evidence_sha256": "sha256:1219e929a158c27c6d14c3d3e2847202218023eb3272f482f2e02ae470b5c91e"
-  },
-  "upstream_update": {
-    "engine_version": "source@72d3525fe7e02f486428386078f192f8c4756804",
-    "reported_version": "1.181.0",
-    "source_revision": "72d3525fe7e02f486428386078f192f8c4756804",
-    "rule_version": "0f5a85ceab1b82b193d0eaa418784c932d237d68",
-    "knowledge_date": "2026-10-14",
-    "support_until": "2027-01-12",
-    "engine_provenance": {
-      "version": "source@72d3525fe7e02f486428386078f192f8c4756804",
-      "source_repository": "https://github.com/semgrep/semgrep",
-      "source_revision": "72d3525fe7e02f486428386078f192f8c4756804",
-      "source_ref": "v1.181.0",
-      "acquisition_source": "https://github.com/semgrep/semgrep/commit/72d3525fe7e02f486428386078f192f8c4756804",
-      "artifact_source_revision": null,
-      "source_association": "source_build_required"
-    },
-    "rules_provenance": {
-      "mode": "embedded",
-      "identifier": "semgrep/semgrep-rules legacy security selection plus four product rules",
-      "revision": "0f5a85ceab1b82b193d0eaa418784c932d237d68",
-      "acquisition_source": "https://github.com/semgrep/semgrep-rules/commit/0f5a85ceab1b82b193d0eaa418784c932d237d68"
-    },
-    "data_provenance": {
-      "mode": "runtime_bound",
-      "identifier": "repository or filesystem snapshot",
-      "revision": "case_artifact_sha256",
-      "acquisition_source": "assessment_case"
-    },
-    "knowledge_input": {
-      "kind": "runtime_bound",
-      "identifier": "repository or filesystem snapshot",
-      "version": "case_artifact_sha256",
-      "acquisition_source": "assessment_case",
-      "pin_state": "runtime_bound"
-    }
+    "evidence_artifact": "semgrep-image-evidence-38783258351-1",
+    "managed_smoke_evidence_sha256": "sha256:89e403027e72f4681c47a0f4d94c9cfccf467263fdde9600995f27a034743c9c"
   }
 }

@@ -4,8 +4,8 @@ Runs Syft over a `repository` snapshot (`dir:`) or a single-image OCI layout (`o
 
 | Item | Value |
 | --- | --- |
-| Upstream | [anchore/syft](https://github.com/anchore/syft) 1.51.0 (`source_ref` `v1.51.0`), revision `2293641e3bd628a01bb37639318d62c0ebe89b39`. Upstream image `anchore/syft:v1.51.0` at digest `678bfa56…`, recorded in plan `verified_upstream_artifact` (`docker_buildx_imagetools_inspect`, `attested_match`, 2026-08-24). |
-| Image | `ghcr.io/teddashh/ai-security-scanner-engine-syft:1.51.0-1` (`plan_kind: managed_rebase`, Apache-2.0), published from 122f3c2 (run 32754480561). The digest is pinned in `engines/catalog.json`. |
+| Upstream | [anchore/syft](https://github.com/anchore/syft), version `1.54.1`, source ref `v1.54.1`, revision `b254e6d92f28c3868a755f62fb3ca8f26e9fee76`. The official `anchore/syft:v1.54.1` base is pinned by index digest. Both platform OCI revision labels match this source; no upstream signature verification is claimed. |
+| Image | `ghcr.io/ted-h-com/ai-security-scanner-engine-syft:1.54.1-1` (`plan_kind: managed_rebase`), published for linux/amd64 and linux/arm64 by [this run](https://github.com/TED-H-com/ai-security-scanner/actions/runs/38704467877) from `c989e75e1c3be7e7abad3395dcf5539cf2a96832`. Exact index/platform digests and verified evidence are in `engines/catalog.json` and `plan.json`. |
 | Build inputs | `engines/images/syft/Dockerfile` and `plan.json` only. The Dockerfile is `FROM` the upstream image by digest and adds labels, `HOME`, `XDG_CACHE_HOME`, `SYFT_CACHE_DIR=/tmp/ai-security-scanner-cache/syft`, `SYFT_CHECK_FOR_APP_UPDATE=false` and `USER 65532:65532`. Nothing is compiled or downloaded (`build_recipe: null`). |
 | Launcher | None: upstream `ENTRYPOINT ["/syft"]` receives the catalog `command`. The [local launcher](local-launcher.md) is not used. |
 | Adapter | `extract_syft_inventory` in `src-tauri/src/adapters/mod.rs` |
@@ -60,10 +60,16 @@ Follow [section 4](../engine-maintenance.md#4-updating-an-engine), then:
   - In `src-tauri/tests/local_case_lifecycle.rs`: `typed_container_and_kubernetes_inputs_complete_the_product_lifecycle`, which checks the OCI command and that components attach to the OCI asset, and `local_case_lifecycle_preserves_scope_evidence_and_comparison_truth`.
   - `unsafe_typed_input_commands_isolate_only_their_engine` in `src-tauri/src/registry.rs`.
   - The publish workflow never runs the image. Before pinning, run it by hand over a repository snapshot and an OCI layout.
-- **Hard-coded values.** `1.51.0-1` appears in the workflow `concurrency.group` and `IMAGE_TAG`, catalog `image.tag`, plan `final_artifact.tag` and the Dockerfile label. Find them with `grep -rn "1.51.0" --exclude-dir=node_modules --exclude-dir=target --exclude-dir=.git --exclude-dir=.upstreams --exclude-dir=.engine-cache`. That search also finds the same upstream version and digest pinned as the SBOM generator in `scripts/engine-image-evidence.mjs` (`SYFT`), `scripts/release/verify-publication-artifact.mjs`, `tests/release/verifyPublicationArtifact.test.mjs`, `docs/release/engine-image-supply-chain.schema.json` and `.github/workflows/release.yml`. Those pin the evidence tooling, not this engine. `support_until` is 2026-11-22.
+- **Hard-coded values.** Keep managed tag `1.54.1-1`, reported version `1.54.1`, full source revision, workflow selector, Dockerfile labels, catalog/plan identity and publication verifier aligned. Search current source with `rg` when updating; preserve dated records and captured fixtures. `support_until` is 2027-01-04.
 - **Compare with raw output.** `jq '.artifacts | length' syft.json` should equal the normalized component count. List with `jq -r '.artifacts[] | [.name, .version, .type, .purl] | @tsv' syft.json | sort | uniq -c`; rows with the same `purl` show as one component in the report.
-- **Publishing.** The workflow runs only when `engines/images/syft/Dockerfile` changes on `main`, or by manual dispatch. The plan at the publishing commit 122f3c2 records the same inputs as today, so a dispatch reuses `1.51.0-1`. A Dockerfile change needs a new tag.
+- **Publishing.** The current `1.54.1-1` publication binds the recorded inputs at `c989e75e1c3be7e7abad3395dcf5539cf2a96832` in [this run](https://github.com/TED-H-com/ai-security-scanner/actions/runs/38704467877). Existing-tag reuse requires verified provenance and matching executable inputs. Any changed image input requires a new immutable tag.
+
+The release/SBOM evidence generator remains separately pinned to Syft 1.51.0. Its tool version and digest are independent of the scanner image described here.
 
 ## 2026-10-14 source update
 
-The replacement recipe targets `1.54.1-1` at upstream commit `b254e6d92f28c3868a755f62fb3ca8f26e9fee76`. The catalog still names the previously published image until replacement publication is verified. See the [batch update record](updates/2026-10-14.md) for changed inputs, retained rules and verification.
+The replacement recipe targets `1.54.1-1` at upstream commit `b254e6d92f28c3868a755f62fb3ca8f26e9fee76`. The replacement is now published and pinned in the current catalog; the verified publication is recorded below. See the [batch update record](updates/2026-10-14.md) for changed inputs, retained rules and verification.
+
+## 2026-10-15 verified publication
+
+[Publication run](https://github.com/TED-H-com/ai-security-scanner/actions/runs/38704467877) binds both platform images to `c989e75e1c3be7e7abad3395dcf5539cf2a96832`. Five source/SBOM attestations, four SBOMs, checksums and anonymous index, version tag, platform manifest and config bytes were independently verified before catalog activation. See the [batch verification record](updates/2026-10-14.md#verified-publication-and-catalog-activation) for native execution results and the remaining scope limits.

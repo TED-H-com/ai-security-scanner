@@ -2,11 +2,11 @@
   "schema_version": "1.0.0",
   "engine_id": "syft",
   "plan_kind": "managed_rebase",
-  "knowledge_date": "2026-08-24",
-  "support_until": "2026-11-22",
+  "knowledge_date": "2026-10-06",
+  "support_until": "2027-01-04",
   "maintenance_owner": "teddashh/ai-security-scanner maintainers",
   "update_procedure": "docs/engine-maintenance.md",
-  "publish_state": "publication_in_progress",
+  "publish_state": "published_managed_artifact",
   "source": {
     "repository": "https://github.com/anchore/syft",
     "revision": "b254e6d92f28c3868a755f62fb3ca8f26e9fee76",
@@ -36,7 +36,7 @@
   "final_artifact": {
     "repository": "ghcr.io/ted-h-com/ai-security-scanner-engine-syft",
     "tag": "1.54.1-1",
-    "digest": null
+    "digest": "sha256:24d4201ec61b2d977fda9d3a32d641199679382bd8eefaeb9edb52b019808f8e"
   },
   "build_recipe": null,
   "dockerfile": {
@@ -82,60 +82,18 @@
     "source_offer_path": null
   },
   "blockers": [],
-  "publication": null,
-  "previous_artifact": {
-    "repository": "ghcr.io/teddashh/ai-security-scanner-engine-syft",
-    "tag": "1.51.0-1",
-    "digest": "sha256:805c9fe522113319f994f99cd68fcb5c18e322dd933e7d89f82cd91f5a5c8501"
-  },
-  "previous_publication": {
-    "workflow_run": "https://github.com/teddashh/ai-security-scanner/actions/runs/32754480561",
-    "source_revision": "122f3c2f83ab596ee6dfda759124d30e533bbcd5",
+  "publication": {
+    "workflow_run": "https://github.com/TED-H-com/ai-security-scanner/actions/runs/38704467877",
+    "source_revision": "c989e75e1c3be7e7abad3395dcf5539cf2a96832",
     "platforms": [
       "linux/amd64",
       "linux/arm64"
     ],
     "platform_digests": {
-      "linux/amd64": "sha256:ab980296c909698e33f468d87ac73309cdd7f242fbfbd948e4e8dda140745152",
-      "linux/arm64": "sha256:652a0b857339892c5375e518fa0154b37df3ad99f0dd49d67b20d0ffe132f1be"
+      "linux/amd64": "sha256:3595844e29cd82fd2677d4571482768dbf00144ff0b8991e0f2f3b154ce091bb",
+      "linux/arm64": "sha256:b81377c99101fb5e79e4fa7a6d92770ca916eb47337fda9f309fb473ba97e68a"
     },
     "anonymous_pull_verified": true,
-    "evidence_artifact": "syft-image-evidence-32754480561-1"
-  },
-  "upstream_update": {
-    "engine_version": "1.54.1",
-    "reported_version": null,
-    "source_revision": "b254e6d92f28c3868a755f62fb3ca8f26e9fee76",
-    "rule_version": "b254e6d92f28c3868a755f62fb3ca8f26e9fee76",
-    "knowledge_date": "2026-10-06",
-    "support_until": "2027-01-04",
-    "engine_provenance": {
-      "version": "1.54.1",
-      "source_repository": "https://github.com/anchore/syft",
-      "source_revision": "b254e6d92f28c3868a755f62fb3ca8f26e9fee76",
-      "source_ref": "v1.54.1",
-      "acquisition_source": "https://github.com/anchore/syft/commit/b254e6d92f28c3868a755f62fb3ca8f26e9fee76",
-      "artifact_source_revision": null,
-      "source_association": "source_build_required"
-    },
-    "rules_provenance": {
-      "mode": "embedded",
-      "identifier": "Syft catalogers",
-      "revision": "b254e6d92f28c3868a755f62fb3ca8f26e9fee76",
-      "acquisition_source": "https://github.com/anchore/syft/commit/b254e6d92f28c3868a755f62fb3ca8f26e9fee76"
-    },
-    "data_provenance": {
-      "mode": "runtime_bound",
-      "identifier": "repository working-tree snapshot",
-      "revision": "case_artifact_sha256",
-      "acquisition_source": "assessment_case"
-    },
-    "knowledge_input": {
-      "kind": "runtime_bound",
-      "identifier": "repository working-tree snapshot",
-      "version": "case_artifact_sha256",
-      "acquisition_source": "assessment_case",
-      "pin_state": "runtime_bound"
-    }
+    "evidence_artifact": "syft-image-evidence-38704467877-1"
   }
 }

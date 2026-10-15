@@ -6,7 +6,7 @@
   "support_until": "2026-11-22",
   "maintenance_owner": "teddashh/ai-security-scanner maintainers",
   "update_procedure": "docs/engine-maintenance.md",
-  "publish_state": "publication_in_progress",
+  "publish_state": "published_managed_artifact",
   "source": {
     "repository": "https://github.com/aquasecurity/kube-bench",
     "revision": "9f133cb7509ce1dbedfc860e94474588000e25ac",
@@ -17,7 +17,7 @@
   "final_artifact": {
     "repository": "ghcr.io/ted-h-com/ai-security-scanner-engine-kube-bench",
     "tag": "0.16.0-5",
-    "digest": null
+    "digest": "sha256:0647e9469148f93cec540b5830e05987fae22c54b477769ac7ea81a3a4feec63"
   },
   "build_recipe": {
     "source_revision": "9f133cb7509ce1dbedfc860e94474588000e25ac",
@@ -109,61 +109,19 @@
     "updates": false,
     "telemetry": false
   },
-  "publication": null,
-  "previous_artifact": {
-    "repository": "ghcr.io/teddashh/ai-security-scanner-engine-kube-bench",
-    "tag": "0.16.0-4",
-    "digest": "sha256:77a136e48c6491528a70acabc8380e161d362a63c5bcc9d66312393c3436538c"
-  },
-  "previous_publication": {
-    "workflow_run": "https://github.com/teddashh/ai-security-scanner/actions/runs/35273577688",
-    "source_revision": "9ee5257d269b2aaf9dc28d1eed470ed9e9c933f3",
+  "publication": {
+    "workflow_run": "https://github.com/TED-H-com/ai-security-scanner/actions/runs/38696246466",
+    "source_revision": "c989e75e1c3be7e7abad3395dcf5539cf2a96832",
     "platforms": [
       "linux/amd64",
       "linux/arm64"
     ],
     "platform_digests": {
-      "linux/amd64": "sha256:d491a83f089ac31503a4be398417100354e9c0f5a4f2ddc8294964287bb3cd44",
-      "linux/arm64": "sha256:ced2c87f2a755b0676d787985ba0056a505e89ad50827e928f63d341d6edea83"
+      "linux/amd64": "sha256:21fb1f28760e7cb4530fb4718e6f262fd9d0eb6285f86525a5b1ea2dd8c0d2e2",
+      "linux/arm64": "sha256:e7de2efbf33de30d7322aa1d5ac37f1e4cf18533b6829455cb76d1c020c507e4"
     },
     "anonymous_pull_verified": true,
-    "evidence_artifact": "kube-bench-image-evidence-35273577688-1",
+    "evidence_artifact": "kube-bench-image-evidence-38696246466-2",
     "managed_smoke_evidence_sha256": "sha256:f9a2f171b0ba51ba6f6fcc6882354d7f51e473bef03be232d3ece382a06a3635"
-  },
-  "upstream_update": {
-    "engine_version": "source@9f133cb7509ce1dbedfc860e94474588000e25ac",
-    "reported_version": "0.16.0",
-    "source_revision": "9f133cb7509ce1dbedfc860e94474588000e25ac",
-    "rule_version": "9f133cb7509ce1dbedfc860e94474588000e25ac",
-    "knowledge_date": "2026-08-24",
-    "support_until": "2026-11-22",
-    "engine_provenance": {
-      "version": "source@9f133cb7509ce1dbedfc860e94474588000e25ac",
-      "source_repository": "https://github.com/aquasecurity/kube-bench",
-      "source_revision": "9f133cb7509ce1dbedfc860e94474588000e25ac",
-      "source_ref": "main",
-      "acquisition_source": "https://github.com/aquasecurity/kube-bench/commit/9f133cb7509ce1dbedfc860e94474588000e25ac",
-      "artifact_source_revision": null,
-      "source_association": "source_build_required"
-    },
-    "rules_provenance": {
-      "mode": "embedded",
-      "identifier": "CIS benchmark configuration",
-      "revision": "9f133cb7509ce1dbedfc860e94474588000e25ac",
-      "acquisition_source": "https://github.com/aquasecurity/kube-bench/commit/9f133cb7509ce1dbedfc860e94474588000e25ac"
-    },
-    "data_provenance": {
-      "mode": "runtime_bound",
-      "identifier": "Kubernetes node configuration snapshot",
-      "revision": "case_artifact_sha256",
-      "acquisition_source": "assessment_case"
-    },
-    "knowledge_input": {
-      "kind": "runtime_bound",
-      "identifier": "Kubernetes node configuration snapshot",
-      "version": "case_artifact_sha256",
-      "acquisition_source": "assessment_case",
-      "pin_state": "runtime_bound"
-    }
   }
 }

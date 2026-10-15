@@ -171,7 +171,7 @@ export const PROWLER_DOWNSTREAM_RUNTIME_PATCHES = {
 };
 
 const prowlerWrapperStrategy = "Validate exactly one AWS account, Azure subscription, or GCP project against one complete ephemeral provider credential profile, enforce provider-specific identity and read-only permission preflights, then invoke only the matching narrow IAM profile without a shell.";
-const downstreamNotice = "Azure static-token and GCP exact-project behavior comes from six ai-security-scanner downstream patches, bound to the applier and runtime-source pre/post SHA-256 values in the packaging plan; it is not native Prowler 5.39.1 behavior.";
+const downstreamNotice = "Azure static-token and GCP exact-project behavior comes from six ai-security-scanner downstream patches, bound to the applier and runtime-source pre/post SHA-256 values in the packaging plan; it is not native Prowler 5.44.0 behavior.";
 
 function exact(left, right) {
   return JSON.stringify(left) === JSON.stringify(right);

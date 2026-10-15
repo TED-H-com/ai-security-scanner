@@ -2,11 +2,11 @@
   "schema_version": "1.0.0",
   "engine_id": "checkov",
   "plan_kind": "managed_source_image",
-  "knowledge_date": "2026-08-24",
-  "support_until": "2026-11-22",
+  "knowledge_date": "2026-10-13",
+  "support_until": "2027-01-11",
   "maintenance_owner": "teddashh/ai-security-scanner maintainers",
   "update_procedure": "docs/engine-maintenance.md",
-  "publish_state": "publication_in_progress",
+  "publish_state": "published_managed_artifact",
   "source": {
     "repository": "https://github.com/bridgecrewio/checkov",
     "revision": "e40023ab262c7c8b7b0a8f0975072b42d1b601f9",
@@ -17,7 +17,7 @@
   "final_artifact": {
     "repository": "ghcr.io/ted-h-com/ai-security-scanner-engine-checkov",
     "tag": "3.3.29-1",
-    "digest": null
+    "digest": "sha256:ad54b5d1b098182b92ea8368d5e50634cfae7b187f63e18f54437cdf38c4af20"
   },
   "build_recipe": {
     "source_revision": "e40023ab262c7c8b7b0a8f0975072b42d1b601f9",
@@ -168,60 +168,18 @@
     "source_offer_path": null
   },
   "blockers": [],
-  "publication": null,
-  "previous_artifact": {
-    "repository": "ghcr.io/teddashh/ai-security-scanner-engine-checkov",
-    "tag": "3.3.13-1",
-    "digest": "sha256:0ecc187b17faa9c538c9b1ecc08a4195283290222694d0f87d50016f2bb79b35"
-  },
-  "previous_publication": {
-    "workflow_run": "https://github.com/teddashh/ai-security-scanner/actions/runs/32754480450",
-    "source_revision": "122f3c2f83ab596ee6dfda759124d30e533bbcd5",
+  "publication": {
+    "workflow_run": "https://github.com/TED-H-com/ai-security-scanner/actions/runs/38758594396",
+    "source_revision": "c989e75e1c3be7e7abad3395dcf5539cf2a96832",
     "platforms": [
       "linux/amd64",
       "linux/arm64"
     ],
     "platform_digests": {
-      "linux/amd64": "sha256:a61ea9064669f25e203d887a8559dde9d5cc01d2efe926e4de7435c31e0d18a3",
-      "linux/arm64": "sha256:b22966af844e9c00151238d478d5f8546b73e8bf6bef27aaca82e85b32fd59e9"
+      "linux/amd64": "sha256:4bd3b775bd397a4a2612606a4dc1395d1747723aeafc66d70eb1ad927590b237",
+      "linux/arm64": "sha256:212fd52d9e976d15ae08c835beb7c9509f15dee905380cc3b7d213c48c4f21bd"
     },
     "anonymous_pull_verified": true,
-    "evidence_artifact": "checkov-image-evidence-32754480450-1"
-  },
-  "upstream_update": {
-    "engine_version": "3.3.29",
-    "reported_version": null,
-    "source_revision": "e40023ab262c7c8b7b0a8f0975072b42d1b601f9",
-    "rule_version": "e40023ab262c7c8b7b0a8f0975072b42d1b601f9",
-    "knowledge_date": "2026-10-13",
-    "support_until": "2027-01-11",
-    "engine_provenance": {
-      "version": "3.3.29",
-      "source_repository": "https://github.com/bridgecrewio/checkov",
-      "source_revision": "e40023ab262c7c8b7b0a8f0975072b42d1b601f9",
-      "source_ref": "3.3.29",
-      "acquisition_source": "https://github.com/bridgecrewio/checkov/commit/e40023ab262c7c8b7b0a8f0975072b42d1b601f9",
-      "artifact_source_revision": null,
-      "source_association": "source_build_required"
-    },
-    "rules_provenance": {
-      "mode": "embedded",
-      "identifier": "Checkov checks",
-      "revision": "e40023ab262c7c8b7b0a8f0975072b42d1b601f9",
-      "acquisition_source": "https://github.com/bridgecrewio/checkov/commit/e40023ab262c7c8b7b0a8f0975072b42d1b601f9"
-    },
-    "data_provenance": {
-      "mode": "runtime_bound",
-      "identifier": "repository working-tree snapshot",
-      "revision": "case_artifact_sha256",
-      "acquisition_source": "assessment_case"
-    },
-    "knowledge_input": {
-      "kind": "runtime_bound",
-      "identifier": "repository working-tree snapshot",
-      "version": "case_artifact_sha256",
-      "acquisition_source": "assessment_case",
-      "pin_state": "runtime_bound"
-    }
+    "evidence_artifact": "checkov-image-evidence-38758594396-1"
   }
 }

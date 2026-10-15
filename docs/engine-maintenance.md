@@ -89,7 +89,7 @@ Before accepting a patch to upstream scanner behavior, record all of the followi
 
 Do not stack unrelated behavior into one patch series. Do not add a second downstream feature while the first lacks an upstream or removal plan. A new upstream release triggers a fresh attempt to remove every patch before rebasing it.
 
-The current Prowler Azure static-token and GCP exact-project implementation is such an exception: six hash-bound runtime patches provide behavior that is not native to Prowler 5.39.1. It must remain labeled as the product’s narrow profile, must not be described as general Prowler Azure/GCP coverage, and must not expand without re-evaluating an upstream-supported replacement.
+The current Prowler Azure static-token and GCP exact-project implementation is such an exception: six hash-bound runtime patches provide behavior that is not native to Prowler 5.44.0. It must remain labeled as the product’s narrow profile, must not be described as general Prowler Azure/GCP coverage, and must not expand without re-evaluating an upstream-supported replacement.
 
 Project launchers that only enforce section 2 boundaries are adapters, not detector forks. Any launcher code that begins deciding whether evidence is vulnerable, changing native severity, or authoring engine-specific remediation has crossed into report or detector logic and must be moved or removed.
 
