@@ -13,10 +13,10 @@ import sys
 import tarfile
 
 
-SOURCE_REVISION = "0604e97b0f77c89a8c6c1fe2219c3d251cbb9789"
-SOURCE_ARCHIVE_SHA256 = "2f69bad836b1c757849f904061b88fcb73cf46e10cdf8f3b4e277ac600a29edd"
+SOURCE_REVISION = "e40023ab262c7c8b7b0a8f0975072b42d1b601f9"
+SOURCE_ARCHIVE_SHA256 = "5f6f20199994878d8af30c85e992339f3d4014fcae831b4537e64ecf209e5b96"
 PIPFILE_LOCK_SHA256 = "f51eb3c9693670743a8be18191e44bcacf80f21e68cdfdb86dc00b0017df7995"
-SOURCE_DATE_EPOCH = 1_787_218_764
+SOURCE_DATE_EPOCH = 1_791_891_584
 EXPECTED_DEPENDENCIES = 99
 NAME_PATTERN = re.compile(r"^[a-z0-9][a-z0-9._-]*$")
 VERSION_PATTERN = re.compile(r"^==[^\s;]+$")
@@ -83,7 +83,7 @@ def render_requirements(source: Path, destination: Path) -> None:
     if not isinstance(packages, dict) or len(packages) != EXPECTED_DEPENDENCIES:
         raise ValueError("Pipfile.lock runtime dependency set is incomplete")
     lines = [
-        "# Generated from Checkov 3.3.13 Pipfile.lock.",
+        "# Generated from Checkov 3.3.29 Pipfile.lock.",
         f"# source-revision: {SOURCE_REVISION}",
         f"# pipfile-lock-sha256: {PIPFILE_LOCK_SHA256}",
     ]

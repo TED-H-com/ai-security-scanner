@@ -80,3 +80,7 @@ Follow [section 4](../engine-maintenance.md#4-updating-an-engine), then:
   - It names run 33196902246 and source 2641850, which published `0.117.0-3`. `0.117.0-4` was pushed by hand from a local OCI tar; it has no build attestation, and its image config says version `0.117.0-3`.
   - `scripts/validate-engine-catalog.mjs` checks only that the run id and evidence artifact agree, so its pass does not establish provenance.
   - The guard fails an existing tag without an attestation ("existing digest has no verifiable GitHub build provenance"). Give the next build a new tag. `import.json` has no plan digest (`uncovered_baseline` in `engines/image-input-hash-policy.json`).
+
+## 2026-10-14 source update
+
+The replacement recipe targets `0.120.1-1` at upstream commit `6f8d854af29d3a3086b11a84afa51554a2a245fe`. The catalog still names the previously published image until replacement publication is verified. See the [batch update record](updates/2026-10-14.md) for changed inputs, retained rules and verification.

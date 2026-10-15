@@ -61,8 +61,8 @@ jobs:
             version: 2.6.1
             dockerfile: engines/images/naabu/Dockerfile
           - engine: httpx
-            tag: 1.10.0-7
-            version: 1.10.0
+            tag: 1.12.0-1
+            version: 1.12.0
             dockerfile: engines/images/httpx/Dockerfile
           - engine: nuclei
             tag: 3.11.1-7

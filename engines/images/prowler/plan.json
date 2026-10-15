@@ -6,21 +6,21 @@
   "support_until": "2026-11-22",
   "maintenance_owner": "teddashh/ai-security-scanner maintainers",
   "update_procedure": "docs/engine-maintenance.md",
-  "publish_state": "published_managed_artifact",
+  "publish_state": "publication_in_progress",
   "source": {
     "repository": "https://github.com/prowler-cloud/prowler",
-    "revision": "40ecbd035e5541bf099917c5033cceb8959c4737",
-    "acquisition_source": "https://github.com/prowler-cloud/prowler/commit/40ecbd035e5541bf099917c5033cceb8959c4737",
+    "revision": "499fd637f3393b485833b08cdaf4172917c5698e",
+    "acquisition_source": "https://github.com/prowler-cloud/prowler/commit/499fd637f3393b485833b08cdaf4172917c5698e",
     "local_research_checkout": ".upstreams/prowler-cloud/prowler"
   },
   "downstream_runtime_patches": {
     "origin": "ai_security_scanner_downstream",
-    "base_revision": "40ecbd035e5541bf099917c5033cceb8959c4737",
+    "base_revision": "499fd637f3393b485833b08cdaf4172917c5698e",
     "application_phase": "image_build",
     "test_hunks_installed": false,
     "applier": {
       "path": "engines/images/prowler/apply-runtime-patches.py",
-      "sha256": "sha256:d426548962bf0801eee7bc6b2db36e37daef2445d7157687d591c9b7cff007b5"
+      "sha256": "sha256:8f698134a7d8bc2b6cab79f2b322f8fe68ecc1b6b8034caf648638503d794383"
     },
     "series": {
       "path": "engines/images/prowler/patches/series",
@@ -29,7 +29,7 @@
     "patches": [
       {
         "path": "engines/images/prowler/patches/0001-azure-static-access-token-iam-only.patch",
-        "sha256": "sha256:bf6059a33443e9f1fa459c6360346829170ee56e0775260f8a42f56dcb53c73c",
+        "sha256": "sha256:053ef441588b6bff99aef8a568f2617d8933a46449d2f9c2804b796c7a39566a",
         "runtime_files": [
           "prowler/providers/azure/azure_provider.py",
           "prowler/providers/azure/lib/arguments/arguments.py",
@@ -97,8 +97,8 @@
       },
       {
         "path": "prowler/providers/common/provider.py",
-        "pre_sha256": "sha256:cf043f096173ba685f5cb57aff653ded25ec54d58300e7afbaf1fd77841a6a4c",
-        "post_sha256": "sha256:4fe43b204884910bfbceac5ebb3e0b2898c9c044b18d241b566cc9a53ae6cf04"
+        "pre_sha256": "sha256:1080b11456deb6426307167067a3066ec79c87c7af07bb85dd3c507d6c76a1da",
+        "post_sha256": "sha256:bd65d893c106cf47389cd17071f96002e7302706b07ebb17cdca6c10f95f3f27"
       },
       {
         "path": "prowler/providers/gcp/gcp_provider.py",
@@ -114,36 +114,34 @@
   },
   "verified_upstream_artifact": {
     "repository": "public.ecr.aws/prowler-cloud/prowler",
-    "tag": "5.39.1",
-    "digest": "sha256:5752ad690fa6ab32c9f2c9031db29d45af111459373d70212638d00efd4834e0",
+    "tag": "5.44.0",
+    "digest": "sha256:9dbcc3c9abd71ec6d37610e6a5a2c45279bc6488caf8aaa948a9e8e368622d30",
     "entrypoint": [
       "/home/prowler/.venv/bin/prowler"
     ],
-    "source_association": "attested_match"
+    "source_association": "oci_revision_label_match",
+    "verification": {
+      "verified_at": "2026-10-14",
+      "artifact_source_revision": "499fd637f3393b485833b08cdaf4172917c5698e",
+      "source_association": "oci_revision_label_match",
+      "method": "official_oci_index_and_platform_config_labels",
+      "platforms": [
+        "linux/amd64",
+        "linux/arm64"
+      ],
+      "signature_verified": false
+    }
   },
   "final_artifact": {
-    "repository": "ghcr.io/teddashh/ai-security-scanner-engine-prowler",
-    "tag": "5.39.1-7",
-    "digest": "sha256:38d9593af214ce164c78b731d1ea29abd06de6babe84b230502972f67a658450"
+    "repository": "ghcr.io/ted-h-com/ai-security-scanner-engine-prowler",
+    "tag": "5.44.0-1",
+    "digest": null
   },
-  "publication": {
-    "workflow_run": "https://github.com/teddashh/ai-security-scanner/actions/runs/37044614517",
-    "source_revision": "dfe8af1721cd165a629a4d438318661e940c13d8",
-    "platforms": [
-      "linux/amd64",
-      "linux/arm64"
-    ],
-    "platform_digests": {
-      "linux/amd64": "sha256:0c4eeebf1f9558c62efc0d197e9cc7d8ac2b263161a610cc00d62a8be7bd8386",
-      "linux/arm64": "sha256:ebe37071c9b98c10a0d97f6b56e1e3626ac38237a715f7fee5ddfbad90c8f3cc"
-    },
-    "anonymous_pull_verified": true,
-    "evidence_artifact": "prowler-image-evidence-37044614517-1"
-  },
+  "publication": null,
   "dockerfile": {
     "emitted": true,
     "path": "engines/images/prowler/Dockerfile",
-    "sha256": "sha256:4888013c30ad4ec31fada4ddce1079aa2aa755e4d7eece1ae40cf3bd456bdd7f"
+    "sha256": "sha256:65fa13f69c86a804bee652ec660a12322aa5712f6efb69996760806c3f9b3970"
   },
   "wrapper": {
     "required": true,
@@ -271,14 +269,14 @@
       {
         "path": "engines/images/prowler/patches/verify-patches.sh",
         "reason": "Verifies the recorded Prowler patch series against upstream source but is not itself recorded in the plan.",
-        "sha256": "sha256:3d728086058c9fc4030c28dcedda6beab2464de8426db5d1d460304c98fa3f38"
+        "sha256": "sha256:3e0bf4a9a7869297eb4dc2cc386e97e0ba24a50f8f0f2d0673b9e8178aa9d911"
       }
     ],
     "patch_audit": {
-      "reviewed_on": "2026-10-03",
-      "review_due": "2026-11-01",
-      "applicable_upstream_version": "5.39.1",
-      "applicable_source_revision": "40ecbd035e5541bf099917c5033cceb8959c4737",
+      "reviewed_on": "2026-10-14",
+      "review_due": "2026-11-14",
+      "applicable_upstream_version": "5.44.0",
+      "applicable_source_revision": "499fd637f3393b485833b08cdaf4172917c5698e",
       "capability": "Use one non-refreshing Azure ARM access token for one exact enabled subscription, or read one exact GCP project without ambient project/organization/tenant enumeration.",
       "contribution_status": "not_submitted",
       "contribution_reason": "No contribution has been submitted. The four-check GCP profile deliberately removes organization discovery needed by broader upstream profiles, and the Azure mode depends on the product-owned one-hour token lifecycle. These restrictions cannot be contributed as general provider behavior without upstream API design and broader-provider fixtures; contribution work must separate optional scope controls from this fixed narrow profile.",
@@ -296,25 +294,25 @@
       "patches": [
         {
           "path": "engines/images/prowler/patches/0001-azure-static-access-token-iam-only.patch",
-          "sha256": "sha256:bf6059a33443e9f1fa459c6360346829170ee56e0775260f8a42f56dcb53c73c",
+          "sha256": "sha256:053ef441588b6bff99aef8a568f2617d8933a46449d2f9c2804b796c7a39566a",
           "files": [
             {
               "path": "prowler/providers/azure/azure_provider.py",
-              "upstream_source": "https://github.com/prowler-cloud/prowler/blob/40ecbd035e5541bf099917c5033cceb8959c4737/prowler/providers/azure/azure_provider.py",
+              "upstream_source": "https://github.com/prowler-cloud/prowler/blob/499fd637f3393b485833b08cdaf4172917c5698e/prowler/providers/azure/azure_provider.py",
               "before_sha256": "sha256:8e54390485d31feeb5e114db2c24933f3c73a4f22f2532b5c18583f9520c9cbb",
               "after_sha256": "sha256:b86ac5e1b350f07012058d2d53b15a9aa79126cb31577b871984e3d877b924cd"
             },
             {
               "path": "prowler/providers/azure/lib/arguments/arguments.py",
-              "upstream_source": "https://github.com/prowler-cloud/prowler/blob/40ecbd035e5541bf099917c5033cceb8959c4737/prowler/providers/azure/lib/arguments/arguments.py",
+              "upstream_source": "https://github.com/prowler-cloud/prowler/blob/499fd637f3393b485833b08cdaf4172917c5698e/prowler/providers/azure/lib/arguments/arguments.py",
               "before_sha256": "sha256:fc48fdd229d5760f5675f06032e05df8e54ee8777dd04a60aecc093615474068",
               "after_sha256": "sha256:afb7c9b47f1b9b2354774579121db4f1c26d6b03112a3d0407fb4f14ad8625af"
             },
             {
               "path": "prowler/providers/common/provider.py",
-              "upstream_source": "https://github.com/prowler-cloud/prowler/blob/40ecbd035e5541bf099917c5033cceb8959c4737/prowler/providers/common/provider.py",
-              "before_sha256": "sha256:cf043f096173ba685f5cb57aff653ded25ec54d58300e7afbaf1fd77841a6a4c",
-              "after_sha256": "sha256:4fe43b204884910bfbceac5ebb3e0b2898c9c044b18d241b566cc9a53ae6cf04"
+              "upstream_source": "https://github.com/prowler-cloud/prowler/blob/499fd637f3393b485833b08cdaf4172917c5698e/prowler/providers/common/provider.py",
+              "before_sha256": "sha256:1080b11456deb6426307167067a3066ec79c87c7af07bb85dd3c507d6c76a1da",
+              "after_sha256": "sha256:bd65d893c106cf47389cd17071f96002e7302706b07ebb17cdca6c10f95f3f27"
             },
             {
               "path": "tests/providers/azure/azure_access_token_auth_test.py",
@@ -330,7 +328,7 @@
           "files": [
             {
               "path": "prowler/providers/gcp/gcp_provider.py",
-              "upstream_source": "https://github.com/prowler-cloud/prowler/blob/40ecbd035e5541bf099917c5033cceb8959c4737/prowler/providers/gcp/gcp_provider.py",
+              "upstream_source": "https://github.com/prowler-cloud/prowler/blob/499fd637f3393b485833b08cdaf4172917c5698e/prowler/providers/gcp/gcp_provider.py",
               "before_sha256": "sha256:9ae2691559660ca902ab3b282fb1a5611bb47ca11f3118d34500dac847770c77",
               "after_sha256": "sha256:36287ddfe2a79b9a61ca71b926b69cde43202f658c55e6a144794b1aa3bba3ae"
             },
@@ -348,13 +346,13 @@
           "files": [
             {
               "path": "prowler/providers/gcp/services/cloudresourcemanager/cloudresourcemanager_service.py",
-              "upstream_source": "https://github.com/prowler-cloud/prowler/blob/40ecbd035e5541bf099917c5033cceb8959c4737/prowler/providers/gcp/services/cloudresourcemanager/cloudresourcemanager_service.py",
+              "upstream_source": "https://github.com/prowler-cloud/prowler/blob/499fd637f3393b485833b08cdaf4172917c5698e/prowler/providers/gcp/services/cloudresourcemanager/cloudresourcemanager_service.py",
               "before_sha256": "sha256:029725c008bf0ed0d6c8cdb8ba1a378d40e584dc49ee40e021c4955e4e5688f3",
               "after_sha256": "sha256:379876877311fe2f4aa17bb9d5b132c85baaf2081210aebf6da59472cc11c9fe"
             },
             {
               "path": "tests/providers/gcp/services/cloudresourcemanager/cloudresourcemanager_service_test.py",
-              "upstream_source": "https://github.com/prowler-cloud/prowler/blob/40ecbd035e5541bf099917c5033cceb8959c4737/tests/providers/gcp/services/cloudresourcemanager/cloudresourcemanager_service_test.py",
+              "upstream_source": "https://github.com/prowler-cloud/prowler/blob/499fd637f3393b485833b08cdaf4172917c5698e/tests/providers/gcp/services/cloudresourcemanager/cloudresourcemanager_service_test.py",
               "before_sha256": "sha256:0f039a16fcd24733dfef122c950ea093c985f457f84adc8eca5176acd92a669a",
               "after_sha256": "sha256:2e6dff5665b8563aeff39d16176443576c4373c4cf51574170e36435548c61bc"
             }
@@ -366,7 +364,7 @@
           "files": [
             {
               "path": "prowler/providers/gcp/gcp_provider.py",
-              "upstream_source": "https://github.com/prowler-cloud/prowler/blob/40ecbd035e5541bf099917c5033cceb8959c4737/prowler/providers/gcp/gcp_provider.py",
+              "upstream_source": "https://github.com/prowler-cloud/prowler/blob/499fd637f3393b485833b08cdaf4172917c5698e/prowler/providers/gcp/gcp_provider.py",
               "before_sha256": "sha256:36287ddfe2a79b9a61ca71b926b69cde43202f658c55e6a144794b1aa3bba3ae",
               "after_sha256": "sha256:c30756aaaa1ce3739c6bf2a023b4ab633656c767f1e6fa1e84ba4ff9fff1c34f"
             },
@@ -384,13 +382,13 @@
           "files": [
             {
               "path": "prowler/lib/outputs/finding.py",
-              "upstream_source": "https://github.com/prowler-cloud/prowler/blob/40ecbd035e5541bf099917c5033cceb8959c4737/prowler/lib/outputs/finding.py",
+              "upstream_source": "https://github.com/prowler-cloud/prowler/blob/499fd637f3393b485833b08cdaf4172917c5698e/prowler/lib/outputs/finding.py",
               "before_sha256": "sha256:00ed79bee5e32239d3cce4943c70df33dbfe3f85056deb750ad11f2073613cce",
               "after_sha256": "sha256:71d5665f11c27a3dc69660ac61b747264066c6791ba65014c50ba80105902749"
             },
             {
               "path": "prowler/providers/azure/azure_provider.py",
-              "upstream_source": "https://github.com/prowler-cloud/prowler/blob/40ecbd035e5541bf099917c5033cceb8959c4737/prowler/providers/azure/azure_provider.py",
+              "upstream_source": "https://github.com/prowler-cloud/prowler/blob/499fd637f3393b485833b08cdaf4172917c5698e/prowler/providers/azure/azure_provider.py",
               "before_sha256": "sha256:b86ac5e1b350f07012058d2d53b15a9aa79126cb31577b871984e3d877b924cd",
               "after_sha256": "sha256:421c9c913ee62076a3305ef1feca6130f87d5ab508a0cb20cd704f1cf1241460"
             },
@@ -408,7 +406,7 @@
           "files": [
             {
               "path": "prowler/providers/azure/azure_provider.py",
-              "upstream_source": "https://github.com/prowler-cloud/prowler/blob/40ecbd035e5541bf099917c5033cceb8959c4737/prowler/providers/azure/azure_provider.py",
+              "upstream_source": "https://github.com/prowler-cloud/prowler/blob/499fd637f3393b485833b08cdaf4172917c5698e/prowler/providers/azure/azure_provider.py",
               "before_sha256": "sha256:421c9c913ee62076a3305ef1feca6130f87d5ab508a0cb20cd704f1cf1241460",
               "after_sha256": "sha256:51cef0e3e7ed819144959f62389d3eb169b97aa37baf37aab66d4c290d21bf14"
             },
@@ -421,6 +419,61 @@
           ]
         }
       ]
+    }
+  },
+  "previous_artifact": {
+    "repository": "ghcr.io/teddashh/ai-security-scanner-engine-prowler",
+    "tag": "5.39.1-7",
+    "digest": "sha256:38d9593af214ce164c78b731d1ea29abd06de6babe84b230502972f67a658450"
+  },
+  "previous_publication": {
+    "workflow_run": "https://github.com/teddashh/ai-security-scanner/actions/runs/37044614517",
+    "source_revision": "dfe8af1721cd165a629a4d438318661e940c13d8",
+    "platforms": [
+      "linux/amd64",
+      "linux/arm64"
+    ],
+    "platform_digests": {
+      "linux/amd64": "sha256:0c4eeebf1f9558c62efc0d197e9cc7d8ac2b263161a610cc00d62a8be7bd8386",
+      "linux/arm64": "sha256:ebe37071c9b98c10a0d97f6b56e1e3626ac38237a715f7fee5ddfbad90c8f3cc"
+    },
+    "anonymous_pull_verified": true,
+    "evidence_artifact": "prowler-image-evidence-37044614517-1"
+  },
+  "upstream_update": {
+    "engine_version": "5.44.0",
+    "reported_version": null,
+    "source_revision": "499fd637f3393b485833b08cdaf4172917c5698e",
+    "rule_version": "499fd637f3393b485833b08cdaf4172917c5698e",
+    "knowledge_date": "2026-09-29",
+    "support_until": "2026-12-28",
+    "engine_provenance": {
+      "version": "5.44.0",
+      "source_repository": "https://github.com/prowler-cloud/prowler",
+      "source_revision": "499fd637f3393b485833b08cdaf4172917c5698e",
+      "source_ref": "5.44.0",
+      "acquisition_source": "https://github.com/prowler-cloud/prowler/commit/499fd637f3393b485833b08cdaf4172917c5698e",
+      "artifact_source_revision": null,
+      "source_association": "source_build_required"
+    },
+    "rules_provenance": {
+      "mode": "embedded",
+      "identifier": "Prowler checks",
+      "revision": "499fd637f3393b485833b08cdaf4172917c5698e",
+      "acquisition_source": "https://github.com/prowler-cloud/prowler/commit/499fd637f3393b485833b08cdaf4172917c5698e"
+    },
+    "data_provenance": {
+      "mode": "runtime_live",
+      "identifier": "Exact-scope AWS, Azure, or GCP IAM configuration",
+      "revision": null,
+      "acquisition_source": "Provider APIs authorized by one case-scoped ephemeral AWS session, Azure ARM access token, or GCP OAuth access token"
+    },
+    "knowledge_input": {
+      "kind": "runtime_live",
+      "identifier": "Exact-scope AWS, Azure, or GCP IAM configuration",
+      "version": null,
+      "acquisition_source": "Provider APIs authorized by one case-scoped ephemeral AWS session, Azure ARM access token, or GCP OAuth access token",
+      "pin_state": "runtime_live"
     }
   }
 }

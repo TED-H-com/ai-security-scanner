@@ -6,26 +6,26 @@
   "support_until": "2026-11-22",
   "maintenance_owner": "teddashh/ai-security-scanner maintainers",
   "update_procedure": "docs/engine-maintenance.md",
-  "publish_state": "published_managed_artifact",
+  "publish_state": "publication_in_progress",
   "source": {
     "repository": "https://github.com/anchore/grype",
-    "revision": "b5fa92bbcbef655497e3be840a2f718380e2cdd3",
-    "acquisition_source": "https://github.com/anchore/grype/commit/b5fa92bbcbef655497e3be840a2f718380e2cdd3",
+    "revision": "6f8d854af29d3a3086b11a84afa51554a2a245fe",
+    "acquisition_source": "https://github.com/anchore/grype/commit/6f8d854af29d3a3086b11a84afa51554a2a245fe",
     "local_research_checkout": ".upstreams/anchore/grype"
   },
   "verified_upstream_artifact": null,
   "final_artifact": {
-    "repository": "ghcr.io/teddashh/ai-security-scanner-engine-grype",
-    "tag": "0.117.0-4",
-    "digest": "sha256:56b0d675e3b8d539890e853699c114493a72a54cca0bbe254eceee7ec2b4c517"
+    "repository": "ghcr.io/ted-h-com/ai-security-scanner-engine-grype",
+    "tag": "0.120.1-1",
+    "digest": null
   },
   "build_recipe": {
-    "source_revision": "b5fa92bbcbef655497e3be840a2f718380e2cdd3",
+    "source_revision": "6f8d854af29d3a3086b11a84afa51554a2a245fe",
     "source_archive": {
-      "url": "https://github.com/anchore/grype/archive/b5fa92bbcbef655497e3be840a2f718380e2cdd3.tar.gz",
-      "sha256": "sha256:3289f706c9a73485655f17cc9f82c46361512791f3b0b7bcb587125323429fcc"
+      "url": "https://github.com/anchore/grype/archive/6f8d854af29d3a3086b11a84afa51554a2a245fe.tar.gz",
+      "sha256": "sha256:238f5623555bed2190d8db85c3f48c8d50b13d230644ada3a9756acc702eec37"
     },
-    "source_date_epoch": 1786377915,
+    "source_date_epoch": 1791304928,
     "target_platforms": [
       "linux/amd64",
       "linux/arm64"
@@ -38,11 +38,8 @@
     "base_images": [
       {
         "repository": "golang",
-        "tag": "1.26.3-alpine",
-        "digest": "sha256:91eda9776261207ea25fd06b5b7fed8d397dd2c0a283e77f2ab6e91bfa71079d",
-        "uses": [
-          "build"
-        ]
+        "tag": "1.26.8-alpine",
+        "digest": "sha256:8ac98ca534ac3f51e1f420a1dd2c15e74c75cfa0f23f3ad27eb5d7236c349a0c"
       }
     ],
     "static_steps": [
@@ -57,21 +54,21 @@
       {
         "path": "engines/images/grype/import.json",
         "reason": "Controls import of the pinned offline Grype database into the image but has no digest in the plan.",
-        "sha256": "sha256:b1382ad7455d20f5af33ac4a9dacb2376d35321c353f078bdafe69a533661afc"
+        "sha256": "sha256:34f988049676aadd83f95bfe9b42f82a2a4a75cfc7c17004e079234d8aad126c"
       }
     ]
   },
   "dockerfile": {
     "emitted": true,
     "path": "engines/images/grype/Dockerfile",
-    "sha256": "sha256:1774a13f2e6e481ed6d52eed5d946a72cbd4442d504731754f7545c076b4f20d",
+    "sha256": "sha256:7f3d405ab25fcdd507f15c64136636965f321b7840d070478cef0a5921c39949",
     "reason": null
   },
   "wrapper": {
     "required": true,
     "strategy": "Invoke the pinned source build against a typed read-only repository or OCI workspace and its embedded checksum-verified vulnerability database; Grype receives dir:/workspace or oci-dir:/workspace without product-owned package filtering.",
     "entrypoint": "/usr/local/bin/ai-security-scanner-engine-entrypoint",
-    "launcher_sha256": "sha256:ddd5775990c5ecff62a356a5480e4dd88afe9521e2f00ee94c03cedcc9592794"
+    "launcher_sha256": "sha256:fc81ca1d8703978576d7c2b79a1723777a69f8852fabb86902737b8f517e9399"
   },
   "command": [
     "--engine",
@@ -105,7 +102,13 @@
     "updates": false,
     "telemetry": false
   },
-  "publication": {
+  "publication": null,
+  "previous_artifact": {
+    "repository": "ghcr.io/teddashh/ai-security-scanner-engine-grype",
+    "tag": "0.117.0-4",
+    "digest": "sha256:56b0d675e3b8d539890e853699c114493a72a54cca0bbe254eceee7ec2b4c517"
+  },
+  "previous_publication": {
     "workflow_run": "https://github.com/teddashh/ai-security-scanner/actions/runs/33196902246",
     "source_revision": "2641850304aeade6ab8ee3b23eda80a7f66411d0",
     "platforms": [
@@ -119,5 +122,41 @@
     "anonymous_pull_verified": true,
     "evidence_artifact": "grype-image-evidence-33196902246-1",
     "managed_smoke_evidence_sha256": "sha256:b4c4a7b33d83ac19d7bbd7bb5907bbf9fb8ceefe119ccc4e57e516228fb7f110"
+  },
+  "upstream_update": {
+    "engine_version": "0.120.1",
+    "reported_version": null,
+    "source_revision": "6f8d854af29d3a3086b11a84afa51554a2a245fe",
+    "rule_version": "6f8d854af29d3a3086b11a84afa51554a2a245fe",
+    "knowledge_date": "2026-10-14",
+    "support_until": "2027-01-12",
+    "engine_provenance": {
+      "version": "0.120.1",
+      "source_repository": "https://github.com/anchore/grype",
+      "source_revision": "6f8d854af29d3a3086b11a84afa51554a2a245fe",
+      "source_ref": "v0.120.1",
+      "acquisition_source": "https://github.com/anchore/grype/commit/6f8d854af29d3a3086b11a84afa51554a2a245fe",
+      "artifact_source_revision": null,
+      "source_association": "source_build_required"
+    },
+    "rules_provenance": {
+      "mode": "embedded",
+      "identifier": "Grype matchers",
+      "revision": "6f8d854af29d3a3086b11a84afa51554a2a245fe",
+      "acquisition_source": "https://github.com/anchore/grype/commit/6f8d854af29d3a3086b11a84afa51554a2a245fe"
+    },
+    "data_provenance": {
+      "mode": "embedded",
+      "identifier": "Grype vulnerability database snapshot",
+      "revision": "sha256:8be8779b1b6fd721e6127c092bd25d5875e25cd511def5d9e7d026fb45189058",
+      "acquisition_source": "https://grype.anchore.io/databases/v6/vulnerability-db_v6.1.10_2026-10-14T00:28:57Z_1791959434.tar.zst"
+    },
+    "knowledge_input": {
+      "kind": "embedded",
+      "identifier": "Grype vulnerability database snapshot",
+      "version": "sha256:8be8779b1b6fd721e6127c092bd25d5875e25cd511def5d9e7d026fb45189058",
+      "acquisition_source": "https://grype.anchore.io/databases/v6/vulnerability-db_v6.1.10_2026-10-14T00:28:57Z_1791959434.tar.zst",
+      "pin_state": "pinned_or_not_applicable"
+    }
   }
 }

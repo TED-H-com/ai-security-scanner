@@ -6,7 +6,7 @@
   "support_until": "2026-11-22",
   "maintenance_owner": "teddashh/ai-security-scanner maintainers",
   "update_procedure": "docs/engine-maintenance.md",
-  "publish_state": "published_managed_artifact",
+  "publish_state": "publication_in_progress",
   "source": {
     "repository": "https://github.com/aquasecurity/kube-bench",
     "revision": "9f133cb7509ce1dbedfc860e94474588000e25ac",
@@ -15,9 +15,9 @@
   },
   "verified_upstream_artifact": null,
   "final_artifact": {
-    "repository": "ghcr.io/teddashh/ai-security-scanner-engine-kube-bench",
-    "tag": "0.16.0-4",
-    "digest": "sha256:77a136e48c6491528a70acabc8380e161d362a63c5bcc9d66312393c3436538c"
+    "repository": "ghcr.io/ted-h-com/ai-security-scanner-engine-kube-bench",
+    "tag": "0.16.0-5",
+    "digest": null
   },
   "build_recipe": {
     "source_revision": "9f133cb7509ce1dbedfc860e94474588000e25ac",
@@ -39,19 +39,12 @@
       {
         "repository": "golang",
         "tag": "1.26.3-alpine",
-        "digest": "sha256:91eda9776261207ea25fd06b5b7fed8d397dd2c0a283e77f2ab6e91bfa71079d",
-        "uses": [
-          "build"
-        ]
+        "digest": "sha256:91eda9776261207ea25fd06b5b7fed8d397dd2c0a283e77f2ab6e91bfa71079d"
       },
       {
         "repository": "alpine",
         "tag": "3.23",
-        "digest": "sha256:fd791d74b68913cbb027c6546007b3f0d3bc45125f797758156952bc2d6daf40",
-        "uses": [
-          "build",
-          "runtime"
-        ]
+        "digest": "sha256:fd791d74b68913cbb027c6546007b3f0d3bc45125f797758156952bc2d6daf40"
       }
     ],
     "static_steps": [
@@ -75,14 +68,14 @@
   "dockerfile": {
     "emitted": true,
     "path": "engines/images/kube-bench/Dockerfile",
-    "sha256": "sha256:2db717863a9144c15b27f88be4036d09e07da124fe9aa628210ecded189a5032",
+    "sha256": "sha256:28800d39bda4309e809af00b2b4b8eb1adf73006f44e1b4d2b8230770b5c3583",
     "reason": null
   },
   "wrapper": {
     "required": true,
     "strategy": "Accept only the reviewed immutable node-facts snapshot profile through the project-owned launcher.",
     "entrypoint": "/usr/local/bin/ai-security-scanner-engine-entrypoint",
-    "launcher_sha256": "sha256:ddd5775990c5ecff62a356a5480e4dd88afe9521e2f00ee94c03cedcc9592794"
+    "launcher_sha256": "sha256:fc81ca1d8703978576d7c2b79a1723777a69f8852fabb86902737b8f517e9399"
   },
   "command": [
     "--engine",
@@ -116,7 +109,13 @@
     "updates": false,
     "telemetry": false
   },
-  "publication": {
+  "publication": null,
+  "previous_artifact": {
+    "repository": "ghcr.io/teddashh/ai-security-scanner-engine-kube-bench",
+    "tag": "0.16.0-4",
+    "digest": "sha256:77a136e48c6491528a70acabc8380e161d362a63c5bcc9d66312393c3436538c"
+  },
+  "previous_publication": {
     "workflow_run": "https://github.com/teddashh/ai-security-scanner/actions/runs/35273577688",
     "source_revision": "9ee5257d269b2aaf9dc28d1eed470ed9e9c933f3",
     "platforms": [
@@ -130,5 +129,41 @@
     "anonymous_pull_verified": true,
     "evidence_artifact": "kube-bench-image-evidence-35273577688-1",
     "managed_smoke_evidence_sha256": "sha256:f9a2f171b0ba51ba6f6fcc6882354d7f51e473bef03be232d3ece382a06a3635"
+  },
+  "upstream_update": {
+    "engine_version": "source@9f133cb7509ce1dbedfc860e94474588000e25ac",
+    "reported_version": "0.16.0",
+    "source_revision": "9f133cb7509ce1dbedfc860e94474588000e25ac",
+    "rule_version": "9f133cb7509ce1dbedfc860e94474588000e25ac",
+    "knowledge_date": "2026-08-24",
+    "support_until": "2026-11-22",
+    "engine_provenance": {
+      "version": "source@9f133cb7509ce1dbedfc860e94474588000e25ac",
+      "source_repository": "https://github.com/aquasecurity/kube-bench",
+      "source_revision": "9f133cb7509ce1dbedfc860e94474588000e25ac",
+      "source_ref": "v0.16.0",
+      "acquisition_source": "https://github.com/aquasecurity/kube-bench/commit/9f133cb7509ce1dbedfc860e94474588000e25ac",
+      "artifact_source_revision": null,
+      "source_association": "source_build_required"
+    },
+    "rules_provenance": {
+      "mode": "embedded",
+      "identifier": "CIS benchmark configuration",
+      "revision": "9f133cb7509ce1dbedfc860e94474588000e25ac",
+      "acquisition_source": "https://github.com/aquasecurity/kube-bench/commit/9f133cb7509ce1dbedfc860e94474588000e25ac"
+    },
+    "data_provenance": {
+      "mode": "runtime_bound",
+      "identifier": "Kubernetes node configuration snapshot",
+      "revision": "case_artifact_sha256",
+      "acquisition_source": "assessment_case"
+    },
+    "knowledge_input": {
+      "kind": "runtime_bound",
+      "identifier": "Kubernetes node configuration snapshot",
+      "version": "case_artifact_sha256",
+      "acquisition_source": "assessment_case",
+      "pin_state": "runtime_bound"
+    }
   }
 }

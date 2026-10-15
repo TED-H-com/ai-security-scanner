@@ -1,9 +1,9 @@
 # Semgrep source and upstream rule records
 
 This image compiles Semgrep CE from the LGPL-2.1-or-later source at
-`a0c13f304151e531c7e7c00838076211a07a790c`. It verifies all 36 archive inputs in
-`semgrep-submodules.lock` and attaches the engine plus its 35 compiler/parser
-submodules before compilation. The rules gitlink is deliberately overridden:
+`72d3525fe7e02f486428386078f192f8c4756804`. It verifies the one retained legacy-rule archive in
+`semgrep-submodules.lock` and attaches the engine plus its upstream-vendored compiler/parser
+sources before compilation. The rules gitlink is deliberately overridden:
 only the selected original legacy rule files, README and license are attached.
 The full rule archive is not included.
 
@@ -27,7 +27,7 @@ only the 1,477 selected original files, not a complete rules checkout.
 To rebuild the engine from attached source, use the pinned build prerequisites
 in the attached Dockerfile, then `make opam-init OPAM_INIT_FLAGS=--disable-sandboxing`,
 `make switch`, and `make install-deps` with `OPAMJOBS=4`. Compile the same upstream
-targets with `DUNE_JOBS=4 SEMGREP_GIT_COMMIT=a0c13f304151e531c7e7c00838076211a07a790c opam exec --
+targets with `DUNE_JOBS=4 SEMGREP_GIT_COMMIT=72d3525fe7e02f486428386078f192f8c4756804 opam exec --
 make core`. Install the core and frozen Python CLI as
 shown in the Dockerfile. Build prerequisites still require network access.
 

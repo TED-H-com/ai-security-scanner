@@ -1,7 +1,7 @@
 # Prowler downstream source patches
 
 These patches apply only to Prowler commit
-`40ecbd035e5541bf099917c5033cceb8959c4737` (v5.39.1).
+`499fd637f3393b485833b08cdaf4172917c5698e` (5.44.0).
 
 They are ai-security-scanner downstream hardening, not native upstream Prowler
 capabilities. In particular, upstream at this pin does not provide Azure

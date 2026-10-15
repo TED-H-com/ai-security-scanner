@@ -6,26 +6,26 @@
   "support_until": "2026-11-22",
   "maintenance_owner": "teddashh/ai-security-scanner maintainers",
   "update_procedure": "docs/engine-maintenance.md",
-  "publish_state": "published_managed_artifact",
+  "publish_state": "publication_in_progress",
   "source": {
     "repository": "https://github.com/semgrep/semgrep",
-    "revision": "a0c13f304151e531c7e7c00838076211a07a790c",
-    "acquisition_source": "https://github.com/semgrep/semgrep/commit/a0c13f304151e531c7e7c00838076211a07a790c",
+    "revision": "72d3525fe7e02f486428386078f192f8c4756804",
+    "acquisition_source": "https://github.com/semgrep/semgrep/commit/72d3525fe7e02f486428386078f192f8c4756804",
     "local_research_checkout": ".upstreams/semgrep/semgrep"
   },
   "verified_upstream_artifact": null,
   "final_artifact": {
-    "repository": "ghcr.io/teddashh/ai-security-scanner-engine-semgrep",
-    "tag": "1.174.0-4",
-    "digest": "sha256:3f1a10c7bce32eae912479c5744dbb653bdfa9a4cbd3d53afd2e0a435b10fb59"
+    "repository": "ghcr.io/ted-h-com/ai-security-scanner-engine-semgrep",
+    "tag": "1.181.0-1",
+    "digest": null
   },
   "build_recipe": {
-    "source_revision": "a0c13f304151e531c7e7c00838076211a07a790c",
+    "source_revision": "72d3525fe7e02f486428386078f192f8c4756804",
     "source_archive": {
-      "url": "https://github.com/semgrep/semgrep/archive/a0c13f304151e531c7e7c00838076211a07a790c.tar.gz",
-      "sha256": "sha256:7c5c5fe27b3b65ba1ac77f121c5d3df4398a1c06ab3d7e39fdef8884ca8494b5"
+      "url": "https://github.com/semgrep/semgrep/archive/72d3525fe7e02f486428386078f192f8c4756804.tar.gz",
+      "sha256": "sha256:be58ce9c2b00934cb5907f09483c6848b3777006154c30f62b1d0db624ce4f3e"
     },
-    "source_date_epoch": 1787250577,
+    "source_date_epoch": 1792004586,
     "target_platforms": [
       "linux/amd64",
       "linux/arm64"
@@ -39,27 +39,17 @@
       {
         "repository": "ghcr.io/astral-sh/uv",
         "tag": "0.10.9",
-        "digest": "sha256:10902f58a1606787602f303954cea099626a4adb02acbac4c69920fe9d278f82",
-        "uses": [
-          "build"
-        ]
+        "digest": "sha256:10902f58a1606787602f303954cea099626a4adb02acbac4c69920fe9d278f82"
       },
       {
         "repository": "golang",
         "tag": "1.25.10-alpine",
-        "digest": "sha256:8d22e29d960bc50cd025d93d5b7c7d220b1ee9aa7a239b3c8f55a57e987e8d45",
-        "uses": [
-          "build"
-        ]
+        "digest": "sha256:8d22e29d960bc50cd025d93d5b7c7d220b1ee9aa7a239b3c8f55a57e987e8d45"
       },
       {
         "repository": "alpine",
         "tag": "3.23",
-        "digest": "sha256:fd791d74b68913cbb027c6546007b3f0d3bc45125f797758156952bc2d6daf40",
-        "uses": [
-          "build",
-          "runtime"
-        ]
+        "digest": "sha256:fd791d74b68913cbb027c6546007b3f0d3bc45125f797758156952bc2d6daf40"
       }
     ],
     "static_steps": [
@@ -79,7 +69,7 @@
       [
         "env",
         "DUNE_JOBS=4",
-        "SEMGREP_GIT_COMMIT=a0c13f304151e531c7e7c00838076211a07a790c",
+        "SEMGREP_GIT_COMMIT=72d3525fe7e02f486428386078f192f8c4756804",
         "opam",
         "exec",
         "--",
@@ -103,7 +93,7 @@
       },
       {
         "path": "engines/images/semgrep/prepare_source_bundle.py",
-        "sha256": "sha256:f6c570d7bb8cc60fca0c169cdd512436d21e0be301bb6236fad120d58a92e250"
+        "sha256": "sha256:6b48ad3f90418c880715163d6198a9cbbb4fd14f3f38ba6d3cfa10c210c4a3d7"
       },
       {
         "path": "engines/images/semgrep/product-rules.yml",
@@ -115,7 +105,7 @@
       },
       {
         "path": "engines/images/semgrep/submodules.lock",
-        "sha256": "sha256:71e3d2192ffc7452b6a886506dcd24ce19ea0c1168488d87eb2e2f3847354e8d"
+        "sha256": "sha256:7035fef7c6cf70660d257e874dc83e6f602b2cdd7cb6d961dd2b5a94c506d8cf"
       },
       {
         "path": "engines/images/semgrep/preview_combined_pack.py",
@@ -127,15 +117,15 @@
       },
       {
         "path": "engines/images/semgrep/run_managed_combination.py",
-        "sha256": "sha256:5a7c1a7e7d549820aa07ea26f3018d0c1edaeb868965c886881270afe09ce0d6"
+        "sha256": "sha256:bab3334020e38e44cea623ed49d4f1a76f049121643ec77577eef36e19542022"
       },
       {
         "path": "engines/images/semgrep/verify_image_payload.py",
-        "sha256": "sha256:3864513bc403a38b11e6053973f266ac7b4b72d562d3c185333fddb764ea7c32"
+        "sha256": "sha256:a7a2548e9a6390186df71c2a4914618e9883c01b4e55ebfd6bde26e9c0a8ef6d"
       },
       {
         "path": "engines/images/semgrep/SOURCE-OFFER.md",
-        "sha256": "sha256:501bf2e26fe5b12468ef63d1d9ccaf409767ce1a087e9442b6d629182eb9f41a"
+        "sha256": "sha256:3ac75b21e5fe71d45ae51a24499cd5b7ba04e9524d2df2f64a984f6103e2c9de"
       },
       {
         "path": "engines/images/local-launcher/go.mod",
@@ -170,14 +160,14 @@
   "dockerfile": {
     "emitted": true,
     "path": "engines/images/semgrep/Dockerfile",
-    "sha256": "sha256:081f7a34aeb8d9af839df679006902b6ad0c51e00862e8d76951e2fb2e432a81",
+    "sha256": "sha256:d3ebeaf532b9f449f03b05e2c25a2bc5699a00266ed27e06bbd0a4fc9de57cf3",
     "reason": null
   },
   "wrapper": {
     "required": true,
     "strategy": "Invoke the pinned CE build against only the read-only repository snapshot and checksum-verified legacy plus product offline rule pack; verify rule-ID provenance before execution.",
     "entrypoint": "/usr/local/bin/ai-security-scanner-engine-entrypoint",
-    "launcher_sha256": "sha256:ddd5775990c5ecff62a356a5480e4dd88afe9521e2f00ee94c03cedcc9592794"
+    "launcher_sha256": "sha256:fc81ca1d8703978576d7c2b79a1723777a69f8852fabb86902737b8f517e9399"
   },
   "command": [
     "--engine",
@@ -211,7 +201,13 @@
     "updates": false,
     "telemetry": false
   },
-  "publication": {
+  "publication": null,
+  "previous_artifact": {
+    "repository": "ghcr.io/teddashh/ai-security-scanner-engine-semgrep",
+    "tag": "1.174.0-4",
+    "digest": "sha256:3f1a10c7bce32eae912479c5744dbb653bdfa9a4cbd3d53afd2e0a435b10fb59"
+  },
+  "previous_publication": {
     "workflow_run": "https://github.com/teddashh/ai-security-scanner/actions/runs/37138219098",
     "source_revision": "94af3e7c5f28fe5f442525a7b0d3aab88b5632ba",
     "platforms": [
@@ -224,46 +220,42 @@
     },
     "anonymous_pull_verified": true,
     "evidence_artifact": "semgrep-image-evidence-37138219098-1",
-    "managed_smoke_evidence_sha256": "sha256:1219e929a158c27c6d14c3d3e2847202218023eb3272f482f2e02ae470b5c91e",
-    "signer_identity": "https://github.com/teddashh/ai-security-scanner/.github/workflows/engine-images-local-k8s.yml@refs/heads/main",
-    "root_checksum_receipt_sha256": "sha256:ea90c34c1273b9dca7991d8d61b0e035357fa44337a65466b48901cc8a8c91dd",
-    "native_verification": {
-      "linux/amd64": {
-        "receipt_sha256": "sha256:0cf04c936456917d409e0ee6e631fed4407904557cc03f198a1ac327ddffeaae",
-        "rootfs_payload_sha256": "sha256:21fb6e6abf9a85456ecaf860fc2a29fef6359f4df66b0366a9397f4969a3ff5b",
-        "source_attachment_sha256": "sha256:3282013b050f79b3f417f488433a050fda219da99edc66c1a6520414842156cd",
-        "managed_artifact_sha256": "sha256:e69b8d68247937790e7102725b3914070a617eb0f5b42720590180d5ac429ec3",
-        "native_matches": {
-          "combined": 22,
-          "managed": 22,
-          "product": 10,
-          "upstream": 12
-        },
-        "rejections_before_output": {
-          "changed-provenance": 126,
-          "changed-rule": 126,
-          "extra-rule": 126,
-          "writable-workspace": 126
-        }
-      },
-      "linux/arm64": {
-        "receipt_sha256": "sha256:12c0e173d8d452783326a6d1efc1cb0c0a6de3df5a17d162c2fddbfee22d9bf6",
-        "rootfs_payload_sha256": "sha256:529fca787dee01941f133806352c1a855a337921e0140764032029175dc75b0d",
-        "source_attachment_sha256": "sha256:3282013b050f79b3f417f488433a050fda219da99edc66c1a6520414842156cd",
-        "managed_artifact_sha256": "sha256:94b633a24264e60f6d5f0a028ff0637c3af94e4932ffc0f41c5544ccfa9ab53f",
-        "native_matches": {
-          "combined": 22,
-          "managed": 22,
-          "product": 10,
-          "upstream": 12
-        },
-        "rejections_before_output": {
-          "changed-provenance": 126,
-          "changed-rule": 126,
-          "extra-rule": 126,
-          "writable-workspace": 126
-        }
-      }
+    "managed_smoke_evidence_sha256": "sha256:1219e929a158c27c6d14c3d3e2847202218023eb3272f482f2e02ae470b5c91e"
+  },
+  "upstream_update": {
+    "engine_version": "source@72d3525fe7e02f486428386078f192f8c4756804",
+    "reported_version": "1.181.0",
+    "source_revision": "72d3525fe7e02f486428386078f192f8c4756804",
+    "rule_version": "0f5a85ceab1b82b193d0eaa418784c932d237d68",
+    "knowledge_date": "2026-10-14",
+    "support_until": "2027-01-12",
+    "engine_provenance": {
+      "version": "source@72d3525fe7e02f486428386078f192f8c4756804",
+      "source_repository": "https://github.com/semgrep/semgrep",
+      "source_revision": "72d3525fe7e02f486428386078f192f8c4756804",
+      "source_ref": "v1.181.0",
+      "acquisition_source": "https://github.com/semgrep/semgrep/commit/72d3525fe7e02f486428386078f192f8c4756804",
+      "artifact_source_revision": null,
+      "source_association": "source_build_required"
+    },
+    "rules_provenance": {
+      "mode": "embedded",
+      "identifier": "semgrep/semgrep-rules legacy security selection plus four product rules",
+      "revision": "0f5a85ceab1b82b193d0eaa418784c932d237d68",
+      "acquisition_source": "https://github.com/semgrep/semgrep-rules/commit/0f5a85ceab1b82b193d0eaa418784c932d237d68"
+    },
+    "data_provenance": {
+      "mode": "runtime_bound",
+      "identifier": "repository or filesystem snapshot",
+      "revision": "case_artifact_sha256",
+      "acquisition_source": "assessment_case"
+    },
+    "knowledge_input": {
+      "kind": "runtime_bound",
+      "identifier": "repository or filesystem snapshot",
+      "version": "case_artifact_sha256",
+      "acquisition_source": "assessment_case",
+      "pin_state": "runtime_bound"
     }
   }
 }

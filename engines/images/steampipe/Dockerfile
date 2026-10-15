@@ -1,50 +1,50 @@
 # syntax=docker/dockerfile:1.7@sha256:a57df69d0ea827fb7266491f2813635de6f17269be881f696fbfdf2d83dda33e
 
-ARG SOURCE_DATE_EPOCH=1786368462
-ARG STEAMPIPE_REVISION=71fa72fc9ce33897bcb0bd0c9ebf09b867b881cf
-ARG AWS_PLUGIN_REVISION=6e79b2dece502bc198310b39bd54bc95d2842c99
-ARG FDW_REVISION=6d1d957d1330582b7af34064eaa9f8fa196d2918
+ARG SOURCE_DATE_EPOCH=1789554885
+ARG STEAMPIPE_REVISION=5c62651887b3e1d127049722e7216b915d4b075d
+ARG AWS_PLUGIN_REVISION=d9a877878061013a49799c17b932616ee0ea415b
+ARG FDW_REVISION=290169e3e104eca604e9013159423027f6477d21
 
-FROM --platform=$BUILDPLATFORM golang:1.26.5-alpine3.23@sha256:622e56dbc11a8cfe87cafa2331e9a201877271cbff918af53d3be315f3da88cc AS steampipe-build
+FROM --platform=$BUILDPLATFORM golang:1.26.8-alpine@sha256:8ac98ca534ac3f51e1f420a1dd2c15e74c75cfa0f23f3ad27eb5d7236c349a0c AS steampipe-build
 ARG TARGETOS
 ARG TARGETARCH
 ARG SOURCE_DATE_EPOCH
 ARG STEAMPIPE_REVISION
 WORKDIR /src
-ADD --checksum=sha256:e5d2d970380e5338a0104419599dbf785ef4fe22ad844d954b9e73b56661dec5 \
-    https://github.com/turbot/steampipe/archive/71fa72fc9ce33897bcb0bd0c9ebf09b867b881cf.tar.gz \
-    /source/steampipe-v2.4.5.tar.gz
-RUN tar --extract --gzip --file=/source/steampipe-v2.4.5.tar.gz \
+ADD --checksum=sha256:81f5b5f8de2b6d34d4f6639c9515bccaec6dd0ea561542beace3f5755204c865 \
+    https://github.com/turbot/steampipe/archive/5c62651887b3e1d127049722e7216b915d4b075d.tar.gz \
+    /source/steampipe-v2.4.7.tar.gz
+RUN tar --extract --gzip --file=/source/steampipe-v2.4.7.tar.gz \
       --directory=/src --strip-components=1 --no-same-owner \
     && go mod download \
     && CGO_ENABLED=0 GOOS=${TARGETOS} GOARCH=${TARGETARCH} \
        go build -mod=readonly -buildvcs=false -trimpath -tags=netgo \
-       -ldflags="-s -w -buildid= -X main.version=2.4.5 -X main.date=2026-08-10T13:27:42Z -X main.commit=${STEAMPIPE_REVISION} -X main.builtBy=ai-security-scanner" \
+       -ldflags="-s -w -buildid= -X main.version=2.4.7 -X main.date=2026-09-16T10:34:45Z -X main.commit=${STEAMPIPE_REVISION} -X main.builtBy=ai-security-scanner" \
        -o /out/steampipe .
 
-FROM --platform=$BUILDPLATFORM golang:1.26.5-alpine3.23@sha256:622e56dbc11a8cfe87cafa2331e9a201877271cbff918af53d3be315f3da88cc AS plugin-build
+FROM --platform=$BUILDPLATFORM golang:1.26.8-alpine@sha256:8ac98ca534ac3f51e1f420a1dd2c15e74c75cfa0f23f3ad27eb5d7236c349a0c AS plugin-build
 ARG TARGETOS
 ARG TARGETARCH
 WORKDIR /src
-ADD --checksum=sha256:a8a876ed355cca40f8232d9b4c287d20f68ade4b3231ccd69487fcfef0fdaea8 \
-    https://github.com/turbot/steampipe-plugin-aws/archive/6e79b2dece502bc198310b39bd54bc95d2842c99.tar.gz \
-    /source/steampipe-plugin-aws-v1.32.0.tar.gz
-RUN tar --extract --gzip --file=/source/steampipe-plugin-aws-v1.32.0.tar.gz \
+ADD --checksum=sha256:9c99d33a37070bf3d7b2d84ef434c32055dc5f776c0a7d060f22cd1fcc177139 \
+    https://github.com/turbot/steampipe-plugin-aws/archive/d9a877878061013a49799c17b932616ee0ea415b.tar.gz \
+    /source/steampipe-plugin-aws-v1.34.0.tar.gz
+RUN tar --extract --gzip --file=/source/steampipe-plugin-aws-v1.34.0.tar.gz \
       --directory=/src --strip-components=1 --no-same-owner \
     && go mod download \
     && CGO_ENABLED=0 GOOS=${TARGETOS} GOARCH=${TARGETARCH} \
        go build -mod=readonly -buildvcs=false -trimpath -tags=netgo \
        -ldflags='-s -w -buildid=' -o /out/steampipe-plugin-aws.plugin .
 
-FROM --platform=$BUILDPLATFORM golang:1.26.5-alpine3.23@sha256:622e56dbc11a8cfe87cafa2331e9a201877271cbff918af53d3be315f3da88cc AS fdw-source
+FROM --platform=$BUILDPLATFORM golang:1.26.8-alpine@sha256:8ac98ca534ac3f51e1f420a1dd2c15e74c75cfa0f23f3ad27eb5d7236c349a0c AS fdw-source
 WORKDIR /src
-ADD --checksum=sha256:c1a05303d5d11317ed59326aae85d9485e7efa8923ca38d60b05a19ddb0d6349 \
-    https://github.com/turbot/steampipe-postgres-fdw/archive/6d1d957d1330582b7af34064eaa9f8fa196d2918.tar.gz \
-    /source/steampipe-postgres-fdw-v2.2.5.tar.gz
-RUN tar --extract --gzip --file=/source/steampipe-postgres-fdw-v2.2.5.tar.gz \
+ADD --checksum=sha256:8f05b1f831ae9c5d8ccfe8fbcbe2a542c8aa8c729581ea3054fc9a05c0cb36b6 \
+    https://github.com/turbot/steampipe-postgres-fdw/archive/290169e3e104eca604e9013159423027f6477d21.tar.gz \
+    /source/steampipe-postgres-fdw-v2.2.7.tar.gz
+RUN tar --extract --gzip --file=/source/steampipe-postgres-fdw-v2.2.7.tar.gz \
       --directory=/src --strip-components=1 --no-same-owner
 
-FROM --platform=$BUILDPLATFORM golang:1.26.5-alpine3.23@sha256:622e56dbc11a8cfe87cafa2331e9a201877271cbff918af53d3be315f3da88cc AS project-tools
+FROM --platform=$BUILDPLATFORM golang:1.26.8-alpine@sha256:8ac98ca534ac3f51e1f420a1dd2c15e74c75cfa0f23f3ad27eb5d7236c349a0c AS project-tools
 ARG TARGETOS
 ARG TARGETARCH
 WORKDIR /launcher
@@ -81,6 +81,9 @@ USER 65532:65532
 
 FROM seed-input AS seed
 ARG TARGETARCH
+ARG STEAMPIPE_REVISION
+ARG AWS_PLUGIN_REVISION
+ARG FDW_REVISION
 RUN case "${TARGETARCH}" in \
       amd64) database_port=19193 ;; \
       arm64) database_port=19194 ;; \
@@ -92,6 +95,9 @@ RUN case "${TARGETARCH}" in \
     && steampipe query --output json "select 1 as seed_ready" \
     && ai-security-scanner-steampipe-installprep \
          /opt/seed /opt/input/steampipe-plugin-aws.plugin "${SOURCE_DATE_EPOCH}" \
+    && grep -Fq "\"steampipe_revision\": \"${STEAMPIPE_REVISION}\"" /opt/seed/ai-security-scanner-provenance.json \
+    && grep -Fq "\"aws_plugin_revision\": \"${AWS_PLUGIN_REVISION}\"" /opt/seed/ai-security-scanner-provenance.json \
+    && grep -Fq "\"fdw_revision\": \"${FDW_REVISION}\"" /opt/seed/ai-security-scanner-provenance.json \
     && rm -f "${STEAMPIPE_INSTALL_DIR}/config/ai-security-scanner-build.spc"
 
 FROM debian:bookworm-slim@sha256:abd67ffcfa541b485a3dff59865ab629aa048a6c613e639d36e7456b0b229241
@@ -99,12 +105,12 @@ ARG SOURCE_DATE_EPOCH
 LABEL org.opencontainers.image.title="ai-security-scanner Steampipe engine" \
       org.opencontainers.image.description="Pinned-source Steampipe and AWS IAM plugin with embedded database closure" \
       org.opencontainers.image.source="https://github.com/teddashh/ai-security-scanner" \
-      org.opencontainers.image.revision="71fa72fc9ce33897bcb0bd0c9ebf09b867b881cf" \
-      org.opencontainers.image.version="2.4.5-6" \
+      org.opencontainers.image.revision="5c62651887b3e1d127049722e7216b915d4b075d" \
+      org.opencontainers.image.version="2.4.7-1" \
       org.opencontainers.image.licenses="AGPL-3.0-only AND Apache-2.0 AND PostgreSQL" \
-      io.ai-security-scanner.aws-plugin.revision="6e79b2dece502bc198310b39bd54bc95d2842c99" \
+      io.ai-security-scanner.aws-plugin.revision="d9a877878061013a49799c17b932616ee0ea415b" \
       io.ai-security-scanner.database.digest="sha256:84264ef41853178707bccb091f5450c22e835f8a98f9961592c75690321093d9" \
-      io.ai-security-scanner.fdw.digest="sha256:62b654db44ca6f7f6894e8f53e5dcad9530d356253273ebf05f92109d5ca7457" \
+      io.ai-security-scanner.fdw.digest="sha256:28756ddfef21169f73e94129cabd51ef15ef81a266eaee8b302f5ec7cc1d8f4b" \
       io.ai-security-scanner.profile="aws-iam-user-inventory-us-east-1"
 
 COPY --chmod=0444 engines/images/steampipe/passwd /etc/passwd
@@ -120,9 +126,9 @@ COPY --from=plugin-build --chmod=0444 /src/LICENSE /usr/share/licenses/steampipe
 COPY --from=fdw-source --chmod=0444 /src/LICENSE /usr/share/licenses/steampipe-postgres-fdw/LICENSE
 COPY --chmod=0444 engines/images/steampipe/POSTGRESQL-COPYRIGHT /usr/share/licenses/postgresql/COPYRIGHT
 COPY --chmod=0444 engines/images/steampipe/SOURCE-OFFER.md /usr/share/source/steampipe/SOURCE-OFFER.md
-COPY --from=steampipe-build --chmod=0444 /source/steampipe-v2.4.5.tar.gz /usr/share/source/steampipe/steampipe-v2.4.5.tar.gz
-COPY --from=plugin-build --chmod=0444 /source/steampipe-plugin-aws-v1.32.0.tar.gz /usr/share/source/steampipe/steampipe-plugin-aws-v1.32.0.tar.gz
-COPY --from=fdw-source --chmod=0444 /source/steampipe-postgres-fdw-v2.2.5.tar.gz /usr/share/source/steampipe/steampipe-postgres-fdw-v2.2.5.tar.gz
+COPY --from=steampipe-build --chmod=0444 /source/steampipe-v2.4.7.tar.gz /usr/share/source/steampipe/steampipe-v2.4.7.tar.gz
+COPY --from=plugin-build --chmod=0444 /source/steampipe-plugin-aws-v1.34.0.tar.gz /usr/share/source/steampipe/steampipe-plugin-aws-v1.34.0.tar.gz
+COPY --from=fdw-source --chmod=0444 /source/steampipe-postgres-fdw-v2.2.7.tar.gz /usr/share/source/steampipe/steampipe-postgres-fdw-v2.2.7.tar.gz
 COPY --chmod=0444 engines/images/steampipe/Dockerfile /usr/share/source/steampipe/build/Dockerfile
 COPY --chmod=0444 engines/images/steampipe/passwd engines/images/steampipe/group /usr/share/source/steampipe/build/
 COPY --chmod=0444 engines/images/cloud-launcher/go.mod engines/images/cloud-launcher/main.go /usr/share/source/steampipe/build/cloud-launcher/

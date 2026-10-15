@@ -17,13 +17,13 @@ permissions:
   attestations: write
 
 concurrency:
-  group: engine-image-checkov-3.3.13-1
+  group: engine-image-checkov-3.3.29-1
   cancel-in-progress: false
 
 env:
   IMAGE: ghcr.io/ted-h-com/ai-security-scanner-engine-checkov
-  IMAGE_TAG: 3.3.13-1
-  SOURCE_DATE_EPOCH: "1787218764"
+  IMAGE_TAG: 3.3.29-1
+  SOURCE_DATE_EPOCH: "1791891584"
 
 jobs:
   publish:

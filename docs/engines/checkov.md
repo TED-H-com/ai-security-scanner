@@ -75,3 +75,7 @@ Follow [section 4](../engine-maintenance.md#4-updating-an-engine), then:
   - List with `jq -r '(if type=="array" then .[] else . end) | .results.failed_checks[]? | [.check_id, .file_path, .file_line_range[0], .resource] | @tsv' checkov.json | sort | uniq -c`; identical rows merge into one finding.
   - Read `jq '(if type=="array" then .[] else . end) | (.summary // .) | {failed, skipped, parsing_errors}' checkov.json` for what the report does not show.
 - **Publishing.** The plan holds two records with the same platform digests: `publication` (run 32754480450, source 122f3c2) and `publication_evidence` (run 32713536164, source 8bdeb311, which is not in this repository's history). The plan at 122f3c2 binds `3.3.13-1` with today's input digests. Its command differs (`--framework terraform` and `--compact`, changed by ef1c653 and 0e4dd55), but the command is not built into the image. Any change to a watched file needs a new tag.
+
+## 2026-10-14 source update
+
+The replacement recipe targets `3.3.29-1` at upstream commit `e40023ab262c7c8b7b0a8f0975072b42d1b601f9`. The catalog still names the previously published image until replacement publication is verified. See the [batch update record](updates/2026-10-14.md) for changed inputs, retained rules and verification.

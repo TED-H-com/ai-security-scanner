@@ -27,7 +27,7 @@ SERIES = (
     "0006-azure-require-enabled-subscription.patch",
 )
 PATCH_SHA256 = {
-    SERIES[0]: "bf6059a33443e9f1fa459c6360346829170ee56e0775260f8a42f56dcb53c73c",
+    SERIES[0]: "053ef441588b6bff99aef8a568f2617d8933a46449d2f9c2804b796c7a39566a",
     SERIES[1]: "7a22e58b3c700813e3b7e814dd04254dd90ddbdbdfbccd917c3b477e487c2fcb",
     SERIES[2]: "136335c3b7defd5a167aa6d07633bcb8f5c99c6f98b398eff01fc15d11a417d1",
     SERIES[3]: "ffef7b02808bbb85f1f7d28ab3c453237b33cde45729daa51feb37633e1fd79a",
@@ -73,8 +73,8 @@ RUNTIME_FILES = {
         "afb7c9b47f1b9b2354774579121db4f1c26d6b03112a3d0407fb4f14ad8625af",
     ),
     "prowler/providers/common/provider.py": (
-        "cf043f096173ba685f5cb57aff653ded25ec54d58300e7afbaf1fd77841a6a4c",
-        "4fe43b204884910bfbceac5ebb3e0b2898c9c044b18d241b566cc9a53ae6cf04",
+        "1080b11456deb6426307167067a3066ec79c87c7af07bb85dd3c507d6c76a1da",
+        "bd65d893c106cf47389cd17071f96002e7302706b07ebb17cdca6c10f95f3f27",
     ),
     "prowler/lib/outputs/finding.py": (
         "00ed79bee5e32239d3cce4943c70df33dbfe3f85056deb750ad11f2073613cce",

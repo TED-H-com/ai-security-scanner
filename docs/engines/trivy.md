@@ -97,3 +97,7 @@ Follow [section 4](../engine-maintenance.md#4-updating-an-engine), then:
   - List with `jq -r '.Results[]? | .Target as $t | .Vulnerabilities[]? | [.VulnerabilityID, $t, .PkgName, .InstalledVersion, (.PkgPath // .PkgID)] | @tsv'`.
   - Identical rows merge into one finding. Check that `Severity`, `FixedVersion` and the CVSS scores arrived unchanged.
 - **Publishing.** The plan at 9ee5257 binds `0.74.0-4` and records the same input digests as today, so a push that changes no recorded input reuses the image. Any recorded change needs a new tag.
+
+## 2026-10-14 source update
+
+The replacement recipe targets `0.76.0-1` at upstream commit `531360e5d2a88e732373f1614ba99a38738538b8`. The catalog still names the previously published image until replacement publication is verified. See the [batch update record](updates/2026-10-14.md) for changed inputs, retained rules and verification.

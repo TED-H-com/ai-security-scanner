@@ -112,6 +112,12 @@ tag. `previous_artifact` and `previous_publication` hold only closed historical
 coordinates/evidence; executable inputs cannot be stored there. Switch the
 catalog only after verifying the new image and its publication evidence.
 
+For an upstream version change, `upstream_update` holds only the closed candidate
+catalog identity. The validator checks the new recipe through that identity while
+keeping the old image, runtime permissions and knowledge dates in the installed
+catalog. Remove this metadata only when the verified replacement is activated.
+The [October 14 update record](engines/updates/2026-10-14.md) documents this flow.
+
 `knowledge_date` describes the newest knowledge in the exact engine/rule/template/feed/database closure. `support_until` is the last date maintainers claim support for that closure and is normally no more than 90 days later. Historical cases retain their original engine identity and dates.
 
 An artifact remains attributable whatever its age. A run records and shows the exact scanner version and its `knowledge_date` as the last-updated date. `support_until` is maintenance metadata; it never marks a run's results expired or incomplete. A replacement receives a new revision and immutable digest; it never rewrites an existing case.

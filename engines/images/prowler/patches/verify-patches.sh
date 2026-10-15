@@ -3,7 +3,7 @@ set -euo pipefail
 
 export LC_ALL=C
 
-readonly PIN="40ecbd035e5541bf099917c5033cceb8959c4737"
+readonly PIN="499fd637f3393b485833b08cdaf4172917c5698e"
 readonly PATCH_DIR="$(CDPATH= cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 readonly PYTHON="${PYTHON:-python3}"
 readonly EXPECTED_SERIES=$'0001-azure-static-access-token-iam-only.patch\n0002-gcp-exact-project-lookups.patch\n0003-gcp-disable-ambient-organization-search.patch\n0004-gcp-disable-provider-organization-lookup.patch\n0005-azure-disable-tenant-enumeration.patch\n0006-azure-require-enabled-subscription.patch'
@@ -26,7 +26,7 @@ fi
 expected_patch_digest() {
   case "$1" in
     0001-azure-static-access-token-iam-only.patch)
-      printf '%s\n' 'bf6059a33443e9f1fa459c6360346829170ee56e0775260f8a42f56dcb53c73c'
+      printf '%s\n' '053ef441588b6bff99aef8a568f2617d8933a46449d2f9c2804b796c7a39566a'
       ;;
     0002-gcp-exact-project-lookups.patch)
       printf '%s\n' '7a22e58b3c700813e3b7e814dd04254dd90ddbdbdfbccd917c3b477e487c2fcb'

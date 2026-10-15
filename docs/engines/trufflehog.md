@@ -84,3 +84,7 @@ Follow [section 4](../engine-maintenance.md#4-updating-an-engine), then:
   - Each distinct row should be one finding: lines with the same detector, file and line merge into one finding with several evidence entries.
   - Never paste `Raw`, `RawV2`, `Redacted` or `ExtraData` into an issue or a commit.
 - **Publishing.** The plan at the publishing commit 2641850 binds `3.97.0-2`, and the launcher has changed since, so the next build needs a new tag.
+
+## 2026-10-14 source update
+
+The replacement recipe targets `3.99.2-1` at upstream commit `e76dff8a7e57d6df0c60ad8cbf5d5cba505a8fc9`. The catalog still names the previously published image until replacement publication is verified. See the [batch update record](updates/2026-10-14.md) for changed inputs, retained rules and verification.

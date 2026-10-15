@@ -5,7 +5,7 @@ FROM --platform=$BUILDPLATFORM golang:1.25.10-alpine@sha256:8d22e29d960bc50cd025
 ARG TARGETOS
 ARG TARGETARCH
 
-ENV CGO_ENABLED=0 GOTOOLCHAIN=local SOURCE_DATE_EPOCH=1787323981
+ENV CGO_ENABLED=0 GOTOOLCHAIN=local SOURCE_DATE_EPOCH=1791467529
 
 WORKDIR /src/launcher
 COPY engines/images/local-launcher/go.mod engines/images/local-launcher/main.go engines/images/local-launcher/main_test.go ./
@@ -18,18 +18,18 @@ FROM --platform=$BUILDPLATFORM golang:1.25.10-alpine@sha256:8d22e29d960bc50cd025
 ARG TARGETOS
 ARG TARGETARCH
 
-ENV CGO_ENABLED=0 GOTOOLCHAIN=local SOURCE_DATE_EPOCH=1787323981
+ENV CGO_ENABLED=0 GOTOOLCHAIN=local SOURCE_DATE_EPOCH=1791467529
 
-ADD --checksum=sha256:3720e3c91247e0799ab2758eee9585125ce7ff41da6539fd6e376f7703cbb57c \
-    https://github.com/trufflesecurity/trufflehog/archive/3ab759fef4bb5935d4fe9ac68b503d05346b8364.tar.gz \
+ADD --checksum=sha256:f288dd98b57cc8ae2dcce2b4c20c8242e6439767ae769714b00d0cafa21fc80f \
+    https://github.com/trufflesecurity/trufflehog/archive/e76dff8a7e57d6df0c60ad8cbf5d5cba505a8fc9.tar.gz \
     /tmp/trufflehog-source.tar.gz
 RUN mkdir -p /src/trufflehog \
     && tar -xzf /tmp/trufflehog-source.tar.gz --strip-components=1 -C /src/trufflehog \
     && cd /src/trufflehog \
-    && echo 'f534f2820ad8ee1f0eec1b4ea6fee263dd7309a3db0a428f00675de0f5ecd5a5  go.sum' | sha256sum -c - \
+    && echo 'f7731e620591acfd78dba0bae275f65044aa279815e175aaa991c070c9ece0f6  go.sum' | sha256sum -c - \
     && go mod verify \
     && GOOS=${TARGETOS} GOARCH=${TARGETARCH} go build -mod=readonly -buildvcs=false -trimpath \
-       -ldflags='-s -w -buildid= -X github.com/trufflesecurity/trufflehog/v3/pkg/version.BuildVersion=3.97.0' \
+       -ldflags='-s -w -buildid= -X github.com/trufflesecurity/trufflehog/v3/pkg/version.BuildVersion=3.99.2' \
        -o /out/trufflehog . \
     && mkdir -p /rootfs/output /rootfs/workspace /rootfs/tmp \
     && chmod 1777 /rootfs/tmp
@@ -39,8 +39,8 @@ FROM scratch
 LABEL org.opencontainers.image.title="ai-security-scanner TruffleHog engine" \
       org.opencontainers.image.description="Pinned-source, filesystem-only secret discovery without credential verification" \
       org.opencontainers.image.source="https://github.com/trufflesecurity/trufflehog" \
-      org.opencontainers.image.revision="3ab759fef4bb5935d4fe9ac68b503d05346b8364" \
-      org.opencontainers.image.version="3.97.0-3" \
+      org.opencontainers.image.revision="e76dff8a7e57d6df0c60ad8cbf5d5cba505a8fc9" \
+      org.opencontainers.image.version="3.99.2-1" \
       org.opencontainers.image.licenses="AGPL-3.0"
 
 ENV HOME="/tmp/ai-security-scanner-home" XDG_CACHE_HOME="/tmp/ai-security-scanner-cache"

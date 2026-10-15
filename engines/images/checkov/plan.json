@@ -6,51 +6,36 @@
   "support_until": "2026-11-22",
   "maintenance_owner": "teddashh/ai-security-scanner maintainers",
   "update_procedure": "docs/engine-maintenance.md",
-  "publish_state": "published_managed_artifact",
+  "publish_state": "publication_in_progress",
   "source": {
     "repository": "https://github.com/bridgecrewio/checkov",
-    "revision": "0604e97b0f77c89a8c6c1fe2219c3d251cbb9789",
-    "acquisition_source": "https://github.com/bridgecrewio/checkov/commit/0604e97b0f77c89a8c6c1fe2219c3d251cbb9789",
+    "revision": "e40023ab262c7c8b7b0a8f0975072b42d1b601f9",
+    "acquisition_source": "https://github.com/bridgecrewio/checkov/commit/e40023ab262c7c8b7b0a8f0975072b42d1b601f9",
     "local_research_checkout": ".upstreams/bridgecrewio/checkov"
   },
-  "verified_upstream_artifact": {
-    "repository": "bridgecrew/checkov",
-    "tag": "3.3.13",
-    "digest": "sha256:c5fb7154bed784fc19a69779c308fddba564f19a37c25d306c0e9765c4f0aa1d",
-    "signature_identity": null,
-    "entrypoint": [
-      "/entrypoint.sh"
-    ],
-    "verification": {
-      "method": "docker_buildx_imagetools_inspect",
-      "verified_at": "2026-08-24",
-      "source_association": "attested_mismatch",
-      "artifact_source_revision": "e5745d49136248321e28bb5c949a7e71114f0e9c",
-      "disposition": "rejected_because_build_inputs_and_entrypoint_are_not_release_safe"
-    }
-  },
+  "verified_upstream_artifact": null,
   "final_artifact": {
-    "repository": "ghcr.io/teddashh/ai-security-scanner-engine-checkov",
-    "tag": "3.3.13-1",
-    "digest": "sha256:0ecc187b17faa9c538c9b1ecc08a4195283290222694d0f87d50016f2bb79b35"
+    "repository": "ghcr.io/ted-h-com/ai-security-scanner-engine-checkov",
+    "tag": "3.3.29-1",
+    "digest": null
   },
   "build_recipe": {
-    "source_revision": "0604e97b0f77c89a8c6c1fe2219c3d251cbb9789",
+    "source_revision": "e40023ab262c7c8b7b0a8f0975072b42d1b601f9",
     "source_archive": {
-      "url": "https://github.com/bridgecrewio/checkov/archive/0604e97b0f77c89a8c6c1fe2219c3d251cbb9789.tar.gz",
-      "sha256": "sha256:2f69bad836b1c757849f904061b88fcb73cf46e10cdf8f3b4e277ac600a29edd"
+      "url": "https://github.com/bridgecrewio/checkov/archive/e40023ab262c7c8b7b0a8f0975072b42d1b601f9.tar.gz",
+      "sha256": "sha256:5f6f20199994878d8af30c85e992339f3d4014fcae831b4537e64ecf209e5b96"
     },
     "dependency_lock": {
       "path": "Pipfile.lock",
       "sha256": "sha256:f51eb3c9693670743a8be18191e44bcacf80f21e68cdfdb86dc00b0017df7995",
       "records": 99,
-      "rendered_requirements_sha256": "sha256:ff6acf0461a6d007bb9da017975d77e2ebfad41ee90704db4246b50c2bc0c557",
+      "rendered_requirements_sha256": "sha256:fe679af1b5868481429f63e8a41811ab64dedbc6294b23e31e55f377e4713878",
       "require_hashes": true,
       "only_binary": true
     },
     "source_preparer": {
       "path": "engines/images/checkov/prepare_source.py",
-      "sha256": "sha256:5eda2611880655006f0d6e9b2018023e3eeaa995abffe73a7910dd42415a8bd0"
+      "sha256": "sha256:0a7c95b9816a0ee4fbc973075b10cdf0985dd088ea642e88d607ba0f360faab1"
     },
     "dockerfile_frontend": {
       "repository": "docker/dockerfile",
@@ -61,14 +46,10 @@
       {
         "repository": "python",
         "tag": "3.11.16-slim",
-        "digest": "sha256:9c900dea9e8fb7e16277c179b555cc72d29a352dbc33cff48ad5a0412fd5bfc7",
-        "uses": [
-          "build",
-          "runtime"
-        ]
+        "digest": "sha256:9c900dea9e8fb7e16277c179b555cc72d29a352dbc33cff48ad5a0412fd5bfc7"
       }
     ],
-    "source_date_epoch": 1787218764,
+    "source_date_epoch": 1791891584,
     "target_platforms": [
       "linux/amd64",
       "linux/arm64"
@@ -112,7 +93,7 @@
         "--create",
         "--format=gnu",
         "--sort=name",
-        "--mtime=@1787218764",
+        "--mtime=@1791891584",
         "--directory=/install",
         "."
       ]
@@ -121,7 +102,7 @@
   "dockerfile": {
     "emitted": true,
     "path": "engines/images/checkov/Dockerfile",
-    "sha256": "sha256:c4b996e2a874f9bd1a235647b6a0f350c1b0de240ca8aa95a43697d6c7ec160c",
+    "sha256": "sha256:463ee9f411875b6d59c5f260f474891a595c9e5f38615f342356cca1e8f456d7",
     "reason": null
   },
   "wrapper": {
@@ -150,16 +131,6 @@
       "XDG_CACHE_HOME": "/tmp/ai-security-scanner-cache"
     }
   },
-  "publication_evidence": {
-    "workflow": ".github/workflows/engine-image-checkov.yml",
-    "run_url": "https://github.com/teddashh/ai-security-scanner/actions/runs/32713536164",
-    "source_revision": "8bdeb311b6485347846298bfcbda6fdfc9520056",
-    "anonymous_pull_verified": true,
-    "platform_manifests": {
-      "linux/amd64": "sha256:a61ea9064669f25e203d887a8559dde9d5cc01d2efe926e4de7435c31e0d18a3",
-      "linux/arm64": "sha256:b22966af844e9c00151238d478d5f8546b73e8bf6bef27aaca82e85b32fd59e9"
-    }
-  },
   "command": [
     "-d",
     "/workspace",
@@ -185,7 +156,13 @@
     "source_offer_path": null
   },
   "blockers": [],
-  "publication": {
+  "publication": null,
+  "previous_artifact": {
+    "repository": "ghcr.io/teddashh/ai-security-scanner-engine-checkov",
+    "tag": "3.3.13-1",
+    "digest": "sha256:0ecc187b17faa9c538c9b1ecc08a4195283290222694d0f87d50016f2bb79b35"
+  },
+  "previous_publication": {
     "workflow_run": "https://github.com/teddashh/ai-security-scanner/actions/runs/32754480450",
     "source_revision": "122f3c2f83ab596ee6dfda759124d30e533bbcd5",
     "platforms": [
@@ -198,5 +175,41 @@
     },
     "anonymous_pull_verified": true,
     "evidence_artifact": "checkov-image-evidence-32754480450-1"
+  },
+  "upstream_update": {
+    "engine_version": "3.3.29",
+    "reported_version": null,
+    "source_revision": "e40023ab262c7c8b7b0a8f0975072b42d1b601f9",
+    "rule_version": "e40023ab262c7c8b7b0a8f0975072b42d1b601f9",
+    "knowledge_date": "2026-10-13",
+    "support_until": "2027-01-11",
+    "engine_provenance": {
+      "version": "3.3.29",
+      "source_repository": "https://github.com/bridgecrewio/checkov",
+      "source_revision": "e40023ab262c7c8b7b0a8f0975072b42d1b601f9",
+      "source_ref": "3.3.29",
+      "acquisition_source": "https://github.com/bridgecrewio/checkov/commit/e40023ab262c7c8b7b0a8f0975072b42d1b601f9",
+      "artifact_source_revision": null,
+      "source_association": "source_build_required"
+    },
+    "rules_provenance": {
+      "mode": "embedded",
+      "identifier": "Checkov checks",
+      "revision": "e40023ab262c7c8b7b0a8f0975072b42d1b601f9",
+      "acquisition_source": "https://github.com/bridgecrewio/checkov/commit/e40023ab262c7c8b7b0a8f0975072b42d1b601f9"
+    },
+    "data_provenance": {
+      "mode": "runtime_bound",
+      "identifier": "repository working-tree snapshot",
+      "revision": "case_artifact_sha256",
+      "acquisition_source": "assessment_case"
+    },
+    "knowledge_input": {
+      "kind": "runtime_bound",
+      "identifier": "repository working-tree snapshot",
+      "version": "case_artifact_sha256",
+      "acquisition_source": "assessment_case",
+      "pin_state": "runtime_bound"
+    }
   }
 }
