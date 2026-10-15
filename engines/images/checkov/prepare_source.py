@@ -82,8 +82,19 @@ def render_requirements(source: Path, destination: Path) -> None:
     packages = lock.get("default")
     if not isinstance(packages, dict) or len(packages) != EXPECTED_DEPENDENCIES:
         raise ValueError("Pipfile.lock runtime dependency set is incomplete")
+    # This release updated setup.py/Pipfile but retained the older lock entry.
+    # Bind the declared runtime version to its exact PyPI wheel.
+    if (packages["bc-detect-secrets"]["version"] != "==1.5.50" or
+            '"bc-detect-secrets==1.5.52"' not in (source / "setup.py").read_text(encoding="utf-8")):
+        raise ValueError("Checkov secrets dependency correction no longer matches its source")
+    packages["bc-detect-secrets"] = {
+        **packages["bc-detect-secrets"],
+        "version": "==1.5.52",
+        "hashes": ["sha256:772353c949a131b7b5efd2b20473e0128af9c25ea27cdb15a3a6a6727ca73c4e"],
+    }
     lines = [
         "# Generated from Checkov 3.3.29 Pipfile.lock.",
+        "# Corrected bc-detect-secrets to 1.5.52 as required by the pinned setup.py/Pipfile.",
         f"# source-revision: {SOURCE_REVISION}",
         f"# pipfile-lock-sha256: {PIPFILE_LOCK_SHA256}",
     ]

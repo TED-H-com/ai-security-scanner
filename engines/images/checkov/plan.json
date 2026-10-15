@@ -29,13 +29,25 @@
       "path": "Pipfile.lock",
       "sha256": "sha256:f51eb3c9693670743a8be18191e44bcacf80f21e68cdfdb86dc00b0017df7995",
       "records": 99,
-      "rendered_requirements_sha256": "sha256:fe679af1b5868481429f63e8a41811ab64dedbc6294b23e31e55f377e4713878",
+      "rendered_requirements_sha256": "sha256:3fd531cc3637d68c40f2c35437ada7863d77e73ef7be0ccea1f2b83ed810ea75",
       "require_hashes": true,
-      "only_binary": true
+      "only_binary": true,
+      "corrections": [
+        {
+          "package": "bc-detect-secrets",
+          "upstream_lock_version": "1.5.50",
+          "required_version": "1.5.52",
+          "reason": "The pinned setup.py and Pipfile require 1.5.52; upstream Pipfile.lock still names 1.5.50.",
+          "artifact": {
+            "url": "https://files.pythonhosted.org/packages/b8/fe/49953a7263c4b56c2c51dd26fb4cd4adc4aff942733f6c2c5fdeeae63bdd/bc_detect_secrets-1.5.52-py3-none-any.whl",
+            "sha256": "sha256:772353c949a131b7b5efd2b20473e0128af9c25ea27cdb15a3a6a6727ca73c4e"
+          }
+        }
+      ]
     },
     "source_preparer": {
       "path": "engines/images/checkov/prepare_source.py",
-      "sha256": "sha256:0a7c95b9816a0ee4fbc973075b10cdf0985dd088ea642e88d607ba0f360faab1"
+      "sha256": "sha256:0437177cbd25a16d95e9f8022fb4654133006ce470d769490a3a75cd3e0fb1c4"
     },
     "dockerfile_frontend": {
       "repository": "docker/dockerfile",
@@ -102,7 +114,7 @@
   "dockerfile": {
     "emitted": true,
     "path": "engines/images/checkov/Dockerfile",
-    "sha256": "sha256:463ee9f411875b6d59c5f260f474891a595c9e5f38615f342356cca1e8f456d7",
+    "sha256": "sha256:0e8cd9df1439a3f2c89de1a03aff935554f6cd3a3c4bb1981d16d5f8a6fd63e9",
     "reason": null
   },
   "wrapper": {
