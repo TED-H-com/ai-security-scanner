@@ -6,7 +6,7 @@ COPY engines/images/cloud-launcher/go.mod engines/images/cloud-launcher/main.go 
 RUN CGO_ENABLED=0 GOOS=linux go build -buildvcs=false -trimpath \
       -ldflags='-s -w -buildid=' -o /out/ai-security-scanner-cloud-launcher .
 
-FROM public.ecr.aws/prowler-cloud/prowler@sha256:9dbcc3c9abd71ec6d37610e6a5a2c45279bc6488caf8aaa948a9e8e368622d30
+FROM docker.io/prowlercloud/prowler@sha256:9dbcc3c9abd71ec6d37610e6a5a2c45279bc6488caf8aaa948a9e8e368622d30
 
 LABEL org.opencontainers.image.title="ai-security-scanner Prowler engine" \
       org.opencontainers.image.description="Pinned Prowler AWS, Azure, and GCP narrow IAM assessment with exact provider scope binding" \
@@ -14,7 +14,7 @@ LABEL org.opencontainers.image.title="ai-security-scanner Prowler engine" \
       org.opencontainers.image.revision="499fd637f3393b485833b08cdaf4172917c5698e" \
       org.opencontainers.image.version="5.44.0-1" \
       org.opencontainers.image.licenses="Apache-2.0" \
-      io.ai-security-scanner.upstream.image="public.ecr.aws/prowler-cloud/prowler@sha256:9dbcc3c9abd71ec6d37610e6a5a2c45279bc6488caf8aaa948a9e8e368622d30" \
+      io.ai-security-scanner.upstream.image="docker.io/prowlercloud/prowler@sha256:9dbcc3c9abd71ec6d37610e6a5a2c45279bc6488caf8aaa948a9e8e368622d30" \
       io.ai-security-scanner.profile="aws-azure-gcp-narrow-iam"
 
 COPY --from=launcher --chmod=0555 /out/ai-security-scanner-cloud-launcher /usr/local/bin/ai-security-scanner-cloud-launcher

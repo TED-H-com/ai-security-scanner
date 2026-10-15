@@ -113,7 +113,7 @@
     ]
   },
   "verified_upstream_artifact": {
-    "repository": "public.ecr.aws/prowler-cloud/prowler",
+    "repository": "docker.io/prowlercloud/prowler",
     "tag": "5.44.0",
     "digest": "sha256:9dbcc3c9abd71ec6d37610e6a5a2c45279bc6488caf8aaa948a9e8e368622d30",
     "entrypoint": [
@@ -121,7 +121,7 @@
     ],
     "source_association": "oci_revision_label_match",
     "verification": {
-      "verified_at": "2026-10-14",
+      "verified_at": "2026-10-15",
       "artifact_source_revision": "499fd637f3393b485833b08cdaf4172917c5698e",
       "source_association": "oci_revision_label_match",
       "method": "official_oci_index_and_platform_config_labels",
@@ -141,7 +141,7 @@
   "dockerfile": {
     "emitted": true,
     "path": "engines/images/prowler/Dockerfile",
-    "sha256": "sha256:65fa13f69c86a804bee652ec660a12322aa5712f6efb69996760806c3f9b3970"
+    "sha256": "sha256:6b7d9596550b6a6a4967a556bcadf60af694ba5bbfd982f5f957c3bb28371fee"
   },
   "wrapper": {
     "required": true,
