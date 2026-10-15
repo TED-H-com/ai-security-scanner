@@ -56,6 +56,15 @@ jobs:
             $runtimeManifest = Join-Path $nativeBundle "manifest.json"
           '@
           $script = $script.Replace($needle, $needle + "`n" + $insertion)
+          $failureNeedle = '      throw "Managed runtime command $OutputName failed with status ${exitCode}; $boundedStdout; $boundedStderr"'
+          if ($script.Split($failureNeedle).Count -ne 2) { throw "Failure insertion point changed." }
+          $failureDetails = @'
+                if ($OutputName -in @("egress-qualification", "container-qualification")) {
+                  & $wsl --list --running --quiet
+                  & $wsl --distribution "podman-$managedMachineName" --user root --exec /bin/sh -c 'cat /proc/1/comm; cat /proc/self/cgroup; cat /sys/fs/cgroup/cgroup.controllers; systemctl --no-pager status user@1000.service; journalctl --no-pager -b _UID=1000 -n 100; systemctl --no-pager status sshd.service' 2>&1 | Tee-Object -FilePath (Join-Path $workRoot "native-guest-failure.log")
+                }
+          '@
+          $script = $script.Replace($failureNeedle, $failureDetails + "`n" + $failureNeedle)
           # This probe exercises the client through the explicit maintainer CLI
           # override. The installed desktop keeps its original compiled anchor.
           $desktopPattern = '(?s)  # The desktop uses this exact default LocalAppData root\..*?  \$desktopProcess\.WaitForExit\(\)'
