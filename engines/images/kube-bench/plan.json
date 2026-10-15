@@ -141,7 +141,7 @@
       "version": "source@9f133cb7509ce1dbedfc860e94474588000e25ac",
       "source_repository": "https://github.com/aquasecurity/kube-bench",
       "source_revision": "9f133cb7509ce1dbedfc860e94474588000e25ac",
-      "source_ref": "v0.16.0",
+      "source_ref": "main",
       "acquisition_source": "https://github.com/aquasecurity/kube-bench/commit/9f133cb7509ce1dbedfc860e94474588000e25ac",
       "artifact_source_revision": null,
       "source_association": "source_build_required"

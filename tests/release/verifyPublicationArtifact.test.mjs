@@ -92,6 +92,8 @@ const signerIdentity = \`https://github.com/\${value("--signer-workflow")}@\${so
 const repository = value("--repo");
 const invocation = \`https://github.com/\${repository}/actions/runs/\${process.env.FAKE_GH_RUN_ID}/attempts/\${process.env.FAKE_GH_ATTEMPT}\`;
 process.stdout.write(JSON.stringify([{
+  attestation: { bundle },
+  fixtureExtraOutput: "x".repeat(Number(process.env.FAKE_GH_EXTRA_OUTPUT_BYTES ?? 0)),
   verificationResult: {
     signature: { certificate: {
       sourceRepositoryURI: \`https://github.com/\${repository}\`,
@@ -213,7 +215,7 @@ function fakeBundle(image, digest, predicateType, predicate) {
   };
 }
 
-async function createArtifact(testContext, engine) {
+async function createArtifact(testContext, engine, { largeSbom = false } = {}) {
   const spec = specs[engine];
   const workflow = spec.workflow ?? workflows[spec.group];
   const root = await mkdtemp(path.join(os.tmpdir(), `publication-${engine}-`));
@@ -230,6 +232,9 @@ async function createArtifact(testContext, engine) {
     for (const sbomSpec of sbomSpecs) {
       const file = `${engine}-linux-${architecture}.${sbomSpec.suffix}.json`;
       const document = fakeSbom(engine, platform, sbomSpec.format);
+      if (largeSbom && platform === "linux/amd64" && sbomSpec.format === "spdx-json") {
+        document.comment = "x".repeat(10 * 1024 * 1024);
+      }
       documents.set(file, document);
       await writeJson(path.join(nested, file), document);
       const record = await fileRecord(path.join(nested, file));
@@ -474,6 +479,7 @@ function runVerifier(engine, artifact, overrides = {}) {
   environment.FAKE_GH_RUN_ID = overrides.runId ?? runId;
   environment.FAKE_GH_ATTEMPT = overrides.attempt ?? attempt;
   environment.FAKE_GH_ATTESTATION_FAILURE = overrides.cryptographicFailure ? "1" : "0";
+  environment.FAKE_GH_EXTRA_OUTPUT_BYTES = String(overrides.extraOutputBytes ?? 0);
   return spawnSync(process.execPath, [
     verifier,
     "--engine", engine,
@@ -790,6 +796,24 @@ test("publication verifier rejects a cryptographically invalid bundle without st
   const result = runVerifier("naabu", artifact, { cryptographicFailure: true });
   assert.notEqual(result.status, 0);
   assert.match(result.stderr, /cryptographic verification failed/u);
+  assert.equal(result.stdout, "");
+});
+
+test("publication verifier accepts a bounded SBOM whose verified CLI envelope exceeds 16 MiB", async (t) => {
+  const artifact = await createArtifact(t, "prowler", { largeSbom: true });
+  const bundle = JSON.parse(await readFile(path.join(artifact, "prowler/prowler-amd64-spdx.sigstore.json"), "utf8"));
+  const statement = JSON.parse(Buffer.from(bundle.dsseEnvelope.payload, "base64").toString("utf8"));
+  assert.ok(Buffer.byteLength(JSON.stringify({ bundle, statement })) > 16 * 1024 * 1024);
+  const result = runVerifier("prowler", artifact);
+  assert.equal(result.status, 0, result.stderr);
+  assert.equal(JSON.parse(result.stdout).engine, "prowler");
+});
+
+test("publication verifier rejects unbounded CLI output without a success receipt", async (t) => {
+  const artifact = await createArtifact(t, "prowler");
+  const result = runVerifier("prowler", artifact, { extraOutputBytes: 65 * 1024 * 1024 });
+  assert.notEqual(result.status, 0);
+  assert.match(result.stderr, /attestation verifier could not be executed/u);
   assert.equal(result.stdout, "");
 });
 

@@ -446,10 +446,12 @@ function verifyBundleCryptographically({
   ], {
     encoding: "utf8",
     stdio: ["ignore", "pipe", "pipe"],
-    maxBuffer: 16 * 1024 * 1024,
+    // gh returns both the encoded bundle and its decoded statement. A valid
+    // SBOM below MAX_SBOM_BYTES can therefore exceed that limit in CLI JSON.
+    maxBuffer: MAX_JSON_BYTES,
     timeout: 45_000,
   });
-  assert(!result.error, "GitHub attestation verifier could not be executed");
+  assert(!result.error, `GitHub attestation verifier could not be executed (${path.basename(bundlePath)}: ${result.error?.code ?? "unknown error"})`);
   assert(result.status === 0, "Sigstore bundle cryptographic verification failed");
   let records;
   try {
