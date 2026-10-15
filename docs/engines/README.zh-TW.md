@@ -6,9 +6,9 @@
 
 每個掃描器與共用 launcher 都有自己的維護頁，記錄產品如何執行、adapter 保留哪些上游結果、更新步驟，以及實際掃描學到的注意事項。修改前先閱讀該頁；有新的實測經驗時，在 **Lessons from real runs** 補上日期、症狀、原因與修正 commit。
 
-建置或更新先從[映像檔建置與更新筆記](image-build-index.md)開始。它涵蓋全部 **25 個引擎紀錄**及 gateway，列出 build context、規則與資料準備、必須同步修改的檔案、patch 與已知限制。v0.4.0 正式版整合 25 個可執行引擎，包含可選的 ZAP 被動網站檢查、Agentic Radar 離線工作流程盤點與受限的 Garak 模型檢查。
+建置或更新先從[映像檔建置與更新筆記](image-build-index.md)開始。它涵蓋全部 **25 個引擎紀錄**及 gateway，列出 build context、規則與資料準備、必須同步修改的檔案、patch 與已知限制。目前目錄整合 25 個可執行引擎，包含可選的 ZAP 被動網站檢查、Agentic Radar 離線工作流程盤點與受限的 Garak 模型檢查。
 
-[引擎維護流程](../engine-maintenance.md)是維護規則；精確版本、digest 與 provenance 以 `engines/catalog.json` 和各引擎 `plan.json` 為準。現行原始碼可能與歷史映像檔不同，不能只看 Dockerfile 就宣稱已發布內容。[Semgrep 發布紀錄](semgrep-publication-2026-10-03.md)保留本次合併規則包的實際證據。
+[引擎維護流程](../engine-maintenance.md)是維護規則；精確版本、digest 與 provenance 以 `engines/catalog.json` 和各引擎 `plan.json` 為準。現行原始碼可能與歷史映像檔不同，不能只看 Dockerfile 就宣稱已發布內容。[目前發布紀錄](updates/2026-10-14.md#verified-publication-and-catalog-activation)保留雙架構、合併規則包與來源的實際證據。
 
 ## 各類資產
 

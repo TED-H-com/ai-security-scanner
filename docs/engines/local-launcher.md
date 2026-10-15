@@ -57,20 +57,16 @@
   - `TestTrivyFilesystemProfilesUseLibraryPackagesAndKeepTheImmutableDatabaseReadOnly`, `TestTrivyOCIProfileDoesNotAddAWorkingTreePackagePass`, `TestGrypeRepositoryUsesTheUpstreamDirectoryCataloger`;
   - `TestEngineProfilesRejectCrossTypeExecution`, `TestInputMarkerIsStrictAndRepositoryDefaultsOnlyWhenAbsent`, `TestInvalidContractAndWritableWorkspaceFailClosed`, `TestSupportedEnginesAreExact`.
 - **Workflow gate.** The `launcher-tests` job runs in `golang:1.26.3-alpine`. It requires an empty `gofmt -d main.go main_test.go` and a passing `go test ./...`, then regenerates the OCI fixture and fails on any `git diff` under `testdata/oci-layout` or `testdata/oci-layout-source`.
-- **Image smoke.** Each publish job runs the image the way the desktop does over its smoke workspace. It checks JSON validity for every engine, plus content for Trivy and Grype. To replay it by hand: `docker run --rm --read-only --network none --cap-drop ALL --security-opt no-new-privileges:true --user "$(id -u):$(id -g)" --tmpfs /tmp:rw,nosuid,nodev,noexec,mode=1777,size=1024m --mount type=bind,src=<workspace>,dst=/workspace,readonly --mount type=bind,src=<output>,dst=/output <image>@<digest> --engine <id> --workspace /workspace --output /output`.
+- **Image smoke.** Each publish job runs the image the way the desktop does over its smoke workspace. It checks JSON validity for every engine, plus content for Trivy and Grype. Create a unique disk scratch directory under `~/agent-work/tmp/`, remove it after the run, and replay with: `docker run --rm --read-only --network none --cap-drop ALL --security-opt no-new-privileges:true --user "$(id -u):$(id -g)" --mount type=bind,src=<disk-scratch>,dst=/tmp --mount type=bind,src=<workspace>,dst=/workspace,readonly --mount type=bind,src=<output>,dst=/output <image>@<digest> --engine <id> --workspace /workspace --output /output`.
 
 ## Publishing
 
-- **Triggers.** Pushes to `main` that touch `engines/images/local-launcher/**`, any of the six engine directories (each `plan.json` excepted), `scripts/generate-oci-layout-fixture.mjs` or `scripts/prepare-offline-engine-data.mjs`, and manual dispatch. Every run builds all six entries (`fail-fast: false`).
-- **Plans track source, not images.** All six plans record `launcher_sha256` `ddd57759…`, the current `main.go`, but the images differ:
-  - Semgrep `1.174.0-4` was published at 94af3e7 from the current launcher and pinned in b0c4ed4.
-  - TruffleHog and Kubescape were published from 2641850, whose launcher hashes to `8ae5ab14…`.
-  - Trivy and kube-bench were rebuilt at 9ee5257 from the launcher recorded then (`e5b1c32b…`) and pinned in 85f92b1.
-  - The Grype pin has no build provenance (3990168).
-- **Tag reuse.** The guard (`publicationPreflight` in `scripts/engine-image-evidence.mjs`) builds any tag that does not exist yet. An existing tag is reused only with a verifiable attestation and a plan, at the publishing commit, that binds that tag with the same recorded input hashes.
-  - Today only Trivy and kube-bench pass. The Semgrep plan at 94af3e7 still binds `1.174.0-3`, the plans at 2641850 still bind the earlier `-2` tags, and the Grype image has no attestation.
-  - Give Semgrep, TruffleHog, Kubescape and Grype new tags in any push that touches these paths, or their jobs fail.
-- **Launcher changes.** A change to `main.go` changes every plan's `launcher_sha256` and needs new tags for all six images. `go.mod` has no plan digest (`directories_without_plans` in `engines/image-input-hash-policy.json`), and `main_test.go` and `testdata/` are excluded from the hash. The guard cannot see a change to those files alone, so advance the tags by hand.
+- **Selection.** Pushes to the watched engine/launcher/preparation paths select explicitly new tags. Pending plans compare the candidate with `previous_artifact`; activated pin-only changes select no publication. Manual dispatch selects one named engine and either verification or publication.
+- **Current publications.** All six updated images bind the recorded launcher and recipe inputs through their exact publishing plans. The [October 15 publication record](updates/2026-10-14.md#verified-publication-and-catalog-activation) lists their source commits, signed evidence and index digests. Older publication discrepancies remain historical observations.
+- **Native image handoff.** Semgrep transfers its exact tested images through checksum-bound artifacts from the same workflow run and attempt. The publisher verifies both before pushing them and builds the index from platform digests; it does not rebuild them. Transfer archives expire after one day, while native verification and signed publication evidence retain their existing retention.
+- **Native Semgrep checks.** Both native architectures must pass the complete result-union, source/payload and refusal checks. The publication job compares each public platform filesystem with its corresponding native receipt from the same run attempt before signing and promoting the image.
+- **Tag reuse.** Existing tags require verifiable provenance and matching recorded executable inputs. A changed input requires a new immutable tag. Update the plan's tracked inputs, workflow selector, catalog identity and verifier together.
+- **Disk scratch.** Version and scan checks bind unique directories under `RUNNER_TEMP` and clean them on exit. Version checks use the runner UID/GID so private scanner caches can be removed by that runner.
 
 ## Lessons from real runs
 

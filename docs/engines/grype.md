@@ -4,8 +4,8 @@ Runs Grype's offline vulnerability matcher over a `repository` snapshot (`dir:`)
 
 | Item | Value |
 | --- | --- |
-| Upstream | [anchore/grype](https://github.com/anchore/grype) 0.117.0 (`source_ref` `v0.117.0`), revision `b5fa92bbcbef655497e3be840a2f718380e2cdd3`. Database: Grype DB schema v6.1.9, built 2026-08-24T06:22:13Z, archive `vulnerability-db_v6.1.9_2026-08-24T00:17:18Z_1787552533.tar.zst`; digests in `engines/images/grype/DATABASE-NOTICE.md`. |
-| Image | `ghcr.io/teddashh/ai-security-scanner-engine-grype:0.117.0-4` (`plan_kind: managed_build`, Apache-2.0). The digest is pinned in `engines/catalog.json`. No workflow published this tag; see **Publishing** below. |
+| Upstream | [anchore/grype](https://github.com/anchore/grype), version `0.120.1`, source ref `v0.120.1`, revision `6f8d854af29d3a3086b11a84afa51554a2a245fe`. Offline database schema v6.1.10, built 2026-10-14T06:30:34Z. Its exact 2,460,639,232-byte file bound and digests are recorded in the recipe and database notice. |
+| Image | `ghcr.io/ted-h-com/ai-security-scanner-engine-grype:0.120.1-1` (`plan_kind: managed_build`), published for linux/amd64 and linux/arm64 by [this run](https://github.com/TED-H-com/ai-security-scanner/actions/runs/38696246466) from `c989e75e1c3be7e7abad3395dcf5539cf2a96832`. Exact index/platform digests and verified evidence are in `engines/catalog.json` and `plan.json`. |
 | Build inputs | `engines/images/grype/`: `Dockerfile`, `import.json`, `DATABASE-NOTICE.md`, `plan.json`, and `testdata/package-lock.json`, which nothing uses. `node scripts/prepare-offline-engine-data.mjs grype` fetches the database archive into `.engine-cache/offline/grype/db.tar.zst` and checks its digest and size. The build pins the source with `ADD --checksum`, checks `go.sum`, runs `go mod verify`, and builds `cmd/grype` with `-mod=readonly`. The runtime is `FROM scratch`. |
 | Launcher | [Local launcher](local-launcher.md): the `grype` branch of `planInvocation` and the database check in `verifyEngineInputs` |
 | Adapter | `extract_grype` and `grype_weakness` in `src-tauri/src/adapters/mod.rs` |
@@ -58,7 +58,7 @@ See the [image build index](image-build-index.md) for the repeatable local build
 
 Follow [section 4](../engine-maintenance.md#4-updating-an-engine), then:
 
-- **Build.** Update in step: the archive URL and checksum, the `go.sum` digest, the four `main.*` ldflags (`version`, `gitCommit`, `buildDate`, `gitDescription`), the labels and `SOURCE_DATE_EPOCH`; the plan's `source` and `build_recipe`; and the catalog `engine_version`, `source_revision`, `rule_version` (the upstream revision) and `provenance.engine` and `provenance.rules`. The workflow `version` (`0.117.0`) must appear in `grype version`.
+- **Build.** Update in step: the archive URL and checksum, the `go.sum` digest, the four `main.*` ldflags (`version`, `gitCommit`, `buildDate`, `gitDescription`), the labels and `SOURCE_DATE_EPOCH`; the plan's `source` and `build_recipe`; and the catalog `engine_version`, `source_revision`, `rule_version` (the upstream revision) and `provenance.engine` and `provenance.rules`. The workflow `version` (`0.120.1`) must appear in `grype version`.
 - **Database.** A refresh changes all of these together:
   - the URL, digest and size in `scripts/prepare-offline-engine-data.mjs`;
   - `import.json` (`digest`, `source`, `client_version`);
@@ -71,16 +71,17 @@ Follow [section 4](../engine-maintenance.md#4-updating-an-engine), then:
   - In `src-tauri/tests/adapter_fixtures.rs` (fixture `grype.json`): `grype_preserves_valid_matches_but_withholds_completion_for_malformed_match_shapes`, `one_vulnerability_seen_by_trivy_and_grype_is_offered_as_a_single_row`, `missing_primary_result_shapes_are_incomplete_but_known_empty_shapes_are_complete` and `repo_adapters_accept_their_explicit_empty_result_shapes_without_warnings`.
   - Launcher tests: `TestGrypeRepositoryUsesTheUpstreamDirectoryCataloger`, `TestTypedContainerPlansUseOCIImageLayout` and `TestEngineProfilesRejectCrossTypeExecution`.
   - The workflow smoke scans only the OCI layout fixture: `.source.type` `image`, the fixture's `imageID`, and a `spring-core` 2.5.6.SEC03 `java-archive` match. Nothing tests repository input, so scan a real repository and compare with Trivy on the same tree, as 3990168 did.
-- **Hard-coded values.** `0.117.0-4` appears in the workflow matrix, catalog `image.tag`, plan `final_artifact.tag`, the Dockerfile label, `scripts/validate-engine-catalog.mjs`, `scripts/release/verify-publication-artifact.mjs` and `tests/release/verifyPublicationArtifact.test.mjs`. User-facing text names it too: `README.md`, `README.zh-TW.md`, `docs/development-status.md`, `docs/engine-catalog.md`, both `docs/getting-started*.md` and `docs/index.html`. Find them with `grep -rn "0.117.0" --exclude-dir=node_modules --exclude-dir=target --exclude-dir=.git --exclude-dir=.upstreams --exclude-dir=.engine-cache`. `support_until` is 2026-11-22.
+- **Hard-coded values.** Keep managed tag `0.120.1-1`, reported version `0.120.1`, full source revision, workflow selector, Dockerfile labels, catalog/plan identity and publication verifier aligned. Search current source with `rg` when updating; preserve dated records and captured fixtures. `support_until` is 2027-01-12.
 - **Compare with raw output.**
   - Count with `jq '.matches | length' grype.json`.
   - List with `jq -r '.matches[] | [.vulnerability.id, .artifact.name, .artifact.version, (.artifact.locations[0].path // .artifact.name)] | @tsv' grype.json | sort | uniq -c`.
   - Rows that share an id and location are one finding. Check that the severity, `fix.versions` and CVSS scores arrived unchanged.
-- **Publishing.** The plan's `publication` is known to be false (3990168):
-  - It names run 33196902246 and source 2641850, which published `0.117.0-3`. `0.117.0-4` was pushed by hand from a local OCI tar; it has no build attestation, and its image config says version `0.117.0-3`.
-  - `scripts/validate-engine-catalog.mjs` checks only that the run id and evidence artifact agree, so its pass does not establish provenance.
-  - The guard fails an existing tag without an attestation ("existing digest has no verifiable GitHub build provenance"). Give the next build a new tag. `import.json` has no plan digest (`uncovered_baseline` in `engines/image-input-hash-policy.json`).
+- **Publishing.** The current 0.120.1-1 image has verified workflow provenance, signed SBOMs and anonymous index/platform/config retrieval. The older 0.117.0-4 pin had inconsistent publication metadata (3990168); retain that history without reusing its receipts for the replacement. Changes require a new immutable tag.
 
 ## 2026-10-14 source update
 
-The replacement recipe targets `0.120.1-1` at upstream commit `6f8d854af29d3a3086b11a84afa51554a2a245fe`. The catalog still names the previously published image until replacement publication is verified. See the [batch update record](updates/2026-10-14.md) for changed inputs, retained rules and verification.
+The replacement recipe targets `0.120.1-1` at upstream commit `6f8d854af29d3a3086b11a84afa51554a2a245fe`. The replacement is now published and pinned in the current catalog; the verified publication is recorded below. See the [batch update record](updates/2026-10-14.md) for changed inputs, retained rules and verification.
+
+## 2026-10-15 verified publication
+
+[Publication run](https://github.com/TED-H-com/ai-security-scanner/actions/runs/38696246466) binds both platform images to `c989e75e1c3be7e7abad3395dcf5539cf2a96832`. Five source/SBOM attestations, four SBOMs, checksums and anonymous index, version tag, platform manifest and config bytes were independently verified before catalog activation. See the [batch verification record](updates/2026-10-14.md#verified-publication-and-catalog-activation) for native execution results and the remaining scope limits.

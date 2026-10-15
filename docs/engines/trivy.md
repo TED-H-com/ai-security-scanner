@@ -4,8 +4,8 @@ Runs Trivy's offline vulnerability scanner. Repository and IaC snapshots get two
 
 | Item | Value |
 | --- | --- |
-| Upstream | [aquasecurity/trivy](https://github.com/aquasecurity/trivy) 0.74.0 (`source_ref` `v0.74.0`), revision `e1fd17a0ea4a8cf24bc4b4dd7e2cfbf4bb31b994`. Databases: `ghcr.io/aquasecurity/trivy-db@sha256:a61aa42e…` (schema 2, `UpdatedAt` 2026-08-24) and `ghcr.io/aquasecurity/trivy-java-db@sha256:0a859620…` (schema 1, `UpdatedAt` 2026-09-09); details in `engines/images/trivy/DATABASE-NOTICE.md`. |
-| Image | `ghcr.io/teddashh/ai-security-scanner-engine-trivy:0.74.0-4` (`plan_kind: managed_build`, Apache-2.0), published from 9ee5257 (run 35273577688) and pinned in 85f92b1. The digest is pinned in `engines/catalog.json`. |
+| Upstream | [aquasecurity/trivy](https://github.com/aquasecurity/trivy), version `0.76.0`, source ref `v0.76.0`, revision `531360e5d2a88e732373f1614ba99a38738538b8`. Offline databases: schema 2 vulnerability DB and schema 1 Java index, both dated 2026-10-15. Exact OCI and file hashes are in `engines/images/trivy/DATABASE-NOTICE.md`. |
+| Image | `ghcr.io/ted-h-com/ai-security-scanner-engine-trivy:0.76.0-1` (`plan_kind: managed_build`), published for linux/amd64 and linux/arm64 by [this run](https://github.com/TED-H-com/ai-security-scanner/actions/runs/38696246466) from `c989e75e1c3be7e7abad3395dcf5539cf2a96832`. Exact index/platform digests and verified evidence are in `engines/catalog.json` and `plan.json`. |
 | Build inputs | `engines/images/trivy/`: `Dockerfile`, `DATABASE-NOTICE.md`, `plan.json`, and `testdata/` (`package.json` and `package-lock.json` for the lockfile smoke). `node scripts/prepare-offline-engine-data.mjs trivy` fetches the two database layers into `.engine-cache/offline/trivy/` (`db.tar.gz`, `java-db.tar.gz`) and checks their digest and size. The build pins the source with `ADD --checksum`, checks `go.sum`, and runs `go mod verify` with `GOEXPERIMENT=jsonv2`. |
 | Launcher | [Local launcher](local-launcher.md): the `trivy` branch of `planInvocation`, the second pass in `planInvocations`, and the database checks in `verifyEngineInputs` |
 | Adapter | `extract_trivy` and `trivy_weakness` in `src-tauri/src/adapters/mod.rs` |
@@ -87,17 +87,21 @@ Follow [section 4](../engine-maintenance.md#4-updating-an-engine), then:
   - The decoded `local-launcher/testdata/trivy-java-db-test.jar.base64`, checked by SHA-256, must report CVE-2024-23672 in `org.apache.tomcat.embed:tomcat-embed-websocket` 9.0.65 in `trivy-individual-packages.json`.
 
   The evidence files are `trivy-oci.json`, `trivy-library.json`, `trivy-jar.json` and `SHA256SUMS.txt`.
-- **Hard-coded values.** `0.74.0-4` appears in:
+- **Hard-coded values.** `0.76.0-1` appears in:
   - the workflow matrix, catalog `image.tag`, plan `final_artifact.tag` and the Dockerfile label;
   - `scripts/validate-engine-catalog.mjs`, `scripts/release/verify-publication-artifact.mjs` and `tests/release/verifyPublicationArtifact.test.mjs`.
 
-  `0.74.0` also appears in the workflow `version`, the ldflag, and the catalog `engine_version` and `provenance.engine`. Find them with `grep -rn "0.74.0" --exclude-dir=node_modules --exclude-dir=target --exclude-dir=.git --exclude-dir=.upstreams --exclude-dir=.engine-cache`. `support_until` is 2026-11-22.
+  `0.76.0` also appears in the workflow `version`, the ldflag, and the catalog `engine_version` and `provenance.engine`. Find them with `grep -rn "0.76.0" --exclude-dir=node_modules --exclude-dir=target --exclude-dir=.git --exclude-dir=.upstreams --exclude-dir=.engine-cache`. `support_until` is 2027-01-13.
 - **Compare with raw output.**
   - Count with `jq '[.Results[]?.Vulnerabilities[]?] | length' trivy.json trivy-individual-packages.json`.
   - List with `jq -r '.Results[]? | .Target as $t | .Vulnerabilities[]? | [.VulnerabilityID, $t, .PkgName, .InstalledVersion, (.PkgPath // .PkgID)] | @tsv'`.
   - Identical rows merge into one finding. Check that `Severity`, `FixedVersion` and the CVSS scores arrived unchanged.
-- **Publishing.** The plan at 9ee5257 binds `0.74.0-4` and records the same input digests as today, so a push that changes no recorded input reuses the image. Any recorded change needs a new tag.
+- **Publishing.** The current `0.76.0-1` publication binds the recorded inputs at `c989e75e1c3be7e7abad3395dcf5539cf2a96832` in [this run](https://github.com/TED-H-com/ai-security-scanner/actions/runs/38696246466). Existing-tag reuse requires verified provenance and matching executable inputs. Any changed image input requires a new immutable tag.
 
 ## 2026-10-14 source update
 
-The replacement recipe targets `0.76.0-1` at upstream commit `531360e5d2a88e732373f1614ba99a38738538b8`. The catalog still names the previously published image until replacement publication is verified. See the [batch update record](updates/2026-10-14.md) for changed inputs, retained rules and verification.
+The replacement recipe targets `0.76.0-1` at upstream commit `531360e5d2a88e732373f1614ba99a38738538b8`. The replacement is now published and pinned in the current catalog; the verified publication is recorded below. See the [batch update record](updates/2026-10-14.md) for changed inputs, retained rules and verification.
+
+## 2026-10-15 verified publication
+
+[Publication run](https://github.com/TED-H-com/ai-security-scanner/actions/runs/38696246466) binds both platform images to `c989e75e1c3be7e7abad3395dcf5539cf2a96832`. Five source/SBOM attestations, four SBOMs, checksums and anonymous index, version tag, platform manifest and config bytes were independently verified before catalog activation. See the [batch verification record](updates/2026-10-14.md#verified-publication-and-catalog-activation) for native execution results and the remaining scope limits.

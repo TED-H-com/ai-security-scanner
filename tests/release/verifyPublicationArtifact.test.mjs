@@ -31,15 +31,19 @@ const platformDigests = {
   "linux/arm64": `sha256:${"33".repeat(32)}`,
 };
 const specs = {
+  steampipe: { tag: "2.4.7-1", group: "cloud", workflow: ".github/workflows/engine-images-cloud.yml" },
+  prowler: { tag: "5.44.0-1", group: "cloud", workflow: ".github/workflows/engine-images-cloud.yml" },
+  checkov: { tag: "3.3.29-1", group: "standalone", workflow: ".github/workflows/engine-image-checkov.yml", sourceDateEpoch: "1791891584" },
+  syft: { tag: "1.54.1-1", group: "standalone", workflow: ".github/workflows/engine-image-syft.yml" },
   naabu: { tag: "2.6.1-7", group: "external" },
-  httpx: { tag: "1.10.0-7", group: "external" },
+  httpx: { tag: "1.12.0-1", group: "external" },
   nuclei: { tag: "3.11.1-7", group: "external" },
-  semgrep: { tag: "1.174.0-4", group: "local", smokeFiles: ["semgrep.json"] },
-  trufflehog: { tag: "3.97.0-3", group: "local", smokeFiles: ["trufflehog.jsonl"] },
-  trivy: { tag: "0.74.0-4", group: "local", smokeFiles: ["trivy-oci.json", "trivy-library.json"] },
-  grype: { tag: "0.117.0-4", group: "local", smokeFiles: ["grype.json"] },
-  kubescape: { tag: "4.0.12-3", group: "local", smokeFiles: ["kubescape.json"] },
-  "kube-bench": { tag: "0.16.0-4", group: "local", smokeFiles: ["kube-bench.json"] },
+  semgrep: { tag: "1.181.0-1", group: "local", smokeFiles: ["semgrep.json"] },
+  trufflehog: { tag: "3.99.2-1", group: "local", smokeFiles: ["trufflehog.jsonl"] },
+  trivy: { tag: "0.76.0-1", group: "local", smokeFiles: ["trivy-oci.json", "trivy-library.json", "trivy-jar.json"] },
+  grype: { tag: "0.120.1-1", group: "local", smokeFiles: ["grype.json"] },
+  kubescape: { tag: "4.0.16-1", group: "local", smokeFiles: ["kubescape.json"] },
+  "kube-bench": { tag: "0.16.0-5", group: "local", smokeFiles: ["kube-bench.json"] },
   "agentic-radar": { tag: "0.14.1-1", group: "local", smokeFiles: ["agentic-radar.json"], workflow: ".github/workflows/engine-image-agentic-radar.yml" },
   garak: { tag: "0.17.0-1", group: "local", smokeFiles: ["report.jsonl", "garak-execution.json", "native-qa.json"], workflow: ".github/workflows/engine-image-garak.yml" },
   scubagear: { tag: "1.8.0-8", group: "m365" },
@@ -88,6 +92,8 @@ const signerIdentity = \`https://github.com/\${value("--signer-workflow")}@\${so
 const repository = value("--repo");
 const invocation = \`https://github.com/\${repository}/actions/runs/\${process.env.FAKE_GH_RUN_ID}/attempts/\${process.env.FAKE_GH_ATTEMPT}\`;
 process.stdout.write(JSON.stringify([{
+  attestation: { bundle },
+  fixtureExtraOutput: "x".repeat(Number(process.env.FAKE_GH_EXTRA_OUTPUT_BYTES ?? 0)),
   verificationResult: {
     signature: { certificate: {
       sourceRepositoryURI: \`https://github.com/\${repository}\`,
@@ -209,7 +215,7 @@ function fakeBundle(image, digest, predicateType, predicate) {
   };
 }
 
-async function createArtifact(testContext, engine) {
+async function createArtifact(testContext, engine, { largeSbom = false } = {}) {
   const spec = specs[engine];
   const workflow = spec.workflow ?? workflows[spec.group];
   const root = await mkdtemp(path.join(os.tmpdir(), `publication-${engine}-`));
@@ -226,6 +232,9 @@ async function createArtifact(testContext, engine) {
     for (const sbomSpec of sbomSpecs) {
       const file = `${engine}-linux-${architecture}.${sbomSpec.suffix}.json`;
       const document = fakeSbom(engine, platform, sbomSpec.format);
+      if (largeSbom && platform === "linux/amd64" && sbomSpec.format === "spdx-json") {
+        document.comment = "x".repeat(10 * 1024 * 1024);
+      }
       documents.set(file, document);
       await writeJson(path.join(nested, file), document);
       const record = await fileRecord(path.join(nested, file));
@@ -423,6 +432,9 @@ async function createArtifact(testContext, engine) {
           },
         }
         : { ...common, platforms, public: true };
+    if (spec.group === "cloud") summary.platformDigests = platformDigests;
+    if (spec.group === "standalone") delete summary.engine;
+    if (spec.sourceDateEpoch) summary.sourceDateEpoch = spec.sourceDateEpoch;
     await writeJson(path.join(root, `${engine}-image-manifest.json`), summary);
   }
   if (engine === "semgrep") {
@@ -454,7 +466,7 @@ async function createArtifact(testContext, engine) {
       });
     }
   }
-  await sealRoot(root);
+  if (!["cloud", "standalone"].includes(spec.group)) await sealRoot(root);
   return root;
 }
 
@@ -467,6 +479,7 @@ function runVerifier(engine, artifact, overrides = {}) {
   environment.FAKE_GH_RUN_ID = overrides.runId ?? runId;
   environment.FAKE_GH_ATTEMPT = overrides.attempt ?? attempt;
   environment.FAKE_GH_ATTESTATION_FAILURE = overrides.cryptographicFailure ? "1" : "0";
+  environment.FAKE_GH_EXTRA_OUTPUT_BYTES = String(overrides.extraOutputBytes ?? 0);
   return spawnSync(process.execPath, [
     verifier,
     "--engine", engine,
@@ -540,7 +553,8 @@ test("publication verifier accepts every fixed engine and the gateway with one n
     assert.equal(payload.workflowRun, `https://github.com/${repository}/actions/runs/${runId}`);
     assert.equal(payload.runId, runId);
     assert.equal(payload.runAttempt, attempt);
-    assert.match(payload.evidence.rootChecksumReceiptSha256, /^sha256:[0-9a-f]{64}$/u);
+    if (["cloud", "standalone"].includes(spec.group)) assert.equal(payload.evidence.rootChecksumReceiptSha256, null);
+    else assert.match(payload.evidence.rootChecksumReceiptSha256, /^sha256:[0-9a-f]{64}$/u);
     assert.match(payload.evidence.nestedChecksumReceiptSha256, /^sha256:[0-9a-f]{64}$/u);
     assert.equal(payload.evidence.sbomCount, 4);
     assert.equal(payload.evidence.attestationCount, 5);
@@ -785,6 +799,24 @@ test("publication verifier rejects a cryptographically invalid bundle without st
   assert.equal(result.stdout, "");
 });
 
+test("publication verifier accepts a bounded SBOM whose verified CLI envelope exceeds 16 MiB", async (t) => {
+  const artifact = await createArtifact(t, "prowler", { largeSbom: true });
+  const bundle = JSON.parse(await readFile(path.join(artifact, "prowler/prowler-amd64-spdx.sigstore.json"), "utf8"));
+  const statement = JSON.parse(Buffer.from(bundle.dsseEnvelope.payload, "base64").toString("utf8"));
+  assert.ok(Buffer.byteLength(JSON.stringify({ bundle, statement })) > 16 * 1024 * 1024);
+  const result = runVerifier("prowler", artifact);
+  assert.equal(result.status, 0, result.stderr);
+  assert.equal(JSON.parse(result.stdout).engine, "prowler");
+});
+
+test("publication verifier rejects unbounded CLI output without a success receipt", async (t) => {
+  const artifact = await createArtifact(t, "prowler");
+  const result = runVerifier("prowler", artifact, { extraOutputBytes: 65 * 1024 * 1024 });
+  assert.notEqual(result.status, 0);
+  assert.match(result.stderr, /attestation verifier could not be executed/u);
+  assert.equal(result.stdout, "");
+});
+
 test("publication verifier rejects unsafe checksum paths and symlinks", async (t) => {
   const unsafeArtifact = await createArtifact(t, "httpx");
   const checksumFile = path.join(unsafeArtifact, "SHA256SUMS.txt");
@@ -851,5 +883,24 @@ test("publication artifact accepts current origin and rejects both mixed pairs a
     const result = runVerifier("httpx", artifact);
     assert.equal(result.status === 0, passes, result.stderr);
     if (!passes) assert.match(result.stderr, /publication origin/u);
+  }
+});
+
+
+test("cloud and standalone publication summaries reject drift from signed evidence", async (t) => {
+  for (const [engine, mutate, error] of [
+    ["prowler", (summary) => { summary.platformDigests["linux/arm64"] = indexDigest; }, /cloud root platform digest mismatch/u],
+    ["steampipe", (summary) => { summary.public = false; }, /must record public access/u],
+    ["checkov", (summary) => { summary.sourceDateEpoch = "1"; }, /source epoch mismatch/u],
+    ["syft", (summary) => { summary.sourceRevision = "ff".repeat(20); }, /source revision mismatch/u],
+  ]) {
+    const artifact = await createArtifact(t, engine);
+    const file = path.join(artifact, `${engine}-image-manifest.json`);
+    const summary = JSON.parse(await readFile(file, "utf8"));
+    mutate(summary);
+    await writeJson(file, summary);
+    const result = runVerifier(engine, artifact);
+    assert.notEqual(result.status, 0, engine);
+    assert.match(result.stderr, error);
   }
 });

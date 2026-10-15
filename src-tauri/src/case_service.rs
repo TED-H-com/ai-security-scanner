@@ -45182,11 +45182,16 @@ mod tests {
             .find(|run| run.engine_id == "trufflehog")
             .expect("trufflehog run");
         assert_eq!(trufflehog.status, EngineRunStatus::Queued);
+        let trufflehog_manifest = fixture.engines.get("trufflehog").unwrap();
+        assert!(trufflehog_manifest.reported_version.is_some());
         assert_eq!(
-            trufflehog.engine_version.as_deref(),
-            Some("source@3ab759fef4bb5935d4fe9ac68b503d05346b8364")
+            trufflehog.engine_version,
+            trufflehog_manifest.engine_version
         );
-        assert_eq!(trufflehog.reported_version.as_deref(), Some("3.97.0"));
+        assert_eq!(
+            trufflehog.reported_version,
+            trufflehog_manifest.reported_version
+        );
 
         let gitleaks = plan
             .scan_run
@@ -45195,7 +45200,10 @@ mod tests {
             .find(|run| run.engine_id == "gitleaks")
             .expect("gitleaks run");
         assert_eq!(gitleaks.status, EngineRunStatus::Queued);
-        assert_eq!(gitleaks.engine_version.as_deref(), Some("8.30.1"));
+        assert_eq!(
+            gitleaks.engine_version,
+            fixture.engines.get("gitleaks").unwrap().engine_version
+        );
         assert_eq!(gitleaks.reported_version, None);
 
         let kube_bench = plan
@@ -45205,11 +45213,16 @@ mod tests {
             .find(|run| run.engine_id == "kube-bench")
             .expect("kube-bench run");
         assert_eq!(kube_bench.status, EngineRunStatus::NotExecuted);
+        let kube_bench_manifest = fixture.engines.get("kube-bench").unwrap();
+        assert!(kube_bench_manifest.reported_version.is_some());
         assert_eq!(
-            kube_bench.engine_version.as_deref(),
-            Some("source@9f133cb7509ce1dbedfc860e94474588000e25ac")
+            kube_bench.engine_version,
+            kube_bench_manifest.engine_version
         );
-        assert_eq!(kube_bench.reported_version.as_deref(), Some("0.16.0"));
+        assert_eq!(
+            kube_bench.reported_version,
+            kube_bench_manifest.reported_version
+        );
         assert!(plan.not_executed.iter().any(|skipped| {
             skipped.engine_id == "kube-bench" && skipped.engine_run_id == kube_bench.id
         }));

@@ -2,11 +2,11 @@
   "schema_version": "1.0.0",
   "engine_id": "trivy",
   "plan_kind": "managed_build",
-  "knowledge_date": "2026-08-24",
-  "support_until": "2026-11-22",
+  "knowledge_date": "2026-10-15",
+  "support_until": "2027-01-13",
   "maintenance_owner": "teddashh/ai-security-scanner maintainers",
   "update_procedure": "docs/engine-maintenance.md",
-  "publish_state": "publication_in_progress",
+  "publish_state": "published_managed_artifact",
   "source": {
     "repository": "https://github.com/aquasecurity/trivy",
     "revision": "531360e5d2a88e732373f1614ba99a38738538b8",
@@ -17,7 +17,7 @@
   "final_artifact": {
     "repository": "ghcr.io/ted-h-com/ai-security-scanner-engine-trivy",
     "tag": "0.76.0-1",
-    "digest": null
+    "digest": "sha256:254caf91721b880a9085e1e88e62f65848ca250b11ad8d5b5ba0f2ebf8470705"
   },
   "build_recipe": {
     "source_revision": "531360e5d2a88e732373f1614ba99a38738538b8",
@@ -141,61 +141,19 @@
     "updates": false,
     "telemetry": false
   },
-  "publication": null,
-  "previous_artifact": {
-    "repository": "ghcr.io/teddashh/ai-security-scanner-engine-trivy",
-    "tag": "0.74.0-4",
-    "digest": "sha256:9bfcef9a6a9d9a69eefcece06b0670eaed72541656b65155469b41acb3855dc2"
-  },
-  "previous_publication": {
-    "workflow_run": "https://github.com/teddashh/ai-security-scanner/actions/runs/35273577688",
-    "source_revision": "9ee5257d269b2aaf9dc28d1eed470ed9e9c933f3",
+  "publication": {
+    "workflow_run": "https://github.com/TED-H-com/ai-security-scanner/actions/runs/38696246466",
+    "source_revision": "c989e75e1c3be7e7abad3395dcf5539cf2a96832",
     "platforms": [
       "linux/amd64",
       "linux/arm64"
     ],
     "platform_digests": {
-      "linux/amd64": "sha256:efcc0345af1a1fca1491b6cda96938804c2f1e19f680b4e348edddebe6c4ad33",
-      "linux/arm64": "sha256:8bed6a6664525e7819f4824647d695dfa311ff619e504fed2bca21a03ae36faa"
+      "linux/amd64": "sha256:7a2de07d2b8db0c1ed59614d595c103ae66759c697debd09b184ceeb68b4814f",
+      "linux/arm64": "sha256:2aee913c97304937a73939237b33cef1955d6d30a644dc0256a06a634e2a8b64"
     },
     "anonymous_pull_verified": true,
-    "evidence_artifact": "trivy-image-evidence-35273577688-2",
-    "managed_smoke_evidence_sha256": "sha256:e20fa96fd9c8a856a21f9c01a7115ea8de7209686ca1d90f958f1e54e06939f0"
-  },
-  "upstream_update": {
-    "engine_version": "0.76.0",
-    "reported_version": null,
-    "source_revision": "531360e5d2a88e732373f1614ba99a38738538b8",
-    "rule_version": "531360e5d2a88e732373f1614ba99a38738538b8",
-    "knowledge_date": "2026-10-15",
-    "support_until": "2027-01-13",
-    "engine_provenance": {
-      "version": "0.76.0",
-      "source_repository": "https://github.com/aquasecurity/trivy",
-      "source_revision": "531360e5d2a88e732373f1614ba99a38738538b8",
-      "source_ref": "v0.76.0",
-      "acquisition_source": "https://github.com/aquasecurity/trivy/commit/531360e5d2a88e732373f1614ba99a38738538b8",
-      "artifact_source_revision": null,
-      "source_association": "source_build_required"
-    },
-    "rules_provenance": {
-      "mode": "embedded",
-      "identifier": "Trivy OS and library package analyzers",
-      "revision": "531360e5d2a88e732373f1614ba99a38738538b8",
-      "acquisition_source": "https://github.com/aquasecurity/trivy/commit/531360e5d2a88e732373f1614ba99a38738538b8"
-    },
-    "data_provenance": {
-      "mode": "embedded",
-      "identifier": "Trivy vulnerability database snapshot",
-      "revision": "sha256:52132f8ca6e26a5ebbc4d758a9b2f20c9537725635f185f9c19b0600f45fe3c1",
-      "acquisition_source": "oci://ghcr.io/aquasecurity/trivy-db"
-    },
-    "knowledge_input": {
-      "kind": "embedded",
-      "identifier": "Trivy vulnerability database snapshot",
-      "version": "sha256:52132f8ca6e26a5ebbc4d758a9b2f20c9537725635f185f9c19b0600f45fe3c1",
-      "acquisition_source": "oci://ghcr.io/aquasecurity/trivy-db",
-      "pin_state": "pinned_or_not_applicable"
-    }
+    "evidence_artifact": "trivy-image-evidence-38696246466-2",
+    "managed_smoke_evidence_sha256": "sha256:28d6c75952be69d34105138d35ccf66973237e0d2a81d35e167f2d2a98443e3a"
   }
 }

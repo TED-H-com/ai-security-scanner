@@ -2,11 +2,11 @@
   "schema_version": "1.0.0",
   "engine_id": "grype",
   "plan_kind": "managed_build",
-  "knowledge_date": "2026-08-24",
-  "support_until": "2026-11-22",
+  "knowledge_date": "2026-10-14",
+  "support_until": "2027-01-12",
   "maintenance_owner": "teddashh/ai-security-scanner maintainers",
   "update_procedure": "docs/engine-maintenance.md",
-  "publish_state": "publication_in_progress",
+  "publish_state": "published_managed_artifact",
   "source": {
     "repository": "https://github.com/anchore/grype",
     "revision": "6f8d854af29d3a3086b11a84afa51554a2a245fe",
@@ -17,7 +17,7 @@
   "final_artifact": {
     "repository": "ghcr.io/ted-h-com/ai-security-scanner-engine-grype",
     "tag": "0.120.1-1",
-    "digest": null
+    "digest": "sha256:9f030366bc950d408762adb2d641d70220fd6cee0175cbc5202e9418dbb05870"
   },
   "build_recipe": {
     "source_revision": "6f8d854af29d3a3086b11a84afa51554a2a245fe",
@@ -102,61 +102,19 @@
     "updates": false,
     "telemetry": false
   },
-  "publication": null,
-  "previous_artifact": {
-    "repository": "ghcr.io/teddashh/ai-security-scanner-engine-grype",
-    "tag": "0.117.0-4",
-    "digest": "sha256:56b0d675e3b8d539890e853699c114493a72a54cca0bbe254eceee7ec2b4c517"
-  },
-  "previous_publication": {
-    "workflow_run": "https://github.com/teddashh/ai-security-scanner/actions/runs/33196902246",
-    "source_revision": "2641850304aeade6ab8ee3b23eda80a7f66411d0",
+  "publication": {
+    "workflow_run": "https://github.com/TED-H-com/ai-security-scanner/actions/runs/38696246466",
+    "source_revision": "c989e75e1c3be7e7abad3395dcf5539cf2a96832",
     "platforms": [
       "linux/amd64",
       "linux/arm64"
     ],
     "platform_digests": {
-      "linux/amd64": "sha256:b656a1a8b00d00f554cb0558c8ba28b55f3ebf8ce80b5dbe1c074ec6a980296f",
-      "linux/arm64": "sha256:46c4ede69e9cb5f166d0369a4f1f5de9b223d7cb8b7b78a23f89218f59f9ed36"
+      "linux/amd64": "sha256:e801d689ad75a282333faee08a28a42a58585fac909ffa2d27739249deac41e1",
+      "linux/arm64": "sha256:eeeb78f644b698481f93637ab3e4d0f482991a1d0516c5ce0089dc4a1078719c"
     },
     "anonymous_pull_verified": true,
-    "evidence_artifact": "grype-image-evidence-33196902246-1",
-    "managed_smoke_evidence_sha256": "sha256:b4c4a7b33d83ac19d7bbd7bb5907bbf9fb8ceefe119ccc4e57e516228fb7f110"
-  },
-  "upstream_update": {
-    "engine_version": "0.120.1",
-    "reported_version": null,
-    "source_revision": "6f8d854af29d3a3086b11a84afa51554a2a245fe",
-    "rule_version": "6f8d854af29d3a3086b11a84afa51554a2a245fe",
-    "knowledge_date": "2026-10-14",
-    "support_until": "2027-01-12",
-    "engine_provenance": {
-      "version": "0.120.1",
-      "source_repository": "https://github.com/anchore/grype",
-      "source_revision": "6f8d854af29d3a3086b11a84afa51554a2a245fe",
-      "source_ref": "v0.120.1",
-      "acquisition_source": "https://github.com/anchore/grype/commit/6f8d854af29d3a3086b11a84afa51554a2a245fe",
-      "artifact_source_revision": null,
-      "source_association": "source_build_required"
-    },
-    "rules_provenance": {
-      "mode": "embedded",
-      "identifier": "Grype matchers",
-      "revision": "6f8d854af29d3a3086b11a84afa51554a2a245fe",
-      "acquisition_source": "https://github.com/anchore/grype/commit/6f8d854af29d3a3086b11a84afa51554a2a245fe"
-    },
-    "data_provenance": {
-      "mode": "embedded",
-      "identifier": "Grype vulnerability database snapshot",
-      "revision": "sha256:8be8779b1b6fd721e6127c092bd25d5875e25cd511def5d9e7d026fb45189058",
-      "acquisition_source": "https://grype.anchore.io/databases/v6/vulnerability-db_v6.1.10_2026-10-14T00:28:57Z_1791959434.tar.zst"
-    },
-    "knowledge_input": {
-      "kind": "embedded",
-      "identifier": "Grype vulnerability database snapshot",
-      "version": "sha256:8be8779b1b6fd721e6127c092bd25d5875e25cd511def5d9e7d026fb45189058",
-      "acquisition_source": "https://grype.anchore.io/databases/v6/vulnerability-db_v6.1.10_2026-10-14T00:28:57Z_1791959434.tar.zst",
-      "pin_state": "pinned_or_not_applicable"
-    }
+    "evidence_artifact": "grype-image-evidence-38696246466-2",
+    "managed_smoke_evidence_sha256": "sha256:d8524755b73dba68b224c2f8d623ef530fcb8f1e7f1a51c6ad1711935845d4c9"
   }
 }

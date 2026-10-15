@@ -71,7 +71,7 @@ The source and license below identify the pinned engine family. Exact release, s
 |---|---|---|---|
 | AWS inventory | [CloudQuery](https://github.com/cloudquery/cloudquery) | MPL-2.0 | Managed OCI image using the public CLI, AWS source plugin, file destination, and a fixed seven-table IAM inventory. |
 | AWS IAM user inventory | [Steampipe](https://github.com/turbot/steampipe) | AGPL-3.0-only | Managed OCI image with independently pinned AWS plugin/FDW components that queries `aws_iam_user`. Returned rows are normalized as inventory; policy-shaped status, control, severity, and MFA columns are ignored rather than presented as vulnerability or configuration findings. |
-| Cloud configuration | [Prowler](https://github.com/prowler-cloud/prowler) | Apache-2.0 | Managed OCI image with narrow, exact-asset IAM profiles for AWS, Azure, and GCP. The Azure static-token and GCP exact-project paths currently depend on six hash-bound downstream runtime patches and are an explicit upstream-first exception, not native Prowler 5.39.1 behavior. |
+| Cloud configuration | [Prowler](https://github.com/prowler-cloud/prowler) | Apache-2.0 | Managed OCI image with narrow, exact-asset IAM profiles for AWS, Azure, and GCP. The Azure static-token and GCP exact-project paths currently depend on six hash-bound downstream runtime patches and are an explicit upstream-first exception, not native Prowler 5.44.0 behavior. |
 | AWS configuration | [ScoutSuite](https://github.com/nccgroup/ScoutSuite) | GPL-2.0-only | Managed OCI image built from pinned source; the current profile is a reduced AWS IAM assessment, not full ScoutSuite coverage. |
 | AWS IAM | [Cloudsplaining](https://github.com/salesforce/cloudsplaining) | BSD-3-Clause | Managed OCI image over bounded IAM evidence for excessive-permission analysis. |
 | Microsoft 365 configuration | [ScubaGear](https://github.com/cisagov/ScubaGear) | CC0-1.0 | Managed PowerShell/OCI image; the current profile is fixed and leaves upstream unknown values unknown. Immutable image revision `1.8.0-8`. |
@@ -80,7 +80,7 @@ The source and license below identify the pinned engine family. Exact release, s
 | HTTP exposure | [httpx](https://github.com/projectdiscovery/httpx) | MIT | Bounded-launcher managed OCI image for HTTP reachability/status metadata with redirect and resolved-IP enforcement. It is not a web vulnerability scanner. |
 | Active HTTP testing | [Nuclei](https://github.com/projectdiscovery/nuclei) | MIT | Bounded-launcher managed OCI image with a 4,674-template read-only pool mechanically derived from the pinned upstream snapshot. Nuclei automatic scan owns technology detection and applicable-template selection; legacy explicit allowlists remain supported. |
 | Network scanner | [OpenVAS Scanner](https://github.com/greenbone/openvas-scanner) | GPL-2.0-only; pinned feed also carries GPL/ODbL terms | Managed direct `openvasd` image with a digest-pinned Community Feed snapshot. The generic internal-host profile mechanically derives non-deprecated unauthenticated remote `gather_info` VTs, excludes local, credential, policy, brute-force, alternate-scanner, and active/destructive categories, and leaves service/product applicability to Greenbone. Legacy explicit-OID profiles remain supported. |
-| Source analysis | [Semgrep](https://github.com/semgrep/semgrep) | LGPL-2.1-or-later scanner; Apache-2.0 product rules; legacy rules retain LGPL 2.1 plus Commons Clause | Published `1.174.0-4`: 1,493 selected legacy upstream rules plus four product rules, with qualified upstream IDs and retained original-source provenance. The [publication record](engines/semgrep-publication-2026-10-03.md) includes native verification, signed evidence and exact digest bindings. Detector bodies, native ratings, messages and fixes remain unchanged. |
+| Source analysis | [Semgrep](https://github.com/semgrep/semgrep) | LGPL-2.1-or-later scanner; Apache-2.0 product rules; legacy rules retain LGPL 2.1 plus Commons Clause | Published `1.181.0-1`: 1,493 selected legacy upstream rules plus four product rules, with qualified upstream IDs and retained original-source provenance. The [current publication record](engines/updates/2026-10-14.md#verified-publication-and-catalog-activation) includes native verification, signed evidence and exact digest bindings. Detector bodies, native ratings, messages and fixes remain unchanged. |
 | Secret scanning | [Gitleaks](https://github.com/gitleaks/gitleaks) | MIT | Project-managed pinned-source OCI image, filesystem mode, fixed offline launcher. Results are sensitive secret-pattern matches. |
 | Secret scanning | [TruffleHog](https://github.com/trufflesecurity/trufflehog) | AGPL-3.0 | Managed pinned-source OCI image, filesystem mode only; verification, update, and engine-network paths disabled. Results do not prove a credential is live. |
 | Infrastructure as code | [Checkov](https://github.com/bridgecrewio/checkov) | Apache-2.0 | Managed OCI image with read-only input and external integrations disabled. The fixed offline invocation uses Checkov's `all` framework selection so bundled runners detect applicable Terraform, CloudFormation, Dockerfile, Kubernetes, workflow, policy, secret, and other supported files instead of forcing every repository through Terraform. |
@@ -97,7 +97,9 @@ The source and license below identify the pinned engine family. Exact release, s
 
 ### Grype repository support
 
-The source catalog at [commit 3990168](https://github.com/TED-H-com/ai-security-scanner/commit/3990168be5154804c8a70c97f8c8f6e827221cbc) pins
+The current catalog pins `ghcr.io/ted-h-com/ai-security-scanner-engine-grype:0.120.1-1` to `sha256:9f030366bc950d408762adb2d641d70220fd6cee0175cbc5202e9418dbb05870`, with the October 14 schema v6.1.10 database. The [verified publication record](engines/updates/2026-10-14.md#verified-publication-and-catalog-activation) binds source provenance and both platform digests. The bounded native OCI fixture emits six Java vulnerability matches with original advisory IDs preserved.
+
+The earlier source catalog at [commit 3990168](https://github.com/TED-H-com/ai-security-scanner/commit/3990168be5154804c8a70c97f8c8f6e827221cbc) pinned
 `ghcr.io/teddashh/ai-security-scanner-engine-grype:0.117.0-4` to
 `sha256:56b0d675e3b8d539890e853699c114493a72a54cca0bbe254eceee7ec2b4c517`.
 The launcher accepts repository working-tree snapshots, allowing upstream Grype to report known
@@ -108,9 +110,7 @@ A controlled Linux repository scan after rebuilding that source recorded 81 Gryp
 Its final HTML report preserved those results. Counts depend on the selected repository and pinned
 database; this fixture result is not a coverage guarantee for another project.
 
-This is current source behavior, not a claim about the earlier public installer. The pin commit
-also records known inconsistencies in image publication metadata; scan results do not establish
-build provenance.
+Those 81 findings belong to the earlier fixture and database. Its pin commit recorded publication-metadata inconsistencies; the replacement above has separately verified signed provenance. Historical scan counts are not reused as measurements of the new image.
 
 
 ### Image admission

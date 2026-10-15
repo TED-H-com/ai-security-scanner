@@ -2,11 +2,11 @@
   "schema_version": "1.0.0",
   "engine_id": "steampipe",
   "plan_kind": "managed_source_image",
-  "knowledge_date": "2026-08-24",
-  "support_until": "2026-11-22",
+  "knowledge_date": "2026-09-26",
+  "support_until": "2026-12-25",
   "maintenance_owner": "teddashh/ai-security-scanner maintainers",
   "update_procedure": "docs/engine-maintenance.md",
-  "publish_state": "publication_in_progress",
+  "publish_state": "published_managed_artifact",
   "source": {
     "repository": "https://github.com/turbot/steampipe",
     "revision": "5c62651887b3e1d127049722e7216b915d4b075d",
@@ -16,9 +16,22 @@
   "final_artifact": {
     "repository": "ghcr.io/ted-h-com/ai-security-scanner-engine-steampipe",
     "tag": "2.4.7-1",
-    "digest": null
+    "digest": "sha256:a9b872c076e6bc38c24a939ee936272408887e75962e1ab04486c70a83f56de9"
   },
-  "publication": null,
+  "publication": {
+    "workflow_run": "https://github.com/TED-H-com/ai-security-scanner/actions/runs/38689379709",
+    "source_revision": "28bd1a3e23c961ce734503a6eeb59aa7d124ea4f",
+    "platforms": [
+      "linux/amd64",
+      "linux/arm64"
+    ],
+    "platform_digests": {
+      "linux/amd64": "sha256:076654bfb46f68e7d5ec07241018ad1f797e81defe9f4e39be78c8cc42fc6be7",
+      "linux/arm64": "sha256:0887c4a9d9864aca021e73fc6ce00638d8f46c0b16fceb8df149959792b7bd3e"
+    },
+    "anonymous_pull_verified": true,
+    "evidence_artifact": "steampipe-image-evidence-38689379709-3"
+  },
   "build_recipe": {
     "source_revision": "5c62651887b3e1d127049722e7216b915d4b075d",
     "source_archive": {
@@ -134,60 +147,5 @@
     "rationale": "The image embeds exact AGPL-3.0-only Steampipe source and build scripts, Apache-2.0 plugin/FDW source, and the PostgreSQL notice.",
     "source_offer_path": "engines/images/steampipe/SOURCE-OFFER.md"
   },
-  "blockers": [],
-  "previous_artifact": {
-    "repository": "ghcr.io/teddashh/ai-security-scanner-engine-steampipe",
-    "tag": "2.4.5-6",
-    "digest": "sha256:cd488a85ca1ebfb4c5f17212b9b29c1309a4cf9450d8645a911ffb1bdb6b4e42"
-  },
-  "previous_publication": {
-    "workflow_run": "https://github.com/teddashh/ai-security-scanner/actions/runs/37044614517",
-    "source_revision": "dfe8af1721cd165a629a4d438318661e940c13d8",
-    "platforms": [
-      "linux/amd64",
-      "linux/arm64"
-    ],
-    "platform_digests": {
-      "linux/amd64": "sha256:00d3a0a18f195499f4378d6bc9e2c899601bb24bf1e62f267168e1aef15cb9b1",
-      "linux/arm64": "sha256:3d887cea7274072e0a120c85255b16ca604201d63a381d0b4af903f006d100f8"
-    },
-    "anonymous_pull_verified": true,
-    "evidence_artifact": "steampipe-image-evidence-37044614517-1"
-  },
-  "upstream_update": {
-    "engine_version": "2.4.7",
-    "reported_version": null,
-    "source_revision": "5c62651887b3e1d127049722e7216b915d4b075d",
-    "rule_version": "d9a877878061013a49799c17b932616ee0ea415b",
-    "knowledge_date": "2026-09-26",
-    "support_until": "2026-12-25",
-    "engine_provenance": {
-      "version": "2.4.7",
-      "source_repository": "https://github.com/turbot/steampipe",
-      "source_revision": "5c62651887b3e1d127049722e7216b915d4b075d",
-      "source_ref": "v2.4.7",
-      "acquisition_source": "https://github.com/turbot/steampipe/commit/5c62651887b3e1d127049722e7216b915d4b075d",
-      "artifact_source_revision": null,
-      "source_association": "source_build_required"
-    },
-    "rules_provenance": {
-      "mode": "embedded",
-      "identifier": "Steampipe AWS plugin v1.34.0",
-      "revision": "d9a877878061013a49799c17b932616ee0ea415b",
-      "acquisition_source": "https://github.com/turbot/steampipe-plugin-aws/commit/d9a877878061013a49799c17b932616ee0ea415b"
-    },
-    "data_provenance": {
-      "mode": "runtime_live",
-      "identifier": "AWS IAM inventory",
-      "revision": null,
-      "acquisition_source": "AWS IAM and STS APIs authorized by the case-scoped read-only role"
-    },
-    "knowledge_input": {
-      "kind": "runtime_live",
-      "identifier": "AWS IAM inventory",
-      "version": null,
-      "acquisition_source": "AWS IAM and STS APIs authorized by the case-scoped read-only role",
-      "pin_state": "runtime_live"
-    }
-  }
+  "blockers": []
 }

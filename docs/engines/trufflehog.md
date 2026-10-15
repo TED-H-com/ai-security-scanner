@@ -4,8 +4,8 @@ Runs TruffleHog's secret detectors over the files of a `repository` snapshot wit
 
 | Item | Value |
 | --- | --- |
-| Upstream | [trufflesecurity/trufflehog](https://github.com/trufflesecurity/trufflehog) revision `3ab759fef4bb5935d4fe9ac68b503d05346b8364` (`source_ref` `main`); the build stamps version `3.97.0` through `-X github.com/trufflesecurity/trufflehog/v3/pkg/version.BuildVersion`. Catalog `reported_version` is `3.97.0`; pinned commit `3ab759f` is 9 commits after `v3.97.0` on `main`. |
-| Image | `ghcr.io/teddashh/ai-security-scanner-engine-trufflehog:3.97.0-3` (`plan_kind: managed_build`, AGPL-3.0; the image carries the source archive and `SOURCE-OFFER.md`). The published digest is pinned in `engines/catalog.json`. |
+| Upstream | [trufflesecurity/trufflehog](https://github.com/trufflesecurity/trufflehog), version `3.99.2`, source ref `v3.99.2`, revision `e76dff8a7e57d6df0c60ad8cbf5d5cba505a8fc9`. |
+| Image | `ghcr.io/ted-h-com/ai-security-scanner-engine-trufflehog:3.99.2-1` (`plan_kind: managed_build`), published for linux/amd64 and linux/arm64 by [this run](https://github.com/TED-H-com/ai-security-scanner/actions/runs/38696246466) from `c989e75e1c3be7e7abad3395dcf5539cf2a96832`. Exact index/platform digests and verified evidence are in `engines/catalog.json` and `plan.json`. |
 | Build inputs | `engines/images/trufflehog/`: `Dockerfile`, `SOURCE-OFFER.md`, `plan.json`, `testdata/README.md` (the smoke workspace). The source archive is `ADD --checksum`-pinned, `go.sum` is SHA-256-checked, then `go mod verify` and `go build -mod=readonly`. The runtime is `FROM scratch`. |
 | Launcher | [Local launcher](local-launcher.md): the `trufflehog` branch of `planInvocation` |
 | Adapter | `extract_trufflehog` in `src-tauri/src/adapters/mod.rs` |
@@ -64,7 +64,7 @@ Follow [section 4](../engine-maintenance.md#4-updating-an-engine), then:
   - the plan's `source` and `build_recipe`;
   - the catalog `engine_version`, `rule_version` and `provenance.engine`.
 
-  The workflow `version` (`3.97.0`) must match `trufflehog --version`.
+  The workflow `version` (`3.99.2`) must match `trufflehog --version`.
 - **CLI.** Re-check that `filesystem`, `--json`, `--no-verification`, `--no-verification-cache`, `--no-update` and `--concurrency` still exist. Confirm that `--no-verification` still stops before any verify path; otherwise a scan could contact credential providers.
 - **Output shape.** Re-check `DetectorName`, `DetectorType` and `SourceMetadata.Data.Filesystem.{file,line}`, that file names are still joined onto `/workspace`, and that the JSON printer still has no severity field (`pkg/output/json.go`).
 - **Mapping.** `mappings/control-mappings.json` maps the `trufflehog:` prefix. `engine_rule_identifiers_have_the_shape_their_engine_actually_emits` in `src-tauri/src/adapters/control_mapping.rs` requires every TruffleHog entry to start with it.
@@ -73,18 +73,22 @@ Follow [section 4](../engine-maintenance.md#4-updating-an-engine), then:
   - The fixture `src-tauri/tests/fixtures/adapters/trufflehog.jsonl` must keep at least two records.
   - `secret_fields_are_never_selected_by_helpers` in `src-tauri/src/adapters/mod.rs`, and the launcher test `TestTruffleHogIsFilesystemOnlyAndCannotVerify`.
   - The workflow smoke scans `testdata/`, which holds only a README, and checks that each line parses. It proves the image runs, not that a detector fires.
-- **Hard-coded values.** `3.97.0-3` appears in:
+- **Hard-coded values.** `3.99.2-1` appears in:
   - the workflow matrix, catalog `image.tag` and plan `final_artifact.tag`;
   - the Dockerfile version label;
   - `scripts/validate-engine-catalog.mjs`, `scripts/release/verify-publication-artifact.mjs` and `tests/release/verifyPublicationArtifact.test.mjs`.
 
-  Find them with `grep -rn "3.97.0-3" --exclude-dir=node_modules --exclude-dir=target --exclude-dir=.git --exclude-dir=.upstreams --exclude-dir=.engine-cache`. `support_until` is 2026-11-22.
+  Find them with `grep -rn "3.99.2-1" --exclude-dir=node_modules --exclude-dir=target --exclude-dir=.git --exclude-dir=.upstreams --exclude-dir=.engine-cache`. `support_until` is 2027-01-06.
 - **Compare with raw output.** Compare without printing the secret fields:
   - `jq -c '{d: .DetectorName, f: .SourceMetadata.Data.Filesystem.file, l: .SourceMetadata.Data.Filesystem.line}' trufflehog.jsonl | sort | uniq -c`.
   - Each distinct row should be one finding: lines with the same detector, file and line merge into one finding with several evidence entries.
   - Never paste `Raw`, `RawV2`, `Redacted` or `ExtraData` into an issue or a commit.
-- **Publishing.** The plan at the publishing commit 2641850 binds `3.97.0-2`, and the launcher has changed since, so the next build needs a new tag.
+- **Publishing.** The current `3.99.2-1` publication binds the recorded inputs at `c989e75e1c3be7e7abad3395dcf5539cf2a96832` in [this run](https://github.com/TED-H-com/ai-security-scanner/actions/runs/38696246466). Existing-tag reuse requires verified provenance and matching executable inputs. Any changed image input requires a new immutable tag.
 
 ## 2026-10-14 source update
 
-The replacement recipe targets `3.99.2-1` at upstream commit `e76dff8a7e57d6df0c60ad8cbf5d5cba505a8fc9`. The catalog still names the previously published image until replacement publication is verified. See the [batch update record](updates/2026-10-14.md) for changed inputs, retained rules and verification.
+The replacement recipe targets `3.99.2-1` at upstream commit `e76dff8a7e57d6df0c60ad8cbf5d5cba505a8fc9`. The replacement is now published and pinned in the current catalog; the verified publication is recorded below. See the [batch update record](updates/2026-10-14.md) for changed inputs, retained rules and verification.
+
+## 2026-10-15 verified publication
+
+[Publication run](https://github.com/TED-H-com/ai-security-scanner/actions/runs/38696246466) binds both platform images to `c989e75e1c3be7e7abad3395dcf5539cf2a96832`. Five source/SBOM attestations, four SBOMs, checksums and anonymous index, version tag, platform manifest and config bytes were independently verified before catalog activation. See the [batch verification record](updates/2026-10-14.md#verified-publication-and-catalog-activation) for native execution results and the remaining scope limits.
