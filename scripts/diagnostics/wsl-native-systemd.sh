@@ -36,3 +36,4 @@ chmod 755 /usr/local/bin/enterns
 install -d -m 755 /etc/containers/containers.conf.d
 printf '[engine]\ncgroup_manager="systemd"\n' > /etc/containers/containers.conf.d/99-ai-security-scanner-systemd.conf
 printf 'Native systemd configuration installed in the product-owned guest.\n'
+exit 0
