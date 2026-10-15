@@ -942,36 +942,41 @@ async function sbomRecord(root, filename, format, predicateType, platformDigest)
   };
 }
 
-function runSyft(image, digest, outputRoot, prefix) {
+async function runSyft(image, digest, outputRoot, prefix) {
   const user = typeof process.getuid === "function" ? `${process.getuid()}:${process.getgid()}` : "0:0";
-  execFileSync(
-    "docker",
-    [
-      "run",
-      "--rm",
-      "--pull",
-      "always",
-      "--user",
-      user,
-      "--env",
-      "SYFT_CHECK_FOR_APP_UPDATE=false",
-      "--env",
-      "SYFT_CACHE_DIR=/tmp/syft-cache",
-      "--env",
-      "XDG_CACHE_HOME=/tmp/xdg-cache",
-      "--tmpfs",
-      "/tmp:rw,nosuid,nodev,mode=1777",
-      "--volume",
-      `${outputRoot}:/evidence`,
-      SYFT.image,
-      `registry:${image}@${digest}`,
-      "-o",
-      `spdx-json=/evidence/${prefix}.spdx.json`,
-      "-o",
-      `cyclonedx-json=/evidence/${prefix}.cyclonedx.json`,
-    ],
-    { stdio: "inherit" },
-  );
+  const scratch = await mkdtemp(path.join(outputRoot, ".syft-tmp-"));
+  try {
+    execFileSync(
+      "docker",
+      [
+        "run",
+        "--rm",
+        "--pull",
+        "always",
+        "--user",
+        user,
+        "--env",
+        "SYFT_CHECK_FOR_APP_UPDATE=false",
+        "--env",
+        "SYFT_CACHE_DIR=/tmp/syft-cache",
+        "--env",
+        "XDG_CACHE_HOME=/tmp/xdg-cache",
+        "--volume",
+        `${scratch}:/tmp`,
+        "--volume",
+        `${outputRoot}:/evidence`,
+        SYFT.image,
+        `registry:${image}@${digest}`,
+        "-o",
+        `spdx-json=/evidence/${prefix}.spdx.json`,
+        "-o",
+        `cyclonedx-json=/evidence/${prefix}.cyclonedx.json`,
+      ],
+      { stdio: "inherit" },
+    );
+  } finally {
+    await rm(scratch, { recursive: true, force: true });
+  }
 }
 
 async function createPreparedEvidence({ engine, image, tag, indexDigest, sourceRevision, outputRoot, platformDigests, runSyftScan }) {
@@ -993,7 +998,7 @@ async function createPreparedEvidence({ engine, image, tag, indexDigest, sourceR
     const digest = platformDigests.get(platform);
     digestHex(digest);
     const prefix = `${engine}-linux-${platformKey(platform)}`;
-    if (runSyftScan) runSyftScan(image, digest, outputRoot, prefix);
+    if (runSyftScan) await runSyftScan(image, digest, outputRoot, prefix);
     const spdxFile = path.join(outputRoot, `${prefix}.spdx.json`);
     const cycloneDxFile = path.join(outputRoot, `${prefix}.cyclonedx.json`);
     const transformation = await normalizeGatewayScratchCycloneDxFile({
