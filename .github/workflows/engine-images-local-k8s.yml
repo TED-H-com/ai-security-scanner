@@ -309,6 +309,7 @@ jobs:
           docker run --platform linux/amd64 --rm \
             --read-only --network none --cap-drop ALL \
             --security-opt no-new-privileges:true \
+            --user "$(id -u):$(id -g)" \
             --mount "type=bind,src=${scratch_root}/version,dst=/tmp" \
             --entrypoint "/usr/local/bin/${ENGINE}" \
             "${IMAGE}@${DIGEST}" ${VERSION_ARGS} 2>&1 | grep -F "${EXPECTED_VERSION}"

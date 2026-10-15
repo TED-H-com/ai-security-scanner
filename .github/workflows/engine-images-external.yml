@@ -140,6 +140,7 @@ jobs:
           docker logout ghcr.io
           docker buildx imagetools inspect "${IMAGE}@${DIGEST}"
           docker run --platform linux/amd64 --rm \
+            --user "$(id -u):$(id -g)" \
             --mount "type=bind,src=${scratch},dst=/tmp" \
             --entrypoint "/usr/local/bin/${{ matrix.engine }}" \
             "${IMAGE}@${DIGEST}" -version 2>&1 | grep -F "${EXPECTED_VERSION}"
