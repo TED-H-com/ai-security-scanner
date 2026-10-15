@@ -18,8 +18,8 @@ import (
 const (
 	databaseVersion = "14.19.0"
 	databaseDigest  = "sha256:84264ef41853178707bccb091f5450c22e835f8a98f9961592c75690321093d9"
-	fdwVersion      = "2.2.5"
-	fdwDigest       = "sha256:62b654db44ca6f7f6894e8f53e5dcad9530d356253273ebf05f92109d5ca7457"
+	fdwVersion      = "2.2.7"
+	fdwDigest       = "sha256:28756ddfef21169f73e94129cabd51ef15ef81a266eaee8b302f5ec7cc1d8f4b"
 	maxTreeBytes    = int64(512 * 1024 * 1024)
 )
 
@@ -101,9 +101,9 @@ func run(arguments []string) error {
 	}
 	metadata := provenance{
 		SchemaVersion:     "1.0.0",
-		SteampipeRevision: "71fa72fc9ce33897bcb0bd0c9ebf09b867b881cf",
-		AWSPluginRevision: "6e79b2dece502bc198310b39bd54bc95d2842c99",
-		FDWRevision:       "6d1d957d1330582b7af34064eaa9f8fa196d2918",
+		SteampipeRevision: "5c62651887b3e1d127049722e7216b915d4b075d",
+		AWSPluginRevision: "d9a877878061013a49799c17b932616ee0ea415b",
+		FDWRevision:       "290169e3e104eca604e9013159423027f6477d21",
 		DatabaseDigest:    databaseDigest,
 		FDWDigest:         fdwDigest,
 		AWSPluginSHA256:   pluginDigest,
@@ -140,7 +140,7 @@ func verifyDownloadedVersions(root string) error {
 		versions.EmbeddedDB.InstalledFrom != "ghcr.io/turbot/steampipe/db:14.19.0" ||
 		versions.FdwExtension.Version != fdwVersion ||
 		versions.FdwExtension.ImageDigest != fdwDigest ||
-		versions.FdwExtension.InstalledFrom != "ghcr.io/turbot/steampipe/fdw:2.2.5" {
+		versions.FdwExtension.InstalledFrom != "ghcr.io/turbot/steampipe/fdw:2.2.7" {
 		return errors.New("downloaded database or FDW provenance is not the exact release closure")
 	}
 	return nil
@@ -227,7 +227,7 @@ func writeStableVersions(root string, epoch time.Time) error {
 	versions := databaseVersions{
 		FdwExtension: installedVersion{
 			Name: "fdwExtension", Version: fdwVersion, ImageDigest: fdwDigest,
-			InstalledFrom:   "ghcr.io/turbot/steampipe/fdw:2.2.5",
+			InstalledFrom:   "ghcr.io/turbot/steampipe/fdw:2.2.7",
 			LastCheckedDate: timestamp, InstallDate: timestamp,
 		},
 		EmbeddedDB: installedVersion{

@@ -1,13 +1,13 @@
-FROM anchore/syft@sha256:678bfa565b60f747aac0f8e964fe5588a24445b8d0a480e91f6efd70020dfbb0
+FROM anchore/syft@sha256:3eb5379ba7b409c3f4069b686110527af0c47df993fa5c10d13e7cf34f49b1aa
 
 LABEL org.opencontainers.image.title="ai-security-scanner managed Syft"
 LABEL org.opencontainers.image.description="Offline, non-root Syft runtime for immutable assessment-case repository snapshots"
-LABEL org.opencontainers.image.source="https://github.com/teddashh/ai-security-scanner"
+LABEL org.opencontainers.image.source="https://github.com/TED-H-com/ai-security-scanner"
 LABEL org.opencontainers.image.licenses="Apache-2.0"
-LABEL org.opencontainers.image.version="1.51.0-1"
+LABEL org.opencontainers.image.version="1.54.1-1"
 LABEL ai.security-scanner.upstream.repository="https://github.com/anchore/syft"
-LABEL ai.security-scanner.upstream.revision="2293641e3bd628a01bb37639318d62c0ebe89b39"
-LABEL ai.security-scanner.upstream.image="anchore/syft@sha256:678bfa565b60f747aac0f8e964fe5588a24445b8d0a480e91f6efd70020dfbb0"
+LABEL ai.security-scanner.upstream.revision="b254e6d92f28c3868a755f62fb3ca8f26e9fee76"
+LABEL ai.security-scanner.upstream.image="anchore/syft@sha256:3eb5379ba7b409c3f4069b686110527af0c47df993fa5c10d13e7cf34f49b1aa"
 
 ENV HOME="/tmp/ai-security-scanner-home" \
     XDG_CACHE_HOME="/tmp/ai-security-scanner-cache" \

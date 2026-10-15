@@ -1,17 +1,17 @@
 # Trivy package-vulnerability database notice
 
 The managed image embeds Trivy DB schema 2 from the immutable OCI manifest
-`ghcr.io/aquasecurity/trivy-db@sha256:a61aa42edc534843230ca24ef72ef322a2da18d717c3de4b6277f4aac43926a1`.
+`ghcr.io/aquasecurity/trivy-db@sha256:52132f8ca6e26a5ebbc4d758a9b2f20c9537725635f185f9c19b0600f45fe3c1`.
 Its database layer is
-`sha256:8cf3aaad2dde16ff1529445dab19c2e2a9adc457dbe8d2b02fdbce06b0f638dc`
-and reports `UpdatedAt` `2026-08-24T06:55:32.451220873Z`.
+`sha256:330b31ecc8312e6f0a8eec86c328234acf84c43954846139522fb36df85b5ea6`
+and reports `UpdatedAt` `2026-10-15T01:13:01.189995254Z`.
 
 The image also embeds Trivy Java DB schema 1 from the immutable OCI manifest
-`ghcr.io/aquasecurity/trivy-java-db@sha256:0a8596207372125cf30d5625d2ecbd05a5656d6b4463a455d85fac2c84778829`.
+`ghcr.io/aquasecurity/trivy-java-db@sha256:e578af6b1e7db314ec2d3714ba522af8e9cd59c1a4349b7d6f54d86b2b8125b0`.
 Its `application/vnd.aquasec.trivy.javadb.layer.v1.tar+gzip` layer is
-`sha256:9077545235eeea3da457263c10255e7d1bf0a748f21f4f9ef5e49135c79a4de4`,
+`sha256:33244241111425d2f4ae10daf1de961edd47673265862d7abac688a60948301c`,
 contains only `trivy-java.db` and `metadata.json`, and reports `UpdatedAt`
-`2026-09-09T01:11:59.619689416Z`. This separate index lets upstream Trivy
+`2026-10-15T00:58:48.745137381Z`. This separate index lets upstream Trivy
 resolve otherwise unidentified JAR contents; vulnerability matching still uses
 the standard database above.
 

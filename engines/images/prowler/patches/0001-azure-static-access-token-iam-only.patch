@@ -354,7 +354,7 @@ diff --git a/prowler/providers/common/provider.py b/prowler/providers/common/pro
 index 2e81bad12100ca73fdd3c936bb6ee4e895c490b1..c023408269ba6e1866b39acb1b8ab128c3979a42 100644
 --- a/prowler/providers/common/provider.py
 +++ b/prowler/providers/common/provider.py
-@@ -404,9 +404,12 @@ class Provider(ABC):
+@@ -406,9 +406,12 @@ class Provider(ABC):
                          sp_env_auth=arguments.sp_env_auth,
                          browser_auth=arguments.browser_auth,
                          managed_identity_auth=arguments.managed_identity_auth,

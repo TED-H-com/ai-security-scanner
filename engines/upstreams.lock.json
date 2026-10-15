@@ -72,7 +72,7 @@
       "path": ".upstreams/anchore/grype",
       "remote": "https://github.com/anchore/grype",
       "branch": "main",
-      "revision": "ab6707d1d575c9183f6292de275f6b4aaced924e",
+      "revision": "6f8d854af29d3a3086b11a84afa51554a2a245fe",
       "shallow": true
     },
     {
@@ -80,7 +80,7 @@
       "path": ".upstreams/anchore/syft",
       "remote": "https://github.com/anchore/syft",
       "branch": "main",
-      "revision": "bf82010f3c38508e30dd01ed8053f158513c0c9d",
+      "revision": "b254e6d92f28c3868a755f62fb3ca8f26e9fee76",
       "shallow": true
     },
     {
@@ -104,7 +104,7 @@
       "path": ".upstreams/aquasecurity/trivy",
       "remote": "https://github.com/aquasecurity/trivy",
       "branch": "main",
-      "revision": "dc3c56eed58ab21c7e08d26757c517bc946a86c5",
+      "revision": "531360e5d2a88e732373f1614ba99a38738538b8",
       "shallow": true
     },
     {
@@ -112,7 +112,7 @@
       "path": ".upstreams/bridgecrewio/checkov",
       "remote": "https://github.com/bridgecrewio/checkov",
       "branch": "main",
-      "revision": "03d5fdad8d6154b1565799a7b1fb8070c158866f",
+      "revision": "e40023ab262c7c8b7b0a8f0975072b42d1b601f9",
       "shallow": true
     },
     {
@@ -264,7 +264,7 @@
       "path": ".upstreams/kubescape/kubescape",
       "remote": "https://github.com/kubescape/kubescape",
       "branch": "master",
-      "revision": "fdd64f4358c66d66165397175c7c498104fa237a",
+      "revision": "d0ea07bcd9d7ab1640dcd6527d0e68a34f10da0e",
       "shallow": true
     },
     {
@@ -320,7 +320,7 @@
       "path": ".upstreams/projectdiscovery/httpx",
       "remote": "https://github.com/projectdiscovery/httpx",
       "branch": "dev",
-      "revision": "50b901aeec5736a785f2ad155d998eeca67a42f3",
+      "revision": "4b6a9a9d476f94a4f3a630f37051f5671ecfb1f8",
       "shallow": true
     },
     {
@@ -360,7 +360,7 @@
       "path": ".upstreams/prowler-cloud/prowler",
       "remote": "https://github.com/prowler-cloud/prowler",
       "branch": "master",
-      "revision": "e3a3acc799c5a1612f24ed88d41bfa2d0c0a4c49",
+      "revision": "499fd637f3393b485833b08cdaf4172917c5698e",
       "shallow": true
     },
     {
@@ -376,7 +376,7 @@
       "path": ".upstreams/semgrep/semgrep",
       "remote": "https://github.com/semgrep/semgrep",
       "branch": "develop",
-      "revision": "a0c13f304151e531c7e7c00838076211a07a790c",
+      "revision": "72d3525fe7e02f486428386078f192f8c4756804",
       "shallow": true
     },
     {
@@ -424,7 +424,7 @@
       "path": ".upstreams/trufflesecurity/trufflehog",
       "remote": "https://github.com/trufflesecurity/trufflehog",
       "branch": "main",
-      "revision": "3ab759fef4bb5935d4fe9ac68b503d05346b8364",
+      "revision": "e76dff8a7e57d6df0c60ad8cbf5d5cba505a8fc9",
       "shallow": true
     },
     {
@@ -448,7 +448,7 @@
       "path": ".upstreams/turbot/steampipe",
       "remote": "https://github.com/turbot/steampipe",
       "branch": "develop",
-      "revision": "d897d7c3dba88ba6b5078f25022f41610036ba03",
+      "revision": "5c62651887b3e1d127049722e7216b915d4b075d",
       "shallow": true
     },
     {

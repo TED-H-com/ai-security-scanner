@@ -51,7 +51,7 @@ def payload(archive: tarfile.TarFile) -> dict:
 
 
 def verify(image: str, environment: dict | None = None) -> dict:
-    if not re.fullmatch(r"(?:ghcr\.io/teddashh/ai-security-scanner-engine-semgrep@)?sha256:[0-9a-f]{64}", image):
+    if not re.fullmatch(r"(?:ghcr\.io/(?:teddashh|ted-h-com)/ai-security-scanner-engine-semgrep@)?sha256:[0-9a-f]{64}", image):
         raise ValueError("filesystem verification requires an exact Semgrep image digest")
     container = f"aiss-semgrep-payload-{os.getpid()}"
     subprocess.run(["docker", "create", "--pull", "never", "--name", container, image], env=environment, check=True, stdout=subprocess.DEVNULL)

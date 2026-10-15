@@ -7,7 +7,7 @@ FROM --platform=$BUILDPLATFORM golang:1.25.10-alpine@sha256:8d22e29d960bc50cd025
 ARG TARGETOS
 ARG TARGETARCH
 
-ENV GOMAXPROCS=4 CGO_ENABLED=0 GOTOOLCHAIN=local SOURCE_DATE_EPOCH=1787250577
+ENV GOMAXPROCS=4 CGO_ENABLED=0 GOTOOLCHAIN=local SOURCE_DATE_EPOCH=1792004586
 WORKDIR /src/launcher
 COPY engines/images/local-launcher/go.mod engines/images/local-launcher/main.go engines/images/local-launcher/main_test.go ./
 RUN go test ./... && GOOS=${TARGETOS} GOARCH=${TARGETARCH} go build \
@@ -21,7 +21,7 @@ ENV OPAMYES=1 \
     OPAMROOT=/root/.opam \
     PIP_DISABLE_PIP_VERSION_CHECK=1 \
     PYTHONDONTWRITEBYTECODE=1 \
-    SOURCE_DATE_EPOCH=1787250577 \
+    SOURCE_DATE_EPOCH=1792004586 \
     UV_LINK_MODE=copy
 
 RUN apk add --no-cache \
@@ -50,27 +50,13 @@ RUN apk add --no-cache \
     zstd-static=1.5.7-r2
 
 COPY --from=uv /uv /usr/local/bin/uv
-FROM toolchain AS rule-inputs
-COPY engines/images/semgrep/submodules.lock /tmp/full-submodules.lock
-RUN python3 -c 'from pathlib import Path; lines=[line for line in Path("/tmp/full-submodules.lock").read_text().splitlines() if line and not line.startswith("#")]; assert len(lines)==36; compiler=[line for line in lines if not line.startswith("tests/semgrep-rules|")]; assert len(compiler)==35; Path("/tmp/compiler-submodules.lock").write_text("\n".join(compiler)+"\n")'
-
 FROM toolchain AS compiler-source
-ADD --checksum=sha256:7c5c5fe27b3b65ba1ac77f121c5d3df4398a1c06ab3d7e39fdef8884ca8494b5 \
-    https://github.com/semgrep/semgrep/archive/a0c13f304151e531c7e7c00838076211a07a790c.tar.gz \
+ADD --checksum=sha256:be58ce9c2b00934cb5907f09483c6848b3777006154c30f62b1d0db624ce4f3e \
+    https://github.com/semgrep/semgrep/archive/72d3525fe7e02f486428386078f192f8c4756804.tar.gz \
     /tmp/semgrep-source.tar.gz
 
 RUN mkdir -p /src/semgrep \
     && tar -xzf /tmp/semgrep-source.tar.gz --strip-components=1 -C /src/semgrep
-
-COPY --from=rule-inputs /tmp/compiler-submodules.lock /tmp/compiler-submodules.lock
-COPY .engine-cache/offline/semgrep-submodules/languages__*.tar.gz .engine-cache/offline/semgrep-submodules/libs__*.tar.gz /tmp/semgrep-submodules/
-RUN set -eu; while IFS='|' read -r path repository revision digest size archive; do \
-      test "$(stat -c '%s' "/tmp/semgrep-submodules/${archive}")" = "${size}"; \
-      echo "${digest#sha256:}  /tmp/semgrep-submodules/${archive}" | sha256sum -c -; \
-      rm -rf "/src/semgrep/${path}"; \
-      mkdir -p "/src/semgrep/${path}"; \
-      tar -xzf "/tmp/semgrep-submodules/${archive}" --strip-components=1 -C "/src/semgrep/${path}"; \
-    done < /tmp/compiler-submodules.lock
 
 FROM toolchain AS rule-pack
 COPY engines/images/semgrep/submodules.lock /tmp/semgrep-submodules.lock
@@ -99,11 +85,11 @@ RUN test "${TARGETARCH}" = "amd64" -o "${TARGETARCH}" = "arm64" \
     && make opam-init OPAM_INIT_FLAGS=--disable-sandboxing
 RUN make switch
 RUN make install-deps
-RUN DUNE_JOBS=4 SEMGREP_GIT_COMMIT=a0c13f304151e531c7e7c00838076211a07a790c opam exec -- make core \
+RUN DUNE_JOBS=4 SEMGREP_GIT_COMMIT=72d3525fe7e02f486428386078f192f8c4756804 opam exec -- make core \
     && install -D -m 0555 _build/default/src/main/Main.exe cli/src/semgrep/bin/semgrep-core \
     && cd cli \
     && UV_PROJECT_ENVIRONMENT=/opt/semgrep uv sync --frozen --no-dev --no-editable --python /usr/bin/python3 \
-    && /opt/semgrep/bin/semgrep --version | grep -Fx '1.174.0'
+    && /opt/semgrep/bin/semgrep --version | grep -Fx '1.181.0'
 
 FROM build AS smoke
 COPY --from=rule-pack /tmp/semgrep-rule-pack /tmp/semgrep-rule-pack
@@ -122,8 +108,8 @@ FROM alpine:3.23@sha256:fd791d74b68913cbb027c6546007b3f0d3bc45125f797758156952bc
 LABEL org.opencontainers.image.title="ai-security-scanner Semgrep engine" \
       org.opencontainers.image.description="Semgrep CE with pinned legacy upstream and product offline rules" \
       org.opencontainers.image.source="https://github.com/semgrep/semgrep" \
-      org.opencontainers.image.revision="a0c13f304151e531c7e7c00838076211a07a790c" \
-      org.opencontainers.image.version="1.174.0-4" \
+      org.opencontainers.image.revision="72d3525fe7e02f486428386078f192f8c4756804" \
+      org.opencontainers.image.version="1.181.0-1" \
       org.opencontainers.image.licenses="LGPL-2.1-or-later AND LicenseRef-Commons-Clause-1.0 AND Apache-2.0" \
       io.ai-security-scanner.rules-revision="0f5a85ceab1b82b193d0eaa418784c932d237d68" \
       io.ai-security-scanner.rules-count="1497" \
@@ -162,7 +148,7 @@ RUN ln -s /opt/semgrep/bin/semgrep /usr/local/bin/semgrep \
     && find /opt/ai-security-scanner/semgrep/rules -type d -exec chmod 0555 {} + \
     && find /opt/ai-security-scanner/semgrep/rules -type f -exec chmod 0444 {} + \
     && chmod 0444 /opt/ai-security-scanner/semgrep/RULES.sha256 \
-    && /usr/local/bin/semgrep --version | grep -Fx '1.174.0'
+    && /usr/local/bin/semgrep --version | grep -Fx '1.181.0'
 
 ENV HOME="/tmp/ai-security-scanner-home" \
     SEMGREP_ENABLE_VERSION_CHECK="0" \

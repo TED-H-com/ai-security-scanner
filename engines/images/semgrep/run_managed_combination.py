@@ -121,15 +121,17 @@ def verify(archive: Path, output: Path, image_tag: str = IMAGE, expected_version
         raise ValueError("candidate image and local pack disagree")
     source_attachment = verify_source(image, output, pack, environment)
     payload_receipt = verify_image_payload(image, environment)
-    base = ["nice", "-n", "10", "docker", "run", "--rm", "--pull", "never", "--platform", f"linux/{architecture}", "--network", "none", "--read-only", "--user", f"{os.getuid()}:{os.getgid()}", "--cap-drop", "ALL", "--security-opt", "no-new-privileges", "--cpus", "2", "--memory", "2g", "--pids-limit", "256", "--ulimit", "fsize=536870912:536870912", "--tmpfs", "/tmp:rw,nosuid,nodev,noexec,mode=1777,size=512m", "--mount", f"type=bind,source={HERE / 'testdata/combination-review'},target=/workspace,readonly"]
+    base = ["nice", "-n", "10", "docker", "run", "--rm", "--pull", "never", "--platform", f"linux/{architecture}", "--network", "none", "--read-only", "--user", f"{os.getuid()}:{os.getgid()}", "--cap-drop", "ALL", "--security-opt", "no-new-privileges", "--cpus", "2", "--memory", "2g", "--pids-limit", "256", "--ulimit", "fsize=536870912:536870912", "--mount", f"type=bind,source={HERE / 'testdata/combination-review'},target=/workspace,readonly"]
     def command(binary, *arguments):
         return ["--entrypoint", binary, image, *arguments]
 
     def run(name, command, mounts=(), success=True, writable_workspace=False):
         directory = output / name
         directory.mkdir()
+        scratch = output / (name + "-tmp")
+        scratch.mkdir()
         container = f"aiss-semgrep-managed-{os.getpid()}-{name}"
-        arguments = base + ["--name", container, "--mount", f"type=bind,source={directory},target=/output"]
+        arguments = base + ["--name", container, "--mount", f"type=bind,source={directory},target=/output", "--mount", f"type=bind,source={scratch},target=/tmp"]
         if writable_workspace:
             index = arguments.index(f"type=bind,source={HERE / 'testdata/combination-review'},target=/workspace,readonly")
             arguments[index] = arguments[index].removesuffix(",readonly")
@@ -139,9 +141,9 @@ def verify(archive: Path, output: Path, image_tag: str = IMAGE, expected_version
         try:
             with (output / (name + ".log")).open("w") as log:
                 result = subprocess.run(arguments, env=environment, stdout=log, stderr=log, timeout=600)
-        except subprocess.TimeoutExpired:
-            subprocess.run(["docker", "rm", "-f", container], env=environment, check=False)
-            raise
+        finally:
+            subprocess.run(["docker", "rm", "-f", container], env=environment, check=False, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+            shutil.rmtree(scratch)
         if success:
             if result.returncode != 0:
                 raise ValueError(f"{name} failed; inspect preserved log")

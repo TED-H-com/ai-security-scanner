@@ -63,3 +63,7 @@ Follow [section 4](../engine-maintenance.md#4-updating-an-engine), then:
 - **Hard-coded values.** `2.4.5-6` appears in `CLOUD_ENGINE_MATRIX`, catalog `image.tag`, plan `final_artifact.tag` and the Dockerfile version label. `2.4.5` and `1.32.0` also appear in the catalog entry; `14.19.0` in `installprep/main.go`, `plan.json` and `main_test.go`. The demo manifest in `src/data/demo.ts` lists 2.4.5, the catalog `engine_version`. `support_until` is 2026-11-22.
 - **Compare with raw output.** The number of rows in the run's raw `steampipe.json` should equal the `aws_iam_user` observations on the account, each with the row's `arn` as native id.
 - **Publishing.** The next push that touches `engines/images/steampipe/` needs a new tag; see [publishing a changed image](cloud-launcher.md#publishing-a-changed-image).
+
+## 2026-10-14 source update
+
+The replacement recipe targets `2.4.7-1` at upstream commit `5c62651887b3e1d127049722e7216b915d4b075d`. The catalog still names the previously published image until replacement publication is verified. See the [batch update record](updates/2026-10-14.md) for changed inputs, retained rules and verification.

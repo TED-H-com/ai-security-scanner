@@ -6,26 +6,26 @@
   "support_until": "2026-11-22",
   "maintenance_owner": "teddashh/ai-security-scanner maintainers",
   "update_procedure": "docs/engine-maintenance.md",
-  "publish_state": "published_managed_artifact",
+  "publish_state": "publication_in_progress",
   "source": {
     "repository": "https://github.com/aquasecurity/trivy",
-    "revision": "e1fd17a0ea4a8cf24bc4b4dd7e2cfbf4bb31b994",
-    "acquisition_source": "https://github.com/aquasecurity/trivy/commit/e1fd17a0ea4a8cf24bc4b4dd7e2cfbf4bb31b994",
+    "revision": "531360e5d2a88e732373f1614ba99a38738538b8",
+    "acquisition_source": "https://github.com/aquasecurity/trivy/commit/531360e5d2a88e732373f1614ba99a38738538b8",
     "local_research_checkout": ".upstreams/aquasecurity/trivy"
   },
   "verified_upstream_artifact": null,
   "final_artifact": {
-    "repository": "ghcr.io/teddashh/ai-security-scanner-engine-trivy",
-    "tag": "0.74.0-4",
-    "digest": "sha256:9bfcef9a6a9d9a69eefcece06b0670eaed72541656b65155469b41acb3855dc2"
+    "repository": "ghcr.io/ted-h-com/ai-security-scanner-engine-trivy",
+    "tag": "0.76.0-1",
+    "digest": null
   },
   "build_recipe": {
-    "source_revision": "e1fd17a0ea4a8cf24bc4b4dd7e2cfbf4bb31b994",
+    "source_revision": "531360e5d2a88e732373f1614ba99a38738538b8",
     "source_archive": {
-      "url": "https://github.com/aquasecurity/trivy/archive/e1fd17a0ea4a8cf24bc4b4dd7e2cfbf4bb31b994.tar.gz",
-      "sha256": "sha256:285594b257470eb444fd2836be95a835565ee600382320c977b3993d8efbb767"
+      "url": "https://github.com/aquasecurity/trivy/archive/531360e5d2a88e732373f1614ba99a38738538b8.tar.gz",
+      "sha256": "sha256:2800c0c0991830fa2236817f77448e657cbabc77acf04a71cd4d0afcea66d6c0"
     },
-    "source_date_epoch": 1786703098,
+    "source_date_epoch": 1791974941,
     "target_platforms": [
       "linux/amd64",
       "linux/arm64"
@@ -38,11 +38,8 @@
     "base_images": [
       {
         "repository": "golang",
-        "tag": "1.26.3-alpine",
-        "digest": "sha256:91eda9776261207ea25fd06b5b7fed8d397dd2c0a283e77f2ab6e91bfa71079d",
-        "uses": [
-          "build"
-        ]
+        "tag": "1.27.2-alpine",
+        "digest": "sha256:f92b6ef800e499660581efdabdf25d9d817a9d124eaf900924f0504e7e27e12d"
       }
     ],
     "static_steps": [
@@ -57,34 +54,34 @@
   "offline_data": {
     "standard_vulnerability_database": {
       "repository": "ghcr.io/aquasecurity/trivy-db",
-      "manifest": "sha256:a61aa42edc534843230ca24ef72ef322a2da18d717c3de4b6277f4aac43926a1",
-      "layer": "sha256:8cf3aaad2dde16ff1529445dab19c2e2a9adc457dbe8d2b02fdbce06b0f638dc",
-      "updated_at": "2026-08-24T06:55:32.451220873Z"
+      "manifest": "sha256:52132f8ca6e26a5ebbc4d758a9b2f20c9537725635f185f9c19b0600f45fe3c1",
+      "layer": "sha256:330b31ecc8312e6f0a8eec86c328234acf84c43954846139522fb36df85b5ea6",
+      "updated_at": "2026-10-15T01:13:01.189995254Z"
     },
     "java_index_database": {
       "repository": "ghcr.io/aquasecurity/trivy-java-db",
-      "manifest": "sha256:0a8596207372125cf30d5625d2ecbd05a5656d6b4463a455d85fac2c84778829",
-      "layer": "sha256:9077545235eeea3da457263c10255e7d1bf0a748f21f4f9ef5e49135c79a4de4",
+      "manifest": "sha256:e578af6b1e7db314ec2d3714ba522af8e9cd59c1a4349b7d6f54d86b2b8125b0",
+      "layer": "sha256:33244241111425d2f4ae10daf1de961edd47673265862d7abac688a60948301c",
       "layer_media_type": "application/vnd.aquasec.trivy.javadb.layer.v1.tar+gzip",
-      "layer_size": 963142179,
-      "updated_at": "2026-09-09T01:11:59.619689416Z",
+      "layer_size": 983567002,
+      "updated_at": "2026-10-15T00:58:48.745137381Z",
       "files": {
-        "trivy-java.db": "sha256:7eaa54234967d2dc36f5c60d51c614bdd40997ddadcd13b3815eb8baeb7dc5cb",
-        "metadata.json": "sha256:856f573fa061b68555b24a06cdd24ab99f9d6a0cd3129a10a620236ffa507d58"
+        "trivy-java.db": "sha256:c26ec91db03a11014dfa45909d2b5275c0e34c2dee276363bc0c9693375acc25",
+        "metadata.json": "sha256:486b01dacad2d0f5dc28006fef82f501249f8be922e2f6f037a61152b567f24d"
       }
     }
   },
   "dockerfile": {
     "emitted": true,
     "path": "engines/images/trivy/Dockerfile",
-    "sha256": "sha256:af317a52fd35995b93dd03a14cd2b3babdf05750b8b99c99e88bf3fe8962ef0d",
+    "sha256": "sha256:12b1bcf3d93b94c68f37d4b134f0321f636267c899a9078e3137e1115a8d4271",
     "reason": null
   },
   "wrapper": {
     "required": true,
     "strategy": "Invoke the pinned source build with its non-overlapping filesystem lockfile and rootfs individual-package analyzer profiles for repository and IaC working trees, plus an OS-package profile for single-image OCI layouts; checksum-verified standard vulnerability and Java index databases are embedded while every update path remains disabled.",
     "entrypoint": "/usr/local/bin/ai-security-scanner-engine-entrypoint",
-    "launcher_sha256": "sha256:ddd5775990c5ecff62a356a5480e4dd88afe9521e2f00ee94c03cedcc9592794"
+    "launcher_sha256": "sha256:3bb1f2f6d0e20f53ec2d1f8dd79f17cb9a8db235f6bb337a646e6f13fef196b3"
   },
   "analysis_profile": {
     "scanner": "vulnerability",
@@ -144,7 +141,13 @@
     "updates": false,
     "telemetry": false
   },
-  "publication": {
+  "publication": null,
+  "previous_artifact": {
+    "repository": "ghcr.io/teddashh/ai-security-scanner-engine-trivy",
+    "tag": "0.74.0-4",
+    "digest": "sha256:9bfcef9a6a9d9a69eefcece06b0670eaed72541656b65155469b41acb3855dc2"
+  },
+  "previous_publication": {
     "workflow_run": "https://github.com/teddashh/ai-security-scanner/actions/runs/35273577688",
     "source_revision": "9ee5257d269b2aaf9dc28d1eed470ed9e9c933f3",
     "platforms": [
@@ -158,5 +161,41 @@
     "anonymous_pull_verified": true,
     "evidence_artifact": "trivy-image-evidence-35273577688-2",
     "managed_smoke_evidence_sha256": "sha256:e20fa96fd9c8a856a21f9c01a7115ea8de7209686ca1d90f958f1e54e06939f0"
+  },
+  "upstream_update": {
+    "engine_version": "0.76.0",
+    "reported_version": null,
+    "source_revision": "531360e5d2a88e732373f1614ba99a38738538b8",
+    "rule_version": "531360e5d2a88e732373f1614ba99a38738538b8",
+    "knowledge_date": "2026-10-15",
+    "support_until": "2027-01-13",
+    "engine_provenance": {
+      "version": "0.76.0",
+      "source_repository": "https://github.com/aquasecurity/trivy",
+      "source_revision": "531360e5d2a88e732373f1614ba99a38738538b8",
+      "source_ref": "v0.76.0",
+      "acquisition_source": "https://github.com/aquasecurity/trivy/commit/531360e5d2a88e732373f1614ba99a38738538b8",
+      "artifact_source_revision": null,
+      "source_association": "source_build_required"
+    },
+    "rules_provenance": {
+      "mode": "embedded",
+      "identifier": "Trivy OS and library package analyzers",
+      "revision": "531360e5d2a88e732373f1614ba99a38738538b8",
+      "acquisition_source": "https://github.com/aquasecurity/trivy/commit/531360e5d2a88e732373f1614ba99a38738538b8"
+    },
+    "data_provenance": {
+      "mode": "embedded",
+      "identifier": "Trivy vulnerability database snapshot",
+      "revision": "sha256:52132f8ca6e26a5ebbc4d758a9b2f20c9537725635f185f9c19b0600f45fe3c1",
+      "acquisition_source": "oci://ghcr.io/aquasecurity/trivy-db"
+    },
+    "knowledge_input": {
+      "kind": "embedded",
+      "identifier": "Trivy vulnerability database snapshot",
+      "version": "sha256:52132f8ca6e26a5ebbc4d758a9b2f20c9537725635f185f9c19b0600f45fe3c1",
+      "acquisition_source": "oci://ghcr.io/aquasecurity/trivy-db",
+      "pin_state": "pinned_or_not_applicable"
+    }
   }
 }

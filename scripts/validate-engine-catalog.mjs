@@ -7,7 +7,7 @@ import { parse as parseYaml } from "yaml";
 
 import { PUBLICATION_ORIGINS, publicationOrigin, publicationRunId } from "./publication-origins.mjs";
 import { validateProwlerCatalogContract } from "./prowler-catalog-contract.mjs";
-import { isPendingImageReplacement } from "./engine-image-replacement.mjs";
+import { isPendingImageReplacement, pendingUpstreamBuild } from "./engine-image-replacement.mjs";
 
 const root = resolve(import.meta.dirname, "..");
 const catalogPath = resolve(root, "engines/catalog.json");
@@ -22,7 +22,7 @@ const managedCloudIds = new Set([
 ]);
 const managedExternalContracts = new Map([
   ["naabu", { tag: "2.6.1-7" }],
-  ["httpx", { tag: "1.10.0-7" }],
+  ["httpx", { tag: "1.12.0-1" }],
   ["nuclei", { tag: "3.11.1-7" }],
 ]);
 const managedExternalIds = new Set(managedExternalContracts.keys());
@@ -137,7 +137,7 @@ const managedLocalK8sContracts = new Map([
     ],
   }],
   ["semgrep", {
-    tag: "1.174.0-4",
+    tag: "1.181.0-1",
     planKind: "managed_build",
     license: { disposition: "source_offer", sourceOfferPath: "engines/images/semgrep/SOURCE-OFFER.md" },
     immutableDockerfileInputs: [
@@ -252,7 +252,7 @@ const managedLocalK8sContracts = new Map([
     ],
   }],
   ["trufflehog", {
-    tag: "3.97.0-3",
+    tag: "3.99.2-1",
     planKind: "managed_build",
     license: { disposition: "source_offer", sourceOfferPath: "engines/images/trufflehog/SOURCE-OFFER.md" },
     immutableDockerfileInputs: [
@@ -262,31 +262,31 @@ const managedLocalK8sContracts = new Map([
     ],
   }],
   ["trivy", {
-    tag: "0.74.0-4",
+    tag: "0.76.0-1",
     planKind: "managed_build",
     license: { disposition: "allow", sourceOfferPath: null },
     immutableLauncherInputs: [
       'outputPath:  "/output/trivy-individual-packages.json"',
       '"rootfs", "--cache-dir", "/opt/ai-security-scanner/trivy-cache"',
       'verifyFile("/opt/ai-security-scanner/trivy-cache/java-db/trivy-java.db", trivyJavaDBSHA256, maxImmutableBytes)',
-      'trivyJavaDBSHA256           = "7eaa54234967d2dc36f5c60d51c614bdd40997ddadcd13b3815eb8baeb7dc5cb"',
-      'trivyJavaMetadataSHA256     = "856f573fa061b68555b24a06cdd24ab99f9d6a0cd3129a10a620236ffa507d58"',
+      'trivyJavaDBSHA256           = "c26ec91db03a11014dfa45909d2b5275c0e34c2dee276363bc0c9693375acc25"',
+      'trivyJavaMetadataSHA256     = "486b01dacad2d0f5dc28006fef82f501249f8be922e2f6f037a61152b567f24d"',
     ],
     immutableDockerfileInputs: [
       "go mod verify",
       "go build -mod=readonly",
       "COPY .engine-cache/offline/trivy/db.tar.gz /tmp/trivy-db.tar.gz",
       "COPY .engine-cache/offline/trivy/java-db.tar.gz /tmp/trivy-java-db.tar.gz",
-      "9077545235eeea3da457263c10255e7d1bf0a748f21f4f9ef5e49135c79a4de4  /tmp/trivy-java-db.tar.gz",
-      "7eaa54234967d2dc36f5c60d51c614bdd40997ddadcd13b3815eb8baeb7dc5cb  /rootfs/opt/ai-security-scanner/trivy-cache/java-db/trivy-java.db",
-      "856f573fa061b68555b24a06cdd24ab99f9d6a0cd3129a10a620236ffa507d58  /rootfs/opt/ai-security-scanner/trivy-cache/java-db/metadata.json",
+      "33244241111425d2f4ae10daf1de961edd47673265862d7abac688a60948301c  /tmp/trivy-java-db.tar.gz",
+      "c26ec91db03a11014dfa45909d2b5275c0e34c2dee276363bc0c9693375acc25  /rootfs/opt/ai-security-scanner/trivy-cache/java-db/trivy-java.db",
+      "486b01dacad2d0f5dc28006fef82f501249f8be922e2f6f037a61152b567f24d  /rootfs/opt/ai-security-scanner/trivy-cache/java-db/metadata.json",
       "COPY engines/images/trivy/DATABASE-NOTICE.md /usr/share/licenses/trivy/DATABASE-NOTICE.md",
-      'io.ai-security-scanner.java-database-manifest="sha256:0a8596207372125cf30d5625d2ecbd05a5656d6b4463a455d85fac2c84778829"',
+      'io.ai-security-scanner.java-database-manifest="sha256:e578af6b1e7db314ec2d3714ba522af8e9cd59c1a4349b7d6f54d86b2b8125b0"',
       'TRIVY_CACHE_DIR="/opt/ai-security-scanner/trivy-cache"',
     ],
   }],
   ["grype", {
-    tag: "0.117.0-4",
+    tag: "0.120.1-1",
     planKind: "managed_build",
     license: { disposition: "allow", sourceOfferPath: null },
     immutableDockerfileInputs: [
@@ -299,7 +299,7 @@ const managedLocalK8sContracts = new Map([
     ],
   }],
   ["kubescape", {
-    tag: "4.0.12-3",
+    tag: "4.0.16-1",
     planKind: "managed_build",
     license: { disposition: "allow", sourceOfferPath: null },
     immutableDockerfileInputs: [
@@ -313,7 +313,7 @@ const managedLocalK8sContracts = new Map([
     ],
   }],
   ["kube-bench", {
-    tag: "0.16.0-4",
+    tag: "0.16.0-5",
     planKind: "managed_build",
     license: { disposition: "allow", sourceOfferPath: null },
     immutableDockerfileInputs: [
@@ -2392,8 +2392,7 @@ function isPendingManagedExternalPublication(plan, engine) {
     engine.provenance?.engine?.source_association === "source_build_required";
 }
 
-function validateManagedExternalImage(plan, planRelative, engine) {
-  const contract = managedExternalContracts.get(engine.id);
+function validateManagedExternalImage(plan, planRelative, engine, contract = managedExternalContracts.get(engine.id)) {
   const expectedRepository = managedRepository(engine, plan);
   if (!contract) {
     errors.push(`${planRelative}: managed external engine has no reviewed artifact contract`);
@@ -2420,15 +2419,16 @@ function validateManagedExternalImage(plan, planRelative, engine) {
     return;
   }
   const dockerfileText = readFileSync(dockerfilePath, "utf8");
-  if (!dockerfileText.includes(`org.opencontainers.image.version="${contract?.tag}"`)) {
-    errors.push(`${planRelative}: managed external Dockerfile OCI version label must equal ${contract?.tag ?? "the fixed release tag"}`);
+  const buildTag = contract.buildTag ?? contract.tag;
+  if (!dockerfileText.includes(`org.opencontainers.image.version="${buildTag}"`)) {
+    errors.push(`${planRelative}: managed external Dockerfile OCI version label must equal ${buildTag}`);
   }
   const externalWorkflowPath = resolve(root, ".github/workflows/engine-images-external.yml");
   const externalWorkflowText = existsSync(externalWorkflowPath)
     ? readFileSync(externalWorkflowPath, "utf8")
     : "";
   const workflowIdentity = new RegExp(
-    `- engine: ${engine.id}\\r?\\n\\s+tag: ${contract?.tag?.replaceAll(".", "\\.") ?? "__missing_tag__"}`,
+    `- engine: ${engine.id}\\r?\\n\\s+tag: ${buildTag.replaceAll(".", "\\.")}`,
   );
   if (!workflowIdentity.test(externalWorkflowText)) {
     errors.push(`${planRelative}: external publication workflow tag does not match ${contract?.tag ?? "the fixed contract"}`);
@@ -2713,7 +2713,7 @@ if (new Set(catalogIds).size !== catalogIds.length) errors.push("catalog engine 
 const managedEvidence = validateManagedImageEvidence(catalog);
 
 const lockedRepositories = new Map((upstreamLock?.repositories ?? []).map((entry) => [entry.remote.replace(/\.git$/, ""), entry]));
-for (const engine of Array.isArray(catalog) ? catalog : []) {
+for (let engine of Array.isArray(catalog) ? catalog : []) {
   const label = `catalog:${engine.id}`;
   validateStaticCommand(engine);
   const launcherJournalVersion = engine.execution?.launcher_journal_version;
@@ -2887,6 +2887,17 @@ for (const engine of Array.isArray(catalog) ? catalog : []) {
   }
   const plan = parseJson(planPath);
   if (!plan) continue;
+  let pendingUpstreamUpdate = false;
+  try {
+    const buildEngine = pendingUpstreamBuild(plan, engine);
+    if (buildEngine) {
+      pendingUpstreamUpdate = true;
+      engine = buildEngine;
+    }
+  } catch (error) {
+    errors.push(`${planRelative}: ${error.message}`);
+    continue;
+  }
   const pendingGreenbonePublication = isPendingGreenbonePublication(plan, engine);
   const replacementContract = managedLocalK8sContracts.get(engine.id);
   const pendingImageReplacement = isPendingImageReplacement(plan, engine, replacementContract);
@@ -2948,7 +2959,10 @@ for (const engine of Array.isArray(catalog) ? catalog : []) {
       }
     }
   }
-  if (pendingGreenbonePublication) {
+  if (pendingUpstreamUpdate) {
+    validateImage(plan.previous_artifact, `${planRelative}.previous_artifact`);
+    validateTag(plan.final_artifact.tag, `${planRelative}.final_artifact.tag`);
+  } else if (pendingGreenbonePublication) {
     const pending = plan.final_artifact;
     if (!pending || pending.repository !== expectedManagedRepository ||
         pending.tag !== managedGreenboneContract.tag || pending.digest !== null ||
@@ -2975,7 +2989,32 @@ for (const engine of Array.isArray(catalog) ? catalog : []) {
     errors.push(`${planRelative}: unpublished managed artifact must have null tag/digest and explicit publish state`);
   }
   const localK8sContract = managedLocalK8sContracts.get(engine.id);
-  if (engine.id === "mcp-armor") {
+  if (pendingUpstreamUpdate) {
+    // Publication checks refer only to the retained image. Recipe checks use
+    // candidate source metadata and the new tag, without making it runnable.
+    const retainedPlan = {
+      ...plan, publish_state: "published_managed_artifact",
+      final_artifact: plan.previous_artifact, publication: plan.previous_publication,
+    };
+    if (localK8sContract) {
+      validatePublishedLocalK8sImage(retainedPlan, planRelative, engine, {
+        ...localK8sContract, tag: plan.previous_artifact.tag, buildTag: plan.final_artifact.tag,
+      });
+    } else if (managedExternalIds.has(engine.id)) {
+      validateManagedExternalImage(retainedPlan, planRelative, engine, {
+        ...managedExternalContracts.get(engine.id), tag: plan.previous_artifact.tag,
+        buildTag: plan.final_artifact.tag,
+      });
+    } else if (managedCloudIds.has(engine.id)) {
+      validateCloudManagedImage(retainedPlan, planRelative, engine);
+    } else if (plan.plan_kind === "managed_rebase") {
+      validateManagedRebase(retainedPlan, planRelative, engine);
+    } else if (plan.plan_kind === "managed_source_image") {
+      validateManagedSourceImage(retainedPlan, planRelative, engine);
+    } else {
+      errors.push(`${planRelative}: unsupported upstream replacement kind`);
+    }
+  } else if (engine.id === "mcp-armor") {
     validateMcpArmorImage(plan, planRelative, engine);
   } else if (engine.id === "agentic-radar") {
     validateAgenticRadarImage(plan, planRelative, engine);

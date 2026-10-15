@@ -15,8 +15,8 @@ import (
 
 const (
 	expectedSourcePath = "/src/httpx/runner/runner.go"
-	expectedSourceSHA  = "748502c7633140c7395d73d3b7d91eaa2efa324a5567cfc7b7a57485a1f9a641"
-	expectedPatchedSHA = "6e8c7c8e59f6f7e574af0ff3b87cf3cd74e8e9d814618108dedeb9620fdbab95"
+	expectedSourceSHA  = "649a47aac12f176000b3ea26fb62e1a395e30d6009fd2bee3fb5285b9943daa2"
+	expectedPatchedSHA = "712382a9145071c020ee4f75ac71218e8bb9687dbab5980a813a1e59a00b6cfe"
 	maximumSourceBytes = 4 * 1024 * 1024
 )
 

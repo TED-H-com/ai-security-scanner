@@ -15,12 +15,12 @@ permissions:
   attestations: write
 
 concurrency:
-  group: engine-image-syft-1.51.0-1
+  group: engine-image-syft-1.54.1-1
   cancel-in-progress: false
 
 env:
   IMAGE: ghcr.io/ted-h-com/ai-security-scanner-engine-syft
-  IMAGE_TAG: 1.51.0-1
+  IMAGE_TAG: 1.54.1-1
 
 jobs:
   publish:

@@ -1,16 +1,16 @@
 # Grype vulnerability database notice
 
-The managed image embeds Anchore Grype DB schema `v6.1.9`, built
-`2026-08-24T06:22:13Z`, from the checksum-pinned archive
-`vulnerability-db_v6.1.9_2026-08-24T00:17:18Z_1787552533.tar.zst`.
+The managed image embeds Anchore Grype DB schema `v6.1.10`, built
+`2026-10-14T06:30:34Z`, from the checksum-pinned archive
+`vulnerability-db_v6.1.10_2026-10-14T00:28:57Z_1791959434.tar.zst`.
 The archive digest is
-`sha256:20a7315860b2d07231103a73bedec01de31e7a7f3d590aedfc61709dc9e117f9`
+`sha256:30d8bcd3c09e03c9f734c522e104c1387e285e3f6e33da2ee7b55f521daadb3f`
 and the extracted SQLite database digest is
-`sha256:db6f590412955f6b58cec12bfa4b712b2626eef9a030bffd8f32b9ebce074ff8`.
+`sha256:8be8779b1b6fd721e6127c092bd25d5875e25cd511def5d9e7d026fb45189058`.
 The required Grype import metadata records the independently calculated
-`xxh64:a30ef08fe392f331` database digest, client schema `v6.1.9`, and fixed
+`xxh64:8f0947c104495800` database digest, client schema `v6.1.10`, and fixed
 archive URL; its SHA-256 is
-`sha256:b1382ad7455d20f5af33ac4a9dacb2376d35321c353f078bdafe69a533661afc`.
+`sha256:34f988049676aadd83f95bfe9b42f82a2a4a75cfc7c17004e079234d8aad126c`.
 
 Grype is Apache-2.0. The database aggregates upstream advisory providers whose
 attribution and use conditions remain applicable. The scanner records the

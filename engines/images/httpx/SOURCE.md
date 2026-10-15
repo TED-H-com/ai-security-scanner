@@ -1,15 +1,15 @@
 # httpx source record
 
 This image is built from the upstream httpx source at commit
-`13037dd08b9715cfbd960a70ae1edfef6686a857` (release `v1.10.0`).
+`4b6a9a9d476f94a4f3a630f37051f5671ecfb1f8` (release `v1.12.0`).
 
 - Repository: <https://github.com/projectdiscovery/httpx>
-- Source archive: <https://github.com/projectdiscovery/httpx/archive/13037dd08b9715cfbd960a70ae1edfef6686a857.tar.gz>
-- Source archive SHA-256: `94ae90ef3a2551bbc81c0814bd157387ab9c9bda54d1f5e38aaa708b95570946`
-- `go.sum` SHA-256: `97ea2eed27767ae6d1e31b4d56b1e2c9a69235cdc76f89cdb79c199e621029b5`
+- Source archive: <https://github.com/projectdiscovery/httpx/archive/4b6a9a9d476f94a4f3a630f37051f5671ecfb1f8.tar.gz>
+- Source archive SHA-256: `f018fc96c4194aa008f1e305fcdc2bb8ecd5f08d7722ab012077cd3a9ec6a84d`
+- `go.sum` SHA-256: `84a4350a4313776cd832d1d052ddcfb60d132af17ce43da8f3193a99212ddf0e`
 - Reviewed managed-image source helper: `patch_live_dns.go`
-- `runner/runner.go` before helper SHA-256: `748502c7633140c7395d73d3b7d91eaa2efa324a5567cfc7b7a57485a1f9a641`
-- `runner/runner.go` after helper SHA-256: `6e8c7c8e59f6f7e574af0ff3b87cf3cd74e8e9d814618108dedeb9620fdbab95`
+- `runner/runner.go` before helper SHA-256: `649a47aac12f176000b3ea26fb62e1a395e30d6009fd2bee3fb5285b9943daa2`
+- `runner/runner.go` after helper SHA-256: `712382a9145071c020ee4f75ac71218e8bb9687dbab5980a813a1e59a00b6cfe`
 - Licenses: upstream httpx is MIT and the project launcher is Apache-2.0; the
   image carries both license texts below `/usr/share/licenses`.
 

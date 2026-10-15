@@ -6,41 +6,28 @@
   "support_until": "2026-11-22",
   "maintenance_owner": "teddashh/ai-security-scanner maintainers",
   "update_procedure": "docs/engine-maintenance.md",
-  "publish_state": "published_managed_artifact",
+  "publish_state": "publication_in_progress",
   "source": {
     "repository": "https://github.com/projectdiscovery/httpx",
-    "revision": "13037dd08b9715cfbd960a70ae1edfef6686a857",
-    "acquisition_source": "https://github.com/projectdiscovery/httpx/commit/13037dd08b9715cfbd960a70ae1edfef6686a857",
+    "revision": "4b6a9a9d476f94a4f3a630f37051f5671ecfb1f8",
+    "acquisition_source": "https://github.com/projectdiscovery/httpx/commit/4b6a9a9d476f94a4f3a630f37051f5671ecfb1f8",
     "local_research_checkout": ".upstreams/projectdiscovery/httpx"
   },
   "final_artifact": {
-    "repository": "ghcr.io/teddashh/ai-security-scanner-engine-httpx",
-    "tag": "1.10.0-7",
-    "digest": "sha256:6911039efb20370ebd84ed6e57d7d793d5ae7bdff5813c007ac9b2774aaaed1e"
+    "repository": "ghcr.io/ted-h-com/ai-security-scanner-engine-httpx",
+    "tag": "1.12.0-1",
+    "digest": null
   },
-  "publication": {
-    "workflow_run": "https://github.com/teddashh/ai-security-scanner/actions/runs/36783633415",
-    "source_revision": "51b8abfd7abe5accaf0be59b9d50567bd206dfe8",
-    "platforms": [
-      "linux/amd64",
-      "linux/arm64"
-    ],
-    "platform_digests": {
-      "linux/amd64": "sha256:372fa216e87b0a953e64701f6382a81cf62e5b582e74e8f9a56c68798ce16754",
-      "linux/arm64": "sha256:dfbbc9b281bf675c9b26bee1e8d6342ccefac7829989641a425a47cc438e7a74"
-    },
-    "anonymous_pull_verified": true,
-    "evidence_artifact": "httpx-image-evidence-36783633415-1"
-  },
+  "publication": null,
   "build_recipe": {
-    "source_revision": "13037dd08b9715cfbd960a70ae1edfef6686a857",
+    "source_revision": "4b6a9a9d476f94a4f3a630f37051f5671ecfb1f8",
     "source_archive": {
-      "url": "https://github.com/projectdiscovery/httpx/archive/13037dd08b9715cfbd960a70ae1edfef6686a857.tar.gz",
-      "sha256": "sha256:94ae90ef3a2551bbc81c0814bd157387ab9c9bda54d1f5e38aaa708b95570946"
+      "url": "https://github.com/projectdiscovery/httpx/archive/4b6a9a9d476f94a4f3a630f37051f5671ecfb1f8.tar.gz",
+      "sha256": "sha256:f018fc96c4194aa008f1e305fcdc2bb8ecd5f08d7722ab012077cd3a9ec6a84d"
     },
     "dependency_lock": {
       "path": "go.sum",
-      "sha256": "sha256:97ea2eed27767ae6d1e31b4d56b1e2c9a69235cdc76f89cdb79c199e621029b5"
+      "sha256": "sha256:84a4350a4313776cd832d1d052ddcfb60d132af17ce43da8f3193a99212ddf0e"
     },
     "dockerfile_frontend": {
       "repository": "docker/dockerfile",
@@ -54,7 +41,7 @@
         "digest": "sha256:d4c4845f5d60c6a974c6000ce58ae079328d03ab7f721a0734277e69905473e5"
       }
     ],
-    "source_date_epoch": 1783613511,
+    "source_date_epoch": 1788874555,
     "target_platforms": [
       "linux/amd64",
       "linux/arm64"
@@ -63,14 +50,14 @@
       {
         "path": "engines/images/httpx/patch_live_dns.go",
         "reason": "Compiled into the patched httpx source tree during the image build but absent from the plan.",
-        "sha256": "sha256:ae8362e4b399543371b4fa7ed1cd637b09c6865c4d812b9ea42220b0b581a32d"
+        "sha256": "sha256:0a583907a9561fea11b9d35e378c3bb6595ccdc14b43b635d4d3cefc03ac5439"
       }
     ],
     "patch_audit": {
-      "reviewed_on": "2026-10-03",
-      "review_due": "2026-11-01",
-      "applicable_upstream_version": "1.10.0",
-      "applicable_source_revision": "13037dd08b9715cfbd960a70ae1edfef6686a857",
+      "reviewed_on": "2026-10-14",
+      "review_due": "2026-11-14",
+      "applicable_upstream_version": "1.12.0",
+      "applicable_source_revision": "4b6a9a9d476f94a4f3a630f37051f5671ecfb1f8",
       "capability": "Preserve approved Host/TLS SNI through the gateway while preventing a second post-request DNS lookup outside frozen-address authorization.",
       "contribution_status": "not_submitted",
       "contribution_reason": "No contribution has been submitted. The product gateway owns frozen-address resolution; removing DNS enrichment globally would remove upstream output that standalone users expect. An upstream opt-out must separate enrichment from request resolution and needs its own public option and compatibility review.",
@@ -86,13 +73,13 @@
       "patches": [
         {
           "path": "engines/images/httpx/patch_live_dns.go",
-          "sha256": "sha256:ae8362e4b399543371b4fa7ed1cd637b09c6865c4d812b9ea42220b0b581a32d",
+          "sha256": "sha256:0a583907a9561fea11b9d35e378c3bb6595ccdc14b43b635d4d3cefc03ac5439",
           "files": [
             {
               "path": "runner/runner.go",
-              "before_sha256": "sha256:748502c7633140c7395d73d3b7d91eaa2efa324a5567cfc7b7a57485a1f9a641",
-              "after_sha256": "sha256:6e8c7c8e59f6f7e574af0ff3b87cf3cd74e8e9d814618108dedeb9620fdbab95",
-              "upstream_source": "https://github.com/projectdiscovery/httpx/blob/13037dd08b9715cfbd960a70ae1edfef6686a857/runner/runner.go"
+              "before_sha256": "sha256:649a47aac12f176000b3ea26fb62e1a395e30d6009fd2bee3fb5285b9943daa2",
+              "after_sha256": "sha256:712382a9145071c020ee4f75ac71218e8bb9687dbab5980a813a1e59a00b6cfe",
+              "upstream_source": "https://github.com/projectdiscovery/httpx/blob/4b6a9a9d476f94a4f3a630f37051f5671ecfb1f8/runner/runner.go"
             }
           ]
         }
@@ -102,7 +89,7 @@
   "dockerfile": {
     "emitted": true,
     "path": "engines/images/httpx/Dockerfile",
-    "sha256": "sha256:86ea6874a3164a1ce8eb5fc78bd86bff97b6ac4c9456d4f19a5bf259775bb2a6"
+    "sha256": "sha256:4f96e4bcb8f0c0fffc70b358921814002f92f46a4d35042a5a9077051d50eb1f"
   },
   "wrapper": {
     "required": true,
@@ -139,5 +126,60 @@
     "rationale": "MIT upstream code and the Apache-2.0 project launcher permit redistribution with notices.",
     "source_offer_path": null
   },
-  "blockers": []
+  "blockers": [],
+  "previous_artifact": {
+    "repository": "ghcr.io/teddashh/ai-security-scanner-engine-httpx",
+    "tag": "1.10.0-7",
+    "digest": "sha256:6911039efb20370ebd84ed6e57d7d793d5ae7bdff5813c007ac9b2774aaaed1e"
+  },
+  "previous_publication": {
+    "workflow_run": "https://github.com/teddashh/ai-security-scanner/actions/runs/36783633415",
+    "source_revision": "51b8abfd7abe5accaf0be59b9d50567bd206dfe8",
+    "platforms": [
+      "linux/amd64",
+      "linux/arm64"
+    ],
+    "platform_digests": {
+      "linux/amd64": "sha256:372fa216e87b0a953e64701f6382a81cf62e5b582e74e8f9a56c68798ce16754",
+      "linux/arm64": "sha256:dfbbc9b281bf675c9b26bee1e8d6342ccefac7829989641a425a47cc438e7a74"
+    },
+    "anonymous_pull_verified": true,
+    "evidence_artifact": "httpx-image-evidence-36783633415-1"
+  },
+  "upstream_update": {
+    "engine_version": "1.12.0",
+    "reported_version": null,
+    "source_revision": "4b6a9a9d476f94a4f3a630f37051f5671ecfb1f8",
+    "rule_version": null,
+    "knowledge_date": "2026-09-08",
+    "support_until": "2026-12-07",
+    "engine_provenance": {
+      "version": "1.12.0",
+      "source_repository": "https://github.com/projectdiscovery/httpx",
+      "source_revision": "4b6a9a9d476f94a4f3a630f37051f5671ecfb1f8",
+      "source_ref": "v1.12.0",
+      "acquisition_source": "https://github.com/projectdiscovery/httpx/commit/4b6a9a9d476f94a4f3a630f37051f5671ecfb1f8",
+      "artifact_source_revision": null,
+      "source_association": "source_build_required"
+    },
+    "rules_provenance": {
+      "mode": "not_applicable",
+      "identifier": "HTTP metadata collection has no external rule pack",
+      "revision": null,
+      "acquisition_source": null
+    },
+    "data_provenance": {
+      "mode": "runtime_live",
+      "identifier": "authorized HTTP service observations",
+      "revision": null,
+      "acquisition_source": "only services in the case scope grant"
+    },
+    "knowledge_input": {
+      "kind": "runtime_live",
+      "identifier": "authorized HTTP service observations",
+      "version": null,
+      "acquisition_source": "only services in the case scope grant",
+      "pin_state": "runtime_live"
+    }
+  }
 }

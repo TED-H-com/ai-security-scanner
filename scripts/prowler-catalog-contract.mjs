@@ -80,12 +80,12 @@ export const PROWLER_DATA_ACQUISITION = {
 
 export const PROWLER_DOWNSTREAM_RUNTIME_PATCHES = {
   origin: "ai_security_scanner_downstream",
-  base_revision: "40ecbd035e5541bf099917c5033cceb8959c4737",
+  base_revision: "499fd637f3393b485833b08cdaf4172917c5698e",
   application_phase: "image_build",
   test_hunks_installed: false,
   applier: {
     path: "engines/images/prowler/apply-runtime-patches.py",
-    sha256: "sha256:d426548962bf0801eee7bc6b2db36e37daef2445d7157687d591c9b7cff007b5",
+    sha256: "sha256:8f698134a7d8bc2b6cab79f2b322f8fe68ecc1b6b8034caf648638503d794383",
   },
   series: {
     path: "engines/images/prowler/patches/series",
@@ -94,7 +94,7 @@ export const PROWLER_DOWNSTREAM_RUNTIME_PATCHES = {
   patches: [
     {
       path: "engines/images/prowler/patches/0001-azure-static-access-token-iam-only.patch",
-      sha256: "sha256:bf6059a33443e9f1fa459c6360346829170ee56e0775260f8a42f56dcb53c73c",
+      sha256: "sha256:053ef441588b6bff99aef8a568f2617d8933a46449d2f9c2804b796c7a39566a",
       runtime_files: [
         "prowler/providers/azure/azure_provider.py",
         "prowler/providers/azure/lib/arguments/arguments.py",
@@ -154,8 +154,8 @@ export const PROWLER_DOWNSTREAM_RUNTIME_PATCHES = {
     },
     {
       path: "prowler/providers/common/provider.py",
-      pre_sha256: "sha256:cf043f096173ba685f5cb57aff653ded25ec54d58300e7afbaf1fd77841a6a4c",
-      post_sha256: "sha256:4fe43b204884910bfbceac5ebb3e0b2898c9c044b18d241b566cc9a53ae6cf04",
+      pre_sha256: "sha256:1080b11456deb6426307167067a3066ec79c87c7af07bb85dd3c507d6c76a1da",
+      post_sha256: "sha256:bd65d893c106cf47389cd17071f96002e7302706b07ebb17cdca6c10f95f3f27",
     },
     {
       path: "prowler/providers/gcp/gcp_provider.py",

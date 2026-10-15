@@ -909,14 +909,14 @@ const (
 	semgrepRuleFileCount        = 1478
 	semgrepRuleProvenancePath   = "/opt/ai-security-scanner/semgrep/RULE-PROVENANCE.json"
 	semgrepRuleProvenanceSHA256 = "a5f8961abe75a57da4c752f39272baa64ac95ca4181e507c070772c54f5c09bf"
-	trivyDBSHA256               = "e58db9fad4ce26f9ad77f4116f7a3b52527eb3a75718484903d930d110dee431"
-	trivyMetadataSHA256         = "b253a6f5e90d91bf0e0e4b6f07a6f26cb9169155d0af68309728d9d853ded143"
-	trivyJavaDBSHA256           = "7eaa54234967d2dc36f5c60d51c614bdd40997ddadcd13b3815eb8baeb7dc5cb"
-	trivyJavaMetadataSHA256     = "856f573fa061b68555b24a06cdd24ab99f9d6a0cd3129a10a620236ffa507d58"
-	grypeDBSHA256               = "db6f590412955f6b58cec12bfa4b712b2626eef9a030bffd8f32b9ebce074ff8"
-	kubescapeNSASHA256          = "7f7d7bbc6908b9872fd71751dc8d5dd5f543cdd6a684a24d1fb15b686e8344db"
-	kubescapeControlsSHA256     = "df4e2431e8f560961ce56aa06e022caf9b2f82f98752de78df1cd0706b42cf3a"
-	kubescapeExceptionsSHA256   = "bf44e01e6b212c8e8c0ca0686d1bd84488e3f9ce5375cd36511c8faef3a44e7b"
+	trivyDBSHA256               = "1f86b775c8bad1b9fa31f91e6523a8b33ba85f9c8529970aceae32663d21bd10"
+	trivyMetadataSHA256         = "e4bc8c46a8295f01122651e3fa2ee0520ab4a5408241f213374262cae72183ba"
+	trivyJavaDBSHA256           = "c26ec91db03a11014dfa45909d2b5275c0e34c2dee276363bc0c9693375acc25"
+	trivyJavaMetadataSHA256     = "486b01dacad2d0f5dc28006fef82f501249f8be922e2f6f037a61152b567f24d"
+	grypeDBSHA256               = "8be8779b1b6fd721e6127c092bd25d5875e25cd511def5d9e7d026fb45189058"
+	kubescapeNSASHA256          = "80e23ca99be3e5bb0f80d968b32ae27b7dada39f9b12b9e3abffea8680ac7737"
+	kubescapeControlsSHA256     = "6b78fae941db97d00780898da40581168303985e6dae0c74799f2c0a6ff5a8b6"
+	kubescapeExceptionsSHA256   = "d0b662af82db3fd6b2d8a242e1c7a46f47941ac7c298c2525481f817d928ddc3"
 )
 
 // Keep deterministic ordering available to tests without exposing dynamic

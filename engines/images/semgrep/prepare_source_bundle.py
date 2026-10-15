@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Assemble candidate engine source without redistributing whole rule archives.
 
-Run before compilation. The 35 compiler/parser submodules remain intact. The
+Run before compilation. The upstream-vendored compiler/parser sources remain intact. The
 rule gitlink is replaced with the selected original bytes and exact notices.
 Assembly does not change the retained upstream licenses.
 """
@@ -62,7 +62,7 @@ def assemble(engine: Path, pack: Path, inputs: Path, output: Path, epoch: int) -
     shutil.copytree(pack, build_inputs / "rule-pack")
     (build_inputs / "SOURCE-PROFILE.json").write_text(json.dumps({
         "source_profile": "selected-legacy-and-product-rules",
-        "engine_revision": "a0c13f304151e531c7e7c00838076211a07a790c",
+        "engine_revision": "72d3525fe7e02f486428386078f192f8c4756804",
         "rules_gitlink_override": metadata["upstream_revision"],
         "original_upstream_files": len(sources),
         "excluded": metadata["excluded"],

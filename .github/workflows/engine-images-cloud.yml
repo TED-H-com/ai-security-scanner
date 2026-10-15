@@ -30,7 +30,7 @@ concurrency:
 
 env:
   CLOUD_ENGINE_MATRIX: >-
-    [{"engine":"cloudquery","tag":"2.0.31-aws9.2.0-6","dockerfile":"engines/images/cloudquery/Dockerfile"},{"engine":"prowler","tag":"5.39.1-7","dockerfile":"engines/images/prowler/Dockerfile"},{"engine":"cloudsplaining","tag":"0.9.1-6","dockerfile":"engines/images/cloudsplaining/Dockerfile"},{"engine":"scoutsuite","tag":"5.14.0-6","dockerfile":"engines/images/scoutsuite/Dockerfile"},{"engine":"steampipe","tag":"2.4.5-6","dockerfile":"engines/images/steampipe/Dockerfile"}]
+    [{"engine":"cloudquery","tag":"2.0.31-aws9.2.0-6","dockerfile":"engines/images/cloudquery/Dockerfile"},{"engine":"prowler","tag":"5.44.0-1","dockerfile":"engines/images/prowler/Dockerfile"},{"engine":"cloudsplaining","tag":"0.9.1-6","dockerfile":"engines/images/cloudsplaining/Dockerfile"},{"engine":"scoutsuite","tag":"5.14.0-6","dockerfile":"engines/images/scoutsuite/Dockerfile"},{"engine":"steampipe","tag":"2.4.7-1","dockerfile":"engines/images/steampipe/Dockerfile"}]
 
 jobs:
   changes:
@@ -201,7 +201,7 @@ jobs:
               "prowler/lib/outputs/finding.py": "71d5665f11c27a3dc69660ac61b747264066c6791ba65014c50ba80105902749",
               "prowler/providers/azure/azure_provider.py": "51cef0e3e7ed819144959f62389d3eb169b97aa37baf37aab66d4c290d21bf14",
               "prowler/providers/azure/lib/arguments/arguments.py": "afb7c9b47f1b9b2354774579121db4f1c26d6b03112a3d0407fb4f14ad8625af",
-              "prowler/providers/common/provider.py": "4fe43b204884910bfbceac5ebb3e0b2898c9c044b18d241b566cc9a53ae6cf04",
+              "prowler/providers/common/provider.py": "bd65d893c106cf47389cd17071f96002e7302706b07ebb17cdca6c10f95f3f27",
               "prowler/providers/gcp/gcp_provider.py": "c30756aaaa1ce3739c6bf2a023b4ab633656c767f1e6fa1e84ba4ff9fff1c34f",
               "prowler/providers/gcp/services/cloudresourcemanager/cloudresourcemanager_service.py": "379876877311fe2f4aa17bb9d5b132c85baaf2081210aebf6da59472cc11c9fe",
           }

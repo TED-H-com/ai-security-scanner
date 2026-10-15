@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 
 import { promotePublication, publicationPreflight, recordedEngineInputIdentity } from "../../scripts/engine-image-evidence.mjs";
-import { isPendingImageReplacement } from "../../scripts/engine-image-replacement.mjs";
+import { isPendingImageReplacement, pendingUpstreamBuild } from "../../scripts/engine-image-replacement.mjs";
 
 const IMAGE = "ghcr.io/ted-h-com/ai-security-scanner-engine-scubagear";
 const TAG = "1.8.0-6";
@@ -143,6 +143,84 @@ test("replacement history cannot hide executable inputs or alter the new build i
   assert.notDeepEqual(identity, recordedEngineInputIdentity(changed, binding));
   plan.previous_publication.launcher_sha256 = `sha256:${"99".repeat(32)}`;
   assert.throws(() => recordedEngineInputIdentity(plan, binding), /only immutable artifact coordinates/u);
+});
+
+function upstreamFixture() {
+  const { plan, engine } = replacementFixture();
+  engine.image = { ...engine.image };
+  plan.source = { revision: CURRENT_REVISION, repository: "https://github.com/example/scanner" };
+  engine.repository_url = plan.source.repository;
+  engine.engine_version = "1.8.0";
+  engine.source_revision = PUBLISHED_REVISION;
+  engine.compatibility = { runnable: true };
+  engine.runtime = { network: "none" };
+  engine.permissions = { credentials: false };
+  plan.upstream_update = {
+    engine_version: "1.8.0", reported_version: null, source_revision: CURRENT_REVISION,
+    rule_version: CURRENT_REVISION, knowledge_date: "2026-10-14", support_until: "2027-01-12",
+    engine_provenance: {
+      version: "1.8.0", source_repository: "https://github.com/example/scanner",
+      source_revision: CURRENT_REVISION, source_ref: "v1.8.0",
+      acquisition_source: `https://github.com/example/scanner/commit/${CURRENT_REVISION}`,
+      artifact_source_revision: null, source_association: "source_build_required",
+    },
+    rules_provenance: { mode: "bundled", identifier: "source", revision: CURRENT_REVISION, acquisition_source: "source" },
+    data_provenance: { mode: "none", identifier: null, revision: null, acquisition_source: null },
+    knowledge_input: { kind: "source", identifier: "source", version: CURRENT_REVISION, acquisition_source: "source", pin_state: "pinned" },
+  };
+  return { plan, engine };
+}
+
+test("an upstream candidate validates new source while retaining the runnable release", () => {
+  const { plan, engine } = upstreamFixture();
+  const original = structuredClone(engine);
+  const candidate = pendingUpstreamBuild(plan, engine);
+  assert.equal(candidate.source_revision, plan.source.revision);
+  assert.equal(candidate.engine_version, plan.upstream_update.engine_version);
+  assert.deepEqual(candidate.image, engine.image);
+  assert.deepEqual(candidate.runtime, engine.runtime);
+  assert.deepEqual(candidate.permissions, engine.permissions);
+  assert.deepEqual(engine, original);
+  for (const mutate of [
+    (p) => { p.previous_artifact.digest = `sha256:${"99".repeat(32)}`; },
+    (p) => { p.final_artifact.digest = INDEX_DIGEST; },
+    (p) => { p.final_artifact.repository = "ghcr.io/ted-h-com/different-engine"; },
+    (p) => { p.publication = p.previous_publication; },
+    (p) => { p.upstream_update.source_revision = PUBLISHED_REVISION; },
+    (p) => { p.upstream_update.engine_provenance.artifact_source_revision = CURRENT_REVISION; },
+    (p) => { p.upstream_update.reported_version = "0.0.0"; },
+    (p) => { p.upstream_update.engine_provenance.source_repository = "https://github.com/other/scanner"; },
+    (p) => { p.upstream_update.knowledge_date = "2026-02-30"; },
+    (p) => { p.upstream_update.support_until = "2028-01-01"; },
+    (p) => { p.final_artifact.command = "hidden-command"; },
+    (p, e) => { e.compatibility.runnable = false; },
+  ]) {
+    const changed = structuredClone({ plan, engine });
+    mutate(changed.plan, changed.engine);
+    assert.throws(() => pendingUpstreamBuild(changed.plan, changed.engine), /upstream update/u);
+  }
+});
+
+test("candidate catalog metadata cannot conceal build inputs or disturb later tag reuse", () => {
+  const { plan } = upstreamFixture();
+  const binding = { engine: plan.engine_id, image: plan.final_artifact.repository, tag: plan.final_artifact.tag };
+  const identity = recordedEngineInputIdentity(plan, binding);
+  const activated = structuredClone(plan);
+  delete activated.upstream_update;
+  delete activated.previous_artifact;
+  delete activated.previous_publication;
+  assert.deepEqual(identity, recordedEngineInputIdentity(activated, binding));
+  for (const field of ["launcher_sha256", "command", "network_destinations"]) {
+    const changed = structuredClone(plan);
+    changed.upstream_update[field] = "hidden-build-input";
+    assert.throws(() => recordedEngineInputIdentity(changed, binding), /closed catalog identity fields/u);
+  }
+  const changed = structuredClone(plan);
+  changed.upstream_update.data_provenance.download = "https://example.invalid/database";
+  assert.throws(() => recordedEngineInputIdentity(changed, binding), /closed catalog identity fields/u);
+  changed.upstream_update = plan.upstream_update;
+  changed.build_recipe.source_archive.sha256 = `sha256:${"99".repeat(32)}`;
+  assert.notDeepEqual(identity, recordedEngineInputIdentity(changed, binding));
 });
 
 async function withPublicationEnvironment(callback) {

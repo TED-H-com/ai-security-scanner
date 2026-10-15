@@ -1,8 +1,9 @@
 import io
 import tarfile
 import unittest
+from unittest.mock import patch
 
-from verify_image_payload import payload
+from verify_image_payload import payload, verify
 
 
 class ImagePayloadTests(unittest.TestCase):
@@ -30,6 +31,22 @@ class ImagePayloadTests(unittest.TestCase):
     def test_duplicate_archive_members_are_refused(self):
         with self.assertRaisesRegex(ValueError, "repeated"):
             self.receipt(duplicate=True)
+
+    def test_exact_digest_accepts_both_publication_origins_and_refuses_other_images(self):
+        digest = "sha256:" + "a" * 64
+        for reference in (digest, *(f"ghcr.io/{owner}/ai-security-scanner-engine-semgrep@{digest}"
+                                    for owner in ("teddashh", "ted-h-com"))):
+            with patch("verify_image_payload.subprocess.run", side_effect=RuntimeError("docker boundary")) as run:
+                with self.assertRaisesRegex(RuntimeError, "docker boundary"):
+                    verify(reference)
+                self.assertEqual(run.call_args.args[0][-1], reference)
+        for reference in ("ghcr.io/other/ai-security-scanner-engine-semgrep@" + digest,
+                          "ghcr.io/ted-h-com/ai-security-scanner-engine-semgrep:latest",
+                          "ghcr.io/ted-h-com/other-engine@" + digest):
+            with patch("verify_image_payload.subprocess.run") as run:
+                with self.assertRaisesRegex(ValueError, "exact Semgrep image digest"):
+                    verify(reference)
+                run.assert_not_called()
 
 
 if __name__ == "__main__":
