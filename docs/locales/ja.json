@@ -715,5 +715,11 @@
   "Folder": "フォルダー",
   "Read report": "レポートを読む（英語）",
   "Choose Settings → 日本語 in v0.5.1. Your language choice is saved across restarts.": "v0.5.1 では Settings → 日本語 で切り替えられます。選択した言語は再起動後も保存されます。",
-  "Japanese README": "日本語 README"
+  "Japanese README": "日本語 README",
+  "Download v0.5.2 stable release": "安定版 v0.5.2 をダウンロード",
+  "v0.5.2 stable release.": "安定版 v0.5.2。",
+  "New in v0.5.2:": "v0.5.2 の新機能：",
+  "Ten updated scanning engines, refreshed offline vulnerability databases and Kubernetes policies, and fixes for Checkov dependencies and Grype database checks.": "スキャンエンジン 10 個とオフラインの脆弱性データベース・Kubernetes ポリシーを更新し、Checkov の依存関係と Grype のデータベースチェックを修正しました。",
+  "Choose Settings → 日本語 in v0.5.2. Your language choice is saved across restarts.": "v0.5.2 では Settings → 日本語 で切り替えられます。選択した言語は再起動後も保存されます。",
+  "tools in v0.5.2": "v0.5.2 のツール"
 }
