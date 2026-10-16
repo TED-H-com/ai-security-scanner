@@ -245,9 +245,14 @@ jobs:
           --manifest runtime/staged/managed-runtime/manifest.json
           --out target/ci-managed-runtime-evidence
           --platform windows-x86_64
-          --expected-manifest-sha256 c30195e26367a8612d600383e181e232bd9cd87a7e36332cc288aacca6b17833
+          --expected-manifest-sha256 83a4f0106c5c1be17e515db9f86f32d9e43fc4563d85473b400e3df6efe240e3
       - name: Build and stage required Windows sidecars
         run: npm run desktop:prepare-sidecar -- --target x86_64-pc-windows-msvc
+      - name: Admit the complete staged runtime through the built CLI
+        run: >-
+          node scripts/release/verify-runtime-consumer.mjs
+          --cli src-tauri/binaries/ai-security-scanner-cli-x86_64-pc-windows-msvc.exe
+          --bundle runtime/staged/managed-runtime
       - name: Test the installer runtime-cache coordinator and build trust anchor
         run: >-
           cargo test --locked --package ai-security-scanner --no-default-features

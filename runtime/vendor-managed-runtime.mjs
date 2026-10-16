@@ -300,6 +300,9 @@ function validateLock(lock, targetName) {
 function windowsPodmanBuildContract(lock) {
   const build = requireObject(lock.windows_podman_build, 'Windows Podman source build');
   requireText(build.version, 'Windows Podman component version');
+  if (!/^[A-Za-z0-9._-]{1,64}$/.test(build.version)) {
+    throw new Error('Windows Podman component version must use the runtime manifest version vocabulary');
+  }
   const source = approvedUrl(build.source_url, 'Windows Podman source URL');
   if (source.href !== `https://github.com/podman-container-tools/podman/archive/${lock.runtime.source_revision}.tar.gz`) {
     throw new Error('Windows Podman source must bind the exact upstream runtime revision');

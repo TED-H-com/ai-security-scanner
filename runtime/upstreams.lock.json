@@ -206,7 +206,7 @@
     }
   },
   "windows_podman_build": {
-    "version": "5.8.2+wsl-systemd.1",
+    "version": "5.8.2-wsl-systemd.1",
     "source_url": "https://github.com/podman-container-tools/podman/archive/5b263b5f5b48004a87caac44e67349a8266d9ef4.tar.gz",
     "source_sha256": "3a40c78cbf6058a888b92d285ca0df4267d65a4e0aad3074524530d28b2c7179",
     "source_size_bytes": 21311134,
