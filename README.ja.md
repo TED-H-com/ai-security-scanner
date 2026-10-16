@@ -10,7 +10,7 @@
 
 ## 最初のスキャン
 
-1. Windows・macOS・Linux 向けの [v0.5.1 をダウンロード](https://github.com/TED-H-com/ai-security-scanner/releases/tag/v0.5.1)し、[インストール手順（英語）](docs/getting-started.md#install)に従います。スキャンツールはアプリが準備するため、Docker は不要です。
+1. Windows・macOS・Linux 向けの [v0.5.2 をダウンロード](https://github.com/TED-H-com/ai-security-scanner/releases/tag/v0.5.2)し、[インストール手順（英語）](docs/getting-started.md#install)に従います。スキャンツールはアプリが準備するため、Docker は不要です。
 2. **Settings → 日本語** で日本語に切り替えます。**自分の環境をスキャン**、**ウェブサイトをチェック**、**コード・AI プロジェクトをチェック**を選び、フォルダー、URL、社内システムを追加します。
 3. 表示された対象とチェックを確認します。ネットワーク対象をスキャンする権限があることを確認し、アプリ画面でスキャンを開始します。
 4. 終了後に**結果**を開き、**レポートを保存・共有**を選びます。形式を **HTML レポート**にして保存すると、ブラウザーで開けます。
@@ -19,11 +19,20 @@
 
 ## 日本語について
 
-v0.5.1 のインストーラーに日本語 UI が含まれています。**Settings → 日本語** で画面の言語を選べます。選択は再起動後も保存されます。
+v0.5.2 のインストーラーに日本語 UI が含まれています。**Settings → 日本語** で画面の言語を選べます。選択は再起動後も保存されます。
 
 未翻訳の動的な説明や上流ツールの出力は英語で表示される場合があります。日本語の画面から保存する HTML レポートは英語です。レポート本体は現在、英語と繁体字中国語に対応しています。
 
 日本語 UI の初期翻訳は [@kieiken](https://github.com/kieiken) の [PR #69](https://github.com/TED-H-com/ai-security-scanner/pull/69) による貢献です。
+
+## v0.5.2 の更新
+
+- スキャンエンジン 10 個と、オフラインの脆弱性データベース・Kubernetes ポリシーを更新しました。
+- Steampipe の AWS プラグインを更新し、Checkov の依存関係と Grype データベースの容量チェックを修正しました。
+- 新しい WSL で Windows のスキャン環境が起動・継続できるよう修正し、メモリ上限を維持しました。
+- 日本語 UI と既存アプリの更新機能を引き続き利用できます。
+
+[変更点の詳細](docs/release/v0.5.2.ja.md)。
 
 ## v0.5.1 の新機能
 
@@ -169,7 +178,7 @@ v0.4.1 以降の完成済みの更新をまとめ、Linux のビルドと依存�
 - [スキャン範囲（英語）](docs/scanning-scope.md)
 - [結果の読み方・共有（英語）](docs/results-and-exports.md)
 - [開発状況（英語）](docs/development-status.md)
-- [v0.5.1 の変更](docs/release/v0.5.1.ja.md) · [v0.5.0 の変更（英語）](docs/release/v0.5.0.md) · [v0.3.1 の変更（英語）](docs/release/v0.3.1.md)
+- [v0.5.2 の変更](docs/release/v0.5.2.ja.md) · [v0.5.1 の変更](docs/release/v0.5.1.ja.md) · [v0.5.0 の変更（英語）](docs/release/v0.5.0.md) · [v0.3.1 の変更（英語）](docs/release/v0.3.1.md)
 - [貢献方法（英語）](CONTRIBUTING.md) · [貢献者](CONTRIBUTORS.md) · [セキュリティ方針（英語）](SECURITY.md)
 
 ## 開発

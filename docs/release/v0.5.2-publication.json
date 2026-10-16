@@ -1,0 +1,109 @@
+{
+  "schemaVersion": 1,
+  "version": "0.5.2",
+  "publicationMode": "public-github-release",
+  "published": true,
+  "releaseChannel": "stable",
+  "sourceCommit": "7af85506691028b3e52d2c3c0cb2a5af0d092b3c",
+  "release": {
+    "id": 414437425,
+    "url": "https://github.com/TED-H-com/ai-security-scanner/releases/tag/v0.5.2",
+    "publishedAt": "2026-10-16T01:29:43Z",
+    "prerelease": false,
+    "latest": true
+  },
+  "candidateRun": {
+    "id": 38828427832,
+    "attempt": 1,
+    "url": "https://github.com/TED-H-com/ai-security-scanner/actions/runs/38828427832",
+    "conclusion": "success"
+  },
+  "promotionRun": {
+    "id": 38834571528,
+    "attempt": 1,
+    "url": "https://github.com/TED-H-com/ai-security-scanner/actions/runs/38834571528",
+    "conclusion": "success"
+  },
+  "frozenArtifact": {
+    "id": 12018677409,
+    "name": "release-finalized-38834571528-1",
+    "bytes": 555450155,
+    "sha256": "2332031052d77cfdc69c421ef1aadf6ea8a804987ace6bc1cde402b9cde41d57"
+  },
+  "verification": {
+    "publishedFilesMatched": 49,
+    "anonymousDownload": true,
+    "publicProvenanceSubjectsVerified": 49,
+    "sourceBoundProvenance": true,
+    "legacyUpdaterRedirects": "passed",
+    "updaterSignatures": "passed",
+    "sourceCiRun": 38828407274,
+    "sourceCodeqlRun": 38828407119,
+    "sourceFrontendPassed": 943,
+    "windowsRuntimeRelatedTestsPassed": 194,
+    "ciContractsPassed": 102,
+    "releaseEvidencePassed": 221,
+    "localWebsiteViews": 6,
+    "websiteTestsPassed": 7,
+    "productDocumentContractsPassed": 17,
+    "windowsRuntimeManifestSha256": "83a4f0106c5c1be17e515db9f86f32d9e43fc4563d85473b400e3df6efe240e3"
+  },
+  "installers": [
+    {
+      "platform": "linux-x86_64",
+      "installerType": "deb",
+      "file": "ai-security-scanner_0.5.2_amd64.deb",
+      "bytes": 82013374,
+      "sha256": "d9f4bafb5a17b4a4d704f03b3ee1abca39d71d862132371c7cea7a9fee619d8c",
+      "knownLimitations": [
+        "beginner-human-path-not-observed",
+        "operating-system-signing-not-configured",
+        "updater-not-offered-for-this-artifact"
+      ],
+      "technicalQualification": "passed"
+    },
+    {
+      "platform": "macos-universal",
+      "installerType": "dmg",
+      "file": "ai-security-scanner_0.5.2_universal.dmg",
+      "bytes": 123479693,
+      "sha256": "595bf1bf9bb9cfd9160af67ca3b8699bedb370ac7098c9b9d128cb8a1ff6dc1a",
+      "knownLimitations": [
+        "beginner-human-path-not-observed",
+        "operating-system-signing-not-configured",
+        "apple-notarization-not-configured",
+        "managed-runtime-not-observed-on-qualification-host"
+      ],
+      "technicalQualification": "installer-passed-runtime-not-observed"
+    },
+    {
+      "platform": "windows-x86_64",
+      "installerType": "msi",
+      "file": "ai-security-scanner_0.5.2_x64_en-US.msi",
+      "bytes": 44900352,
+      "sha256": "968a8b4f44cb826e6e8ee03709a024cc745ade5d72e4b8f2184a866c976298d1",
+      "knownLimitations": [
+        "beginner-human-path-not-observed",
+        "operating-system-signing-not-configured",
+        "windows-lifecycle-not-observed",
+        "windows-data-preservation-not-observed",
+        "updater-not-offered-for-this-artifact"
+      ],
+      "technicalQualification": "passed"
+    },
+    {
+      "platform": "windows-x86_64",
+      "installerType": "nsis",
+      "file": "ai-security-scanner_0.5.2_x64-setup.exe",
+      "bytes": 31881858,
+      "sha256": "ea3f4c865daa8ad07f51c6a862e19eb79c1b316cdf2cef5ce8c7ce5b9803e340",
+      "knownLimitations": [
+        "beginner-human-path-not-observed",
+        "operating-system-signing-not-configured",
+        "windows-lifecycle-not-observed",
+        "windows-data-preservation-not-observed"
+      ],
+      "technicalQualification": "passed"
+    }
+  ]
+}
