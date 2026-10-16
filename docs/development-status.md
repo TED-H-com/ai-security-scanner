@@ -2,7 +2,7 @@
 
 [繁體中文](development-status.zh-TW.md) · [Documentation](README.md)
 
-_Updated 2026-10-12._
+_Updated 2026-10-16._
 
 This page summarizes current engineering status for contributors. It is not a product specification
 or release declaration. [The product specification](product-spec.md) remains the source of truth for
@@ -10,7 +10,7 @@ product behavior, and the [current product review](product-audit.md) tracks the 
 
 ## At a glance
 
-- [v0.5.1 Japanese support](release/v0.5.1.md) is the current stable/latest release for Windows, macOS and Linux. It packages the Japanese UI, README and website, including follow-up onboarding translations. Public bytes, updater signatures, source CI and CodeQL passed; exact evidence and platform limitations are in the release record.
+- [v0.5.2 upstream engine updates](release/v0.5.2.md) is the current stable/latest release for Windows, macOS and Linux. It updates ten engines and offline data and repairs bounded Windows runtime execution on recent WSL. Public bytes, updater signatures, source provenance, exact-source CI and CodeQL passed; installer observations and limitations are in the release record.
 
 - The earlier stable release, [v0.4.1](release/v0.4.1.md), retains its original installer and updater observations.
 - The released desktop includes Prowler failure headlines, approved AWS report grouping, reconnect-and-rescan, blocked-scan continuations, Semgrep `1.174.0-4`, and explicit kube-bench/KICS incomplete-coverage handling.

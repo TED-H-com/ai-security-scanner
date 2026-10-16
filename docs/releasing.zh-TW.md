@@ -6,11 +6,11 @@
 
 ## 目前發布版本
 
-[v0.5.1](https://github.com/TED-H-com/ai-security-scanner/releases/tag/v0.5.1) 是目前的 **stable／latest** 桌面版本，於 2026-10-12 發布，涵蓋 **Linux、macOS、Windows**，新增日文介面。[候選 38280286730](https://github.com/teddashh/ai-security-scanner/actions/runs/38280286730) 建置精確來源 `0405fecbf3435d16da176fc5be2ab14fcb4c962f`；[發布流程 38286089269](https://github.com/teddashh/ai-security-scanner/actions/runs/38286089269) 經正常 `release-publication` 核准後直接發布凍結檔案。全部 49 個公開檔案均符合凍結檢查碼，來源證明與更新簽章也驗證通過。見[交付紀錄](release/v0.5.1.zh-TW.md)。
+[v0.5.2](https://github.com/TED-H-com/ai-security-scanner/releases/tag/v0.5.2) 是目前的 **stable／latest** 桌面版本，於 2026-10-16 發布，涵蓋 **Linux、macOS、Windows**，更新十個掃描引擎與離線資料，並修正新版 WSL 上的 Windows 受限執行環境。[候選 38828427832](https://github.com/TED-H-com/ai-security-scanner/actions/runs/38828427832) 建置精確來源 `7af85506691028b3e52d2c3c0cb2a5af0d092b3c`；[發布流程 38834571528](https://github.com/TED-H-com/ai-security-scanner/actions/runs/38834571528) 經正常 `release-publication` 核准後直接發布凍結檔案。全部 49 個公開檔案均符合凍結檢查碼，來源證明、更新簽章與舊更新網址轉址也驗證通過。見[交付紀錄](release/v0.5.2.zh-TW.md)。
 
-GitHub 記錄 `prerelease: false`；metadata 記錄 `releaseChannel: stable`、`stableTarget: 0.5.1`。macOS 與 Windows NSIS 有更新目標，Debian 與 MSI 沒有。Windows 安裝檔未簽章，macOS 未公證；Windows 生命週期／資料保留與精確候選新手真人操作仍未觀察，macOS qualification 主機也未觀察 managed runtime 執行。不提供 AppImage 與 RPM。
+GitHub 記錄 `prerelease: false`；metadata 記錄 `releaseChannel: stable`、`stableTarget: 0.5.2`。macOS 與 Windows NSIS 有更新目標，Debian 與 MSI 沒有。Windows 安裝檔未簽章，macOS 未公證；Windows 已安裝程式生命週期、升級／資料保留與精確候選新手真人操作仍未觀察，macOS qualification 主機也未觀察 managed runtime 執行。不提供 AppImage 與 RPM。
 
-前一個正式版 [v0.5.0](release/v0.5.0.zh-TW.md) 與更早版本保留原始檔案及觀察。
+前一個正式版 [v0.5.1](release/v0.5.1.zh-TW.md) 與更早版本保留原始檔案及觀察。
 
 ## 版本身分
 

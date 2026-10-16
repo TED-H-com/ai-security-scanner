@@ -2,11 +2,11 @@
 
 [English](development-status.md) · [文件](README.zh-TW.md)
 
-更新：2026-10-12。[產品規格](product-spec.md)定義現行產品行為；本頁記錄工程現況與已觀察的限制。
+更新：2026-10-16。[產品規格](product-spec.md)定義現行產品行為；本頁記錄工程現況與已觀察的限制。
 
 ## 現況
 
-- [v0.5.1 日文支援](release/v0.5.1.zh-TW.md)已發布為目前 stable／latest，提供 Windows、macOS 與 Linux 安裝版。納入日文介面、README、網站與初次使用流程補譯；公開檔案、更新簽章、精確來源 CI 及 CodeQL 均驗證通過，平台觀察與限制見發布紀錄。
+- [v0.5.2 上游引擎更新](release/v0.5.2.zh-TW.md)已發布為目前 stable／latest，提供 Windows、macOS 與 Linux 安裝版。更新十個引擎與離線資料，並修正新版 WSL 的 Windows 受限執行環境；公開檔案、更新簽章、來源證明、精確來源 CI 及 CodeQL 均驗證通過，平台觀察與限制見發布紀錄。
 
 - 先前的 [v0.4.1 正式版](release/v0.4.1.zh-TW.md)保留原始安裝檔、更新目標與平台觀察紀錄。
 - 程式包含可選的 ZAP、Agentic Radar 與 Garak；並保留 Prowler 實際失敗標題、核准的 AWS 發現合併、重新連接再掃描、受阻的繼續操作修正、Semgrep `1.174.0-4` 合併規則包，以及 kube-bench／KICS 的未完成涵蓋範圍揭露。
