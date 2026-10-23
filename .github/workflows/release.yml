@@ -559,7 +559,7 @@ jobs:
           node-version: 24.15.0
 
       - name: Download the independently built platform artifact
-        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
           name: desktop-installers-${{ matrix.platform }}
           path: release-input
@@ -662,7 +662,7 @@ jobs:
           node-version: 24.15.0
 
       - name: Download the independently built Windows artifacts
-        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
           name: desktop-installers-windows-x86_64
           path: release-input
@@ -754,20 +754,20 @@ jobs:
         run: npm ci --ignore-scripts
 
       - name: Download supply-chain evidence
-        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
           name: release-supply-chain
           path: assembled-input
 
       - name: Download every platform artifact that finished successfully
-        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
           pattern: desktop-installers-*
           path: assembled-input
           merge-multiple: true
 
       - name: Download every artifact qualification that finished successfully
-        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
           pattern: platform-qualification-*
           path: assembled-input
@@ -775,7 +775,7 @@ jobs:
 
       - name: Optionally download requested Windows data-preservation fixtures
         continue-on-error: true
-        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
           pattern: windows-nsis-supporting-data-preservation-*
           path: assembled-input
