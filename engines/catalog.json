@@ -1291,14 +1291,14 @@
     "license_spdx": "Apache-2.0 AND MIT",
     "distribution_mode": "pull_pinned_image",
     "image": {
-      "repository": "ghcr.io/teddashh/ai-security-scanner-engine-nuclei",
-      "tag": "3.11.1-7",
-      "digest": "sha256:c0d9709528f9d900ccf7e676de3e19456865aaa9788828adb29e19bd55204520",
-      "signature_identity": null
+      "repository": "ghcr.io/ted-h-com/ai-security-scanner-engine-nuclei",
+      "tag": "3.11.1-8",
+      "digest": "sha256:3be62445b89694e1253788390953d20da62c2897d987af30f861fdf7371de898",
+      "signature_identity": "https://github.com/TED-H-com/ai-security-scanner/.github/workflows/engine-images-external.yml@refs/heads/main"
     },
     "source_revision": "a8c88feb4a1c8e961b7902534ce3af97e9d524a4",
     "engine_version": "3.11.1",
-    "rule_version": "24858b4bfabfa86f0bcfd36aea24fb535152b012",
+    "rule_version": "f938a3dd530c283e9387b518b97911152ff5846c",
     "adapter_version": "0.2.6",
     "supported_asset_kinds": [
       "domain",
@@ -1338,7 +1338,7 @@
     ],
     "status": "integrated",
     "notices": [
-      "The pinned automatic profile derives 4,674 eligible templates mechanically from the embedded upstream snapshot; Nuclei technology detection selects the applicable checks.",
+      "The pinned automatic profile derives 4,775 eligible templates mechanically from the embedded upstream snapshot; Nuclei technology detection selects the applicable checks.",
       "Exact-origin targeting, rate limits, and the read-only capability boundary are enforced by the launcher; legacy explicit template selections remain supported.",
       "MIT upstream code/templates and the Apache-2.0 project launcher permit redistribution with notices."
     ],
@@ -1354,14 +1354,14 @@
         "source_revision": "a8c88feb4a1c8e961b7902534ce3af97e9d524a4",
         "source_ref": "v3.11.1",
         "acquisition_source": "https://github.com/projectdiscovery/nuclei/commit/a8c88feb4a1c8e961b7902534ce3af97e9d524a4",
-        "artifact_source_revision": "a8c88feb4a1c8e961b7902534ce3af97e9d524a4",
+        "artifact_source_revision": "46b7d1900fc25ef8ae4e4b568b638c915f28d130",
         "source_association": "attested_match"
       },
       "rules": {
         "mode": "embedded",
         "identifier": "projectdiscovery/nuclei-templates",
-        "revision": "24858b4bfabfa86f0bcfd36aea24fb535152b012",
-        "acquisition_source": "https://github.com/projectdiscovery/nuclei-templates/commit/24858b4bfabfa86f0bcfd36aea24fb535152b012"
+        "revision": "f938a3dd530c283e9387b518b97911152ff5846c",
+        "acquisition_source": "https://github.com/projectdiscovery/nuclei-templates/commit/f938a3dd530c283e9387b518b97911152ff5846c"
       },
       "data": {
         "mode": "runtime_live",
@@ -1378,8 +1378,8 @@
       }
     },
     "compatibility": {
-      "knowledge_date": "2026-08-24",
-      "support_until": "2026-11-22",
+      "knowledge_date": "2026-10-22",
+      "support_until": "2027-01-20",
       "maintenance_owner": "teddashh/ai-security-scanner maintainers",
       "update_procedure": "docs/engine-maintenance.md",
       "runnable": true,
@@ -2415,13 +2415,13 @@
     "distribution_mode": "pull_pinned_image",
     "image": {
       "repository": "ghcr.io/ted-h-com/ai-security-scanner-engine-trivy",
-      "tag": "0.76.0-1",
-      "digest": "sha256:254caf91721b880a9085e1e88e62f65848ca250b11ad8d5b5ba0f2ebf8470705",
+      "tag": "0.76.1-1",
+      "digest": "sha256:c195548f47cf8fe2305c6a92fb9cac0c7306bf31fc1c5142f241281c97cf0694",
       "signature_identity": "https://github.com/TED-H-com/ai-security-scanner/.github/workflows/engine-images-local-k8s.yml@refs/heads/main"
     },
-    "source_revision": "531360e5d2a88e732373f1614ba99a38738538b8",
-    "engine_version": "0.76.0",
-    "rule_version": "531360e5d2a88e732373f1614ba99a38738538b8",
+    "source_revision": "e713f67f7d54decdcd9b3132c9751833dcced698",
+    "engine_version": "0.76.1",
+    "rule_version": "e713f67f7d54decdcd9b3132c9751833dcced698",
     "adapter_version": "0.2.6",
     "supported_asset_kinds": [
       "repository",
@@ -2477,24 +2477,24 @@
     },
     "provenance": {
       "engine": {
-        "version": "0.76.0",
+        "version": "0.76.1",
         "source_repository": "https://github.com/aquasecurity/trivy",
-        "source_revision": "531360e5d2a88e732373f1614ba99a38738538b8",
-        "source_ref": "v0.76.0",
-        "acquisition_source": "https://github.com/aquasecurity/trivy/commit/531360e5d2a88e732373f1614ba99a38738538b8",
-        "artifact_source_revision": "c989e75e1c3be7e7abad3395dcf5539cf2a96832",
+        "source_revision": "e713f67f7d54decdcd9b3132c9751833dcced698",
+        "source_ref": "v0.76.1",
+        "acquisition_source": "https://github.com/aquasecurity/trivy/commit/e713f67f7d54decdcd9b3132c9751833dcced698",
+        "artifact_source_revision": "46b7d1900fc25ef8ae4e4b568b638c915f28d130",
         "source_association": "attested_match"
       },
       "rules": {
         "mode": "embedded",
         "identifier": "Trivy OS and library package analyzers",
-        "revision": "531360e5d2a88e732373f1614ba99a38738538b8",
-        "acquisition_source": "https://github.com/aquasecurity/trivy/commit/531360e5d2a88e732373f1614ba99a38738538b8"
+        "revision": "e713f67f7d54decdcd9b3132c9751833dcced698",
+        "acquisition_source": "https://github.com/aquasecurity/trivy/commit/e713f67f7d54decdcd9b3132c9751833dcced698"
       },
       "data": {
         "mode": "embedded",
         "identifier": "Trivy vulnerability database snapshot",
-        "revision": "sha256:52132f8ca6e26a5ebbc4d758a9b2f20c9537725635f185f9c19b0600f45fe3c1",
+        "revision": "sha256:4bf3ae89527fbbb3596748b1c9d294a8b240c49edc9f87e65947e42291bb0bf6",
         "acquisition_source": "oci://ghcr.io/aquasecurity/trivy-db"
       },
       "adapter": {
@@ -2506,8 +2506,8 @@
       }
     },
     "compatibility": {
-      "knowledge_date": "2026-10-15",
-      "support_until": "2027-01-13",
+      "knowledge_date": "2026-10-22",
+      "support_until": "2027-01-20",
       "maintenance_owner": "teddashh/ai-security-scanner maintainers",
       "update_procedure": "docs/engine-maintenance.md",
       "runnable": true,
@@ -2516,7 +2516,7 @@
       "knowledge_input": {
         "kind": "embedded",
         "identifier": "Trivy vulnerability database snapshot",
-        "version": "sha256:52132f8ca6e26a5ebbc4d758a9b2f20c9537725635f185f9c19b0600f45fe3c1",
+        "version": "sha256:4bf3ae89527fbbb3596748b1c9d294a8b240c49edc9f87e65947e42291bb0bf6",
         "acquisition_source": "oci://ghcr.io/aquasecurity/trivy-db",
         "pin_state": "pinned_or_not_applicable"
       },

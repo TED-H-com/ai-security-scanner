@@ -1,7 +1,7 @@
 import type { TransportProtocol } from "./types";
 
 export const websiteQuickProfile = {
-  templateRevision: "nuclei-templates@24858b4bfabfa86f0bcfd36aea24fb535152b012",
+  templateRevision: "nuclei-templates@f938a3dd530c283e9387b518b97911152ff5846c",
   profileId: "nuclei_web_safe_v1",
   engineIds: ["nuclei"],
   ratePolicy: {

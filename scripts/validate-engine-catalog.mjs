@@ -24,7 +24,7 @@ const managedCloudIds = new Set([
 const managedExternalContracts = new Map([
   ["naabu", { tag: "2.6.1-7" }],
   ["httpx", { tag: "1.12.0-1" }],
-  ["nuclei", { tag: "3.11.1-7" }],
+  ["nuclei", { tag: "3.11.1-8" }],
 ]);
 const managedExternalIds = new Set(managedExternalContracts.keys());
 const naabuLauncherJournalVersion = 2;
@@ -263,7 +263,7 @@ const managedLocalK8sContracts = new Map([
     ],
   }],
   ["trivy", {
-    tag: "0.76.0-1",
+    tag: "0.76.1-1",
     planKind: "managed_build",
     license: { disposition: "allow", sourceOfferPath: null },
     immutableLauncherInputs: [

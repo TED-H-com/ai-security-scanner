@@ -6,7 +6,7 @@
   "support_until": "2027-01-20",
   "maintenance_owner": "teddashh/ai-security-scanner maintainers",
   "update_procedure": "docs/engine-maintenance.md",
-  "publish_state": "publication_in_progress",
+  "publish_state": "published_managed_artifact",
   "source": {
     "repository": "https://github.com/projectdiscovery/nuclei",
     "revision": "a8c88feb4a1c8e961b7902534ce3af97e9d524a4",
@@ -16,9 +16,22 @@
   "final_artifact": {
     "repository": "ghcr.io/ted-h-com/ai-security-scanner-engine-nuclei",
     "tag": "3.11.1-8",
-    "digest": null
+    "digest": "sha256:3be62445b89694e1253788390953d20da62c2897d987af30f861fdf7371de898"
   },
-  "publication": null,
+  "publication": {
+    "workflow_run": "https://github.com/TED-H-com/ai-security-scanner/actions/runs/39895715641",
+    "source_revision": "46b7d1900fc25ef8ae4e4b568b638c915f28d130",
+    "platforms": [
+      "linux/amd64",
+      "linux/arm64"
+    ],
+    "platform_digests": {
+      "linux/amd64": "sha256:5fe4148b48c6f56945c0c63c5b4063ace21f6a36287455e802d9c7cdad9fc48a",
+      "linux/arm64": "sha256:51ba07d7ead3bbf05d731a2794f047acc352236bd9df7d50e0e331f9bd272176"
+    },
+    "anonymous_pull_verified": true,
+    "evidence_artifact": "nuclei-image-evidence-39895715641-1"
+  },
   "build_recipe": {
     "source_revision": "a8c88feb4a1c8e961b7902534ce3af97e9d524a4",
     "source_archive": {
@@ -110,60 +123,5 @@
     "rationale": "MIT upstream code/templates and the Apache-2.0 project launcher permit redistribution with notices.",
     "source_offer_path": null
   },
-  "blockers": [],
-  "previous_artifact": {
-    "repository": "ghcr.io/teddashh/ai-security-scanner-engine-nuclei",
-    "tag": "3.11.1-7",
-    "digest": "sha256:c0d9709528f9d900ccf7e676de3e19456865aaa9788828adb29e19bd55204520"
-  },
-  "previous_publication": {
-    "workflow_run": "https://github.com/teddashh/ai-security-scanner/actions/runs/36783633415",
-    "source_revision": "51b8abfd7abe5accaf0be59b9d50567bd206dfe8",
-    "platforms": [
-      "linux/amd64",
-      "linux/arm64"
-    ],
-    "platform_digests": {
-      "linux/amd64": "sha256:42a7ec2350beafb9802d3fa4269c4a739b4ea0371eca5dced207d39ccb554317",
-      "linux/arm64": "sha256:9f3d3d07a4f0ca5bd4af552a829cf2a6877a9c6f2b424fb1eb02b560352102a7"
-    },
-    "anonymous_pull_verified": true,
-    "evidence_artifact": "nuclei-image-evidence-36783633415-1"
-  },
-  "upstream_update": {
-    "engine_version": "3.11.1",
-    "reported_version": null,
-    "source_revision": "a8c88feb4a1c8e961b7902534ce3af97e9d524a4",
-    "rule_version": "f938a3dd530c283e9387b518b97911152ff5846c",
-    "knowledge_date": "2026-10-22",
-    "support_until": "2027-01-20",
-    "engine_provenance": {
-      "version": "3.11.1",
-      "source_repository": "https://github.com/projectdiscovery/nuclei",
-      "source_revision": "a8c88feb4a1c8e961b7902534ce3af97e9d524a4",
-      "source_ref": "v3.11.1",
-      "acquisition_source": "https://github.com/projectdiscovery/nuclei/commit/a8c88feb4a1c8e961b7902534ce3af97e9d524a4",
-      "artifact_source_revision": null,
-      "source_association": "source_build_required"
-    },
-    "rules_provenance": {
-      "mode": "embedded",
-      "identifier": "projectdiscovery/nuclei-templates",
-      "revision": "f938a3dd530c283e9387b518b97911152ff5846c",
-      "acquisition_source": "https://github.com/projectdiscovery/nuclei-templates/commit/f938a3dd530c283e9387b518b97911152ff5846c"
-    },
-    "data_provenance": {
-      "mode": "runtime_live",
-      "identifier": "authorized service responses",
-      "revision": null,
-      "acquisition_source": "only services with active-testing scope grants"
-    },
-    "knowledge_input": {
-      "kind": "runtime_live",
-      "identifier": "authorized service responses",
-      "version": null,
-      "acquisition_source": "only services with active-testing scope grants",
-      "pin_state": "runtime_live"
-    }
-  }
+  "blockers": []
 }

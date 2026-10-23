@@ -15,7 +15,7 @@
 <body>
   <a class="skip-link" href="#main"><span class="lang-en">Skip to content</span><span class="lang-zh" lang="zh-Hant">跳到主要內容</span><span class="lang-ja" lang="ja">本文へスキップ</span></a>
   <header class="site-header"><div class="header-inner">
-    <a class="brand" href="index.html"><img src="project-mark.svg" alt=""><span>ai-security-scanner</span></a>
+    <a class="brand" href="index.html" aria-label="ai-security-scanner home"><img src="project-mark.svg" alt=""><span>ai-security-scanner</span></a>
     <nav class="nav" aria-label="Navigation">
       <a href="#downloads"><span class="lang-en">Downloads</span><span class="lang-zh" lang="zh-Hant">下載</span><span class="lang-ja" lang="ja">ダウンロード</span></a>
       <a href="#start"><span class="lang-en">Start a scan</span><span class="lang-zh" lang="zh-Hant">開始掃描</span><span class="lang-ja" lang="ja">検査を始める</span></a>
@@ -49,8 +49,8 @@
     <section class="section incident-section" id="start">
       <div class="section-heading"><h2><span class="lang-en">Choose what to check</span><span class="lang-zh" lang="zh-Hant">選擇檢查方式</span><span class="lang-ja" lang="ja">検査方法を選ぶ</span></h2></div>
       <ol class="incident-steps">
-        <li><span class="lang-en">Open <strong>Scan my IT environment</strong> or <strong>Check a project folder</strong>, then add the assets you manage.</span><span class="lang-zh" lang="zh-Hant">開啟<strong>掃描我的 IT 環境</strong>或<strong>檢查專案資料夾</strong>，加入你管理的資產。</span><span class="lang-ja" lang="ja"><strong>IT 環境をスキャン</strong>または<strong>プロジェクトフォルダーを検査</strong>を開き、管理する資産を追加します。</span></li>
-        <li><span class="lang-en">Keep the standard scan for code, secrets, dependencies, configuration and applicable network checks. For focused package checks, select <strong>October 21–22 incident triage</strong>.</span><span class="lang-zh" lang="zh-Hant">一般掃描檢查程式碼、機密、相依套件、設定與適用的網路風險。要專注檢查事件相關套件，請勾選<strong>10/21–10/22 事件專項檢查</strong>。</span><span class="lang-ja" lang="ja">通常スキャンではコード、秘密情報、依存関係、設定、適用可能なネットワーク検査を実行。対象パッケージに絞る場合は<strong>10 月 21～22 日の事案別検査</strong>を選びます。</span></li>
+        <li><span class="lang-en">Open <strong>Scan my environment</strong> or <strong>Check code or an AI project</strong>, then add the assets you manage.</span><span class="lang-zh" lang="zh-Hant">開啟<strong>掃描公司環境</strong>或<strong>檢查程式碼或 AI 專案</strong>，加入你管理的資產。</span><span class="lang-ja" lang="ja"><strong>自分の環境をスキャン</strong>または<strong>コード・AI プロジェクトをチェック</strong>を開き、管理する資産を追加します。</span></li>
+        <li><span class="lang-en">Keep the standard scan for code, secrets, dependencies, configuration and applicable network checks. For focused package checks, select <strong>October 21–22 incident triage</strong>.</span><span class="lang-zh" lang="zh-Hant">一般掃描檢查程式碼、機密、相依套件、設定與適用的網路風險。要專注檢查事件相關套件，請勾選<strong>10/21–10/22 事件專項檢查</strong>。</span><span class="lang-ja" lang="ja">通常スキャンではコード、秘密情報、依存関係、設定、適用可能なネットワーク検査を実行。対象パッケージに絞る場合は<strong>10 月 21～22 日のインシデント初期確認</strong>を選びます。</span></li>
         <li><span class="lang-en">Review the displayed scope and start once. When it finishes, save the unified HTML report; JSON remains available.</span><span class="lang-zh" lang="zh-Hant">確認畫面列出的範圍後開始掃描。完成後儲存整合 HTML 報告，也可匯出 JSON。</span><span class="lang-ja" lang="ja">表示された範囲を確認して開始。完了後に共通の HTML レポートを保存します。JSON も利用できます。</span></li>
       </ol>
       <p class="incident-note"><span class="lang-en">Incident triage uses Trivy on selected repository, IaC and supported OCI-image copies. Websites and internal hosts use the standard scan. Account breaches and unpublished advisory mappings appear as investigation or pending items.</span><span class="lang-zh" lang="zh-Hant">事件專項使用 Trivy 檢查所選儲存庫、IaC 與支援的 OCI 映像副本。網站與內部主機請使用一般掃描。帳戶入侵與尚無公開漏洞對應的項目會列為需要調查或待確認。</span><span class="lang-ja" lang="ja">事案別検査は、選択したリポジトリ・IaC・対応 OCI イメージのコピーを Trivy で検査します。Web サイトと内部ホストには通常スキャンを使用。アカウント侵害や公開情報の対応が未確認の項目は、要調査または確認待ちとして表示します。</span></p>

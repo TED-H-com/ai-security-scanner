@@ -1,0 +1,124 @@
+{
+  "schema_version": "1.0.0",
+  "observed_at": "2026-10-23T04:01:38.034987+00:00",
+  "purpose": "Owner-requested v0.5.3 October 21 incident scan pack",
+  "publication": {
+    "trivy": {
+      "schemaVersion": 1,
+      "engine": "trivy",
+      "image": "ghcr.io/ted-h-com/ai-security-scanner-engine-trivy",
+      "tag": "0.76.1-1",
+      "indexDigest": "sha256:c195548f47cf8fe2305c6a92fb9cac0c7306bf31fc1c5142f241281c97cf0694",
+      "platformDigests": {
+        "linux/amd64": "sha256:d3450c2be2fa0e6cdc52f1b059ceeb557ad9adc124235c7e887a56e33ec40b6c",
+        "linux/arm64": "sha256:3fea173ab42f944c4279c30e64da144a76964a790b75ea3b1f57580080959125"
+      },
+      "sourceRevision": "46b7d1900fc25ef8ae4e4b568b638c915f28d130",
+      "workflowRun": "https://github.com/TED-H-com/ai-security-scanner/actions/runs/39895715689",
+      "runId": "39895715689",
+      "runAttempt": "1",
+      "evidence": {
+        "rootChecksumReceiptSha256": "sha256:db8e026277d7e42220e23a4e71f2b2c9d49dee733b135f0e7351fe523a7c6bc0",
+        "nestedChecksumReceiptSha256": "sha256:20c5fb1db4ab6e795ec7de9c68a769e78d4318088fc4824fa3abbe407e407fa6",
+        "rootChecksumEntries": 16,
+        "nestedChecksumEntries": 10,
+        "sbomCount": 4,
+        "attestationCount": 5,
+        "managedSmokeEvidenceSha256": "sha256:f6fcb19da5061a637a727783ecc38c674bee4faaba11965232fc75810f1d9730"
+      },
+      "artifact_name": "trivy-image-evidence-39895715689-1"
+    },
+    "nuclei": {
+      "schemaVersion": 1,
+      "engine": "nuclei",
+      "image": "ghcr.io/ted-h-com/ai-security-scanner-engine-nuclei",
+      "tag": "3.11.1-8",
+      "indexDigest": "sha256:3be62445b89694e1253788390953d20da62c2897d987af30f861fdf7371de898",
+      "platformDigests": {
+        "linux/amd64": "sha256:5fe4148b48c6f56945c0c63c5b4063ace21f6a36287455e802d9c7cdad9fc48a",
+        "linux/arm64": "sha256:51ba07d7ead3bbf05d731a2794f047acc352236bd9df7d50e0e331f9bd272176"
+      },
+      "sourceRevision": "46b7d1900fc25ef8ae4e4b568b638c915f28d130",
+      "workflowRun": "https://github.com/TED-H-com/ai-security-scanner/actions/runs/39895715641",
+      "runId": "39895715641",
+      "runAttempt": "1",
+      "evidence": {
+        "rootChecksumReceiptSha256": "sha256:d8827e094099b046d34e1d9a58375a40e0abce463db7f5350bcf6f0c6bd6a13a",
+        "nestedChecksumReceiptSha256": "sha256:f55c531227d30caea069279e870f87fb42278db0c40954d91ba3995c55e4f899",
+        "rootChecksumEntries": 12,
+        "nestedChecksumEntries": 10,
+        "sbomCount": 4,
+        "attestationCount": 5
+      },
+      "artifact_name": "nuclei-image-evidence-39895715641-1"
+    }
+  },
+  "runtime_verification": {
+    "trivy": {
+      "schema_version": "1.0.0",
+      "image": "ghcr.io/ted-h-com/ai-security-scanner-engine-trivy@sha256:c195548f47cf8fe2305c6a92fb9cac0c7306bf31fc1c5142f241281c97cf0694",
+      "publication_run": "https://github.com/TED-H-com/ai-security-scanner/actions/runs/39895715689",
+      "source_revision": "46b7d1900fc25ef8ae4e4b568b638c915f28d130",
+      "platform": "linux/amd64",
+      "network": "none",
+      "non_root": true,
+      "read_only_rootfs": true,
+      "limits": {
+        "memory_mb": 2048,
+        "cpu_millis": 2000,
+        "pids": 256
+      },
+      "results": [
+        {
+          "fixture": "php-vulnerable",
+          "installed_version": "8.3.6-0ubuntu0.24.04.12",
+          "matched_advisory_ids": [
+            "CVE-2026-109618",
+            "CVE-2026-109619"
+          ],
+          "raw_report_sha256": "c116b27e18ea289fa39c06453f0f3f9f37f13b83fd22946afa7a455edf382576",
+          "exit_code": 0
+        },
+        {
+          "fixture": "php-fixed",
+          "installed_version": "8.3.6-0ubuntu0.24.04.13",
+          "matched_advisory_ids": [],
+          "raw_report_sha256": "66720bf77aab35ed55a499a7c89134b878e7ef10e1c6437ecf815df3e42df28b",
+          "exit_code": 0
+        }
+      ]
+    },
+    "nuclei": {
+      "image": "ghcr.io/ted-h-com/ai-security-scanner-engine-nuclei@sha256:3be62445b89694e1253788390953d20da62c2897d987af30f861fdf7371de898",
+      "source_revision": "46b7d1900fc25ef8ae4e4b568b638c915f28d130",
+      "publication_run": "https://github.com/TED-H-com/ai-security-scanner/actions/runs/39895715641",
+      "platform": "linux/amd64",
+      "non_root": true,
+      "uid": 65532,
+      "network": "isolated Docker network with exact local fixture proxy",
+      "automatic_status_exposure_detected": true,
+      "all_connections_authorized": true,
+      "record_count": 17,
+      "matched_template_ids": [
+        "default-nginx-page",
+        "nginx-status",
+        "nginx-version"
+      ],
+      "requests": 1073,
+      "connections": 1074,
+      "exit_code": 0,
+      "raw_report_sha256": "1361120d1bdac6e44842b9f94bbb83649adf5fa8c82d4e682773bd21162e4942",
+      "read_only_rootfs": true,
+      "limits": {
+        "memory_mb": 1024,
+        "cpu_millis": 1000,
+        "pids": 256
+      }
+    }
+  },
+  "limits": [
+    "Both platform image identities and five attestations per engine were verified; local fixture execution was Linux amd64 only.",
+    "Nuclei publication job succeeded; sibling immutable Naabu and httpx tags refused replacement and their catalog pins remain unchanged.",
+    "Only inert package metadata and owned local HTTP fixtures were scanned. No incident exploit or external target was executed."
+  ]
+}

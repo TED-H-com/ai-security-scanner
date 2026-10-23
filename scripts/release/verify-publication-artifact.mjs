@@ -26,11 +26,11 @@ const ENGINE_SPECS = Object.freeze({
   syft: { tag: "1.54.1-1", group: "standalone", workflow: ".github/workflows/engine-image-syft.yml" },
   naabu: { tag: "2.6.1-7", group: "external", workflow: ".github/workflows/engine-images-external.yml" },
   httpx: { tag: "1.12.0-1", group: "external", workflow: ".github/workflows/engine-images-external.yml" },
-  nuclei: { tag: "3.11.1-7", group: "external", workflow: ".github/workflows/engine-images-external.yml" },
+  nuclei: { tag: "3.11.1-8", group: "external", workflow: ".github/workflows/engine-images-external.yml" },
   semgrep: { tag: "1.181.0-1", group: "local", workflow: ".github/workflows/engine-images-local-k8s.yml", smokeFiles: ["semgrep.json"] },
   trufflehog: { tag: "3.99.2-1", group: "local", workflow: ".github/workflows/engine-images-local-k8s.yml", smokeFiles: ["trufflehog.jsonl"] },
   trivy: {
-    tag: "0.76.0-1",
+    tag: "0.76.1-1",
     group: "local",
     workflow: ".github/workflows/engine-images-local-k8s.yml",
     smokeFiles: ["trivy-oci.json", "trivy-library.json", "trivy-jar.json"],

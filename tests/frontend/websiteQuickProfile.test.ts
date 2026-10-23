@@ -12,7 +12,7 @@ const nativeCaseServiceSource = readFileSync(
 test("the public website quick profile delegates applicability to one pinned upstream Nuclei profile", () => {
   assert.equal(
     websiteQuickProfile.templateRevision,
-    "nuclei-templates@24858b4bfabfa86f0bcfd36aea24fb535152b012",
+    "nuclei-templates@f938a3dd530c283e9387b518b97911152ff5846c",
   );
   assert.equal(websiteQuickProfile.profileId, "nuclei_web_safe_v1");
   assert.deepEqual(websiteQuickProfile.engineIds, ["nuclei"]);
