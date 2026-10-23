@@ -37,7 +37,7 @@ AWS 或 Microsoft 365 的唯讀連線過期時，掃描結果會提供**重新�
 | 電腦 | 安裝檔 | 第一次開啟前 |
 | --- | --- | --- |
 | macOS（Apple 晶片或 Intel） | [ai-security-scanner_0.5.3_universal.dmg](https://github.com/TED-H-com/ai-security-scanner/releases/download/v0.5.3/ai-security-scanner_0.5.3_universal.dmg) | 把應用程式拖進**應用程式**資料夾。此版本未經 Apple 公證，開啟前先在「終端機」執行一次 `xattr -dr com.apple.quarantine /Applications/ai-security-scanner.app`。 |
-| Windows x86-64 | [ai-security-scanner_0.5.3_x64-setup.exe](https://github.com/TED-H-com/ai-security-scanner/releases/download/v0.5.3/ai-security-scanner_0.5.3_x64-setup.exe) 或 [MSI](https://github.com/TED-H-com/ai-security-scanner/releases/download/v0.5.3/ai-security-scanner_0.5.3_x64_en-US.msi) | 安裝檔未簽章。SmartScreen 警告時，選**其他資訊 → 仍要執行**。Windows 要求安裝或更新 WSL 時請允許。 |
+| Windows x86-64 | [MSI](https://github.com/TED-H-com/ai-security-scanner/releases/download/v0.5.3/ai-security-scanner_0.5.3_x64_en-US.msi) | 安裝檔未簽章。SmartScreen 警告時，選**其他資訊 → 仍要執行**。Windows 要求安裝或更新 WSL 時請允許。 |
 | Debian 或 Ubuntu x86-64 | [ai-security-scanner_0.5.3_amd64.deb](https://github.com/TED-H-com/ai-security-scanner/releases/download/v0.5.3/ai-security-scanner_0.5.3_amd64.deb) | 以 `sudo apt install ./ai-security-scanner_0.5.3_amd64.deb` 安裝。 |
 
 安裝完成後啟動 **ai-security-scanner**。第一次需要掃描時，應用程式會自行準備掃描環境，不需要另外安裝 Docker。

@@ -49,8 +49,8 @@ open /Applications/ai-security-scanner.app
 Windows x86-64, in PowerShell. The installer is unsigned: if SmartScreen warns, the user selects **More info → Run anyway**, and allows a WSL update if Windows asks for one:
 
 ```powershell
-Invoke-WebRequest https://github.com/TED-H-com/ai-security-scanner/releases/download/v0.5.3/ai-security-scanner_0.5.3_x64-setup.exe -OutFile ai-security-scanner_0.5.3_x64-setup.exe
-Start-Process .\ai-security-scanner_0.5.3_x64-setup.exe
+Invoke-WebRequest https://github.com/TED-H-com/ai-security-scanner/releases/download/v0.5.3/ai-security-scanner_0.5.3_x64_en-US.msi -OutFile ai-security-scanner_0.5.3_x64_en-US.msi
+Start-Process msiexec.exe -ArgumentList '/i', '.\ai-security-scanner_0.5.3_x64_en-US.msi' -Wait
 ```
 
 Debian or Ubuntu x86-64. `sudo` needs the user's password, so the user runs the second line:

@@ -731,5 +731,7 @@
   "New in v0.5.3:": "v0.5.3 の新機能：",
   "Choose Settings → 日本語 in v0.5.3. Your language choice is saved across restarts.": "v0.5.3 では Settings → 日本語 で切り替えられます。選択した言語は再起動後も保存されます。",
   "tools in v0.5.3": "v0.5.3 のツール",
-  "October 21 incident triage, updated Trivy databases and Nuclei templates, and one shared report with ISO / NIST references.": "10/21 の事案別検査、Trivy データベースと Nuclei テンプレートの更新、ISO / NIST 参照付きの共通レポートを追加しました。"
+  "October 21 incident triage, updated Trivy databases and Nuclei templates, and one shared report with ISO / NIST references.": "10/21 の事案別検査、Trivy データベースと Nuclei テンプレートの更新、ISO / NIST 参照付きの共通レポートを追加しました。",
+  "Windows installer": "Windows インストーラー",
+  "(unsigned; SmartScreen may warn), macOS Universal": "（未署名のため SmartScreen の警告が出る場合があります）、macOS Universal"
 }
