@@ -15,7 +15,7 @@ import {
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { UPDATER_DOWNLOAD_REPOSITORY } from "../publication-origins.mjs";
-import { PROJECT_ROOT, isSemver, readJson, runMain, sha256File, toPosix } from "./lib.mjs";
+import { PROJECT_ROOT, isSemver, readJson, runMain, sha256File, toPosix, writeJsonAtomic } from "./lib.mjs";
 import { createPlatformQualification } from "./platform-qualification.mjs";
 import { createReleaseCandidateLock } from "./release-candidate-lock.mjs";
 import { publishedReleaseAssetName } from "./release-asset-name.mjs";
