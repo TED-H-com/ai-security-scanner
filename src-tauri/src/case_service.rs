@@ -117,7 +117,7 @@ const DECLARED_HOST_SCAN_METADATA_KEY: &str = "declared_host_scan";
 const MAX_DECLARED_HOST_SCAN_PORTS: usize = 64;
 const DECLARED_WEBSITE_ENGINE_ID: &str = "nuclei";
 const DECLARED_WEBSITE_TEMPLATE_REVISION: &str =
-    "nuclei-templates@24858b4bfabfa86f0bcfd36aea24fb535152b012";
+    "nuclei-templates@f938a3dd530c283e9387b518b97911152ff5846c";
 const NUCLEI_WEB_SAFE_PROFILE_ID: &str = "nuclei_web_safe_v1";
 const INTERNAL_DEVICE_ENGINE_ID: &str = "greenbone";
 const INTERNAL_DEVICE_TEMPLATE_REVISION: &str =

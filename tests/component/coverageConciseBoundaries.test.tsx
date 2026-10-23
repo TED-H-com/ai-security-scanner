@@ -703,7 +703,7 @@ test("public website flow applies the fixed Nuclei quick profile and starts with
         timeoutSeconds: 10,
       },
       templatePolicy: {
-        revision: "nuclei-templates@24858b4bfabfa86f0bcfd36aea24fb535152b012",
+        revision: "nuclei-templates@f938a3dd530c283e9387b518b97911152ff5846c",
         profileId: "nuclei_web_safe_v1",
         allowedTemplateIds: [],
         allowHeadless: false,

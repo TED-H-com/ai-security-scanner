@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import test from "node:test";
 import { publishedInstallers } from "../../docs/incident-pack.js";
+import { incidentScanPackForRelease } from "../../scripts/release/incident-scan-pack.mjs";
 
 const pack = JSON.parse(readFileSync(new URL("../../docs/incident-pack.json", import.meta.url)));
 const asset = (suffix, extra = {}) => ({
@@ -31,12 +32,14 @@ test("incident downloads expose only uploaded installers from the exact publishe
   ]), pack), []);
 });
 
-test("the incident pack and all native package identities use one release version", () => {
+test("the incident pack retains its release identity and shared report contract", async () => {
   const product = JSON.parse(readFileSync(new URL("../../package.json", import.meta.url)));
   const native = JSON.parse(readFileSync(new URL("../../src-tauri/tauri.conf.json", import.meta.url)));
-  assert.equal(product.version, pack.app_version);
-  assert.equal(native.version, pack.app_version);
+  assert.equal(native.version, product.version);
   assert.equal(pack.release_tag, `v${pack.app_version}`);
+  const sourceCommit = "a".repeat(40);
+  assert.equal((await incidentScanPackForRelease(pack.app_version, sourceCommit)).source_commit, sourceCommit);
+  assert.equal(await incidentScanPackForRelease(`${pack.app_version}-other`, sourceCommit), null);
   assert.deepEqual(pack.profiles, ["standard", "october-2026"]);
   assert.equal(pack.report.model, "beginner_master_report");
   assert.deepEqual(pack.report.formats, ["html", "json"]);
