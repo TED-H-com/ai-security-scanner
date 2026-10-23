@@ -34,6 +34,7 @@ import {
 } from "./release-metadata.mjs";
 import { publishedReleaseAssetName } from "./release-asset-name.mjs";
 import { UPDATER_DOWNLOAD_REPOSITORY } from "../publication-origins.mjs";
+import { incidentScanPackForRelease } from "./incident-scan-pack.mjs";
 
 const PUBLICATION_MODES = new Set(["commit-bound-qc", "public-github-release"]);
 
@@ -1237,15 +1238,11 @@ async function scopedFinalizeMain() {
     spdxName,
   ]) await copySelected(name);
 
-  if (version === "0.5.3") {
+  const expectedScanPack = await incidentScanPackForRelease(version, commit);
+  if (expectedScanPack) {
     const pack = await readJson(path.join(input, "incident-scan-pack.json"));
-    assert(pack.app_version === version && pack.release_tag === tag && pack.source_commit === commit,
-      "incident scan pack does not match the release source");
-    const campaignBytes = await readFile(path.join(PROJECT_ROOT, pack.campaign_path));
-    assert(pack.campaign_sha256 === await sha256File(path.join(PROJECT_ROOT, pack.campaign_path)),
-      "incident campaign hash differs from the release source");
-    assert(JSON.stringify(pack.campaign) === JSON.stringify(JSON.parse(campaignBytes)),
-      "incident campaign differs from the release source");
+    assert(pack.release_tag === tag && JSON.stringify(pack) === JSON.stringify(expectedScanPack),
+      "incident scan pack differs from the exact release source or report contract");
     await copySelected("incident-scan-pack.json");
     await copySelected("INCIDENT_SCAN_PACK.md");
   }
