@@ -6,7 +6,7 @@ Current operations are documented in [Release operations](../releasing.md). The 
 
 The [2026-10-03 desktop delivery record](desktop-readiness-2026-10-03.md) records the owner decision, exact candidate verification, publication and remaining follow-ups.
 
-The current stable release is [v0.5.2](v0.5.2.md), updating ten scanning engines and offline vulnerability and policy data. Japanese UI, README and website support remain available.
+The current stable release is [v0.5.3](v0.5.3.md), adding the October 21 incident scan pack for Mac, Windows and Linux, updated Trivy databases and Nuclei templates, and a shared report with ISO / NIST references.
 
 [v0.5.0 consolidated stable release](v0.5.0.md) ([繁體中文](v0.5.0.zh-TW.md)) collects all completed updates since v0.4.1, Linux build fixes and two dependency security updates. Windows, macOS and Linux installers are published with verified public bytes and source provenance.
 
@@ -14,6 +14,7 @@ This directory contains historical release records, exact delivery observations,
 
 ## Version records
 
+- [v0.5.3 October 21 incident scan pack](v0.5.3.md)
 - [v0.5.2 upstream engine updates](v0.5.2.md) ([日本語](v0.5.2.ja.md) · [繁體中文](v0.5.2.zh-TW.md))
 - [v0.5.1 Japanese support](v0.5.1.md) ([日本語](v0.5.1.ja.md) · [繁體中文](v0.5.1.zh-TW.md))
 - [v0.5.0 stable](v0.5.0.md) ([繁體中文](v0.5.0.zh-TW.md))
