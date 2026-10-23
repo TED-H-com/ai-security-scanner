@@ -870,8 +870,10 @@ mod tests {
         ] {
             assert!(preview_selected_run_report(&case, &invalid, &options).is_err());
         }
-        let mut raw = ExportOptions::default();
-        raw.include_raw_artifacts = true;
+        let raw = ExportOptions {
+            include_raw_artifacts: true,
+            ..ExportOptions::default()
+        };
         assert!(preview_selected_run_report(&case, &selected, &raw).is_err());
         let saved_case_id = case.scan_runs[1].case_id.clone();
         case.scan_runs[1].case_id = "another-case".into();

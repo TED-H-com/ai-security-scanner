@@ -169,16 +169,15 @@ fn read_report(path: &Path) -> AppResult<ParsedReport> {
         }
         exact_text(row, "title", 2_048)?;
         let target = exact_text(row, "target", 2_048)?;
-        if let Ok(url) = url::Url::parse(target) {
-            if !url.username().is_empty()
+        if let Ok(url) = url::Url::parse(target)
+            && (!url.username().is_empty()
                 || url.password().is_some()
                 || url.query().is_some()
-                || url.fragment().is_some()
-            {
-                return Err(invalid(
-                    "Report targets must not contain credentials, queries, or fragments.",
-                ));
-            }
+                || url.fragment().is_some())
+        {
+            return Err(invalid(
+                "Report targets must not contain credentials, queries, or fragments.",
+            ));
         }
         parse_timestamp(exact_text(row, "timestamp", 128)?)?;
         targets.insert(target.to_owned());
@@ -319,7 +318,7 @@ pub fn import_external_scanner_reports(
         knowledge_cutoff: now,
         ai_system_applicable: false,
         ai_system_applicability: AiSystemApplicabilityAnswer::Unknown,
-        ai_generated_artifact: case.ai_generated_artifact.clone(),
+        ai_generated_artifact: case.ai_generated_artifact,
         verification_baseline_run_id: None,
         scope_grant_ids: vec![],
         scope_grant_snapshots: vec![],

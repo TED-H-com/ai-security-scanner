@@ -2049,10 +2049,10 @@ fn standard_redaction_replacements(case: &AssessmentCase) -> Vec<(String, String
             .map(|index| format!("Asset {}", index + 1))
             .unwrap_or_else(|| "[redacted target]".into());
         add_redaction_replacement(&mut replacements, target, &alias);
-        if let Ok(url) = url::Url::parse(target) {
-            if let Some(host) = url.host_str() {
-                add_redaction_replacement(&mut replacements, host, &alias);
-            }
+        if let Ok(url) = url::Url::parse(target)
+            && let Some(host) = url.host_str()
+        {
+            add_redaction_replacement(&mut replacements, host, &alias);
         }
     }
     for grant in &case.scope_grants {
