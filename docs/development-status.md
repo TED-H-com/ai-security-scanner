@@ -4,6 +4,8 @@
 
 _Updated 2026-10-16._
 
+The October 21 incident pack is being prepared as v0.5.3. It retains the standard scan and shared report, adds focused package triage and a three-platform GitHub Pages download entry. CI document and contract tests: 105 tests cover the current source boundaries. See [the incident release record](release/v0.5.3.md) for scope; publication availability is recorded by the GitHub Release.
+
 This page summarizes current engineering status for contributors. It is not a product specification
 or release declaration. [The product specification](product-spec.md) remains the source of truth for
 product behavior, and the [current product review](product-audit.md) tracks the broader user journey.

@@ -498,6 +498,7 @@ fn refresh_refuses_an_active_or_paused_scan() {
         .plan_scan(
             &created.id,
             ScanPlanRequest {
+                campaign_id: None,
                 engine_ids: vec!["gitleaks".into()],
                 engine_asset_routes: Vec::new(),
             },

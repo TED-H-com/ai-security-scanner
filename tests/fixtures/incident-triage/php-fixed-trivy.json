@@ -1,0 +1,73 @@
+{
+  "SchemaVersion": 2,
+  "Trivy": {
+    "Version": "0.76.1"
+  },
+  "ReportID": "01a16483-d97e-7a44-a8d5-f0faf17b3983",
+  "CreatedAt": "2026-10-22T12:48:44.926675969-04:00",
+  "ArtifactID": "sha256:d4d00632e1948c3f7485eb1a748686477ccebe61b1de483d0a3d5ec8e211041e",
+  "ArtifactName": "/tmp/incident-upstream-20261022/verified/php-fixed",
+  "ArtifactType": "container_image",
+  "Metadata": {
+    "Size": 10240,
+    "OS": {
+      "Family": "ubuntu",
+      "Name": "24.04"
+    },
+    "ImageID": "sha256:d4d00632e1948c3f7485eb1a748686477ccebe61b1de483d0a3d5ec8e211041e",
+    "DiffIDs": [
+      "sha256:9c09d121c0d952644fe799f5cd0374077982bf9215d3e0bcfa8c9d1db61333e0"
+    ],
+    "ImageConfig": {
+      "architecture": "amd64",
+      "created": "0001-01-01T00:00:00Z",
+      "os": "linux",
+      "rootfs": {
+        "type": "layers",
+        "diff_ids": [
+          "sha256:9c09d121c0d952644fe799f5cd0374077982bf9215d3e0bcfa8c9d1db61333e0"
+        ]
+      },
+      "config": {}
+    },
+    "Layers": [
+      {
+        "Size": 10240,
+        "Digest": "sha256:9c09d121c0d952644fe799f5cd0374077982bf9215d3e0bcfa8c9d1db61333e0",
+        "DiffID": "sha256:9c09d121c0d952644fe799f5cd0374077982bf9215d3e0bcfa8c9d1db61333e0"
+      }
+    ]
+  },
+  "Results": [
+    {
+      "Target": "/tmp/incident-upstream-20261022/verified/php-fixed (ubuntu 24.04)",
+      "Class": "os-pkgs",
+      "Type": "ubuntu",
+      "Packages": [
+        {
+          "ID": "php8.3-cli@8.3.6-0ubuntu0.24.04.13",
+          "Name": "php8.3-cli",
+          "Identifier": {
+            "PURL": "pkg:deb/ubuntu/php8.3-cli@8.3.6-0ubuntu0.24.04.13?arch=amd64\u0026distro=ubuntu-24.04",
+            "UID": "177392b35d266a62"
+          },
+          "Version": "8.3.6",
+          "Release": "0ubuntu0.24.04.13",
+          "Arch": "amd64",
+          "SrcName": "php8.3",
+          "SrcVersion": "8.3.6",
+          "SrcRelease": "0ubuntu0.24.04.13",
+          "Maintainer": "Fixture \u003cfixture@example.invalid\u003e",
+          "Repository": {
+            "Class": "official"
+          },
+          "Layer": {
+            "Digest": "sha256:9c09d121c0d952644fe799f5cd0374077982bf9215d3e0bcfa8c9d1db61333e0",
+            "DiffID": "sha256:9c09d121c0d952644fe799f5cd0374077982bf9215d3e0bcfa8c9d1db61333e0"
+          },
+          "AnalyzedBy": "dpkg"
+        }
+      ]
+    }
+  ]
+}

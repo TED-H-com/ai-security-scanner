@@ -1,0 +1,24 @@
+[
+  {
+    "id": "vuln-0001",
+    "title": "Untrusted command execution",
+    "severity": "high",
+    "timestamp": "2026-10-21 12:00:00 UTC",
+    "description": "Untrusted input reaches a shell",
+    "impact": "Command execution",
+    "target": "/workspace/app",
+    "poc_script_code": "raise RuntimeError('MUST NEVER EXECUTE')",
+    "remediation_steps": "Avoid shell execution and pass argument arrays.",
+    "confidence": "medium",
+    "cvss": 8.1,
+    "cwe": "CWE-78",
+    "code_locations": [
+      {
+        "file": "src/handler.py",
+        "start_line": 12,
+        "end_line": 12
+      }
+    ],
+    "finding_class": "dynamic"
+  }
+]

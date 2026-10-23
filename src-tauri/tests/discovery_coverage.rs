@@ -512,6 +512,7 @@ fn ledger_represents_all_six_states_without_using_findings() {
     ];
     let run_scope_snapshots = case.scope_grants[1..].to_vec();
     case.scan_runs.push(ScanRun {
+        campaign_id: None,
         id: "run-1".into(),
         case_id: case.id.clone(),
         sequence: 1,
@@ -605,6 +606,7 @@ fn failed_partial_cancelled_and_not_executed_never_become_green() {
         case.scope_grants.push(grant("grant-target", "target"));
         let run_scope_snapshot = case.scope_grants[0].clone();
         case.scan_runs.push(ScanRun {
+            campaign_id: None,
             id: "run".into(),
             case_id: case.id.clone(),
             sequence: 1,
@@ -662,6 +664,7 @@ fn built_in_localhost_coverage_uses_typed_outcomes_without_a_manifest() {
     });
     completed.finished_at = Some(observed_at);
     case.scan_runs.push(ScanRun {
+        campaign_id: None,
         id: "run".into(),
         case_id: case.id.clone(),
         sequence: 1,
@@ -728,6 +731,7 @@ fn completed_provider_incompatible_run_never_becomes_green() {
     case.scope_grants.push(grant("grant-target", "target"));
     let run_scope_snapshot = case.scope_grants[0].clone();
     case.scan_runs.push(ScanRun {
+        campaign_id: None,
         id: "run".into(),
         case_id: case.id.clone(),
         sequence: 1,
@@ -811,6 +815,7 @@ fn active_low_impact_engine_uses_its_declared_permission_for_coverage() {
     let mut completed = engine_run("run", "endpoint", EngineRunStatus::Completed);
     completed.engine_id = "httpx".into();
     case.scan_runs.push(ScanRun {
+        campaign_id: None,
         id: "run".into(),
         case_id: case.id.clone(),
         sequence: 1,
@@ -863,6 +868,7 @@ fn coverage_uses_frozen_run_grants_and_never_backfills_legacy_runs() {
     case.assets.push(asset("target", "source", true));
     case.scope_grants.push(grant("grant-target", "target"));
     case.scan_runs.push(ScanRun {
+        campaign_id: None,
         id: "run".into(),
         case_id: case.id.clone(),
         sequence: 1,

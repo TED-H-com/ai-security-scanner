@@ -114,11 +114,14 @@ export const COMMANDS = {
   suggestFindingCorrelations: "suggest_finding_correlations",
   startLocalhostQuickScan: "start_localhost_quick_scan",
   startScan: "start_scan",
+  previewExternalScannerImport: "preview_external_scanner_import",
+  importExternalScannerReports: "import_external_scanner_reports",
   pauseScan: "pause_scan",
   resumeScan: "resume_scan",
   cancelScan: "cancel_scan",
   previewExport: "preview_export",
   exportCase: "export_case",
+  exportSelectedRunReport: "export_selected_run_report",
   verifyCaseExport: "verify_case_export",
   startRescan: "start_rescan",
   archiveCase: "archive_case",
@@ -373,7 +376,33 @@ export interface EngineAssetRoute {
   assetIds: string[];
 }
 
+export interface ExternalScannerImportPreview {
+  source_sha256: string;
+  source_format: string;
+  engine_id: "strix";
+  targets: string[];
+  finding_count: number;
+}
+
+export interface ExternalScannerImportRequest {
+  source_sha256: string;
+  report_path: string;
+  asset_id: string;
+  upstream_target: string;
+}
+
+export interface SelectedRunReportExport {
+  case_id: string;
+  selected_run_ids: string[];
+  format: "html" | "json";
+  path: string;
+  sha256: string;
+  created_at: string;
+  redaction_profile: "standard" | "none";
+}
+
 export interface StartScanInput {
+  campaignId?: string;
   caseId: string;
   /** Legacy single-boundary form used by the single-target shortcuts. */
   authorization?: Omit<ScopeApprovalInput, "caseId">;
@@ -687,6 +716,24 @@ export const scannerService = {
     return nativeResult(await invoke<boolean>(COMMANDS.cancelDiscovery, { caseId }));
   },
 
+  async chooseExternalScannerReport(): Promise<string | null> {
+    if (!isNativeSurface()) return null;
+    const selected = await open({ title: serviceText("Choose Strix vulnerabilities.json", "選擇 Strix vulnerabilities.json"),
+      multiple: false, directory: false, filters: [{ name: "Strix JSON report", extensions: ["json"] }] });
+    return typeof selected === "string" ? selected : null;
+  },
+
+  async previewExternalScannerImport(reportPath: string): Promise<ExternalScannerImportPreview> {
+    if (!isNativeSurface()) throw new Error("Open the desktop app to import scanner results.");
+    return invoke<ExternalScannerImportPreview>(COMMANDS.previewExternalScannerImport, { reportPath });
+  },
+
+  async importExternalScannerReports(caseId: string, requests: ExternalScannerImportRequest[]): Promise<ServiceResult<ActionResponse>> {
+    return actionResult(COMMANDS.importExternalScannerReports, { caseId, requests },
+      serviceText("Imported scanner results are ready in Results.", "匯入結果已整理至結果頁。"),
+      serviceText("Open the desktop app to import scanner results.", "請開啟桌面版匯入掃描結果。"), true);
+  },
+
   async chooseSourceSnapshot(): Promise<string | null> {
     if (!isNativeSurface()) return null;
     const selected = await open({
@@ -831,6 +878,7 @@ export const scannerService = {
       {
         caseId: input.caseId,
         decisions,
+        ...(input.campaignId ? { campaignId: input.campaignId } : {}),
         engineIds: input.engineIds ?? [],
         engineAssetRoutes: (input.engineAssetRoutes ?? []).map((route) => ({
           engine_id: route.engineId,
@@ -1167,6 +1215,28 @@ export const scannerService = {
         "這份僅限所選掃描紀錄的展示預覽，會略過可變動的案件整體涵蓋資料與跨掃描複驗。DEMO_ONLY_NOT_A_SCAN 檔不是正式案件包，也不含可驗證的原始證據。",
       ),
     });
+  },
+
+  async exportSelectedRunReport(input: {
+    caseId: string;
+    runIds: string[];
+    locale: "en" | "zh-Hant";
+    format: "html" | "json";
+    redactSensitiveValues: boolean;
+  }): Promise<ServiceResult<SelectedRunReportExport | null>> {
+    if (!isNativeSurface()) throw new Error(serviceText(
+      "Open the desktop app to combine saved scan results.",
+      "請開啟桌面版整合已保存的掃描結果。",
+    ));
+    const destination = await save({
+      title: serviceText("Save combined security report", "儲存整合資安報告"),
+      defaultPath: `combined-security-report.${input.format}`,
+      filters: [{ name: input.format === "html" ? "HTML report" : "JSON report", extensions: [input.format] }],
+    });
+    if (!destination) return nativeResult(null);
+    return nativeResult(await invoke<SelectedRunReportExport>(COMMANDS.exportSelectedRunReport, {
+      input: { ...input, runIds: [...input.runIds], destination },
+    }));
   },
 
   async exportCase(input: ExportCaseInput, workspace: CaseWorkspace): Promise<ServiceResult<CaseExport | null>> {

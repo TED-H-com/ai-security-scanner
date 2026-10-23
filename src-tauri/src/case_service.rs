@@ -278,6 +278,9 @@ pub struct ScopeApprovalRequest {
 
 #[derive(Debug, Clone, Serialize, Deserialize, Default)]
 pub struct ScanPlanRequest {
+    /// Optional product-owned incident triage; never grants target authorization.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub campaign_id: Option<String>,
     /// Empty means every catalog engine applicable to the case's
     /// ownership-confirmed assets and effective scope grants. Unknown
     /// explicitly requested IDs are retained as `not_executed` records.
@@ -4048,6 +4051,7 @@ impl<'a> CaseService<'a> {
             None => AiSystemApplicabilityAnswer::Unknown,
         };
         let scan_run = ScanRun {
+            campaign_id: request.campaign_id.clone(),
             id: new_id(),
             case_id: case.id.clone(),
             sequence: case
@@ -4147,6 +4151,19 @@ impl<'a> CaseService<'a> {
             if !run_is_terminal(baseline) {
                 return Err(AppError::InvalidRequest(
                     "a rescan baseline must be terminal".into(),
+                ));
+            }
+            if baseline
+                .engine_runs
+                .iter()
+                .any(|task| matches!(task.task_kind, EngineTaskKind::ExternalReportImport { .. }))
+                && !baseline
+                    .engine_runs
+                    .iter()
+                    .any(|task| matches!(task.task_kind, EngineTaskKind::CatalogEngine))
+            {
+                return Err(AppError::InvalidRequest(
+                    "imported reports cannot authorize a Check fixes scan; start a separately reviewed scan".into(),
                 ));
             }
             if request.engine_ids.is_empty() && request.engine_asset_routes.is_empty() {
@@ -4629,6 +4646,7 @@ impl<'a> CaseService<'a> {
             freeze_report_asset_snapshots(case, &report_requested_asset_ids)?;
         let completed_at = executable.is_empty().then_some(now);
         let scan_run = ScanRun {
+            campaign_id: request.campaign_id.clone(),
             id: scan_run_id,
             case_id: case.id.clone(),
             sequence,
@@ -8900,11 +8918,13 @@ fn scan_plan_request_from_baseline(baseline: &ScanRun) -> ScanPlanRequest {
     }
     if asset_ids_by_engine.is_empty() {
         return ScanPlanRequest {
+            campaign_id: baseline.campaign_id.clone(),
             engine_ids: catalog_engine_ids.into_iter().collect(),
             engine_asset_routes: Vec::new(),
         };
     }
     ScanPlanRequest {
+        campaign_id: baseline.campaign_id.clone(),
         engine_ids: Vec::new(),
         engine_asset_routes: asset_ids_by_engine
             .into_iter()
@@ -9005,6 +9025,19 @@ fn normalized_engine_asset_routes(
     case: &AssessmentCase,
     request: &ScanPlanRequest,
 ) -> AppResult<BTreeMap<String, BTreeSet<Id>>> {
+    let campaign_engines = if request.engine_asset_routes.is_empty() {
+        request.engine_ids.clone()
+    } else {
+        request
+            .engine_asset_routes
+            .iter()
+            .map(|route| route.engine_id.clone())
+            .collect()
+    };
+    crate::incident_focus::validate_campaign_selection(
+        request.campaign_id.as_deref(),
+        &campaign_engines,
+    )?;
     if !request.engine_ids.is_empty() && !request.engine_asset_routes.is_empty() {
         return Err(AppError::InvalidRequest(
             "engine_ids and engine_asset_routes cannot be combined; routes are the exact engine selection"
@@ -14649,7 +14682,7 @@ mod export_destination_tests {
     }
 }
 
-fn write_new_private_file(destination: &Path, bytes: &[u8]) -> AppResult<PathBuf> {
+pub(crate) fn write_new_private_file(destination: &Path, bytes: &[u8]) -> AppResult<PathBuf> {
     validate_destination(destination)?;
     let parent = destination
         .parent()
@@ -19721,6 +19754,48 @@ fn html_verification_comparison_section(
     html
 }
 
+fn html_incident_focus_section(
+    report: &BeginnerMasterReport,
+    target_labels: &BTreeMap<Id, String>,
+    catalog: HtmlReportCatalog,
+) -> String {
+    use crate::incident_focus::IncidentCoverageStatus;
+    let Some(campaign) = &report.incident_focus else {
+        return String::new();
+    };
+    let matches = campaign
+        .issues
+        .iter()
+        .filter(|issue| issue.status == IncidentCoverageStatus::UpstreamMatch)
+        .count();
+    let rows = campaign.issues.iter().map(|issue| {
+        let (reason, next_action) = crate::incident_focus::incident_issue_guidance(
+            issue, catalog.locale == crate::export::ReportLocale::ZhHant,
+        );
+        let status = match issue.status {
+            IncidentCoverageStatus::UpstreamMatch => catalog.text("Upstream finding", "上游發現"),
+            IncidentCoverageStatus::NotTested => catalog.text("Not tested", "未測試"),
+            IncidentCoverageStatus::InvestigationRequired => catalog.text("Investigation needed", "需要調查"),
+            IncidentCoverageStatus::AdvisoryPending => catalog.text("Advisory pending", "公告對應待確認"),
+        };
+        let target = issue.asset_id.as_ref().and_then(|id| target_labels.get(id))
+            .map(String::as_str).unwrap_or(catalog.text("Incident context", "事件資訊"));
+        let sources = issue.sources.iter().filter(|source| source.starts_with("https://"))
+            .map(|source| format!("<li><a href=\"{}\">{}</a></li>", html_escape(source), html_escape(source)))
+            .collect::<String>();
+        format!("<tr><td>{}</td><td>{}</td><td>{}</td><td><details><summary>{}</summary><p>{}</p><p>{}</p><ul>{}</ul></details></td></tr>",
+            html_escape(&issue.title), html_escape(target), status,
+            catalog.text("Evidence and guidance", "證據與建議"), html_escape(reason), html_escape(next_action), sources)
+    }).collect::<String>();
+    format!("<section data-incident-focus><h2>{}</h2><p>{}: {matches}</p><details><summary>{}</summary><p>{}</p><table><thead><tr><th>{}</th><th>{}</th><th>{}</th><th>{}</th></tr></thead><tbody>{rows}</tbody></table></details></section>",
+        catalog.text("October incident triage", "10 月事件初步檢查"),
+        catalog.text("Asset/advisory matches", "資產與漏洞公告命中"),
+        catalog.text("Incident coverage and next actions", "事件涵蓋範圍與下一步"),
+        catalog.text("Specific advisory coverage depends on upstream detectors. A completed check does not clear an individual incident.", "特定漏洞涵蓋範圍取決於上游偵測器；完成一般檢查並不代表個別事件已排除。"),
+        catalog.text("Issue", "項目"), catalog.text("Asset", "資產"),
+        catalog.text("Outcome", "結果"), catalog.text("Details", "詳情"))
+}
+
 fn html_report_bytes(
     case: &AssessmentCase,
     run_id: &str,
@@ -21235,6 +21310,25 @@ fn html_report_bytes_with_attachments(
                     catalog.text("bytes", "位元組"),
                 )
             }
+            crate::beginner_report::TechnicalExecution::ExternalReportImport {
+                engine_id,
+                source_format,
+                source_sha256,
+                ..
+            } => {
+                format!(
+                    "{}: {}; {}: {}; SHA-256: {}. {}",
+                    catalog.text("Imported report", "匯入報告"),
+                    engine_id,
+                    catalog.text("format", "格式"),
+                    source_format,
+                    source_sha256,
+                    catalog.text(
+                        "No scanner was executed; original scan coverage remains unverified.",
+                        "未執行掃描工具；原始掃描涵蓋範圍尚未驗證。"
+                    )
+                )
+            }
             crate::beginner_report::TechnicalExecution::InvalidBuiltInTask { explanation } => {
                 let explanation = translated_task_sentence(catalog, explanation);
                 format!(
@@ -21897,6 +21991,11 @@ fn html_report_bytes_with_attachments(
     ));
     document.push_str(&html_severity_profile(&report, catalog));
     document.push_str(&html_coverage_matrix(&report, &target_labels, catalog));
+    document.push_str(&html_incident_focus_section(
+        &report,
+        &target_labels,
+        catalog,
+    ));
     document.push_str(&html_asset_result_section(&report, &target_labels, catalog));
     document.push_str(&format!(
         concat!(
@@ -22373,6 +22472,8 @@ mod tests {
             assert!(!diagnostic.contains("right now"), "{diagnostic}");
         }
     }
+
+    include!("case_service_incident_tests.rs");
 
     struct Fixture {
         directory: tempfile::TempDir,
@@ -22939,6 +23040,7 @@ mod tests {
             .plan_scan_for_execution(
                 &created.id,
                 ScanPlanRequest {
+                    campaign_id: None,
                     engine_ids: vec![NAABU_ENGINE_ID.into()],
                     engine_asset_routes: Vec::new(),
                 },
@@ -26704,6 +26806,7 @@ mod tests {
                 .persist_scan_before_execution_preflight(
                     &case_id,
                     ScanPlanRequest {
+                        campaign_id: None,
                         engine_ids: vec!["gitleaks".into()],
                         engine_asset_routes: Vec::new(),
                     },
@@ -28192,6 +28295,7 @@ mod tests {
                     }),
                 }],
                 ScanPlanRequest {
+                    campaign_id: None,
                     engine_ids: vec![NAABU_ENGINE_ID.into()],
                     engine_asset_routes: Vec::new(),
                 },
@@ -29287,6 +29391,7 @@ mod tests {
         );
         case.id = "case-redaction".into();
         case.scan_runs.push(ScanRun {
+            campaign_id: None,
             id: "run-redaction".into(),
             case_id: case.id.clone(),
             sequence: 1,
@@ -29428,6 +29533,7 @@ mod tests {
             .plan_scan(
                 &case_id,
                 ScanPlanRequest {
+                    campaign_id: None,
                     engine_ids: vec!["gitleaks".into()],
                     engine_asset_routes: Vec::new(),
                 },
@@ -29463,6 +29569,7 @@ mod tests {
             .plan_scan(
                 &case_id,
                 ScanPlanRequest {
+                    campaign_id: None,
                     engine_ids: vec!["gitleaks".into()],
                     engine_asset_routes: Vec::new(),
                 },
@@ -29531,6 +29638,7 @@ mod tests {
             .plan_scan(
                 &case_id,
                 ScanPlanRequest {
+                    campaign_id: None,
                     engine_ids: vec!["gitleaks".into()],
                     engine_asset_routes: Vec::new(),
                 },
@@ -30033,6 +30141,7 @@ mod tests {
             .plan_scan(
                 &created.id,
                 ScanPlanRequest {
+                    campaign_id: None,
                     engine_ids: vec![],
                     engine_asset_routes: vec![EngineAssetRoute {
                         engine_id: "garak".into(),
@@ -30076,6 +30185,7 @@ mod tests {
         approve_repository_local_artifact_read(&service, &created.id, first.clone());
         approve_repository_local_artifact_read(&service, &created.id, second.clone());
         let request = ScanPlanRequest {
+            campaign_id: None,
             engine_ids: vec!["agentic-radar".into()],
             engine_asset_routes: vec![],
         };
@@ -30192,6 +30302,7 @@ mod tests {
             .plan_scan(
                 &created.id,
                 ScanPlanRequest {
+                    campaign_id: None,
                     engine_ids: vec!["agentic-radar".into()],
                     engine_asset_routes: Vec::new(),
                 },
@@ -32556,6 +32667,7 @@ mod tests {
             .plan_scan(
                 &created.id,
                 ScanPlanRequest {
+                    campaign_id: None,
                     engine_ids: vec!["naabu".into(), "httpx".into()],
                     engine_asset_routes: Vec::new(),
                 },
@@ -32625,6 +32737,7 @@ mod tests {
             .plan_scan(
                 &created.id,
                 ScanPlanRequest {
+                    campaign_id: None,
                     engine_ids: vec!["naabu".into()],
                     engine_asset_routes: Vec::new(),
                 },
@@ -32660,6 +32773,7 @@ mod tests {
             .plan_scan(
                 &created.id,
                 ScanPlanRequest {
+                    campaign_id: None,
                     engine_ids: vec!["greenbone".into(), "nuclei".into()],
                     engine_asset_routes: Vec::new(),
                 },
@@ -32680,6 +32794,7 @@ mod tests {
             .plan_scan(
                 case_id,
                 ScanPlanRequest {
+                    campaign_id: None,
                     engine_ids: vec!["gitleaks".into()],
                     engine_asset_routes: Vec::new(),
                 },
@@ -32699,6 +32814,7 @@ mod tests {
             .plan_scan(
                 case_id,
                 ScanPlanRequest {
+                    campaign_id: None,
                     engine_ids: vec![MCP_ARMOR_ENGINE_ID.into()],
                     engine_asset_routes: Vec::new(),
                 },
@@ -32739,6 +32855,7 @@ mod tests {
             .plan_scan(
                 case_id,
                 ScanPlanRequest {
+                    campaign_id: None,
                     engine_ids: vec!["httpx".into()],
                     engine_asset_routes: Vec::new(),
                 },
@@ -33599,6 +33716,7 @@ mod tests {
             .plan_scan_for_execution(
                 &created.id,
                 ScanPlanRequest {
+                    campaign_id: None,
                     engine_ids: Vec::new(),
                     engine_asset_routes: vec![
                         EngineAssetRoute {
@@ -33809,6 +33927,7 @@ mod tests {
             ),
         ];
         let request = ScanPlanRequest {
+            campaign_id: None,
             engine_ids: Vec::new(),
             engine_asset_routes: vec![
                 EngineAssetRoute {
@@ -34052,6 +34171,7 @@ mod tests {
             .plan_scan(
                 &case.id,
                 ScanPlanRequest {
+                    campaign_id: None,
                     engine_ids: vec![],
                     engine_asset_routes: vec![
                         EngineAssetRoute {
@@ -34120,6 +34240,7 @@ mod tests {
             .plan_scan(
                 &case.id,
                 ScanPlanRequest {
+                    campaign_id: None,
                     engine_ids: Vec::new(),
                     engine_asset_routes: vec![EngineAssetRoute {
                         engine_id: "greenbone".into(),
@@ -34480,6 +34601,7 @@ mod tests {
             asset_id: asset_id.clone(),
             decision,
             request: ScanPlanRequest {
+                campaign_id: None,
                 engine_ids: Vec::new(),
                 engine_asset_routes: vec![EngineAssetRoute {
                     engine_id: INTERNAL_DEVICE_ENGINE_ID.into(),
@@ -34870,6 +34992,7 @@ mod tests {
             asset_id: asset_id.clone(),
             decision,
             request: ScanPlanRequest {
+                campaign_id: None,
                 engine_ids: Vec::new(),
                 engine_asset_routes: vec![EngineAssetRoute {
                     engine_id: "greenbone".into(),
@@ -35801,6 +35924,7 @@ mod tests {
                     }),
                 }],
                 ScanPlanRequest {
+                    campaign_id: None,
                     engine_ids: Vec::new(),
                     engine_asset_routes: vec![EngineAssetRoute {
                         engine_id: "greenbone".into(),
@@ -35940,6 +36064,7 @@ mod tests {
             .persist_scan_before_execution_preflight(
                 &case.id,
                 ScanPlanRequest {
+                    campaign_id: None,
                     engine_ids: vec!["gitleaks".into()],
                     engine_asset_routes: Vec::new(),
                 },
@@ -36067,6 +36192,7 @@ mod tests {
             .persist_scan_before_execution_preflight(
                 &case.id,
                 ScanPlanRequest {
+                    campaign_id: None,
                     engine_ids: vec!["gitleaks".into()],
                     engine_asset_routes: Vec::new(),
                 },
@@ -36143,6 +36269,7 @@ mod tests {
             .plan_scan(
                 &created.id,
                 ScanPlanRequest {
+                    campaign_id: None,
                     engine_ids: Vec::new(),
                     engine_asset_routes: vec![EngineAssetRoute {
                         engine_id: "gitleaks".into(),
@@ -36161,6 +36288,7 @@ mod tests {
             .plan_scan(
                 &created.id,
                 ScanPlanRequest {
+                    campaign_id: None,
                     engine_ids: Vec::new(),
                     engine_asset_routes: vec![EngineAssetRoute {
                         engine_id: "gitleaks".into(),
@@ -36202,6 +36330,7 @@ mod tests {
             .plan_scan(
                 &created.id,
                 ScanPlanRequest {
+                    campaign_id: None,
                     engine_ids: Vec::new(),
                     engine_asset_routes: vec![EngineAssetRoute {
                         engine_id: "future-scanner".into(),
@@ -36249,6 +36378,7 @@ mod tests {
             .plan_scan(
                 &created.id,
                 ScanPlanRequest {
+                    campaign_id: None,
                     engine_ids: Vec::new(),
                     engine_asset_routes: vec![
                         EngineAssetRoute {
@@ -36412,6 +36542,7 @@ mod tests {
             .plan_scan(
                 &created.id,
                 ScanPlanRequest {
+                    campaign_id: None,
                     engine_ids: vec!["steampipe".into()],
                     engine_asset_routes: Vec::new(),
                 },
@@ -36477,6 +36608,7 @@ mod tests {
             .persist_scan_before_execution_preflight(
                 &case_id,
                 ScanPlanRequest {
+                    campaign_id: None,
                     engine_ids: vec!["gitleaks".into()],
                     engine_asset_routes: Vec::new(),
                 },
@@ -36517,6 +36649,7 @@ mod tests {
                     external_scope: None,
                 }],
                 ScanPlanRequest {
+                    campaign_id: None,
                     engine_ids: vec!["gitleaks".into()],
                     engine_asset_routes: Vec::new(),
                 },
@@ -36560,6 +36693,7 @@ mod tests {
                 &case_id,
                 vec![],
                 ScanPlanRequest {
+                    campaign_id: None,
                     engine_ids: vec!["gitleaks".into()],
                     engine_asset_routes: Vec::new(),
                 },
@@ -36595,6 +36729,7 @@ mod tests {
                 &created.id,
                 vec![],
                 ScanPlanRequest {
+                    campaign_id: None,
                     engine_ids: vec!["gitleaks".into()],
                     engine_asset_routes: Vec::new(),
                 },
@@ -36651,6 +36786,7 @@ mod tests {
                     },
                 ],
                 ScanPlanRequest {
+                    campaign_id: None,
                     engine_ids: vec!["gitleaks".into()],
                     engine_asset_routes: Vec::new(),
                 },
@@ -36701,6 +36837,7 @@ mod tests {
                     external_scope: None,
                 }],
                 ScanPlanRequest {
+                    campaign_id: None,
                     engine_ids: vec!["gitleaks".into()],
                     engine_asset_routes: Vec::new(),
                 },
@@ -36734,6 +36871,7 @@ mod tests {
                     external_scope: None,
                 }],
                 ScanPlanRequest {
+                    campaign_id: None,
                     engine_ids: vec!["gitleaks".into(), "missing-engine".into()],
                     engine_asset_routes: Vec::new(),
                 },
@@ -36793,6 +36931,7 @@ mod tests {
                     external_scope: None,
                 }],
                 ScanPlanRequest {
+                    campaign_id: None,
                     engine_ids: vec!["gitleaks".into()],
                     engine_asset_routes: Vec::new(),
                 },
@@ -36880,6 +37019,7 @@ mod tests {
             .persist_scan_before_execution_preflight(
                 &no_grant_case.id,
                 ScanPlanRequest {
+                    campaign_id: None,
                     engine_ids: vec!["gitleaks".into()],
                     engine_asset_routes: Vec::new(),
                 },
@@ -36913,6 +37053,7 @@ mod tests {
             .persist_scan_before_execution_preflight(
                 &no_owner_case_id,
                 ScanPlanRequest {
+                    campaign_id: None,
                     engine_ids: vec!["gitleaks".into()],
                     engine_asset_routes: Vec::new(),
                 },
@@ -36948,6 +37089,7 @@ mod tests {
             .persist_scan_before_execution_preflight(
                 &no_applicable_case.id,
                 ScanPlanRequest {
+                    campaign_id: None,
                     engine_ids: vec![],
                     engine_asset_routes: Vec::new(),
                 },
@@ -36973,6 +37115,7 @@ mod tests {
             .persist_scan_before_execution_preflight(
                 &case_id,
                 ScanPlanRequest {
+                    campaign_id: None,
                     engine_ids: vec!["missing-engine".into()],
                     engine_asset_routes: Vec::new(),
                 },
@@ -37001,6 +37144,7 @@ mod tests {
             .persist_scan_before_execution_preflight(
                 &case_id,
                 ScanPlanRequest {
+                    campaign_id: None,
                     engine_ids: vec!["gitleaks".into(), "semgrep".into()],
                     engine_asset_routes: Vec::new(),
                 },
@@ -37051,6 +37195,7 @@ mod tests {
             .persist_scan_before_execution_preflight(
                 &case_id,
                 ScanPlanRequest {
+                    campaign_id: None,
                     engine_ids: vec!["gitleaks".into()],
                     engine_asset_routes: Vec::new(),
                 },
@@ -37093,6 +37238,7 @@ mod tests {
             .persist_scan_before_execution_preflight(
                 &case_id,
                 ScanPlanRequest {
+                    campaign_id: None,
                     engine_ids: vec!["gitleaks".into()],
                     engine_asset_routes: Vec::new(),
                 },
@@ -37159,6 +37305,7 @@ mod tests {
             .persist_scan_before_execution_preflight(
                 &case_id,
                 ScanPlanRequest {
+                    campaign_id: None,
                     engine_ids: vec!["gitleaks".into()],
                     engine_asset_routes: Vec::new(),
                 },
@@ -37216,6 +37363,7 @@ mod tests {
             .persist_scan_before_execution_preflight(
                 &case_id,
                 ScanPlanRequest {
+                    campaign_id: None,
                     engine_ids: vec!["gitleaks".into(), "semgrep".into()],
                     engine_asset_routes: Vec::new(),
                 },
@@ -37294,6 +37442,7 @@ mod tests {
             .persist_scan_before_execution_preflight(
                 &case_id,
                 ScanPlanRequest {
+                    campaign_id: None,
                     engine_ids: vec!["gitleaks".into()],
                     engine_asset_routes: Vec::new(),
                 },
@@ -37381,6 +37530,7 @@ mod tests {
             .preview_scan_for_execution(
                 &case_id,
                 ScanPlanRequest {
+                    campaign_id: None,
                     engine_ids: vec!["gitleaks".into()],
                     engine_asset_routes: Vec::new(),
                 },
@@ -37393,6 +37543,7 @@ mod tests {
             .persist_scan_before_execution_preflight(
                 &case_id,
                 ScanPlanRequest {
+                    campaign_id: None,
                     engine_ids: vec!["gitleaks".into()],
                     engine_asset_routes: Vec::new(),
                 },
@@ -37413,6 +37564,7 @@ mod tests {
                 &case_id,
                 &baseline_run_id,
                 ScanPlanRequest {
+                    campaign_id: None,
                     engine_ids: vec!["gitleaks".into()],
                     engine_asset_routes: Vec::new(),
                 },
@@ -37437,6 +37589,7 @@ mod tests {
             .persist_scan_before_execution_preflight(
                 &case_id,
                 ScanPlanRequest {
+                    campaign_id: None,
                     engine_ids: vec!["gitleaks".into()],
                     engine_asset_routes: Vec::new(),
                 },
@@ -37503,6 +37656,7 @@ mod tests {
             .persist_scan_before_execution_preflight(
                 &case_id,
                 ScanPlanRequest {
+                    campaign_id: None,
                     engine_ids: vec!["gitleaks".into()],
                     engine_asset_routes: Vec::new(),
                 },
@@ -37523,6 +37677,7 @@ mod tests {
                 .persist_scan_before_execution_preflight(
                     &case_id,
                     ScanPlanRequest {
+                        campaign_id: None,
                         engine_ids: vec!["gitleaks".into()],
                         engine_asset_routes: Vec::new(),
                     },
@@ -37641,6 +37796,7 @@ mod tests {
                 .persist_scan_before_execution_preflight(
                     &case_id,
                     ScanPlanRequest {
+                        campaign_id: None,
                         engine_ids: vec!["gitleaks".into()],
                         engine_asset_routes: Vec::new(),
                     },
@@ -38216,6 +38372,7 @@ mod tests {
             .persist_scan_before_execution_preflight(
                 &case_id,
                 ScanPlanRequest {
+                    campaign_id: None,
                     engine_ids: vec!["gitleaks".into()],
                     engine_asset_routes: Vec::new(),
                 },
@@ -39223,6 +39380,7 @@ mod tests {
             let mut case = base_case.clone();
             let now = Utc::now();
             case.scan_runs.push(ScanRun {
+                campaign_id: None,
                 id: "run-verification".into(),
                 case_id: case.id.clone(),
                 sequence: 1,
@@ -39327,6 +39485,7 @@ mod tests {
         let now = Utc::now();
         let task_id = "httpx-task";
         case.scan_runs.push(ScanRun {
+            campaign_id: None,
             id: "run-httpx".into(),
             case_id: case.id.clone(),
             sequence: 1,
@@ -40262,6 +40421,7 @@ mod tests {
             .plan_scan(
                 &created.id,
                 ScanPlanRequest {
+                    campaign_id: None,
                     engine_ids: vec!["gitleaks".into()],
                     engine_asset_routes: Vec::new(),
                 },
@@ -41016,6 +41176,7 @@ mod tests {
             .plan_scan(
                 &case_id,
                 ScanPlanRequest {
+                    campaign_id: None,
                     engine_ids: vec!["gitleaks".into()],
                     engine_asset_routes: Vec::new(),
                 },
@@ -41233,6 +41394,7 @@ mod tests {
             .plan_scan(
                 &case_id,
                 ScanPlanRequest {
+                    campaign_id: None,
                     engine_ids: vec!["gitleaks".into()],
                     engine_asset_routes: Vec::new(),
                 },
@@ -41998,6 +42160,7 @@ mod tests {
             .plan_scan(
                 &case_id,
                 ScanPlanRequest {
+                    campaign_id: None,
                     engine_ids: vec!["gitleaks".into()],
                     engine_asset_routes: Vec::new(),
                 },
@@ -42169,6 +42332,7 @@ mod tests {
             .plan_scan(
                 &created.id,
                 ScanPlanRequest {
+                    campaign_id: None,
                     engine_ids: vec!["gitleaks".into()],
                     engine_asset_routes: Vec::new(),
                 },
@@ -43215,6 +43379,7 @@ mod tests {
             };
         let mut status_for = |engine_runs: Vec<EngineRun>| -> CaseStatus {
             case.scan_runs = vec![ScanRun {
+                campaign_id: None,
                 id: "run-1".into(),
                 case_id: case.id.clone(),
                 sequence: 1,
@@ -43864,6 +44029,7 @@ mod tests {
         let mut case = fixture.create();
         let now = Utc::now();
         case.scan_runs.push(ScanRun {
+            campaign_id: None,
             id: "run-1".into(),
             case_id: case.id.clone(),
             sequence: 1,
@@ -43971,6 +44137,7 @@ mod tests {
         let mut case = fixture.create();
         let now = Utc::now();
         case.scan_runs.push(ScanRun {
+            campaign_id: None,
             id: "run-1".into(),
             case_id: case.id.clone(),
             sequence: 1,
@@ -44670,6 +44837,7 @@ mod tests {
             engine_run.phase = "active_fixture".into();
             engine_run.finished_at = None;
             case.scan_runs.push(ScanRun {
+                campaign_id: None,
                 id: "run-active".into(),
                 case_id: case.id.clone(),
                 sequence: 1,
@@ -44743,6 +44911,7 @@ mod tests {
             .plan_scan(
                 &case.id,
                 ScanPlanRequest {
+                    campaign_id: None,
                     engine_ids: vec!["cloudquery".into()],
                     engine_asset_routes: Vec::new(),
                 },
@@ -45099,6 +45268,7 @@ mod tests {
             .plan_scan(
                 &case.id,
                 ScanPlanRequest {
+                    campaign_id: None,
                     engine_ids: vec!["gitleaks".into()],
                     engine_asset_routes: Vec::new(),
                 },
@@ -45169,6 +45339,7 @@ mod tests {
             .plan_scan(
                 &case.id,
                 ScanPlanRequest {
+                    campaign_id: None,
                     engine_ids: vec!["trufflehog".into(), "gitleaks".into(), "kube-bench".into()],
                     engine_asset_routes: Vec::new(),
                 },
@@ -45253,6 +45424,7 @@ mod tests {
             .plan_scan(
                 &case.id,
                 ScanPlanRequest {
+                    campaign_id: None,
                     engine_ids: vec!["gitleaks".into()],
                     engine_asset_routes: Vec::new(),
                 },
@@ -45302,6 +45474,7 @@ mod tests {
             .plan_scan(
                 &case.id,
                 ScanPlanRequest {
+                    campaign_id: None,
                     engine_ids: vec!["gitleaks".into()],
                     engine_asset_routes: Vec::new(),
                 },
@@ -45351,6 +45524,7 @@ mod tests {
             .plan_scan(
                 &case.id,
                 ScanPlanRequest {
+                    campaign_id: None,
                     engine_ids: vec!["gitleaks".into()],
                     engine_asset_routes: Vec::new(),
                 },
@@ -45395,6 +45569,7 @@ mod tests {
                     &case_id,
                     "missing-baseline",
                     ScanPlanRequest {
+                        campaign_id: None,
                         engine_ids: vec!["gitleaks".into()],
                         engine_asset_routes: Vec::new(),
                     },
@@ -45412,6 +45587,7 @@ mod tests {
                 &case_id,
                 &baseline_run_id,
                 ScanPlanRequest {
+                    campaign_id: None,
                     engine_ids: vec!["gitleaks".into()],
                     engine_asset_routes: Vec::new(),
                 },
@@ -45479,6 +45655,7 @@ mod tests {
                 &case_id,
                 &baseline_run_id,
                 ScanPlanRequest {
+                    campaign_id: None,
                     engine_ids: vec!["gitleaks".into()],
                     engine_asset_routes: Vec::new(),
                 },
@@ -45507,6 +45684,7 @@ mod tests {
             .plan_scan(
                 &case_id,
                 ScanPlanRequest {
+                    campaign_id: None,
                     engine_ids: vec!["gitleaks".into()],
                     engine_asset_routes: Vec::new(),
                 },
@@ -45550,6 +45728,7 @@ mod tests {
                 &case_id,
                 &baseline_run_id,
                 ScanPlanRequest {
+                    campaign_id: None,
                     engine_ids: vec!["missing".into()],
                     engine_asset_routes: Vec::new(),
                 },
@@ -45572,6 +45751,7 @@ mod tests {
                 &case_id,
                 &baseline_run_id,
                 ScanPlanRequest {
+                    campaign_id: None,
                     engine_ids: vec!["missing".into()],
                     engine_asset_routes: Vec::new(),
                 },
@@ -45613,6 +45793,7 @@ mod tests {
             .plan_scan(
                 &case.id,
                 ScanPlanRequest {
+                    campaign_id: None,
                     engine_ids: vec!["kics".into(), "semgrep".into()],
                     engine_asset_routes: Vec::new(),
                 },
@@ -45748,6 +45929,7 @@ mod tests {
             .plan_scan(
                 &case.id,
                 ScanPlanRequest {
+                    campaign_id: None,
                     engine_ids,
                     engine_asset_routes: Vec::new(),
                 },
@@ -46084,6 +46266,7 @@ mod tests {
             .plan_scan(
                 &case.id,
                 ScanPlanRequest {
+                    campaign_id: None,
                     engine_ids: vec!["naabu".into()],
                     engine_asset_routes: Vec::new(),
                 },
@@ -46266,6 +46449,7 @@ mod tests {
             .plan_scan(
                 &case.id,
                 ScanPlanRequest {
+                    campaign_id: None,
                     engine_ids: vec!["trufflehog".into()],
                     engine_asset_routes: Vec::new(),
                 },
@@ -46323,6 +46507,7 @@ mod tests {
             .plan_scan(
                 &case.id,
                 ScanPlanRequest {
+                    campaign_id: None,
                     engine_ids: vec!["trufflehog".into()],
                     engine_asset_routes: Vec::new(),
                 },
@@ -46401,6 +46586,7 @@ mod tests {
             .plan_scan(
                 &case.id,
                 ScanPlanRequest {
+                    campaign_id: None,
                     engine_ids: vec!["kics".into(), "semgrep".into()],
                     engine_asset_routes: Vec::new(),
                 },
@@ -46599,6 +46785,7 @@ mod tests {
             .persist_scan_before_execution_preflight(
                 &case_id,
                 ScanPlanRequest {
+                    campaign_id: None,
                     engine_ids: vec!["gitleaks".into()],
                     engine_asset_routes: Vec::new(),
                 },
@@ -46673,6 +46860,7 @@ mod tests {
             .persist_scan_before_execution_preflight(
                 &case_id,
                 ScanPlanRequest {
+                    campaign_id: None,
                     engine_ids: vec!["gitleaks".into()],
                     engine_asset_routes: Vec::new(),
                 },
@@ -46691,6 +46879,7 @@ mod tests {
             .persist_scan_before_execution_preflight(
                 &case_id,
                 ScanPlanRequest {
+                    campaign_id: None,
                     engine_ids: vec!["gitleaks".into()],
                     engine_asset_routes: Vec::new(),
                 },
@@ -46776,6 +46965,7 @@ mod tests {
             .persist_scan_before_execution_preflight(
                 &case_id,
                 ScanPlanRequest {
+                    campaign_id: None,
                     engine_ids: vec!["gitleaks".into()],
                     engine_asset_routes: Vec::new(),
                 },
@@ -46843,6 +47033,7 @@ mod tests {
             .plan_scan(
                 &case.id,
                 ScanPlanRequest {
+                    campaign_id: None,
                     engine_ids: vec!["gitleaks".into()],
                     engine_asset_routes: Vec::new(),
                 },
@@ -46988,6 +47179,7 @@ mod tests {
             .plan_scan(
                 &case.id,
                 ScanPlanRequest {
+                    campaign_id: None,
                     engine_ids: vec!["gitleaks".into()],
                     engine_asset_routes: Vec::new(),
                 },
@@ -47094,6 +47286,7 @@ mod tests {
             .plan_scan(
                 &case.id,
                 ScanPlanRequest {
+                    campaign_id: None,
                     engine_ids: vec!["syft".into()],
                     engine_asset_routes: Vec::new(),
                 },
@@ -47162,6 +47355,7 @@ mod tests {
             .plan_scan(
                 &case.id,
                 ScanPlanRequest {
+                    campaign_id: None,
                     engine_ids: vec!["syft".into()],
                     engine_asset_routes: Vec::new(),
                 },
@@ -47214,6 +47408,7 @@ mod tests {
             .plan_scan(
                 &case.id,
                 ScanPlanRequest {
+                    campaign_id: None,
                     engine_ids: vec!["syft".into()],
                     engine_asset_routes: Vec::new(),
                 },
@@ -47260,6 +47455,7 @@ mod tests {
             .plan_scan(
                 &case.id,
                 ScanPlanRequest {
+                    campaign_id: None,
                     engine_ids: vec!["gitleaks".into()],
                     engine_asset_routes: Vec::new(),
                 },
@@ -47360,6 +47556,7 @@ mod tests {
             .plan_scan(
                 &case.id,
                 ScanPlanRequest {
+                    campaign_id: None,
                     engine_ids: vec!["gitleaks".into(), "cloudquery".into()],
                     engine_asset_routes: Vec::new(),
                 },
@@ -47433,6 +47630,7 @@ mod tests {
             .plan_scan(
                 &case.id,
                 ScanPlanRequest {
+                    campaign_id: None,
                     engine_ids: vec!["steampipe".into(), "missing".into()],
                     engine_asset_routes: Vec::new(),
                 },
@@ -47504,6 +47702,7 @@ mod tests {
                 .plan_scan(
                     &case.id,
                     ScanPlanRequest {
+                        campaign_id: None,
                         engine_ids: aws_engine_ids.iter().map(|id| (*id).into()).collect(),
                         engine_asset_routes: Vec::new(),
                     },
@@ -47556,6 +47755,7 @@ mod tests {
             .plan_scan(
                 &case.id,
                 ScanPlanRequest {
+                    campaign_id: None,
                     engine_ids: vec!["steampipe".into()],
                     engine_asset_routes: Vec::new(),
                 },
@@ -47601,6 +47801,7 @@ mod tests {
             .plan_scan(
                 &case.id,
                 ScanPlanRequest {
+                    campaign_id: None,
                     engine_ids: vec!["steampipe".into()],
                     engine_asset_routes: Vec::new(),
                 },
@@ -47731,6 +47932,7 @@ mod tests {
             .plan_scan(
                 &case.id,
                 ScanPlanRequest {
+                    campaign_id: None,
                     engine_ids: vec!["scubagear".into()],
                     engine_asset_routes: Vec::new(),
                 },
@@ -47862,6 +48064,7 @@ mod tests {
             .plan_scan(
                 &case.id,
                 ScanPlanRequest {
+                    campaign_id: None,
                     engine_ids: vec!["scubagear".into()],
                     engine_asset_routes: Vec::new(),
                 },
@@ -47911,6 +48114,7 @@ mod tests {
             .plan_scan(
                 &case.id,
                 ScanPlanRequest {
+                    campaign_id: None,
                     engine_ids: vec!["cloudquery".into()],
                     engine_asset_routes: Vec::new(),
                 },
@@ -48053,6 +48257,7 @@ mod tests {
             external_scope: None,
         });
         case.scan_runs.push(ScanRun {
+            campaign_id: None,
             id: "scan-1".into(),
             case_id: case.id.clone(),
             sequence: 1,
@@ -48617,6 +48822,7 @@ mod tests {
         };
         for (sequence, id) in [(1, "baseline"), (2, "current")] {
             case.scan_runs.push(ScanRun {
+                campaign_id: None,
                 id: id.into(),
                 case_id: case.id.clone(),
                 sequence,
@@ -48646,6 +48852,7 @@ mod tests {
             engine_run.finished_at = completed_at;
             engine_run.exit_code = None;
             case.scan_runs.push(ScanRun {
+                campaign_id: None,
                 id: id.into(),
                 case_id: case.id.clone(),
                 sequence,
@@ -48982,6 +49189,7 @@ mod tests {
         let case_id = case.id.clone();
         let created_at = Utc::now();
         let run = |id: &str, sequence: u32| ScanRun {
+            campaign_id: None,
             id: id.into(),
             case_id: case_id.clone(),
             sequence,
@@ -49322,6 +49530,7 @@ mod tests {
         asset: &Asset,
     ) -> ScanRun {
         ScanRun {
+            campaign_id: None,
             id: id.into(),
             case_id: case_id.into(),
             sequence,

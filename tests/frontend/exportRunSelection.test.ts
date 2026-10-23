@@ -89,7 +89,7 @@ test("Findings, Export, service, and native command preserve one explicit run co
   const previewCommandStart = commands.indexOf("pub fn preview_export");
   const exportCommandEnd = commands.indexOf("pub fn verify_case_export", previewCommandStart);
   const nativeExportFlow = commands.slice(previewCommandStart, exportCommandEnd);
-  assert.equal((nativeExportFlow.match(/&input\.run_id/gu) ?? []).length, 2);
+  assert.equal((nativeExportFlow.match(/&input\.run_id\b/gu) ?? []).length, 2);
   assert.doesNotMatch(nativeExportFlow, /\.max_by\(/u);
 });
 

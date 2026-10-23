@@ -703,6 +703,12 @@ pub enum EngineRunStatus {
 pub enum EngineTaskKind {
     #[default]
     CatalogEngine,
+    /// Imported scanner evidence. This never represents local execution or
+    /// proves coverage, and cannot authorize a scanner or target contact.
+    ExternalReportImport {
+        source_format: String,
+        source_sha256: String,
+    },
     BuiltInLocalhostTcp {
         port: u16,
         timeout_ms: u64,
@@ -1192,6 +1198,9 @@ where
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ScanRun {
+    /// Explicit incident-triage selection, frozen with this run. No scan authority.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub campaign_id: Option<String>,
     pub id: Id,
     pub case_id: Id,
     pub sequence: u32,
@@ -2652,6 +2661,7 @@ mod tests {
         )
         .unwrap();
         let run = ScanRun {
+            campaign_id: None,
             id: "run-no-checks".into(),
             case_id: "case-1".into(),
             sequence: 1,
@@ -2890,6 +2900,7 @@ mod tests {
         let now = Utc::now();
         for (id, sequence) in [("newer", 2), ("older-vector-tail", 1)] {
             case.scan_runs.push(ScanRun {
+                campaign_id: None,
                 id: id.into(),
                 case_id: case.id.clone(),
                 sequence,
@@ -2968,6 +2979,7 @@ mod tests {
         fn localhost_scan_run(case_id: &str, id: &str, sequence: u32, port: u16) -> ScanRun {
             let now = "2026-08-30T12:00:00Z".parse().unwrap();
             ScanRun {
+                campaign_id: None,
                 id: id.into(),
                 case_id: case_id.into(),
                 sequence,

@@ -199,6 +199,7 @@ pub fn prepare_localhost_quick_scan(
         error_message: None,
     };
     case.scan_runs.push(ScanRun {
+        campaign_id: None,
         id: scan_run_id.clone(),
         case_id: case.id.clone(),
         sequence: 1,

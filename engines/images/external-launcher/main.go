@@ -34,10 +34,10 @@ const (
 	journalPlanMountPath         = "/run/ai-security-scanner/execution-journal-v2.json"
 	outputMountPath              = "/output"
 	templateRootPath             = "/opt/nuclei-templates"
-	templateRevision             = "24858b4bfabfa86f0bcfd36aea24fb535152b012"
+	templateRevision             = "f938a3dd530c283e9387b518b97911152ff5846c"
 	templateRevisionMarker       = "/opt/nuclei-templates/AI_SECURITY_SCANNER_REVISION"
 	nucleiWebSafeProfileID       = "nuclei_web_safe_v1"
-	nucleiWebSafeTemplateCount   = 4674
+	nucleiWebSafeTemplateCount   = 4775
 	maxScopeBytes                = 4 * 1024 * 1024
 	maxEvidenceBytes             = 512 * 1024 * 1024
 	maxEvidenceLineBytes         = 16 * 1024 * 1024

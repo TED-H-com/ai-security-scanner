@@ -23,11 +23,13 @@ pub mod execution_coverage;
 pub mod export;
 pub mod export_identity;
 pub mod exporters;
+pub mod external_scanner_import;
 pub mod external_scope;
 pub mod finding_narrative;
 pub mod garak_input;
 #[cfg(any(feature = "desktop", feature = "cli"))]
 pub mod gateway_release;
+pub mod incident_focus;
 pub mod job_manager;
 pub mod local_tcp_probe;
 pub mod localhost_quick_scan;
@@ -46,6 +48,7 @@ mod report_attachments;
 mod report_problem_groups;
 pub mod runtime;
 pub mod runtime_health_monitor;
+pub mod selected_run_report;
 pub mod source_authorization;
 #[cfg(any(feature = "desktop", test))]
 mod startup_failure;
@@ -391,6 +394,8 @@ pub fn run() {
             commands::get_app_snapshot,
             commands::detect_local_private_subnets,
             commands::get_scan_readiness,
+            commands::preview_external_scanner_import,
+            commands::import_external_scanner_reports,
             commands::setup_managed_runtime,
             commands::get_managed_runtime_setup_status,
             commands::cancel_managed_runtime_setup,
@@ -433,6 +438,7 @@ pub fn run() {
             commands::start_rescan,
             commands::preview_export,
             commands::export_case,
+            commands::export_selected_run_report,
             commands::verify_case_export,
         ])
         .run(tauri::generate_context!())

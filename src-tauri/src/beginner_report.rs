@@ -105,6 +105,8 @@ const INTERNAL_ENDPOINT_TELNET_VULNERABILITY_OIDS: [&str; 1] = ["1.3.6.1.4.1.256
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 pub struct BeginnerMasterReport {
     pub schema_version: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub incident_focus: Option<crate::incident_focus::IncidentCampaignReport>,
     pub case_id: Id,
     pub run_id: Id,
     pub project_title: String,
@@ -795,6 +797,12 @@ pub enum TechnicalExecution {
         observation: Option<LocalhostTcpObservation>,
         contract: String,
     },
+    ExternalReportImport {
+        engine_id: String,
+        source_format: String,
+        source_sha256: String,
+        contract: String,
+    },
     InvalidBuiltInTask {
         explanation: String,
     },
@@ -1009,6 +1017,9 @@ pub fn build_beginner_master_report(
 
     Ok(BeginnerMasterReport {
         schema_version: BEGINNER_MASTER_REPORT_SCHEMA_VERSION.into(),
+        incident_focus: crate::incident_focus::build_campaign_report_from_observations(
+            run, selected_observations.values().copied(),
+        ),
         case_id: case.id.clone(),
         run_id: run.id.clone(),
         project_title: case.title.clone(),
@@ -1457,7 +1468,8 @@ fn project_requested_coverage(
                     });
                 }
             }
-            EngineTaskKind::BuiltInLocalhostTcp { .. } => {}
+            EngineTaskKind::BuiltInLocalhostTcp { .. }
+            | EngineTaskKind::ExternalReportImport { .. } => {}
         }
     }
     for grant in &run.scope_grant_snapshots {
@@ -2029,6 +2041,30 @@ fn project_actual_coverage(case: &AssessmentCase, run: &ScanRun) -> ActualCovera
                     tested_dimensions.clear();
                     useful_result = false;
                 }
+            }
+            EngineTaskKind::ExternalReportImport { .. } => {
+                let failed = task.status == EngineRunStatus::Failed;
+                status = if failed {
+                    CoverageDimensionStatus::Failed
+                } else {
+                    CoverageDimensionStatus::NotTested
+                };
+                let kind = if failed {
+                    CoverageGapKind::Failed
+                } else {
+                    CoverageGapKind::NotTested
+                };
+                gaps.push(CoverageGap {
+                    unattributed: None, class: kind.default_class(), kind,
+                    task_id: Some(task.id.clone()), target_asset_ids: task.asset_ids.clone(),
+                    dimension: "External report coverage".into(),
+                    reason: if failed { "The selected external report could not be imported." }
+                        else { "Imported findings are available; the original scanner's coverage was not verified." }.into(),
+                    next_action_code: NextActionCode::ReviewFinding,
+                    next_action: if failed { "Select the report again and review its target." }
+                        else { "Review the imported findings and confirm the affected asset." }.into(),
+                });
+                task_gap_already_projected = true;
             }
             EngineTaskKind::CatalogEngine => {
                 // Older adapters did not freeze granular executed dimensions.
@@ -4691,6 +4727,10 @@ fn project_technical_details(case: &AssessmentCase, run: &ScanRun) -> TechnicalD
             evidence_sha256.sort();
             evidence_sha256.dedup();
             let execution = match task.task_kind {
+                EngineTaskKind::ExternalReportImport { ref source_format, ref source_sha256 } => TechnicalExecution::ExternalReportImport {
+                    engine_id: task.engine_id.clone(), source_format: source_format.clone(), source_sha256: source_sha256.clone(),
+                    contract: "Offline report import. No scanner was executed; original scan coverage remains unverified.".into(),
+                },
                 EngineTaskKind::CatalogEngine => TechnicalExecution::CatalogEngine {
                     engine_id: task.engine_id.clone(),
                     engine_version: task.engine_version.clone(),
@@ -4907,6 +4947,7 @@ fn exactly_completed_without_known_gap(task: &EngineRun) -> bool {
                 )
         }
         EngineTaskKind::CatalogEngine => true,
+        EngineTaskKind::ExternalReportImport { .. } => false,
     }
 }
 
@@ -5016,6 +5057,9 @@ fn check_id(task: &EngineRun) -> String {
             format!("native localhost TCP check on 127.0.0.1:{port}")
         }
         EngineTaskKind::CatalogEngine => task.engine_id.clone(),
+        EngineTaskKind::ExternalReportImport { .. } => {
+            format!("{} imported report", task.engine_id)
+        }
     }
 }
 
@@ -5081,7 +5125,9 @@ fn task_result_kind(task: &EngineRun) -> CheckResultKind {
         {
             CheckResultKind::Inventory
         }
-        EngineTaskKind::CatalogEngine => CheckResultKind::SecurityCheck,
+        EngineTaskKind::CatalogEngine | EngineTaskKind::ExternalReportImport { .. } => {
+            CheckResultKind::SecurityCheck
+        }
     }
 }
 
@@ -5354,6 +5400,7 @@ pub(crate) mod tests {
         });
         let run_id = "run-1".to_string();
         case.scan_runs.push(ScanRun {
+            campaign_id: None,
             id: run_id.clone(),
             case_id: case.id.clone(),
             sequence: 1,
@@ -5542,6 +5589,7 @@ pub(crate) mod tests {
             metadata: BTreeMap::new(),
         });
         case.scan_runs.push(ScanRun {
+            campaign_id: None,
             id: "run-1".into(),
             case_id: case.id.clone(),
             sequence: 1,
@@ -7370,6 +7418,7 @@ pub(crate) mod tests {
             metadata: BTreeMap::new(),
         });
         case.scan_runs.push(ScanRun {
+            campaign_id: None,
             id: "run-1".into(),
             case_id: case.id.clone(),
             sequence: 1,
@@ -7435,6 +7484,7 @@ pub(crate) mod tests {
             metadata: BTreeMap::new(),
         });
         case.scan_runs.push(ScanRun {
+            campaign_id: None,
             id: "run-1".into(),
             case_id: case.id.clone(),
             sequence: 1,
@@ -7647,6 +7697,7 @@ pub(crate) mod tests {
         device_task.engine_id = GREENBONE_ENGINE_ID.into();
         device_task.asset_ids = vec!["device-asset".into()];
         case.scan_runs.push(ScanRun {
+            campaign_id: None,
             id: "run-1".into(),
             case_id: case.id.clone(),
             sequence: 1,
@@ -8203,6 +8254,7 @@ pub(crate) mod tests {
             metadata: BTreeMap::new(),
         });
         case.scan_runs.push(ScanRun {
+            campaign_id: None,
             id: "run-1".into(),
             case_id: case.id.clone(),
             sequence: 1,
@@ -9681,6 +9733,7 @@ pub(crate) mod tests {
         task.error_message = None;
 
         case.scan_runs.push(ScanRun {
+            campaign_id: None,
             id: "run-1".into(),
             case_id: case.id.clone(),
             sequence: 1,
@@ -9771,6 +9824,7 @@ pub(crate) mod tests {
         task.error_message = None;
 
         case.scan_runs.push(ScanRun {
+            campaign_id: None,
             id: "run-1".into(),
             case_id: case.id.clone(),
             sequence: 1,
@@ -9918,6 +9972,7 @@ pub(crate) mod tests {
         task.error_message = None;
 
         case.scan_runs.push(ScanRun {
+            campaign_id: None,
             id: "run-1".into(),
             case_id: case.id.clone(),
             sequence: 1,

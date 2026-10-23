@@ -1638,3 +1638,67 @@ test("mixed workflow inventory dispatch stays on its selected repository and req
     .toEqual({ engineId: "agentic-radar", assetIds: ["repo-a"] });
   expect(authorizations.find((a: { assetIds: string[] }) => a.assetIds.includes("repo-a")).modes).toEqual(["local_artifact"]);
 });
+
+test("incident triage narrows the local scan while freezing the campaign selection", async () => {
+  const onStartScan = vi.fn().mockResolvedValue(true);
+  const { getByRole, getByLabelText, container } = renderRoute({
+    assessmentIntent: "source_code", requestedActivities: ["local_artifact_analysis"], onStartScan,
+    assets: [pendingAsset({ name: "incident-copy", localInputProfile: "repository_working_tree" })],
+  });
+  fireEvent.click(getByLabelText(/October 21–22 incident triage/u));
+  await waitFor(() => expect(container.querySelector(".coverage-guided-boundary")?.textContent)
+    .toContain("Read-only checks: Known package vulnerabilities."));
+  fireEvent.click(getByRole("button", { name: "Confirm and start scan" }));
+  expect(onStartScan).toHaveBeenCalledWith(["asset-1"], ["local_artifact"],
+    "The user explicitly selected this saved local copy and confirmed the recommended read-only checks.",
+    undefined, ["trivy"], "october-2026");
+});
+
+test("package incident triage excludes every external route and unsupported local input before authorization", async () => {
+  const onStartEnvironmentScan = vi.fn().mockResolvedValue(false);
+  const external = (id: string, details: Partial<Asset>) => pendingAsset({
+    id, name: id, platform: "external", type: "service", locator: `${id}.example.invalid`,
+    identifiers: [{ namespace: "dns_name", value: `${id}.example.invalid` }],
+    internetExposed: false, ...details,
+  });
+  const { getByLabelText, getByText, getByRole, queryByText } = renderRoute({
+    assessmentIntent: "internal_it_environment", nativeMode: false,
+    requestedActivities: ["local_artifact_analysis", "active_external_vulnerability_tests"],
+    onStartEnvironmentScan,
+    assets: [
+      pendingAsset({ id: "repo", name: "package-copy", localInputProfile: "repository_working_tree" }),
+      pendingAsset({ id: "node", name: "node-config", localInputProfile: "kubernetes_node_snapshot" }),
+      external("website", { declaredWebService: { protocol: "https", port: 443, path: "/" } }),
+      external("host", { type: "domain", declaredHostScan: { protocol: "tcp", ports: [22,443], scanProfile: "internal_host_greenbone_remote_safe" } }),
+      external("endpoint", { declaredNetworkService: { protocol: "tcp", port: 22, scanProfile: "internal_endpoint_ssh" } }),
+      external("device", { declaredWebService: { protocol: "https", port: 443, path: "/", scanProfile: "internal_device_https" } }),
+    ],
+  });
+  fireEvent.click(getByLabelText(/October 21–22 incident triage/u));
+  expect(getByText("5 assets excluded from package incident checks")).toBeTruthy();
+  expect(queryByText(/I confirm I am allowed/u)).toBeNull();
+  const submit = getByRole("button", { name: "Start one combined scan" });
+  fireEvent.click(submit);
+  await waitFor(() => expect(onStartEnvironmentScan).toHaveBeenCalledTimes(1));
+  const [authorizations, routes, campaign] = onStartEnvironmentScan.mock.calls[0]!;
+  expect(authorizations).toEqual([{
+    assetIds: ["repo"], modes: ["local_artifact"],
+    confirmation: "The user explicitly selected this saved local copy and confirmed the recommended read-only checks.",
+  }]);
+  expect(routes).toEqual([{ engineId: "trivy", assetIds: ["repo"] }]);
+  expect(campaign).toBe("october-2026");
+  fireEvent.click(getByLabelText("Choose package-copy"));
+  expect((submit as HTMLButtonElement).disabled).toBe(true);
+  fireEvent.click(submit);
+  expect(onStartEnvironmentScan).toHaveBeenCalledTimes(1);
+});
+
+test.each(["deployed_website", "internal_it_environment"] as const)("%s without package inputs does not offer unsupported incident triage", (assessmentIntent) => {
+  const { queryByLabelText } = renderRoute({ assessmentIntent,
+    requestedActivities: ["active_external_vulnerability_tests"],
+    assets: [pendingAsset({ id: "site", platform: "external", type: "service", name: "website",
+      locator: "https://example.invalid", identifiers: [{ namespace: "dns_name", value: "example.invalid" }],
+      declaredWebService: { protocol: "https", port: 443, path: "/" }, internetExposed: true })],
+  });
+  expect(queryByLabelText(/October 21–22 incident triage/u)).toBeNull();
+});

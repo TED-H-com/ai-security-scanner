@@ -1,0 +1,882 @@
+{
+  "schema_version": 1,
+  "note": "Actual offline mechanical proposal outcomes. Local bundles contain patches/reports; none were applied to runtime recipes or catalog. Source checkout drift is not latest stable release qualification.",
+  "results": [
+    {
+      "engine": "agentic-radar",
+      "outcome": "frozen",
+      "policy": "frozen",
+      "bundle": ".upstream-refresh/2026-10-22/bundles/agentic-radar/20261022T151501Z",
+      "drift": {
+        "status": "detected",
+        "summary": "At least one available offline source differs from the pinned plan revision.",
+        "pinned_revision": "65a7e4bd01e2034c7cb52e9620eeed287688cc53",
+        "checkout_revision": "1a3e4d81e3b122a69a529f1553a0b7239b64750d",
+        "lock_revision": "1a3e4d81e3b122a69a529f1553a0b7239b64750d"
+      },
+      "pr_eligible": false,
+      "verification": [
+        {
+          "name": "validate:engine-input-hashes",
+          "status": "not_run",
+          "reason": "The offline machine-output image is published. Automatic upstream refreshes are frozen and cannot reach a release through automation; manually revalidate the thin output patch, five framework parsers, diagnostics and target/environment isolation before changing the pin."
+        },
+        {
+          "name": "validate:engine-catalog",
+          "status": "not_run",
+          "reason": "The offline machine-output image is published. Automatic upstream refreshes are frozen and cannot reach a release through automation; manually revalidate the thin output patch, five framework parsers, diagnostics and target/environment isolation before changing the pin."
+        },
+        {
+          "name": "validate:engine-line-endings",
+          "status": "not_run",
+          "reason": "The offline machine-output image is published. Automatic upstream refreshes are frozen and cannot reach a release through automation; manually revalidate the thin output patch, five framework parsers, diagnostics and target/environment isolation before changing the pin."
+        }
+      ],
+      "reasons": [
+        "Policy status is frozen: The offline machine-output image is published. Automatic upstream refreshes are frozen and cannot reach a release through automation; manually revalidate the thin output patch, five framework parsers, diagnostics and target/environment isolation before changing the pin.",
+        "No adapter change was produced.",
+        "Verification check validate:engine-input-hashes was not run: The offline machine-output image is published. Automatic upstream refreshes are frozen and cannot reach a release through automation; manually revalidate the thin output patch, five framework parsers, diagnostics and target/environment isolation before changing the pin.",
+        "Verification check validate:engine-catalog was not run: The offline machine-output image is published. Automatic upstream refreshes are frozen and cannot reach a release through automation; manually revalidate the thin output patch, five framework parsers, diagnostics and target/environment isolation before changing the pin.",
+        "Verification check validate:engine-line-endings was not run: The offline machine-output image is published. Automatic upstream refreshes are frozen and cannot reach a release through automation; manually revalidate the thin output patch, five framework parsers, diagnostics and target/environment isolation before changing the pin."
+      ]
+    },
+    {
+      "engine": "checkov",
+      "outcome": "no_change",
+      "policy": "eligible",
+      "bundle": ".upstream-refresh/2026-10-22/bundles/checkov/20261022T151501Z",
+      "drift": {
+        "status": "none",
+        "summary": "Every available required offline source matches the pinned plan revision.",
+        "pinned_revision": "e40023ab262c7c8b7b0a8f0975072b42d1b601f9",
+        "checkout_revision": "e40023ab262c7c8b7b0a8f0975072b42d1b601f9",
+        "lock_revision": "e40023ab262c7c8b7b0a8f0975072b42d1b601f9"
+      },
+      "pr_eligible": false,
+      "verification": [
+        {
+          "name": "validate:engine-input-hashes",
+          "status": "not_run",
+          "reason": "No proposed changes were produced, so there was no proposed tree to verify."
+        },
+        {
+          "name": "validate:engine-catalog",
+          "status": "not_run",
+          "reason": "No proposed changes were produced, so there was no proposed tree to verify."
+        },
+        {
+          "name": "validate:engine-line-endings",
+          "status": "not_run",
+          "reason": "No proposed changes were produced, so there was no proposed tree to verify."
+        }
+      ],
+      "reasons": [
+        "No adapter change was produced.",
+        "Verification check validate:engine-input-hashes was not run: No proposed changes were produced, so there was no proposed tree to verify.",
+        "Verification check validate:engine-catalog was not run: No proposed changes were produced, so there was no proposed tree to verify.",
+        "Verification check validate:engine-line-endings was not run: No proposed changes were produced, so there was no proposed tree to verify."
+      ]
+    },
+    {
+      "engine": "cloudquery",
+      "outcome": "frozen",
+      "policy": "frozen",
+      "bundle": ".upstream-refresh/2026-10-22/bundles/cloudquery/20261022T151501Z",
+      "drift": {
+        "status": "detected",
+        "summary": "At least one available offline source differs from the pinned plan revision.",
+        "pinned_revision": "e27e4ab61ad85479a5d53dae9b08440bc63e72b3",
+        "checkout_revision": "db391adb6f7282196d1848541ab29297cffc6058",
+        "lock_revision": "db391adb6f7282196d1848541ab29297cffc6058"
+      },
+      "pr_eligible": false,
+      "verification": [
+        {
+          "name": "validate:engine-input-hashes",
+          "status": "not_run",
+          "reason": "CloudQuery is deliberately pinned to v2.0.31 (knowledge_date 2023-01-10), the last fully public CloudQuery CLI before the project stopped being fully open source. A refresh would move the product onto a non-open-source upstream."
+        },
+        {
+          "name": "validate:engine-catalog",
+          "status": "not_run",
+          "reason": "CloudQuery is deliberately pinned to v2.0.31 (knowledge_date 2023-01-10), the last fully public CloudQuery CLI before the project stopped being fully open source. A refresh would move the product onto a non-open-source upstream."
+        },
+        {
+          "name": "validate:engine-line-endings",
+          "status": "not_run",
+          "reason": "CloudQuery is deliberately pinned to v2.0.31 (knowledge_date 2023-01-10), the last fully public CloudQuery CLI before the project stopped being fully open source. A refresh would move the product onto a non-open-source upstream."
+        }
+      ],
+      "reasons": [
+        "Policy status is frozen: CloudQuery is deliberately pinned to v2.0.31 (knowledge_date 2023-01-10), the last fully public CloudQuery CLI before the project stopped being fully open source. A refresh would move the product onto a non-open-source upstream.",
+        "No adapter change was produced.",
+        "Verification check validate:engine-input-hashes was not run: CloudQuery is deliberately pinned to v2.0.31 (knowledge_date 2023-01-10), the last fully public CloudQuery CLI before the project stopped being fully open source. A refresh would move the product onto a non-open-source upstream.",
+        "Verification check validate:engine-catalog was not run: CloudQuery is deliberately pinned to v2.0.31 (knowledge_date 2023-01-10), the last fully public CloudQuery CLI before the project stopped being fully open source. A refresh would move the product onto a non-open-source upstream.",
+        "Verification check validate:engine-line-endings was not run: CloudQuery is deliberately pinned to v2.0.31 (knowledge_date 2023-01-10), the last fully public CloudQuery CLI before the project stopped being fully open source. A refresh would move the product onto a non-open-source upstream."
+      ]
+    },
+    {
+      "engine": "cloudsplaining",
+      "outcome": "verification_failed",
+      "policy": "eligible",
+      "bundle": ".upstream-refresh/2026-10-22/bundles/cloudsplaining/20261022T151501Z",
+      "drift": {
+        "status": "detected",
+        "summary": "At least one available offline source differs from the pinned plan revision.",
+        "pinned_revision": "75a67ea9cb6d0fdf35ff185d08dad0d45587e6f7",
+        "checkout_revision": "62df86e799c963a3131ead9ffc4e78d7d0ed9db6",
+        "lock_revision": "62df86e799c963a3131ead9ffc4e78d7d0ed9db6"
+      },
+      "pr_eligible": false,
+      "verification": [
+        {
+          "name": "validate:engine-input-hashes",
+          "status": "passed",
+          "reason": null
+        },
+        {
+          "name": "validate:engine-catalog",
+          "status": "failed",
+          "reason": "The check exited with status 1."
+        },
+        {
+          "name": "validate:engine-line-endings",
+          "status": "passed",
+          "reason": null
+        }
+      ],
+      "reasons": [
+        "Verification check validate:engine-catalog failed.",
+        "Completing an upstream revision refresh requires a re-pinned source archive with a new SHA-256 checksum, a Dockerfile revision update, and a rebuilt image; those network, registry, and owner-authorized publication steps are outside this offline pipeline."
+      ]
+    },
+    {
+      "engine": "garak",
+      "outcome": "frozen",
+      "policy": "frozen",
+      "bundle": ".upstream-refresh/2026-10-22/bundles/garak/20261022T151504Z",
+      "drift": {
+        "status": "none",
+        "summary": "Every available required offline source matches the pinned plan revision.",
+        "pinned_revision": "93aa9cdec309ec4170559676f1826ea2a679920c",
+        "checkout_revision": "93aa9cdec309ec4170559676f1826ea2a679920c",
+        "lock_revision": "93aa9cdec309ec4170559676f1826ea2a679920c"
+      },
+      "pr_eligible": false,
+      "verification": [
+        {
+          "name": "validate:engine-input-hashes",
+          "status": "not_run",
+          "reason": "The fixed native REST/DAN/ANSI image is published. Automatic upstream refreshes are frozen and cannot reach a release through automation; manually revalidate prompt/detector counts, exact HTTPS/model scope, import closure, retry-inclusive limits and six-case native TLS QA before changing the pin."
+        },
+        {
+          "name": "validate:engine-catalog",
+          "status": "not_run",
+          "reason": "The fixed native REST/DAN/ANSI image is published. Automatic upstream refreshes are frozen and cannot reach a release through automation; manually revalidate prompt/detector counts, exact HTTPS/model scope, import closure, retry-inclusive limits and six-case native TLS QA before changing the pin."
+        },
+        {
+          "name": "validate:engine-line-endings",
+          "status": "not_run",
+          "reason": "The fixed native REST/DAN/ANSI image is published. Automatic upstream refreshes are frozen and cannot reach a release through automation; manually revalidate prompt/detector counts, exact HTTPS/model scope, import closure, retry-inclusive limits and six-case native TLS QA before changing the pin."
+        }
+      ],
+      "reasons": [
+        "Policy status is frozen: The fixed native REST/DAN/ANSI image is published. Automatic upstream refreshes are frozen and cannot reach a release through automation; manually revalidate prompt/detector counts, exact HTTPS/model scope, import closure, retry-inclusive limits and six-case native TLS QA before changing the pin.",
+        "No adapter change was produced.",
+        "Verification check validate:engine-input-hashes was not run: The fixed native REST/DAN/ANSI image is published. Automatic upstream refreshes are frozen and cannot reach a release through automation; manually revalidate prompt/detector counts, exact HTTPS/model scope, import closure, retry-inclusive limits and six-case native TLS QA before changing the pin.",
+        "Verification check validate:engine-catalog was not run: The fixed native REST/DAN/ANSI image is published. Automatic upstream refreshes are frozen and cannot reach a release through automation; manually revalidate prompt/detector counts, exact HTTPS/model scope, import closure, retry-inclusive limits and six-case native TLS QA before changing the pin.",
+        "Verification check validate:engine-line-endings was not run: The fixed native REST/DAN/ANSI image is published. Automatic upstream refreshes are frozen and cannot reach a release through automation; manually revalidate prompt/detector counts, exact HTTPS/model scope, import closure, retry-inclusive limits and six-case native TLS QA before changing the pin."
+      ]
+    },
+    {
+      "engine": "gitleaks",
+      "outcome": "verification_failed",
+      "policy": "eligible",
+      "bundle": ".upstream-refresh/2026-10-22/bundles/gitleaks/20261022T151504Z",
+      "drift": {
+        "status": "detected",
+        "summary": "At least one available offline source differs from the pinned plan revision.",
+        "pinned_revision": "83d9cd684c87d95d656c1458ef04895a7f1cbd8e",
+        "checkout_revision": "b58d3f102cf3a2c84cb7f923d05c25c9b1aed84b",
+        "lock_revision": "b58d3f102cf3a2c84cb7f923d05c25c9b1aed84b"
+      },
+      "pr_eligible": false,
+      "verification": [
+        {
+          "name": "validate:engine-input-hashes",
+          "status": "passed",
+          "reason": null
+        },
+        {
+          "name": "validate:engine-catalog",
+          "status": "failed",
+          "reason": "The check exited with status 1."
+        },
+        {
+          "name": "validate:engine-line-endings",
+          "status": "passed",
+          "reason": null
+        }
+      ],
+      "reasons": [
+        "Verification check validate:engine-catalog failed.",
+        "Completing an upstream revision refresh requires a re-pinned source archive with a new SHA-256 checksum, a Dockerfile revision update, and a rebuilt image; those network, registry, and owner-authorized publication steps are outside this offline pipeline."
+      ]
+    },
+    {
+      "engine": "greenbone",
+      "outcome": "drift_detected_but_no_proposal",
+      "policy": "eligible",
+      "bundle": ".upstream-refresh/2026-10-22/bundles/greenbone/20261022T151508Z",
+      "drift": {
+        "status": "detected",
+        "summary": "At least one available offline source differs from the pinned plan revision.",
+        "pinned_revision": "26465a11ff0e6a98d60a253265fab5974fc757b6",
+        "checkout_revision": null,
+        "lock_revision": "dcd2be55045b6b63b4f954504d76cc26a09b583e"
+      },
+      "pr_eligible": false,
+      "verification": [
+        {
+          "name": "validate:engine-input-hashes",
+          "status": "not_run",
+          "reason": "No proposed changes were produced, so there was no proposed tree to verify."
+        },
+        {
+          "name": "validate:engine-catalog",
+          "status": "not_run",
+          "reason": "No proposed changes were produced, so there was no proposed tree to verify."
+        },
+        {
+          "name": "validate:engine-line-endings",
+          "status": "not_run",
+          "reason": "No proposed changes were produced, so there was no proposed tree to verify."
+        }
+      ],
+      "reasons": [
+        "Upstream lock revision dcd2be55045b6b63b4f954504d76cc26a09b583e differs from the plan pin 26465a11ff0e6a98d60a253265fab5974fc757b6; the plan does not name a safe local research checkout. Re-pin the plan after inspecting a local checkout.",
+        "Verification check validate:engine-input-hashes was not run: No proposed changes were produced, so there was no proposed tree to verify.",
+        "Verification check validate:engine-catalog was not run: No proposed changes were produced, so there was no proposed tree to verify.",
+        "Verification check validate:engine-line-endings was not run: No proposed changes were produced, so there was no proposed tree to verify."
+      ]
+    },
+    {
+      "engine": "grype",
+      "outcome": "no_change",
+      "policy": "eligible",
+      "bundle": ".upstream-refresh/2026-10-22/bundles/grype/20261022T151508Z",
+      "drift": {
+        "status": "none",
+        "summary": "Every available required offline source matches the pinned plan revision.",
+        "pinned_revision": "6f8d854af29d3a3086b11a84afa51554a2a245fe",
+        "checkout_revision": "6f8d854af29d3a3086b11a84afa51554a2a245fe",
+        "lock_revision": "6f8d854af29d3a3086b11a84afa51554a2a245fe"
+      },
+      "pr_eligible": false,
+      "verification": [
+        {
+          "name": "validate:engine-input-hashes",
+          "status": "not_run",
+          "reason": "No proposed changes were produced, so there was no proposed tree to verify."
+        },
+        {
+          "name": "validate:engine-catalog",
+          "status": "not_run",
+          "reason": "No proposed changes were produced, so there was no proposed tree to verify."
+        },
+        {
+          "name": "validate:engine-line-endings",
+          "status": "not_run",
+          "reason": "No proposed changes were produced, so there was no proposed tree to verify."
+        }
+      ],
+      "reasons": [
+        "No adapter change was produced.",
+        "Verification check validate:engine-input-hashes was not run: No proposed changes were produced, so there was no proposed tree to verify.",
+        "Verification check validate:engine-catalog was not run: No proposed changes were produced, so there was no proposed tree to verify.",
+        "Verification check validate:engine-line-endings was not run: No proposed changes were produced, so there was no proposed tree to verify."
+      ]
+    },
+    {
+      "engine": "httpx",
+      "outcome": "no_change",
+      "policy": "eligible",
+      "bundle": ".upstream-refresh/2026-10-22/bundles/httpx/20261022T151508Z",
+      "drift": {
+        "status": "none",
+        "summary": "Every available required offline source matches the pinned plan revision.",
+        "pinned_revision": "4b6a9a9d476f94a4f3a630f37051f5671ecfb1f8",
+        "checkout_revision": "4b6a9a9d476f94a4f3a630f37051f5671ecfb1f8",
+        "lock_revision": "4b6a9a9d476f94a4f3a630f37051f5671ecfb1f8"
+      },
+      "pr_eligible": false,
+      "verification": [
+        {
+          "name": "validate:engine-input-hashes",
+          "status": "not_run",
+          "reason": "No proposed changes were produced, so there was no proposed tree to verify."
+        },
+        {
+          "name": "validate:engine-catalog",
+          "status": "not_run",
+          "reason": "No proposed changes were produced, so there was no proposed tree to verify."
+        },
+        {
+          "name": "validate:engine-line-endings",
+          "status": "not_run",
+          "reason": "No proposed changes were produced, so there was no proposed tree to verify."
+        }
+      ],
+      "reasons": [
+        "No adapter change was produced.",
+        "Verification check validate:engine-input-hashes was not run: No proposed changes were produced, so there was no proposed tree to verify.",
+        "Verification check validate:engine-catalog was not run: No proposed changes were produced, so there was no proposed tree to verify.",
+        "Verification check validate:engine-line-endings was not run: No proposed changes were produced, so there was no proposed tree to verify."
+      ]
+    },
+    {
+      "engine": "kics",
+      "outcome": "verification_failed",
+      "policy": "eligible",
+      "bundle": ".upstream-refresh/2026-10-22/bundles/kics/20261022T151508Z",
+      "drift": {
+        "status": "detected",
+        "summary": "At least one available offline source differs from the pinned plan revision.",
+        "pinned_revision": "e1f23cad9640f55b963f22a116b04906b8c16ac6",
+        "checkout_revision": "1f05308bc1f1068c41cdc3cb5a3c2d99732c56fd",
+        "lock_revision": "1f05308bc1f1068c41cdc3cb5a3c2d99732c56fd"
+      },
+      "pr_eligible": false,
+      "verification": [
+        {
+          "name": "validate:engine-input-hashes",
+          "status": "passed",
+          "reason": null
+        },
+        {
+          "name": "validate:engine-catalog",
+          "status": "failed",
+          "reason": "The check exited with status 1."
+        },
+        {
+          "name": "validate:engine-line-endings",
+          "status": "passed",
+          "reason": null
+        }
+      ],
+      "reasons": [
+        "Verification check validate:engine-catalog failed.",
+        "Completing an upstream revision refresh requires a re-pinned source archive with a new SHA-256 checksum, a Dockerfile revision update, and a rebuilt image; those network, registry, and owner-authorized publication steps are outside this offline pipeline."
+      ]
+    },
+    {
+      "engine": "kube-bench",
+      "outcome": "verification_failed",
+      "policy": "eligible",
+      "bundle": ".upstream-refresh/2026-10-22/bundles/kube-bench/20261022T151511Z",
+      "drift": {
+        "status": "detected",
+        "summary": "At least one available offline source differs from the pinned plan revision.",
+        "pinned_revision": "9f133cb7509ce1dbedfc860e94474588000e25ac",
+        "checkout_revision": "e278a5915a982f2756026de6e2f9ca77077ef9f9",
+        "lock_revision": "e278a5915a982f2756026de6e2f9ca77077ef9f9"
+      },
+      "pr_eligible": false,
+      "verification": [
+        {
+          "name": "validate:engine-input-hashes",
+          "status": "passed",
+          "reason": null
+        },
+        {
+          "name": "validate:engine-catalog",
+          "status": "failed",
+          "reason": "The check exited with status 1."
+        },
+        {
+          "name": "validate:engine-line-endings",
+          "status": "passed",
+          "reason": null
+        }
+      ],
+      "reasons": [
+        "Verification check validate:engine-catalog failed.",
+        "Completing an upstream revision refresh requires a re-pinned source archive with a new SHA-256 checksum, a Dockerfile revision update, and a rebuilt image; those network, registry, and owner-authorized publication steps are outside this offline pipeline."
+      ]
+    },
+    {
+      "engine": "kubescape",
+      "outcome": "no_change",
+      "policy": "eligible",
+      "bundle": ".upstream-refresh/2026-10-22/bundles/kubescape/20261022T151516Z",
+      "drift": {
+        "status": "none",
+        "summary": "Every available required offline source matches the pinned plan revision.",
+        "pinned_revision": "d0ea07bcd9d7ab1640dcd6527d0e68a34f10da0e",
+        "checkout_revision": "d0ea07bcd9d7ab1640dcd6527d0e68a34f10da0e",
+        "lock_revision": "d0ea07bcd9d7ab1640dcd6527d0e68a34f10da0e"
+      },
+      "pr_eligible": false,
+      "verification": [
+        {
+          "name": "validate:engine-input-hashes",
+          "status": "not_run",
+          "reason": "No proposed changes were produced, so there was no proposed tree to verify."
+        },
+        {
+          "name": "validate:engine-catalog",
+          "status": "not_run",
+          "reason": "No proposed changes were produced, so there was no proposed tree to verify."
+        },
+        {
+          "name": "validate:engine-line-endings",
+          "status": "not_run",
+          "reason": "No proposed changes were produced, so there was no proposed tree to verify."
+        }
+      ],
+      "reasons": [
+        "No adapter change was produced.",
+        "Verification check validate:engine-input-hashes was not run: No proposed changes were produced, so there was no proposed tree to verify.",
+        "Verification check validate:engine-catalog was not run: No proposed changes were produced, so there was no proposed tree to verify.",
+        "Verification check validate:engine-line-endings was not run: No proposed changes were produced, so there was no proposed tree to verify."
+      ]
+    },
+    {
+      "engine": "maester",
+      "outcome": "verification_failed",
+      "policy": "eligible",
+      "bundle": ".upstream-refresh/2026-10-22/bundles/maester/20261022T151516Z",
+      "drift": {
+        "status": "detected",
+        "summary": "At least one available offline source differs from the pinned plan revision.",
+        "pinned_revision": "6bf1d98f094fc7a68e449d2f40f73ef820b72ee3",
+        "checkout_revision": "0a84dc481c624cc4bc3e219ecd91906633be0c24",
+        "lock_revision": "0a84dc481c624cc4bc3e219ecd91906633be0c24"
+      },
+      "pr_eligible": false,
+      "verification": [
+        {
+          "name": "validate:engine-input-hashes",
+          "status": "passed",
+          "reason": null
+        },
+        {
+          "name": "validate:engine-catalog",
+          "status": "failed",
+          "reason": "The check exited with status 1."
+        },
+        {
+          "name": "validate:engine-line-endings",
+          "status": "passed",
+          "reason": null
+        }
+      ],
+      "reasons": [
+        "Verification check validate:engine-catalog failed.",
+        "Completing an upstream revision refresh requires a re-pinned source archive with a new SHA-256 checksum, a Dockerfile revision update, and a rebuilt image; those network, registry, and owner-authorized publication steps are outside this offline pipeline."
+      ]
+    },
+    {
+      "engine": "mcp-armor",
+      "outcome": "frozen",
+      "policy": "frozen",
+      "bundle": ".upstream-refresh/2026-10-22/bundles/mcp-armor/20261022T151525Z",
+      "drift": {
+        "status": "detected",
+        "summary": "At least one available offline source differs from the pinned plan revision.",
+        "pinned_revision": "6af4cee4665ab6242f02a88952f9127b6a04922a",
+        "checkout_revision": "2f82f6c369313d5e4fb4784fe99750749e7d61e2",
+        "lock_revision": "2f82f6c369313d5e4fb4784fe99750749e7d61e2"
+      },
+      "pr_eligible": false,
+      "verification": [
+        {
+          "name": "validate:engine-input-hashes",
+          "status": "not_run",
+          "reason": "The configuration-only image is published. Automatic upstream refreshes are frozen and cannot reach a release through automation; manually revalidate the two native checks and continued exclusion of model imports, downloads and server execution before changing the pin."
+        },
+        {
+          "name": "validate:engine-catalog",
+          "status": "not_run",
+          "reason": "The configuration-only image is published. Automatic upstream refreshes are frozen and cannot reach a release through automation; manually revalidate the two native checks and continued exclusion of model imports, downloads and server execution before changing the pin."
+        },
+        {
+          "name": "validate:engine-line-endings",
+          "status": "not_run",
+          "reason": "The configuration-only image is published. Automatic upstream refreshes are frozen and cannot reach a release through automation; manually revalidate the two native checks and continued exclusion of model imports, downloads and server execution before changing the pin."
+        }
+      ],
+      "reasons": [
+        "Policy status is frozen: The configuration-only image is published. Automatic upstream refreshes are frozen and cannot reach a release through automation; manually revalidate the two native checks and continued exclusion of model imports, downloads and server execution before changing the pin.",
+        "No adapter change was produced.",
+        "Verification check validate:engine-input-hashes was not run: The configuration-only image is published. Automatic upstream refreshes are frozen and cannot reach a release through automation; manually revalidate the two native checks and continued exclusion of model imports, downloads and server execution before changing the pin.",
+        "Verification check validate:engine-catalog was not run: The configuration-only image is published. Automatic upstream refreshes are frozen and cannot reach a release through automation; manually revalidate the two native checks and continued exclusion of model imports, downloads and server execution before changing the pin.",
+        "Verification check validate:engine-line-endings was not run: The configuration-only image is published. Automatic upstream refreshes are frozen and cannot reach a release through automation; manually revalidate the two native checks and continued exclusion of model imports, downloads and server execution before changing the pin."
+      ]
+    },
+    {
+      "engine": "naabu",
+      "outcome": "verification_failed",
+      "policy": "eligible",
+      "bundle": ".upstream-refresh/2026-10-22/bundles/naabu/20261022T151525Z",
+      "drift": {
+        "status": "detected",
+        "summary": "At least one available offline source differs from the pinned plan revision.",
+        "pinned_revision": "5a0ca8bde91b5bb16213e9e8b5c6871eac954bd8",
+        "checkout_revision": "506cf6a8291feff6f29a8d7eb10ee40155651b44",
+        "lock_revision": "506cf6a8291feff6f29a8d7eb10ee40155651b44"
+      },
+      "pr_eligible": false,
+      "verification": [
+        {
+          "name": "validate:engine-input-hashes",
+          "status": "passed",
+          "reason": null
+        },
+        {
+          "name": "validate:engine-catalog",
+          "status": "failed",
+          "reason": "The check exited with status 1."
+        },
+        {
+          "name": "validate:engine-line-endings",
+          "status": "passed",
+          "reason": null
+        }
+      ],
+      "reasons": [
+        "Verification check validate:engine-catalog failed.",
+        "Completing an upstream revision refresh requires a re-pinned source archive with a new SHA-256 checksum, a Dockerfile revision update, and a rebuilt image; those network, registry, and owner-authorized publication steps are outside this offline pipeline."
+      ]
+    },
+    {
+      "engine": "nuclei",
+      "outcome": "verification_failed",
+      "policy": "eligible",
+      "bundle": ".upstream-refresh/2026-10-22/bundles/nuclei/20261022T151532Z",
+      "drift": {
+        "status": "detected",
+        "summary": "At least one available offline source differs from the pinned plan revision.",
+        "pinned_revision": "a8c88feb4a1c8e961b7902534ce3af97e9d524a4",
+        "checkout_revision": "b0eeadc5541e3378fc2cc7a6f109e2eeb003c53b",
+        "lock_revision": "b0eeadc5541e3378fc2cc7a6f109e2eeb003c53b"
+      },
+      "pr_eligible": false,
+      "verification": [
+        {
+          "name": "validate:engine-input-hashes",
+          "status": "passed",
+          "reason": null
+        },
+        {
+          "name": "validate:engine-catalog",
+          "status": "failed",
+          "reason": "The check exited with status 1."
+        },
+        {
+          "name": "validate:engine-line-endings",
+          "status": "passed",
+          "reason": null
+        }
+      ],
+      "reasons": [
+        "Verification check validate:engine-catalog failed.",
+        "Completing an upstream revision refresh requires a re-pinned source archive with a new SHA-256 checksum, a Dockerfile revision update, and a rebuilt image; those network, registry, and owner-authorized publication steps are outside this offline pipeline."
+      ]
+    },
+    {
+      "engine": "prowler",
+      "outcome": "no_change",
+      "policy": "eligible",
+      "bundle": ".upstream-refresh/2026-10-22/bundles/prowler/20261022T151543Z",
+      "drift": {
+        "status": "none",
+        "summary": "Every available required offline source matches the pinned plan revision.",
+        "pinned_revision": "499fd637f3393b485833b08cdaf4172917c5698e",
+        "checkout_revision": "499fd637f3393b485833b08cdaf4172917c5698e",
+        "lock_revision": "499fd637f3393b485833b08cdaf4172917c5698e"
+      },
+      "pr_eligible": false,
+      "verification": [
+        {
+          "name": "validate:engine-input-hashes",
+          "status": "not_run",
+          "reason": "No proposed changes were produced, so there was no proposed tree to verify."
+        },
+        {
+          "name": "validate:engine-catalog",
+          "status": "not_run",
+          "reason": "No proposed changes were produced, so there was no proposed tree to verify."
+        },
+        {
+          "name": "validate:engine-line-endings",
+          "status": "not_run",
+          "reason": "No proposed changes were produced, so there was no proposed tree to verify."
+        }
+      ],
+      "reasons": [
+        "No adapter change was produced.",
+        "Verification check validate:engine-input-hashes was not run: No proposed changes were produced, so there was no proposed tree to verify.",
+        "Verification check validate:engine-catalog was not run: No proposed changes were produced, so there was no proposed tree to verify.",
+        "Verification check validate:engine-line-endings was not run: No proposed changes were produced, so there was no proposed tree to verify."
+      ]
+    },
+    {
+      "engine": "scoutsuite",
+      "outcome": "no_change",
+      "policy": "eligible",
+      "bundle": ".upstream-refresh/2026-10-22/bundles/scoutsuite/20261022T151544Z",
+      "drift": {
+        "status": "none",
+        "summary": "Every available required offline source matches the pinned plan revision.",
+        "pinned_revision": "7909f2fc6186063e5c9e7ddef8c4d7d1072c8f3d",
+        "checkout_revision": "7909f2fc6186063e5c9e7ddef8c4d7d1072c8f3d",
+        "lock_revision": "7909f2fc6186063e5c9e7ddef8c4d7d1072c8f3d"
+      },
+      "pr_eligible": false,
+      "verification": [
+        {
+          "name": "validate:engine-input-hashes",
+          "status": "not_run",
+          "reason": "No proposed changes were produced, so there was no proposed tree to verify."
+        },
+        {
+          "name": "validate:engine-catalog",
+          "status": "not_run",
+          "reason": "No proposed changes were produced, so there was no proposed tree to verify."
+        },
+        {
+          "name": "validate:engine-line-endings",
+          "status": "not_run",
+          "reason": "No proposed changes were produced, so there was no proposed tree to verify."
+        }
+      ],
+      "reasons": [
+        "No adapter change was produced.",
+        "Verification check validate:engine-input-hashes was not run: No proposed changes were produced, so there was no proposed tree to verify.",
+        "Verification check validate:engine-catalog was not run: No proposed changes were produced, so there was no proposed tree to verify.",
+        "Verification check validate:engine-line-endings was not run: No proposed changes were produced, so there was no proposed tree to verify."
+      ]
+    },
+    {
+      "engine": "scubagear",
+      "outcome": "verification_failed",
+      "policy": "eligible",
+      "bundle": ".upstream-refresh/2026-10-22/bundles/scubagear/20261022T151544Z",
+      "drift": {
+        "status": "detected",
+        "summary": "At least one available offline source differs from the pinned plan revision.",
+        "pinned_revision": "4d34e9a48e38ce5c2e14c0fdfbaee53e57594ae2",
+        "checkout_revision": "cce2bcf2d9081c2cf7f51571a3f986076c4d32b9",
+        "lock_revision": "cce2bcf2d9081c2cf7f51571a3f986076c4d32b9"
+      },
+      "pr_eligible": false,
+      "verification": [
+        {
+          "name": "validate:engine-input-hashes",
+          "status": "passed",
+          "reason": null
+        },
+        {
+          "name": "validate:engine-catalog",
+          "status": "failed",
+          "reason": "The check exited with status 1."
+        },
+        {
+          "name": "validate:engine-line-endings",
+          "status": "passed",
+          "reason": null
+        }
+      ],
+      "reasons": [
+        "Verification check validate:engine-catalog failed.",
+        "Completing an upstream revision refresh requires a re-pinned source archive with a new SHA-256 checksum, a Dockerfile revision update, and a rebuilt image; those network, registry, and owner-authorized publication steps are outside this offline pipeline."
+      ]
+    },
+    {
+      "engine": "semgrep",
+      "outcome": "no_change",
+      "policy": "eligible",
+      "bundle": ".upstream-refresh/2026-10-22/bundles/semgrep/20261022T151553Z",
+      "drift": {
+        "status": "none",
+        "summary": "Every available required offline source matches the pinned plan revision.",
+        "pinned_revision": "72d3525fe7e02f486428386078f192f8c4756804",
+        "checkout_revision": "72d3525fe7e02f486428386078f192f8c4756804",
+        "lock_revision": "72d3525fe7e02f486428386078f192f8c4756804"
+      },
+      "pr_eligible": false,
+      "verification": [
+        {
+          "name": "validate:engine-input-hashes",
+          "status": "not_run",
+          "reason": "No proposed changes were produced, so there was no proposed tree to verify."
+        },
+        {
+          "name": "validate:engine-catalog",
+          "status": "not_run",
+          "reason": "No proposed changes were produced, so there was no proposed tree to verify."
+        },
+        {
+          "name": "validate:engine-line-endings",
+          "status": "not_run",
+          "reason": "No proposed changes were produced, so there was no proposed tree to verify."
+        }
+      ],
+      "reasons": [
+        "No adapter change was produced.",
+        "Verification check validate:engine-input-hashes was not run: No proposed changes were produced, so there was no proposed tree to verify.",
+        "Verification check validate:engine-catalog was not run: No proposed changes were produced, so there was no proposed tree to verify.",
+        "Verification check validate:engine-line-endings was not run: No proposed changes were produced, so there was no proposed tree to verify."
+      ]
+    },
+    {
+      "engine": "steampipe",
+      "outcome": "no_change",
+      "policy": "eligible",
+      "bundle": ".upstream-refresh/2026-10-22/bundles/steampipe/20261022T151554Z",
+      "drift": {
+        "status": "none",
+        "summary": "Every available required offline source matches the pinned plan revision.",
+        "pinned_revision": "5c62651887b3e1d127049722e7216b915d4b075d",
+        "checkout_revision": "5c62651887b3e1d127049722e7216b915d4b075d",
+        "lock_revision": "5c62651887b3e1d127049722e7216b915d4b075d"
+      },
+      "pr_eligible": false,
+      "verification": [
+        {
+          "name": "validate:engine-input-hashes",
+          "status": "not_run",
+          "reason": "No proposed changes were produced, so there was no proposed tree to verify."
+        },
+        {
+          "name": "validate:engine-catalog",
+          "status": "not_run",
+          "reason": "No proposed changes were produced, so there was no proposed tree to verify."
+        },
+        {
+          "name": "validate:engine-line-endings",
+          "status": "not_run",
+          "reason": "No proposed changes were produced, so there was no proposed tree to verify."
+        }
+      ],
+      "reasons": [
+        "No adapter change was produced.",
+        "Verification check validate:engine-input-hashes was not run: No proposed changes were produced, so there was no proposed tree to verify.",
+        "Verification check validate:engine-catalog was not run: No proposed changes were produced, so there was no proposed tree to verify.",
+        "Verification check validate:engine-line-endings was not run: No proposed changes were produced, so there was no proposed tree to verify."
+      ]
+    },
+    {
+      "engine": "syft",
+      "outcome": "no_change",
+      "policy": "eligible",
+      "bundle": ".upstream-refresh/2026-10-22/bundles/syft/20261022T151554Z",
+      "drift": {
+        "status": "none",
+        "summary": "Every available required offline source matches the pinned plan revision.",
+        "pinned_revision": "b254e6d92f28c3868a755f62fb3ca8f26e9fee76",
+        "checkout_revision": "b254e6d92f28c3868a755f62fb3ca8f26e9fee76",
+        "lock_revision": "b254e6d92f28c3868a755f62fb3ca8f26e9fee76"
+      },
+      "pr_eligible": false,
+      "verification": [
+        {
+          "name": "validate:engine-input-hashes",
+          "status": "not_run",
+          "reason": "No proposed changes were produced, so there was no proposed tree to verify."
+        },
+        {
+          "name": "validate:engine-catalog",
+          "status": "not_run",
+          "reason": "No proposed changes were produced, so there was no proposed tree to verify."
+        },
+        {
+          "name": "validate:engine-line-endings",
+          "status": "not_run",
+          "reason": "No proposed changes were produced, so there was no proposed tree to verify."
+        }
+      ],
+      "reasons": [
+        "No adapter change was produced.",
+        "Verification check validate:engine-input-hashes was not run: No proposed changes were produced, so there was no proposed tree to verify.",
+        "Verification check validate:engine-catalog was not run: No proposed changes were produced, so there was no proposed tree to verify.",
+        "Verification check validate:engine-line-endings was not run: No proposed changes were produced, so there was no proposed tree to verify."
+      ]
+    },
+    {
+      "engine": "trivy",
+      "outcome": "no_change",
+      "policy": "eligible",
+      "bundle": ".upstream-refresh/2026-10-22/bundles/trivy/20261022T151555Z",
+      "drift": {
+        "status": "none",
+        "summary": "Every available required offline source matches the pinned plan revision.",
+        "pinned_revision": "531360e5d2a88e732373f1614ba99a38738538b8",
+        "checkout_revision": "531360e5d2a88e732373f1614ba99a38738538b8",
+        "lock_revision": "531360e5d2a88e732373f1614ba99a38738538b8"
+      },
+      "pr_eligible": false,
+      "verification": [
+        {
+          "name": "validate:engine-input-hashes",
+          "status": "not_run",
+          "reason": "No proposed changes were produced, so there was no proposed tree to verify."
+        },
+        {
+          "name": "validate:engine-catalog",
+          "status": "not_run",
+          "reason": "No proposed changes were produced, so there was no proposed tree to verify."
+        },
+        {
+          "name": "validate:engine-line-endings",
+          "status": "not_run",
+          "reason": "No proposed changes were produced, so there was no proposed tree to verify."
+        }
+      ],
+      "reasons": [
+        "No adapter change was produced.",
+        "Verification check validate:engine-input-hashes was not run: No proposed changes were produced, so there was no proposed tree to verify.",
+        "Verification check validate:engine-catalog was not run: No proposed changes were produced, so there was no proposed tree to verify.",
+        "Verification check validate:engine-line-endings was not run: No proposed changes were produced, so there was no proposed tree to verify."
+      ]
+    },
+    {
+      "engine": "trufflehog",
+      "outcome": "no_change",
+      "policy": "eligible",
+      "bundle": ".upstream-refresh/2026-10-22/bundles/trufflehog/20261022T151555Z",
+      "drift": {
+        "status": "none",
+        "summary": "Every available required offline source matches the pinned plan revision.",
+        "pinned_revision": "e76dff8a7e57d6df0c60ad8cbf5d5cba505a8fc9",
+        "checkout_revision": "e76dff8a7e57d6df0c60ad8cbf5d5cba505a8fc9",
+        "lock_revision": "e76dff8a7e57d6df0c60ad8cbf5d5cba505a8fc9"
+      },
+      "pr_eligible": false,
+      "verification": [
+        {
+          "name": "validate:engine-input-hashes",
+          "status": "not_run",
+          "reason": "No proposed changes were produced, so there was no proposed tree to verify."
+        },
+        {
+          "name": "validate:engine-catalog",
+          "status": "not_run",
+          "reason": "No proposed changes were produced, so there was no proposed tree to verify."
+        },
+        {
+          "name": "validate:engine-line-endings",
+          "status": "not_run",
+          "reason": "No proposed changes were produced, so there was no proposed tree to verify."
+        }
+      ],
+      "reasons": [
+        "No adapter change was produced.",
+        "Verification check validate:engine-input-hashes was not run: No proposed changes were produced, so there was no proposed tree to verify.",
+        "Verification check validate:engine-catalog was not run: No proposed changes were produced, so there was no proposed tree to verify.",
+        "Verification check validate:engine-line-endings was not run: No proposed changes were produced, so there was no proposed tree to verify."
+      ]
+    }
+  ]
+}

@@ -909,10 +909,10 @@ const (
 	semgrepRuleFileCount        = 1478
 	semgrepRuleProvenancePath   = "/opt/ai-security-scanner/semgrep/RULE-PROVENANCE.json"
 	semgrepRuleProvenanceSHA256 = "a5f8961abe75a57da4c752f39272baa64ac95ca4181e507c070772c54f5c09bf"
-	trivyDBSHA256               = "1f86b775c8bad1b9fa31f91e6523a8b33ba85f9c8529970aceae32663d21bd10"
-	trivyMetadataSHA256         = "e4bc8c46a8295f01122651e3fa2ee0520ab4a5408241f213374262cae72183ba"
-	trivyJavaDBSHA256           = "c26ec91db03a11014dfa45909d2b5275c0e34c2dee276363bc0c9693375acc25"
-	trivyJavaMetadataSHA256     = "486b01dacad2d0f5dc28006fef82f501249f8be922e2f6f037a61152b567f24d"
+	trivyDBSHA256               = "b21b4f3ced4ff587023a351dcb28c0cf1d72e71159a0161d05591cc2e611abf2"
+	trivyMetadataSHA256         = "8b0a74308b3dec2270f7298ced784a323863092487ee7cc22dde96946125feb6"
+	trivyJavaDBSHA256           = "24d6c783ce89260282c46886b2dab64a69b7fcc31dae4447ed67194b38f77770"
+	trivyJavaMetadataSHA256     = "1b91db7182eda1c8b74db15a4b515238617c5e179d9d1623b82ff0af4a8b4ee2"
 	grypeDBSHA256               = "8be8779b1b6fd721e6127c092bd25d5875e25cd511def5d9e7d026fb45189058"
 	grypeDBMaxBytes             = 2460639232
 	kubescapeNSASHA256          = "80e23ca99be3e5bb0f80d968b32ae27b7dada39f9b12b9e3abffea8680ac7737"

@@ -107,7 +107,8 @@ export function pendingUpstreamBuild(plan, engine) {
     rule_version: update.rule_version,
     provenance: { ...engine.provenance, engine: update.engine_provenance,
       rules: update.rules_provenance, data: update.data_provenance },
-    compatibility: { ...engine.compatibility, knowledge_input: update.knowledge_input },
+    compatibility: { ...engine.compatibility, knowledge_input: update.knowledge_input,
+      knowledge_date: update.knowledge_date, support_until: update.support_until },
   };
   if (sourceBuild) buildEngine.reported_version = update.reported_version;
   else delete buildEngine.reported_version;

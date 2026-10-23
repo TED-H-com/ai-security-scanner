@@ -203,6 +203,29 @@ A cloud or Microsoft 365 scan is something a beginner can finish alone. The most
 
 ## 5. Scanner integration and execution
 
+### 5.0 Incident triage and external scanner reports
+
+The optional **October 21–22 incident triage** selection narrows applicable work
+to Trivy for supported local package inputs. Websites, internal hosts and other
+unsupported inputs are explicitly excluded with an asset count before starting;
+website-only setup does not offer this mode. The current safe Nuclei profile has
+no campaign-advisory intersection, and no applicable packaged Community Feed
+check has been verified. Existing Trivy profiles and databases remain upstream;
+the mode does not claim that every new advisory already has a detector. The selected
+campaign is frozen with the scan and retained when checking fixes. Its report
+links exact upstream advisory matches to the selected asset and separately
+lists untested issues, incidents requiring investigation, and unpublished
+advisories. Generic scan completion or zero findings never clears an individual
+campaign issue. Campaign selection does not create targets or grant permission.
+
+Users may also import existing native Strix reports into one terminal report.
+Each selected upstream target binds to an existing asset; sibling targets are
+excluded. Parsing is bounded and concurrent, independent failures are retained,
+and original source evidence is preserved. Imported results are identified as
+external reports with unverified coverage, never as a scan the product executed.
+The default local scan does not run Strix or submit code to Anthropic's hosted
+OSS Scanner. The latter's enrollment repository is not a distributable engine.
+
 ### 5.1 Stay close to upstream
 
 The product prefers established upstream scanners over reimplementing detection. An integration:
@@ -284,7 +307,11 @@ Code-scanning findings at the same file and starting line also share one first-l
 
 Check fixes compares the same problem cards that Results shows. A card is still present while any of its findings is observed again; it is no longer observed only when every one of its findings was compared and none was observed, and new only when all of its findings are new. Otherwise it stays under verification incomplete. Each card's original findings keep their own comparison status in technical detail. A card that is still present but only partly fixed shows how many of its original findings the new scan found. Within each status, cards follow the same priority order as Results.
 
-External framework references, when the product team wants them, are optional context after the actionable report. They do not start, block, rank, or complete a scan and do not define the roadmap.
+External framework references follow the actionable report in the same HTML template. The owner-requested October 21 incident pack retains the existing evidence-bound ISO/IEC 27001:2022, NIST CSF 2.0, AIDEFEND, OWASP and CIS relationships. Unmapped findings remain visible; a missing relationship is unknown. These references do not start, block, rank, or complete a scan and do not establish certification.
+
+### 6.4 October 21 incident scan pack
+
+The GitHub Pages incident entry offers the same versioned desktop app for macOS Universal, Windows x86_64 and Linux x86_64, with download links only for artifacts actually published in its exact GitHub Release. It offers the standard scan and the optional October incident package profile. Both use this section's shared report model and HTML/JSON exports; frameworks do not create separate report templates. The incident profile narrows existing authorized local-asset routes to applicable upstream Trivy package checks. Website and internal-host assets remain available through the standard scan. Incident-specific matches, checks not verified, investigations and pending advisories retain their distinct outcomes. The pack records its campaign revision and shared report contract alongside release artifacts.
 
 ## 7. Recovery, data, and safety
 

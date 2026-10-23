@@ -184,6 +184,7 @@ pub fn build_demo_case() -> AssessmentCase {
     let prowler_run_id = new_id();
     let httpx_run_id = new_id();
     case.scan_runs.push(ScanRun {
+        campaign_id: None,
         id: run_id.clone(),
         case_id: case.id.clone(),
         sequence: 1,

@@ -1,10 +1,10 @@
 {
   "name": "ai-security-scanner",
   "private": true,
-  "version": "0.5.2",
+  "version": "0.5.3",
   "release": {
     "channel": "stable",
-    "target": "0.5.2"
+    "target": "0.5.3"
   },
   "description": "One guided desktop app for security checks across websites, networks, code, IaC, cloud, containers, and Kubernetes.",
   "license": "Apache-2.0",

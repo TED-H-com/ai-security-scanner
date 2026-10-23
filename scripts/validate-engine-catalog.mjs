@@ -270,19 +270,19 @@ const managedLocalK8sContracts = new Map([
       'outputPath:  "/output/trivy-individual-packages.json"',
       '"rootfs", "--cache-dir", "/opt/ai-security-scanner/trivy-cache"',
       'verifyFile("/opt/ai-security-scanner/trivy-cache/java-db/trivy-java.db", trivyJavaDBSHA256, maxImmutableBytes)',
-      'trivyJavaDBSHA256           = "c26ec91db03a11014dfa45909d2b5275c0e34c2dee276363bc0c9693375acc25"',
-      'trivyJavaMetadataSHA256     = "486b01dacad2d0f5dc28006fef82f501249f8be922e2f6f037a61152b567f24d"',
+      'trivyJavaDBSHA256           = "24d6c783ce89260282c46886b2dab64a69b7fcc31dae4447ed67194b38f77770"',
+      'trivyJavaMetadataSHA256     = "1b91db7182eda1c8b74db15a4b515238617c5e179d9d1623b82ff0af4a8b4ee2"',
     ],
     immutableDockerfileInputs: [
       "go mod verify",
       "go build -mod=readonly",
       "COPY .engine-cache/offline/trivy/db.tar.gz /tmp/trivy-db.tar.gz",
       "COPY .engine-cache/offline/trivy/java-db.tar.gz /tmp/trivy-java-db.tar.gz",
-      "33244241111425d2f4ae10daf1de961edd47673265862d7abac688a60948301c  /tmp/trivy-java-db.tar.gz",
-      "c26ec91db03a11014dfa45909d2b5275c0e34c2dee276363bc0c9693375acc25  /rootfs/opt/ai-security-scanner/trivy-cache/java-db/trivy-java.db",
-      "486b01dacad2d0f5dc28006fef82f501249f8be922e2f6f037a61152b567f24d  /rootfs/opt/ai-security-scanner/trivy-cache/java-db/metadata.json",
+      "35c8f473bb7485db657c022eee43404fda3684fc3c0341aef3598db6016c28ca  /tmp/trivy-java-db.tar.gz",
+      "24d6c783ce89260282c46886b2dab64a69b7fcc31dae4447ed67194b38f77770  /rootfs/opt/ai-security-scanner/trivy-cache/java-db/trivy-java.db",
+      "1b91db7182eda1c8b74db15a4b515238617c5e179d9d1623b82ff0af4a8b4ee2  /rootfs/opt/ai-security-scanner/trivy-cache/java-db/metadata.json",
       "COPY engines/images/trivy/DATABASE-NOTICE.md /usr/share/licenses/trivy/DATABASE-NOTICE.md",
-      'io.ai-security-scanner.java-database-manifest="sha256:e578af6b1e7db314ec2d3714ba522af8e9cd59c1a4349b7d6f54d86b2b8125b0"',
+      'io.ai-security-scanner.java-database-manifest="sha256:a805d22ec39082e3d0910a6c37ae4e85c666248293add991d2d2bf82237323a5"',
       'TRIVY_CACHE_DIR="/opt/ai-security-scanner/trivy-cache"',
     ],
   }],
@@ -563,7 +563,18 @@ function validateManagedImageEvidence(catalogEntries) {
     const matrixEntry = Array.isArray(localK8sMatrix)
       ? localK8sMatrix.find((entry) => entry?.engine === engineId)
       : undefined;
-    if (matrixEntry?.tag !== contract.tag) {
+    let expectedTag = contract.tag;
+    const candidateEngine = catalog.find((engine) => engine.id === engineId);
+    const candidatePlan = candidateEngine?.compatibility?.packaging_plan
+      ? parseJson(resolve(root, candidateEngine.compatibility.packaging_plan)) : null;
+    try {
+      if (candidatePlan && pendingUpstreamBuild(candidatePlan, candidateEngine)) {
+        expectedTag = candidatePlan.final_artifact.tag;
+      }
+    } catch (error) {
+      errors.push(`${localK8sWorkflowRelative}: ${engineId} candidate: ${error.message}`);
+    }
+    if (matrixEntry?.tag !== expectedTag) {
       errors.push(`${localK8sWorkflowRelative}:jobs.publish: ${engineId} tag must match its reviewed artifact contract`);
     }
   }
@@ -2494,7 +2505,7 @@ function validateManagedExternalImage(plan, planRelative, engine, contract = man
   }
   if (engine.id === "nuclei") {
     const templates = recipe?.templates;
-    if (templates?.revision !== engine.rule_version || templates?.revision !== "24858b4bfabfa86f0bcfd36aea24fb535152b012" || !templates?.source_archive?.url?.includes(templates.revision) || !digestPattern.test(templates?.source_archive?.sha256 ?? "")) {
+    if (templates?.revision !== engine.rule_version || templates?.revision !== "f938a3dd530c283e9387b518b97911152ff5846c" || !templates?.source_archive?.url?.includes(templates.revision) || !digestPattern.test(templates?.source_archive?.sha256 ?? "")) {
       errors.push(`${planRelative}: Nuclei template artifact is not the required exact revision`);
     } else if (!dockerfileText.includes(`ADD --checksum=${templates.source_archive.sha256}`) || !dockerfileText.includes(templates.source_archive.url)) {
       errors.push(`${planRelative}: Nuclei Dockerfile does not embed the declared exact template artifact`);
@@ -2502,7 +2513,7 @@ function validateManagedExternalImage(plan, planRelative, engine, contract = man
     if (!runtime?.template_policy ||
         runtime.template_policy.revision !== `nuclei-templates@${templates?.revision}` ||
         runtime.template_policy.profile_id !== "nuclei_web_safe_v1" ||
-        runtime.template_policy.derived_template_count !== 4674 ||
+        runtime.template_policy.derived_template_count !== 4775 ||
         runtime.template_policy.legacy_exact_allowlist_supported !== true ||
         runtime.template_policy.denied_capabilities?.some((value) => typeof value !== "string") ||
         runtime.template_policy.denied_capabilities?.length !== 6) {

@@ -1345,6 +1345,22 @@ pub(crate) fn beginner_report_for_export(
 }
 
 fn redact_beginner_master_report(report: &mut BeginnerMasterReport, case: &AssessmentCase) {
+    // Legacy external imports did not retain the target outside their private
+    // raw attachment. Never guess those identifiers from free-form prose.
+    let legacy_import_ids: BTreeSet<_> = case
+        .finding_observations
+        .iter()
+        .filter(|observation| observation.run_id == report.run_id)
+        .filter_map(|observation| {
+            observation.finding_snapshot.as_ref().or_else(|| {
+                case.findings
+                    .iter()
+                    .find(|finding| finding.id == observation.finding_id)
+            })
+        })
+        .filter(|finding| crate::external_scanner_import::legacy_import_missing_target(finding))
+        .map(|finding| finding.id.as_str())
+        .collect();
     let replacements = standard_redaction_replacements(case);
     let aliases = IamAliases::of(case);
     let iam_context_by_finding = report
@@ -1478,6 +1494,12 @@ fn redact_beginner_master_report(report: &mut BeginnerMasterReport, case: &Asses
     }
 
     for finding in &mut report.findings {
+        if legacy_import_ids.contains(finding.finding_id.as_str()) {
+            finding.title = "Imported finding (source identifiers withheld)".into();
+            finding.plain_language_risk =
+                "Review the unredacted source report for this imported finding.".into();
+            finding.possible_impact = "[redacted imported impact]".into();
+        }
         let (is_cloudsplaining, iam_context) = iam_context_by_finding
             .get(&finding.finding_id)
             .map(|(is_cloudsplaining, context)| (*is_cloudsplaining, context.as_ref()))
@@ -1679,7 +1701,8 @@ fn redact_beginner_master_report(report: &mut BeginnerMasterReport, case: &Asses
             TechnicalExecution::InvalidBuiltInTask { explanation } => {
                 redact_known_literals(explanation, &replacements);
             }
-            TechnicalExecution::CatalogEngine { .. } => {}
+            TechnicalExecution::CatalogEngine { .. }
+            | TechnicalExecution::ExternalReportImport { .. } => {}
         }
     }
     redact_known_literals(
@@ -1774,6 +1797,12 @@ fn redact_asset_record(asset: &mut Asset, alias: String) {
 }
 
 fn redact_finding(finding: &mut Finding, replacements: &[(String, String)], aliases: &IamAliases) {
+    if crate::external_scanner_import::legacy_import_missing_target(finding) {
+        finding.title = "Imported finding (source identifiers withheld)".into();
+        finding.plain_language_summary =
+            "Review the unredacted source report for this imported finding.".into();
+        finding.possible_impact = "[redacted imported impact]".into();
+    }
     let is_cloudsplaining = finding
         .evidence
         .iter()
@@ -2000,6 +2029,30 @@ fn standard_redaction_replacements(case: &AssessmentCase) -> Vec<(String, String
         }
         for identifier in &asset.identifiers {
             add_redaction_replacement(&mut replacements, &identifier.value, &alias);
+        }
+    }
+    // Import targets may intentionally differ from the selected asset's
+    // identifiers. Include canonical and immutable historical snapshots so a
+    // later import or asset edit cannot expose an older source's private target.
+    for finding in case.findings.iter().chain(
+        case.finding_observations
+            .iter()
+            .filter_map(|observation| observation.finding_snapshot.as_ref()),
+    ) {
+        let Some(target) = crate::external_scanner_import::imported_report_target(finding) else {
+            continue;
+        };
+        let alias = finding
+            .asset_ids
+            .first()
+            .and_then(|id| case.assets.iter().position(|asset| &asset.id == id))
+            .map(|index| format!("Asset {}", index + 1))
+            .unwrap_or_else(|| "[redacted target]".into());
+        add_redaction_replacement(&mut replacements, target, &alias);
+        if let Ok(url) = url::Url::parse(target) {
+            if let Some(host) = url.host_str() {
+                add_redaction_replacement(&mut replacements, host, &alias);
+            }
         }
     }
     for grant in &case.scope_grants {
@@ -3018,6 +3071,7 @@ mod tests {
             metadata: BTreeMap::new(),
         });
         case.scan_runs.push(ScanRun {
+            campaign_id: None,
             id: "run-1".into(),
             case_id: case.id.clone(),
             sequence: 1,

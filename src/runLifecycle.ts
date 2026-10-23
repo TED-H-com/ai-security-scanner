@@ -18,6 +18,12 @@ const verificationBaselineStatuses = new Set<ScanRun["status"]>([
 export const isTerminalResultRun = (run: Pick<ScanRun, "status">): boolean =>
   terminalResultStatuses.has(run.status);
 
-/** A run with no completed checks has no scanner result to compare. */
-export const isVerificationBaselineRun = (run: Pick<ScanRun, "status">): boolean =>
-  verificationBaselineStatuses.has(run.status);
+/** Imported evidence cannot recreate an executable scan for Check fixes. */
+export const isVerificationBaselineRun = (
+  run: Pick<ScanRun, "status"> & {
+    engineRuns?: ReadonlyArray<Pick<ScanRun["engineRuns"][number], "taskKind">>;
+  },
+): boolean =>
+  verificationBaselineStatuses.has(run.status)
+  && (!run.engineRuns?.length
+    || run.engineRuns.some((task) => task.taskKind?.kind !== "external_report_import"));

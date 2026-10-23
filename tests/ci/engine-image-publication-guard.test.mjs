@@ -177,6 +177,8 @@ test("an upstream candidate validates new source while retaining the runnable re
   const candidate = pendingUpstreamBuild(plan, engine);
   assert.equal(candidate.source_revision, plan.source.revision);
   assert.equal(candidate.engine_version, plan.upstream_update.engine_version);
+  assert.equal(candidate.compatibility.knowledge_date, plan.upstream_update.knowledge_date);
+  assert.equal(candidate.compatibility.support_until, plan.upstream_update.support_until);
   assert.deepEqual(candidate.image, engine.image);
   assert.deepEqual(candidate.runtime, engine.runtime);
   assert.deepEqual(candidate.permissions, engine.permissions);

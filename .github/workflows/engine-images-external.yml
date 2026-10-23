@@ -65,7 +65,7 @@ jobs:
             version: 1.12.0
             dockerfile: engines/images/httpx/Dockerfile
           - engine: nuclei
-            tag: 3.11.1-7
+            tag: 3.11.1-8
             version: 3.11.1
             dockerfile: engines/images/nuclei/Dockerfile
     env:

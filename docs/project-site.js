@@ -32,7 +32,7 @@ const applyLanguage = (language, updateUrl = true) => {
   for (const link of document.querySelectorAll("a[data-href-en][data-href-zh]")) {
     const url = new URL(selected === "zh-TW" ? link.dataset.hrefZh : link.dataset.hrefEn, window.location.href);
     const page = url.pathname.split('/').pop();
-    if (url.origin === location.origin && ['index.html', 'scanner-guide.html', 'sample-reports.html', 'check-fixes-demo.html'].includes(page)) {
+    if (url.origin === location.origin && ['index.html', 'scanner-guide.html', 'sample-reports.html', 'check-fixes-demo.html', 'incident-october-21.html'].includes(page)) {
       url.searchParams.set('lang', selected);
     }
     link.href = selected === 'ja' && link.dataset.hrefJa ? link.dataset.hrefJa : url.href;

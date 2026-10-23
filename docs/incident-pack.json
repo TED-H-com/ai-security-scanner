@@ -1,0 +1,19 @@
+{
+  "schema_version": 1,
+  "id": "october-2026",
+  "title": "October 21 incident scan pack",
+  "reviewed_at": "2026-10-22",
+  "app_version": "0.5.3",
+  "release_tag": "v0.5.3",
+  "repository": "TED-H-com/ai-security-scanner",
+  "campaign_path": "engines/campaigns/october-2026.json",
+  "platforms": ["macos-universal", "windows-x86_64", "linux-x86_64"],
+  "profiles": ["standard", "october-2026"],
+  "report": {
+    "model": "beginner_master_report",
+    "formats": ["html", "json"],
+    "frameworks": ["ISO/IEC 27001:2022", "NIST CSF 2.0", "AIDEFEND", "OWASP Top 10", "OWASP Top 10 for LLM Applications", "CIS Kubernetes Benchmark", "CIS AWS Foundations Benchmark"],
+    "framework_relationships": "evidence_bound",
+    "certification": false
+  }
+}

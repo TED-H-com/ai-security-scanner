@@ -1156,6 +1156,7 @@ fn all_engines_in_one_report<T>(
         .plan_scan(
             &case.id,
             ScanPlanRequest {
+                campaign_id: None,
                 engine_ids: vec![],
                 engine_asset_routes: routes,
             },

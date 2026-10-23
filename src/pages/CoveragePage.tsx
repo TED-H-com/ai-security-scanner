@@ -63,6 +63,8 @@ import {
   localProfileByAssessmentIntent,
   type LocalInputProfile,
 } from "../localInputProfiles";
+import { INCIDENT_FOCUS_ID, selectIncidentFocusEngines } from "../incidentFocusProfile";
+import { ExternalScannerImport } from "../components/ExternalScannerImport";
 import { engineOutcomeForId } from "../scanPresentation";
 import { agenticRadarFramework, agenticRadarFrameworks } from "../agenticRadarProfile";
 import { ModelEndpointPanel } from "../components/ModelEndpointPanel";
@@ -99,10 +101,12 @@ export interface CoveragePageProps {
     confirmation: string,
     externalScope?: ExternalScopeRequest,
     engineIds?: string[],
+    campaignId?: string,
   ) => Promise<boolean>;
   onStartEnvironmentScan: (
     authorizations: Array<Omit<ScopeApprovalInput, "caseId">>,
     engineAssetRoutes: EngineAssetRoute[],
+    campaignId?: string,
   ) => Promise<boolean>;
 }
 
@@ -282,6 +286,11 @@ const isAwaitingFirstScan = (state: CoverageState, scanAttempted: boolean | unde
   state === "authorized_incomplete" && scanAttempted === false;
 
 const pageCopy = {
+  incidentFocusTitle: bilingual("October 21–22 incident triage", "10/21–10/22 事件專項檢查"),
+  incidentFocusDetail: bilingual("Check packages in selected local copies with Trivy. Websites and internal hosts are excluded; results show incident matches and coverage.", "使用 Trivy 檢查所選本機副本的套件弱點。網站與內部主機不納入；結果列出事件命中與涵蓋範圍。"),
+  incidentFocusPackages: bilingual("Check known package vulnerabilities in the selected copies.", "檢查所選副本中的已知套件弱點。"),
+  incidentFocusExcludedCount: bilingual("{count} assets excluded from package incident checks", "套件事件檢查不納入 {count} 項資產"),
+  incidentFocusExcluded: bilingual("Not included in incident triage", "未納入這次事件專項檢查"),
   headerEyebrow: bilingual("Set up your scan", "設定這次掃描"),
   headerTitle: bilingual("Scan setup", "掃描設定"),
   refresh: bilingual("Refresh items", "重新整理項目"),
@@ -874,6 +883,8 @@ export function CoveragePage({
     if (guidedLocalProfile) return { kind: "local", profile: guidedLocalProfile };
     return { kind: "none" };
   }, [guidedCloudRoute, guidedLocalProfile, guidedNetworkRoute]);
+  const [incidentFocus, setIncidentFocus] = useState(false);
+  useEffect(() => setIncidentFocus(false), [caseId]);
   const [filter, setFilter] = useState<CoverageState | "all">("all");
   const [selectedAssets, setSelectedAssets] = useState<string[]>([]);
   const [showSourceForm, setShowSourceForm] = useState(false);
@@ -910,7 +921,7 @@ export function CoveragePage({
   const [templateRevision, setTemplateRevision] = useState<string>(websiteQuickProfile.templateRevision);
   const [websiteScanProfile, setWebsiteScanProfile] = useState<"quick" | "passive">("quick");
   const zapRunnable = engineManifests.some((manifest) => manifest.id === "zap" && manifest.runnable === true);
-  const passiveWebsiteSelected = zapRunnable && websiteScanProfile === "passive";
+  const passiveWebsiteSelected = !incidentFocus && zapRunnable && websiteScanProfile === "passive";
   const selectedWebsiteProfile = passiveWebsiteSelected ? websitePassiveProfile : websiteQuickProfile;
   const [allowedTemplateIds, setAllowedTemplateIds] = useState("");
   const [allowSensitiveNetworks, setAllowSensitiveNetworks] = useState(false);
@@ -938,7 +949,8 @@ export function CoveragePage({
   const agenticRadarRunnable = engineManifests.some((manifest) => (
     manifest.id === "agentic-radar" && manifest.runnable === true && manifest.compatibilityValid
   ));
-  const localEngineIdsForAsset = (asset: Asset): string[] => [
+  const localEngineIdsForAsset = (asset: Asset): string[] => {
+    const engineIds = [
     ...(asset.localInputProfile ? localInputEngineIds[asset.localInputProfile] : []),
     ...(mcpArmorRunnable && asset.localInputProfile === "repository_working_tree" && asset.selectedMcpConfiguration
       ? ["mcp-armor"]
@@ -946,7 +958,9 @@ export function CoveragePage({
     ...(agenticRadarRunnable && asset.localInputProfile === "repository_working_tree" && asset.agenticRadarFramework
       ? ["agentic-radar"]
       : []),
-  ];
+    ];
+    return incidentFocus ? selectIncidentFocusEngines(engineIds) : engineIds;
+  };
   const agenticInventorySelection = (selected: readonly Asset[]) => {
     const repositories = selected.filter((asset) => asset.localInputProfile === "repository_working_tree");
     if (!agenticRadarRunnable || repositories.length === 0) return null;
@@ -1098,11 +1112,16 @@ export function CoveragePage({
     ? guidedLocalInput
     : localInputDefinitions[workspaceInputProfile];
   const selectedScopeAssets = assets.filter((asset) => selectedAssets.includes(asset.id));
-  const selectedEnvironmentLocalAssets = environmentLocalAssets.filter((asset) => selectedAssets.includes(asset.id));
-  const selectedEnvironmentHostAssets = environmentHostAssets.filter(({ asset }) => selectedAssets.includes(asset.id));
-  const selectedEnvironmentWebsiteAssets = environmentWebsiteAssets.filter(({ asset }) => selectedAssets.includes(asset.id));
-  const selectedEnvironmentEndpointAssets = environmentEndpointAssets.filter(({ asset }) => selectedAssets.includes(asset.id));
-  const selectedEnvironmentDeviceAssets = environmentDeviceAssets.filter(({ asset }) => selectedAssets.includes(asset.id));
+  const selectedEnvironmentLocalAssets = environmentLocalAssets.filter((asset) => selectedAssets.includes(asset.id)
+    && localEngineIdsForAsset(asset).length > 0);
+  const selectedEnvironmentHostAssets = environmentHostAssets.filter(({ asset }) => !incidentFocus && selectedAssets.includes(asset.id));
+  const selectedEnvironmentWebsiteAssets = environmentWebsiteAssets.filter(({ asset }) => !incidentFocus && selectedAssets.includes(asset.id));
+  const selectedEnvironmentEndpointAssets = environmentEndpointAssets.filter(({ asset }) => !incidentFocus && selectedAssets.includes(asset.id));
+  const selectedEnvironmentDeviceAssets = environmentDeviceAssets.filter(({ asset }) => !incidentFocus && selectedAssets.includes(asset.id));
+  const incidentFocusAvailable = scopeEligibleAssets.some((asset) => asset.localInputProfile
+    && selectIncidentFocusEngines(localInputEngineIds[asset.localInputProfile]).length > 0);
+  const incidentExcludedAssets = incidentFocus ? scopeEligibleAssets.filter((asset) =>
+    !asset.localInputProfile || localEngineIdsForAsset(asset).length === 0) : [];
   const selectedEnvironmentNetworkAssets = [
     ...selectedEnvironmentHostAssets,
     ...selectedEnvironmentWebsiteAssets,
@@ -1141,7 +1160,8 @@ export function CoveragePage({
     ? [...new Set(selectedScopeAssets.flatMap((asset) => localEngineIdsForAsset(asset)))]
     : undefined;
   const mcpSelectionRequired = Boolean(
-    mcpArmorRunnable
+    !incidentFocus
+    && mcpArmorRunnable
     && guidedLocalConsent
     && selectedScopeAssets.some((asset) => (
       asset.localInputProfile === "repository_working_tree"
@@ -1436,6 +1456,9 @@ export function CoveragePage({
     if (selectedAssets.length === 0 || scopeModes.length === 0 || (!conciseGuidedConsent && !ownershipConfirmed)) return;
     if (requiresAuthorizationReference && !scopeConfirmation.trim()) return;
     if (!externalScopeReady || mcpSelectionRequired) return;
+    // Never let an empty focused selection become the generic default engine plan.
+    if (incidentFocus && (!guidedLocalConsent || !guidedLocalEngineIds?.length
+      || selectedScopeAssets.some((asset) => localEngineIdsForAsset(asset).length === 0))) return;
     const externalScope: ExternalScopeRequest | undefined = externalActivity && parsedPorts ? {
       target: externalTarget,
       ports: parsedPorts,
@@ -1472,6 +1495,7 @@ export function CoveragePage({
       guidedWebsiteQuickProfile
         ? [...selectedWebsiteProfile.engineIds]
         : guidedLocalEngineIds,
+      ...(incidentFocus ? [INCIDENT_FOCUS_ID] as [string] : [] as []),
     );
     if (started) resetScopeForm();
   };
@@ -1483,6 +1507,7 @@ export function CoveragePage({
     const authorizations: Array<Omit<ScopeApprovalInput, "caseId">> = [];
     const routes = new Map<string, string[]>();
     const addEngineRoute = (engineId: string, assetId: string) => {
+      if (incidentFocus && selectIncidentFocusEngines([engineId]).length === 0) return;
       const routedAssetIds = routes.get(engineId) ?? [];
       if (!routedAssetIds.includes(assetId)) routedAssetIds.push(assetId);
       routes.set(engineId, routedAssetIds);
@@ -1626,9 +1651,11 @@ export function CoveragePage({
       for (const engineId of profile.engineIds) addEngineRoute(engineId, asset.id);
     }
 
+    if (routes.size === 0 || authorizations.length === 0) return;
     const started = await onStartEnvironmentScan(
       authorizations,
       [...routes].map(([engineId, assetIds]) => ({ engineId, assetIds })),
+      ...(incidentFocus ? [INCIDENT_FOCUS_ID] as [string] : [] as []),
     );
     if (started) resetScopeForm();
   };
@@ -2202,6 +2229,9 @@ export function CoveragePage({
       </details>
       </section>}
 
+      <ExternalScannerImport key={caseId} caseId={caseId} assets={assets} nativeMode={nativeMode} busy={busy}
+        onImported={onAuthorizationChanged} />
+
       {!environmentRoute && shouldPromptForFirstAsset(pendingAssets.length, selectedAssets.length) && (
         <InlineNotice tone="warning" title={text(pageCopy.pendingNoticeTitle)} />
       )}
@@ -2214,6 +2244,15 @@ export function CoveragePage({
           {selectedAssets.length > 0 && !conciseGuidedConsent && <span className="count-label">{text(pageCopy.selectedCount, { count: formatNumber(selectedAssets.length) })}</span>}
         </div>}
 
+        {incidentFocusAvailable && (environmentRoute || Boolean(guidedLocalProfile)) && (
+          <label className="toggle-row">
+            <input type="checkbox" checked={incidentFocus} disabled={busy}
+              onChange={(event) => { setIncidentFocus(event.target.checked); setEnvironmentNetworkConfirmed(false); setOwnershipConfirmed(false); }} />
+            <span><strong>{text(pageCopy.incidentFocusTitle)}</strong>
+              <small>{text(pageCopy.incidentFocusDetail)}</small></span>
+          </label>
+        )}
+
         {environmentRoute && (
           <form className="scope-confirmation-panel" onSubmit={(event) => { event.preventDefault(); void startEnvironmentScan(); }}>
             <div className="scope-confirmation-panel__heading">
@@ -2224,32 +2263,38 @@ export function CoveragePage({
             </div>
             <p className="coverage-review-timing">{text(pageCopy.environmentTiming)}</p>
 
+            {incidentFocus && incidentExcludedAssets.length > 0 && (
+              <InlineNotice tone="warning" title={text(pageCopy.incidentFocusExcludedCount, { count: formatNumber(incidentExcludedAssets.length) })}>
+                <ul>{incidentExcludedAssets.map((asset) => <li key={asset.id}>{asset.name}</li>)}</ul>
+              </InlineNotice>
+            )}
+
             {environmentLocalAssets.length > 0 && (
               <fieldset className="scope-mode-fieldset">
                 <legend>{text(pageCopy.environmentRepositoriesTitle)}</legend>
-                <p>{text(pageCopy.environmentRepositoriesBody)}</p>
+                <p>{text(incidentFocus ? pageCopy.incidentFocusPackages : pageCopy.environmentRepositoriesBody)}</p>
                 <div className="scope-mode-grid">
                   {environmentLocalAssets.map((asset) => (
-                    <label key={asset.id} className={selectedAssets.includes(asset.id) ? "scope-mode-card scope-mode-card--active" : "scope-mode-card"}>
+                    <label key={asset.id} className={selectedAssets.includes(asset.id) && localEngineIdsForAsset(asset).length > 0 ? "scope-mode-card scope-mode-card--active" : "scope-mode-card"}>
                       <input
                         type="checkbox"
-                        disabled={busy}
-                        checked={selectedAssets.includes(asset.id)}
+                        disabled={busy || localEngineIdsForAsset(asset).length === 0}
+                        checked={selectedAssets.includes(asset.id) && localEngineIdsForAsset(asset).length > 0}
                         aria-label={text(pageCopy.chooseAsset, { name: asset.name })}
                         onChange={() => toggleEnvironmentAsset(asset.id)}
                       />
                       <span>
                         <strong>{asset.name}</strong>
-                        <small>{asset.localInputProfile ? localInputEngines[asset.localInputProfile] : ""}</small>
+                        <small>{incidentFocus ? localEngineIdsForAsset(asset).join(", ") || text(pageCopy.incidentFocusExcluded) : asset.localInputProfile ? localInputEngines[asset.localInputProfile] : ""}</small>
                       </span>
                     </label>
                   ))}
                 </div>
-                {agenticInventorySelection(selectedEnvironmentLocalAssets)}
+                {!incidentFocus && agenticInventorySelection(selectedEnvironmentLocalAssets)}
               </fieldset>
             )}
 
-            {environmentHostAssets.length > 0 && (
+            {!incidentFocus && environmentHostAssets.length > 0 && (
               <fieldset className="scope-mode-fieldset">
                 <legend>{text(pageCopy.environmentHostsTitle)}</legend>
                 <p>{text(pageCopy.environmentHostsBody)}</p>
@@ -2273,7 +2318,7 @@ export function CoveragePage({
               </fieldset>
             )}
 
-            {environmentWebsiteAssets.length > 0 && (
+            {!incidentFocus && environmentWebsiteAssets.length > 0 && (
               <fieldset className="scope-mode-fieldset">
                 <legend>{text(pageCopy.environmentWebsitesTitle)}</legend>
                 <p>{text(passiveWebsiteSelected ? pageCopy.environmentWebsitePassiveBody : pageCopy.environmentWebsitesBody)}</p>
@@ -2298,7 +2343,7 @@ export function CoveragePage({
               </fieldset>
             )}
 
-            {environmentEndpointAssets.length > 0 && (
+            {!incidentFocus && environmentEndpointAssets.length > 0 && (
               <fieldset className="scope-mode-fieldset">
                 <legend>{text(pageCopy.environmentEndpointsTitle)}</legend>
                 <p>{text(pageCopy.environmentEndpointsBody)}</p>
@@ -2328,7 +2373,7 @@ export function CoveragePage({
               </fieldset>
             )}
 
-            {environmentDeviceAssets.length > 0 && (
+            {!incidentFocus && environmentDeviceAssets.length > 0 && (
               <fieldset className="scope-mode-fieldset">
                 <legend>{text(pageCopy.environmentDevicesTitle)}</legend>
                 <p>{text(pageCopy.environmentDevicesBody)}</p>
@@ -2355,7 +2400,7 @@ export function CoveragePage({
               </fieldset>
             )}
 
-            {environmentUnreadyExternalAssets.length > 0 && (
+            {!incidentFocus && environmentUnreadyExternalAssets.length > 0 && (
               <InlineNotice
                 tone="warning"
                 title={text(pageCopy.environmentNotReadyTitle)}

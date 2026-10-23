@@ -63,7 +63,7 @@
     "required": true,
     "strategy": "Accept only a fixed filesystem scan contract through the project-owned launcher; credential verification and network access remain disabled.",
     "entrypoint": "/usr/local/bin/ai-security-scanner-engine-entrypoint",
-    "launcher_sha256": "sha256:fc81ca1d8703978576d7c2b79a1723777a69f8852fabb86902737b8f517e9399"
+    "launcher_sha256": "sha256:cbb21bd585184a6d43ebdee25b6864d0528510299facccfdceb53db187bb4d7a"
   },
   "command": [
     "--engine",

@@ -479,6 +479,7 @@ fn local_case_lifecycle_preserves_scope_evidence_and_comparison_truth() {
         .plan_scan(
             &case.id,
             ScanPlanRequest {
+                campaign_id: None,
                 engine_ids: lifecycle_engine_ids
                     .iter()
                     .map(|engine_id| (*engine_id).to_owned())
@@ -625,6 +626,7 @@ fn local_case_lifecycle_preserves_scope_evidence_and_comparison_truth() {
             &case.id,
             &plan.scan_run.id,
             ScanPlanRequest {
+                campaign_id: None,
                 engine_ids: vec!["gitleaks".into()],
                 engine_asset_routes: Vec::new(),
             },
@@ -760,6 +762,7 @@ fn local_case_lifecycle_preserves_scope_evidence_and_comparison_truth() {
         .plan_scan(
             &case.id,
             ScanPlanRequest {
+                campaign_id: None,
                 engine_ids: unavailable_ids.clone(),
                 engine_asset_routes: Vec::new(),
             },
@@ -958,6 +961,7 @@ fn mixed_environment_fake_runtime_reopens_one_shared_report_and_export() {
                 },
             ],
             ScanPlanRequest {
+                campaign_id: None,
                 engine_ids: vec![],
                 engine_asset_routes: vec![
                     EngineAssetRoute {
@@ -1187,6 +1191,7 @@ fn mixed_environment_fake_runtime_reopens_one_shared_report_and_export() {
         .plan_scan(
             &case.id,
             ScanPlanRequest {
+                campaign_id: None,
                 engine_ids: vec![],
                 engine_asset_routes: vec![
                     EngineAssetRoute {
@@ -1452,6 +1457,7 @@ fn typed_container_and_kubernetes_inputs_complete_the_product_lifecycle() {
         .plan_scan(
             &case.id,
             ScanPlanRequest {
+                campaign_id: None,
                 engine_ids: ["syft", "trivy", "grype", "kubescape", "kube-bench"]
                     .into_iter()
                     .map(str::to_owned)
@@ -1690,6 +1696,7 @@ fn execute_greenbone_framework_vertical(ai_system_applicable: bool) -> Greenbone
                 }),
             }],
             ScanPlanRequest {
+                campaign_id: None,
                 engine_ids: vec![],
                 engine_asset_routes: vec![EngineAssetRoute {
                     engine_id: "greenbone".into(),
@@ -2377,6 +2384,7 @@ PRIVATE_KEY=baseline-line-nine
         .plan_scan(
             &case.id,
             ScanPlanRequest {
+                campaign_id: None,
                 engine_ids: vec!["gitleaks".into()],
                 engine_asset_routes: Vec::new(),
             },
@@ -2462,6 +2470,7 @@ PRIVATE_KEY=moved-line-seven
             &case.id,
             &plan.scan_run.id,
             ScanPlanRequest {
+                campaign_id: None,
                 engine_ids: vec!["gitleaks".into()],
                 engine_asset_routes: Vec::new(),
             },

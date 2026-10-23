@@ -480,6 +480,7 @@ mod tests {
         );
         case.id = "case-1".into();
         case.scan_runs.push(ScanRun {
+            campaign_id: None,
             id: "run-1".into(),
             case_id: case.id.clone(),
             sequence: 1,

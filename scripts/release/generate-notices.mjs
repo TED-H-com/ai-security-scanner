@@ -1,4 +1,5 @@
 import { execFileSync } from "node:child_process";
+import { createHash } from "node:crypto";
 import { copyFile, mkdir, readFile } from "node:fs/promises";
 import path from "node:path";
 import {
@@ -247,6 +248,18 @@ async function main() {
     engines,
   });
   await copyFile(path.join(PROJECT_ROOT, "LICENSE"), path.join(output, "LICENSE.txt"));
+
+  const scanPack = await readJson(path.join(PROJECT_ROOT, "docs/incident-pack.json"));
+  if (scanPack.app_version === version) {
+    const campaignBytes = await readFile(path.join(PROJECT_ROOT, scanPack.campaign_path));
+    await writeJsonAtomic(path.join(output, "incident-scan-pack.json"), {
+      ...scanPack,
+      source_commit: commit,
+      campaign_sha256: createHash("sha256").update(campaignBytes).digest("hex"),
+      campaign: JSON.parse(campaignBytes),
+    });
+    await copyFile(path.join(PROJECT_ROOT, "docs/release/v0.5.3.md"), path.join(output, "INCIDENT_SCAN_PACK.md"));
+  }
 
   const metadata = createPreparedReleaseMetadata({
     version,
