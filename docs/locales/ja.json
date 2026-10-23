@@ -725,5 +725,13 @@
   "10/21 scan pack": "10/21 検査パック",
   "Check the October incidents.": "10 月の事案を確認。",
   "Standard scanning and focused package checks for Mac, Windows and Linux. One report includes priorities, incident coverage and ISO / NIST references.": "Mac・Windows・Linux で通常スキャンと対象パッケージの検査を実行。優先順位、事案の確認範囲、ISO / NIST の参照を 1 つのレポートに。",
-  "Open scan pack →": "検査パックを開く →"
+  "Open scan pack →": "検査パックを開く →",
+  "Download v0.5.3 stable release": "安定版 v0.5.3 をダウンロード",
+  "v0.5.3 stable release.": "安定版 v0.5.3。",
+  "New in v0.5.3:": "v0.5.3 の新機能：",
+  "Choose Settings → 日本語 in v0.5.3. Your language choice is saved across restarts.": "v0.5.3 では Settings → 日本語 で切り替えられます。選択した言語は再起動後も保存されます。",
+  "tools in v0.5.3": "v0.5.3 のツール",
+  "October 21 incident triage, updated Trivy databases and Nuclei templates, and one shared report with ISO / NIST references.": "10/21 の事案別検査、Trivy データベースと Nuclei テンプレートの更新、ISO / NIST 参照付きの共通レポートを追加しました。",
+  "Windows installer": "Windows インストーラー",
+  "(unsigned; SmartScreen may warn), macOS Universal": "（未署名のため SmartScreen の警告が出る場合があります）、macOS Universal"
 }

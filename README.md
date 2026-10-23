@@ -10,7 +10,7 @@ Choose what to check in the desktop app. It selects suitable security tools and 
 
 ## Run your first scan
 
-1. [Download v0.5.2](https://github.com/TED-H-com/ai-security-scanner/releases/tag/v0.5.2) for Windows, macOS or Linux and [follow the install steps](docs/getting-started.md#install). The app prepares its scanning tools; you do not need to install Docker.
+1. [Download v0.5.3](https://github.com/TED-H-com/ai-security-scanner/releases/tag/v0.5.3) for Windows, macOS or Linux and [follow the install steps](docs/getting-started.md#install). The app prepares its scanning tools; you do not need to install Docker.
 2. Open the app and choose **Scan my environment**, **Check a website**, or **Check code or an AI project**. Add the folders, URLs or internal systems you want to check.
 3. Review the listed targets and checks. Confirm that you may scan any network targets, then start the scan in the app window.
 4. When the scan ends, open **Results**. Choose **Save or share report**, then **Save HTML report** to save a report you can open in a browser.
@@ -19,7 +19,15 @@ The first scan may take longer while tools download. Later scans can use those t
 
 ## Languages
 
-Japanese UI support is included in v0.5.2. Choose **Settings → 日本語**; the choice is saved across restarts. Untranslated explanations fall back to English; HTML exports from the Japanese UI are in English. See the [Japanese README](README.ja.md) and [Japanese website](https://ted-h-com.github.io/ai-security-scanner/?lang=ja).
+Japanese UI support is included in v0.5.3. Choose **Settings → 日本語**; the choice is saved across restarts. Untranslated explanations fall back to English; HTML exports from the Japanese UI are in English. See the [Japanese README](README.ja.md) and [Japanese website](https://ted-h-com.github.io/ai-security-scanner/?lang=ja).
+
+## New in v0.5.3
+
+- Adds the [October 21 incident scan pack](https://ted-h-com.github.io/ai-security-scanner/incident-october-21.html) for Mac, Windows and Linux.
+- Keeps the standard scan and focused incident triage in one HTML / JSON report, with evidence-bound ISO, NIST, AIDEFEND, OWASP and CIS references.
+- Updates Trivy and its offline databases, refreshes Nuclei templates, and supports importing and combining saved external scanner results.
+
+[Read the v0.5.3 changes](docs/release/v0.5.3.md).
 
 ## New in v0.5.2
 

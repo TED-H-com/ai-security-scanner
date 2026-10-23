@@ -1,0 +1,418 @@
+{
+  "schema_version": "1.0.0",
+  "observed_at": "2026-10-23T05:18:41.435591+00:00",
+  "release": {
+    "schema_version": "1.0.0",
+    "observed_at": "2026-10-23T05:17:17.544994+00:00",
+    "repository": "TED-H-com/ai-security-scanner",
+    "release_id": 421474140,
+    "release_url": "https://github.com/TED-H-com/ai-security-scanner/releases/tag/v0.5.3",
+    "published_at": "2026-10-23T05:16:41Z",
+    "tag": "v0.5.3",
+    "source_commit": "654dd7165112c38da4e7bf894fdccb9a251d2c1d",
+    "anonymous_download": true,
+    "all_three_platforms_present": true,
+    "source_bound_pack_verified": true,
+    "assets": [
+      {
+        "name": "ai-security-scanner_0.5.3_universal.dmg",
+        "asset_id": 668051565,
+        "bytes": 124253396,
+        "sha256": "04a48d279764b14cf2ff653d1c47ecbc0963298f333818c46c746a5bc4ba0e0f"
+      },
+      {
+        "name": "ai-security-scanner_0.5.3_amd64.deb",
+        "asset_id": 668051226,
+        "bytes": 82377860,
+        "sha256": "3df3db24bdd001d02d0679b4a002ca87cd756ed06c664ad85dfb7eb1d7dae88d"
+      },
+      {
+        "name": "ai-security-scanner_0.5.3_x64_en-US.msi",
+        "asset_id": 668051874,
+        "bytes": 45199360,
+        "sha256": "42787647cf1d7572ee2af41b8fd8799f13929ad6247df4ebf20b36549bdcaf6f"
+      },
+      {
+        "name": "release-assets.json",
+        "asset_id": 668052918,
+        "bytes": 11259,
+        "sha256": "41136c4413de258ac9e69f15262427502789cfe7f49fe6a6d3907bb3d7a1036d"
+      },
+      {
+        "name": "release-metadata.json",
+        "asset_id": 668052933,
+        "bytes": 9274,
+        "sha256": "c7af097cbec7a9a035665168fbe5d342a4ddc15be28fa927b24bb79f323b3780"
+      },
+      {
+        "name": "incident-scan-pack.json",
+        "asset_id": 668052452,
+        "bytes": 23832,
+        "sha256": "8990381d72056c63345d2c924435f49fcce394c52946e6201ac6c7d2f5b5448d"
+      },
+      {
+        "name": "INCIDENT_SCAN_PACK.md",
+        "asset_id": 668052436,
+        "bytes": 4318,
+        "sha256": "efeaae2765cb33a30d215364c0c38fe9d566f7559270ac20e5a69f0a313108fc"
+      },
+      {
+        "name": "SHA256SUMS.txt",
+        "asset_id": 668053013,
+        "bytes": 4912,
+        "sha256": "f032ffba513b2f7be52efb68b73d9368cb2b8a5195996e9eff8683a4743637b0"
+      }
+    ]
+  },
+  "candidate": {
+    "run": {
+      "id": 39898535241,
+      "html_url": "https://github.com/TED-H-com/ai-security-scanner/actions/runs/39898535241",
+      "status": "completed",
+      "conclusion": "success",
+      "run_attempt": 1,
+      "head_sha": "654dd7165112c38da4e7bf894fdccb9a251d2c1d",
+      "head_branch": "main",
+      "path": ".github/workflows/release.yml"
+    },
+    "artifacts": [
+      {
+        "id": 12480050981,
+        "name": "release-candidate-input-39898535241-1",
+        "digest": "sha256:21ad1519f3aff29353e84b87a0eb81545e5803564fd0b4efc2182d7220ff1d21",
+        "size_in_bytes": 792919172,
+        "expired": false
+      },
+      {
+        "id": 12479817875,
+        "name": "release-finalized",
+        "digest": "sha256:95f6c7e752369f5d346664c9f427e9b64d786abb69adbf905baa5dbd3c2c7e8f",
+        "size_in_bytes": 528136877,
+        "expired": false
+      }
+    ]
+  },
+  "promotion": {
+    "databaseId": 39904080557,
+    "url": "https://github.com/TED-H-com/ai-security-scanner/actions/runs/39904080557",
+    "status": "completed",
+    "conclusion": "success",
+    "headSha": "654dd7165112c38da4e7bf894fdccb9a251d2c1d",
+    "event": "workflow_dispatch",
+    "workflowName": "Promote frozen desktop release candidate"
+  },
+  "source_checks": [
+    {
+      "id": 39898533979,
+      "name": "CI",
+      "path": ".github/workflows/ci.yml",
+      "head_sha": "654dd7165112c38da4e7bf894fdccb9a251d2c1d",
+      "event": "push",
+      "status": "completed",
+      "conclusion": "success",
+      "html_url": "https://github.com/TED-H-com/ai-security-scanner/actions/runs/39898533979",
+      "run_attempt": 1,
+      "created_at": "2026-10-23T04:06:27Z",
+      "updated_at": "2026-10-23T04:46:14Z"
+    },
+    {
+      "id": 39898533911,
+      "name": "CodeQL",
+      "path": ".github/workflows/codeql.yml",
+      "head_sha": "654dd7165112c38da4e7bf894fdccb9a251d2c1d",
+      "event": "push",
+      "status": "completed",
+      "conclusion": "success",
+      "html_url": "https://github.com/TED-H-com/ai-security-scanner/actions/runs/39898533911",
+      "run_attempt": 1,
+      "created_at": "2026-10-23T04:06:27Z",
+      "updated_at": "2026-10-23T04:15:49Z"
+    }
+  ],
+  "installer_provenance": [
+    {
+      "file": "ai-security-scanner_0.5.3_universal.dmg",
+      "subject_sha256": "04a48d279764b14cf2ff653d1c47ecbc0963298f333818c46c746a5bc4ba0e0f",
+      "verified": true,
+      "predicate_type": "https://slsa.dev/provenance/v1",
+      "signer_workflow": "TED-H-com/ai-security-scanner/.github/workflows/promote-release.yml",
+      "source_commit": "654dd7165112c38da4e7bf894fdccb9a251d2c1d",
+      "source_ref": "refs/heads/main",
+      "github_hosted_runner_required": true,
+      "verification_receipt_sha256": "ae56b6d435563ccfdf9ea4099e954b4f967105973bfe71e47321188210fbca6d"
+    },
+    {
+      "file": "ai-security-scanner_0.5.3_amd64.deb",
+      "subject_sha256": "3df3db24bdd001d02d0679b4a002ca87cd756ed06c664ad85dfb7eb1d7dae88d",
+      "verified": true,
+      "predicate_type": "https://slsa.dev/provenance/v1",
+      "signer_workflow": "TED-H-com/ai-security-scanner/.github/workflows/promote-release.yml",
+      "source_commit": "654dd7165112c38da4e7bf894fdccb9a251d2c1d",
+      "source_ref": "refs/heads/main",
+      "github_hosted_runner_required": true,
+      "verification_receipt_sha256": "ae56b6d435563ccfdf9ea4099e954b4f967105973bfe71e47321188210fbca6d"
+    },
+    {
+      "file": "ai-security-scanner_0.5.3_x64_en-US.msi",
+      "subject_sha256": "42787647cf1d7572ee2af41b8fd8799f13929ad6247df4ebf20b36549bdcaf6f",
+      "verified": true,
+      "predicate_type": "https://slsa.dev/provenance/v1",
+      "signer_workflow": "TED-H-com/ai-security-scanner/.github/workflows/promote-release.yml",
+      "source_commit": "654dd7165112c38da4e7bf894fdccb9a251d2c1d",
+      "source_ref": "refs/heads/main",
+      "github_hosted_runner_required": true,
+      "verification_receipt_sha256": "ae56b6d435563ccfdf9ea4099e954b4f967105973bfe71e47321188210fbca6d"
+    }
+  ],
+  "offered_platforms": [
+    {
+      "platform": "linux-x86_64",
+      "availability": "offered",
+      "reason": null,
+      "installers": [
+        {
+          "installerType": "appimage",
+          "availability": "not-offered",
+          "reason": "technical-qualification-not-observed",
+          "artifact": null
+        },
+        {
+          "installerType": "deb",
+          "availability": "offered",
+          "reason": null,
+          "artifact": {
+            "file": "ai-security-scanner_0.5.3_amd64.deb",
+            "bytes": 82377860,
+            "sha256": "3df3db24bdd001d02d0679b4a002ca87cd756ed06c664ad85dfb7eb1d7dae88d",
+            "technicalQualification": {
+              "state": "passed",
+              "evidenceFile": "platform-qualification-linux-x86_64-deb.json",
+              "reason": null
+            },
+            "humanPath": {
+              "state": "not-observed",
+              "evidenceFile": null,
+              "reason": "exact-candidate-beginner-path-not-observed"
+            },
+            "operatingSystemSigning": {
+              "state": "not-configured",
+              "evidenceFile": null,
+              "reason": "artifact-has-no-verified-operating-system-signature"
+            },
+            "notarization": {
+              "state": "not-applicable",
+              "evidenceFile": null,
+              "reason": "apple-notarization-does-not-apply"
+            },
+            "windowsLifecycle": {
+              "state": "not-applicable",
+              "evidenceFiles": [],
+              "reason": "Windows lifecycle does not apply"
+            },
+            "windowsDataPreservation": {
+              "state": "not-applicable",
+              "evidenceFiles": [],
+              "reason": "Windows data preservation does not apply"
+            },
+            "updater": {
+              "state": "not-offered",
+              "payloadFile": null,
+              "signatureFile": null,
+              "targetKeys": [],
+              "reason": "no-valid-artifact-scoped-updater"
+            },
+            "provenanceAttestation": {
+              "state": "required-before-publication",
+              "provider": "GitHub artifact attestations",
+              "evidenceFile": null
+            },
+            "knownLimitations": [
+              "beginner-human-path-not-observed",
+              "operating-system-signing-not-configured",
+              "updater-not-offered-for-this-artifact"
+            ]
+          }
+        },
+        {
+          "installerType": "rpm",
+          "availability": "not-offered",
+          "reason": "technical-qualification-not-observed",
+          "artifact": null
+        }
+      ]
+    },
+    {
+      "platform": "macos-universal",
+      "availability": "offered",
+      "reason": null,
+      "installers": [
+        {
+          "installerType": "dmg",
+          "availability": "offered",
+          "reason": null,
+          "artifact": {
+            "file": "ai-security-scanner_0.5.3_universal.dmg",
+            "bytes": 124253396,
+            "sha256": "04a48d279764b14cf2ff653d1c47ecbc0963298f333818c46c746a5bc4ba0e0f",
+            "technicalQualification": {
+              "state": "installer-passed-runtime-not-observed",
+              "evidenceFile": "platform-qualification-macos-universal-dmg.json",
+              "reason": null
+            },
+            "humanPath": {
+              "state": "not-observed",
+              "evidenceFile": null,
+              "reason": "exact-candidate-beginner-path-not-observed"
+            },
+            "operatingSystemSigning": {
+              "state": "not-configured",
+              "evidenceFile": null,
+              "reason": "artifact-has-no-verified-operating-system-signature"
+            },
+            "notarization": {
+              "state": "not-configured",
+              "evidenceFile": null,
+              "reason": "artifact-has-no-verified-apple-notarization"
+            },
+            "windowsLifecycle": {
+              "state": "not-applicable",
+              "evidenceFiles": [],
+              "reason": "Windows lifecycle does not apply"
+            },
+            "windowsDataPreservation": {
+              "state": "not-applicable",
+              "evidenceFiles": [],
+              "reason": "Windows data preservation does not apply"
+            },
+            "updater": {
+              "state": "signed",
+              "payloadFile": "ai-security-scanner_0.5.3_universal.app.tar.gz",
+              "signatureFile": "ai-security-scanner_0.5.3_universal.app.tar.gz.sig",
+              "targetKeys": [
+                "darwin-x86_64",
+                "darwin-x86_64-app",
+                "darwin-aarch64",
+                "darwin-aarch64-app"
+              ],
+              "reason": null
+            },
+            "provenanceAttestation": {
+              "state": "required-before-publication",
+              "provider": "GitHub artifact attestations",
+              "evidenceFile": null
+            },
+            "knownLimitations": [
+              "beginner-human-path-not-observed",
+              "operating-system-signing-not-configured",
+              "apple-notarization-not-configured",
+              "managed-runtime-not-observed-on-qualification-host"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "platform": "windows-x86_64",
+      "availability": "offered",
+      "reason": null,
+      "installers": [
+        {
+          "installerType": "msi",
+          "availability": "offered",
+          "reason": null,
+          "artifact": {
+            "file": "ai-security-scanner_0.5.3_x64_en-US.msi",
+            "bytes": 45199360,
+            "sha256": "42787647cf1d7572ee2af41b8fd8799f13929ad6247df4ebf20b36549bdcaf6f",
+            "technicalQualification": {
+              "state": "passed",
+              "evidenceFile": "platform-qualification-windows-x86_64-msi.json",
+              "reason": null
+            },
+            "humanPath": {
+              "state": "not-observed",
+              "evidenceFile": null,
+              "reason": "exact-candidate-beginner-path-not-observed"
+            },
+            "operatingSystemSigning": {
+              "state": "not-configured",
+              "evidenceFile": null,
+              "reason": "artifact-has-no-verified-operating-system-signature"
+            },
+            "notarization": {
+              "state": "not-applicable",
+              "evidenceFile": null,
+              "reason": "apple-notarization-does-not-apply"
+            },
+            "windowsLifecycle": {
+              "state": "not-observed",
+              "evidenceFiles": [],
+              "reason": "equivalent-msi-lifecycle-not-observed"
+            },
+            "windowsDataPreservation": {
+              "state": "not-observed",
+              "evidenceFiles": [],
+              "reason": "equivalent-msi-data-preservation-not-observed"
+            },
+            "updater": {
+              "state": "not-offered",
+              "payloadFile": null,
+              "signatureFile": null,
+              "targetKeys": [],
+              "reason": "no-valid-artifact-scoped-updater"
+            },
+            "provenanceAttestation": {
+              "state": "required-before-publication",
+              "provider": "GitHub artifact attestations",
+              "evidenceFile": null
+            },
+            "knownLimitations": [
+              "beginner-human-path-not-observed",
+              "operating-system-signing-not-configured",
+              "windows-lifecycle-not-observed",
+              "windows-data-preservation-not-observed",
+              "updater-not-offered-for-this-artifact"
+            ]
+          }
+        },
+        {
+          "installerType": "nsis",
+          "availability": "not-offered",
+          "reason": "technical-qualification-not-observed",
+          "artifact": null
+        }
+      ]
+    }
+  ],
+  "incident_pack": {
+    "campaign_sha256": "3c27438ed10f11b032b68cf0d2d3d2e5118c1272e2f7843fd62bbaef0ae42c5e",
+    "profiles": [
+      "standard",
+      "october-2026"
+    ],
+    "report": {
+      "model": "beginner_master_report",
+      "formats": [
+        "html",
+        "json"
+      ],
+      "frameworks": [
+        "ISO/IEC 27001:2022",
+        "NIST CSF 2.0",
+        "AIDEFEND",
+        "OWASP Top 10",
+        "OWASP Top 10 for LLM Applications",
+        "CIS Kubernetes Benchmark",
+        "CIS AWS Foundations Benchmark"
+      ],
+      "framework_relationships": "evidence_bound",
+      "certification": false
+    }
+  },
+  "limits": [
+    "macOS installer and desktop startup passed on the hosted Intel runner; managed-runtime and container execution were not observed because nested virtualization is unsupported on that runner.",
+    "Windows MSI and Linux DEB passed managed-runtime, egress and container execution checks. Windows NSIS failed the WSL idle observation and was excluded from the published set.",
+    "The exact-candidate beginner human path, Windows lifecycle/data preservation, operating-system signatures and Apple notarization are not claimed; per-artifact states are retained from the published release metadata.",
+    "Framework references are evidence-bound relationships, not certification or compliance determinations."
+  ]
+}

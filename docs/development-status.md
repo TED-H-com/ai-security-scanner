@@ -2,9 +2,9 @@
 
 [繁體中文](development-status.zh-TW.md) · [Documentation](README.md)
 
-_Updated 2026-10-16._
+_Updated 2026-10-23._
 
-The October 21 incident pack is being prepared as v0.5.3. It retains the standard scan and shared report, adds focused package triage and a three-platform GitHub Pages download entry. CI document and contract tests: 105 tests cover the current source boundaries. See [the incident release record](release/v0.5.3.md) for scope; publication availability is recorded by the GitHub Release.
+The October 21 incident pack is published as v0.5.3. It retains the standard scan and shared report, adds focused package triage and a three-platform GitHub Pages download entry. CI document and contract tests: 105 tests cover the current source boundaries. See [the incident release record](release/v0.5.3.md) for scope; publication availability is recorded by the GitHub Release.
 
 This page summarizes current engineering status for contributors. It is not a product specification
 or release declaration. [The product specification](product-spec.md) remains the source of truth for
@@ -12,7 +12,9 @@ product behavior, and the [current product review](product-audit.md) tracks the 
 
 ## At a glance
 
-- [v0.5.2 upstream engine updates](release/v0.5.2.md) is the current stable/latest release for Windows, macOS and Linux. It updates ten engines and offline data and repairs bounded Windows runtime execution on recent WSL. Public bytes, updater signatures, source provenance, exact-source CI and CodeQL passed; installer observations and limitations are in the release record.
+- [v0.5.3 October 21 incident scan pack](release/v0.5.3.md) is the current stable/latest release for Windows, macOS and Linux. Standard and focused incident checks share the actionable HTML / JSON report with ISO and NIST references. Trivy databases, Nuclei templates and Vite development tooling are updated; public artifacts and platform observations are recorded with the release.
+
+- [v0.5.2 upstream engine updates](release/v0.5.2.md) is the preceding stable release for Windows, macOS and Linux. It updates ten engines and offline data and repairs bounded Windows runtime execution on recent WSL. Public bytes, updater signatures, source provenance, exact-source CI and CodeQL passed; installer observations and limitations are in the release record.
 
 - The earlier stable release, [v0.4.1](release/v0.4.1.md), retains its original installer and updater observations.
 - The released desktop includes Prowler failure headlines, approved AWS report grouping, reconnect-and-rescan, blocked-scan continuations, Semgrep `1.174.0-4`, and explicit kube-bench/KICS incomplete-coverage handling.

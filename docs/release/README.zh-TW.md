@@ -2,10 +2,11 @@
 
 [English](README.md) · [文件](../README.zh-TW.md)
 
-目前版本為 [v0.5.2 正式版](v0.5.2.zh-TW.md)，更新十個掃描引擎與離線弱點、政策資料，保留日文介面、README 與網站。Linux、macOS 與 Windows 的安裝檔、更新說明、實際交付證據與尚未觀察的項目，都保存在該版紀錄。
+目前版本為 [v0.5.3 正式版](v0.5.3.md#繁體中文)，提供 Mac、Windows、Linux 的 10/21 事件掃描包。一般掃描與事件專項共用含 ISO／NIST 對照的報告，並更新 Trivy 資料庫與 Nuclei 範本。
 
 [v0.5.0 整合正式版](v0.5.0.zh-TW.md)收納 v0.4.1 之後所有已完成更新、Linux 建置修正及兩項依賴安全更新；Windows、macOS 與 Linux 安裝包已正式發布，公開檔案與來源證明均驗證通過。
 
+- [v0.5.3 10/21 事件掃描包](v0.5.3.md#繁體中文)
 - [v0.5.2 發布紀錄](v0.5.2.zh-TW.md) · [日本語](v0.5.2.ja.md) · [English](v0.5.2.md)
 - [v0.5.1 發布紀錄](v0.5.1.zh-TW.md) · [日本語](v0.5.1.ja.md) · [English](v0.5.1.md)
 - [v0.5.0 發布紀錄](v0.5.0.zh-TW.md) · [English](v0.5.0.md)

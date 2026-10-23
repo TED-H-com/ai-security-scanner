@@ -10,7 +10,7 @@
 
 ## 最初のスキャン
 
-1. Windows・macOS・Linux 向けの [v0.5.2 をダウンロード](https://github.com/TED-H-com/ai-security-scanner/releases/tag/v0.5.2)し、[インストール手順（英語）](docs/getting-started.md#install)に従います。スキャンツールはアプリが準備するため、Docker は不要です。
+1. Windows・macOS・Linux 向けの [v0.5.3 をダウンロード](https://github.com/TED-H-com/ai-security-scanner/releases/tag/v0.5.3)し、[インストール手順（英語）](docs/getting-started.md#install)に従います。スキャンツールはアプリが準備するため、Docker は不要です。
 2. **Settings → 日本語** で日本語に切り替えます。**自分の環境をスキャン**、**ウェブサイトをチェック**、**コード・AI プロジェクトをチェック**を選び、フォルダー、URL、社内システムを追加します。
 3. 表示された対象とチェックを確認します。ネットワーク対象をスキャンする権限があることを確認し、アプリ画面でスキャンを開始します。
 4. 終了後に**結果**を開き、**レポートを保存・共有**を選びます。形式を **HTML レポート**にして保存すると、ブラウザーで開けます。
@@ -19,11 +19,19 @@
 
 ## 日本語について
 
-v0.5.2 のインストーラーに日本語 UI が含まれています。**Settings → 日本語** で画面の言語を選べます。選択は再起動後も保存されます。
+v0.5.3 のインストーラーに日本語 UI が含まれています。**Settings → 日本語** で画面の言語を選べます。選択は再起動後も保存されます。
 
 未翻訳の動的な説明や上流ツールの出力は英語で表示される場合があります。日本語の画面から保存する HTML レポートは英語です。レポート本体は現在、英語と繁体字中国語に対応しています。
 
 日本語 UI の初期翻訳は [@kieiken](https://github.com/kieiken) の [PR #69](https://github.com/TED-H-com/ai-security-scanner/pull/69) による貢献です。
+
+## v0.5.3 の更新
+
+- Mac・Windows・Linux 向けの [10/21 検査パック](https://ted-h-com.github.io/ai-security-scanner/incident-october-21.html?lang=ja)を追加しました。
+- 通常スキャンと事案別検査で共通の HTML / JSON レポートを使い、証拠に基づく ISO・NIST・AIDEFEND・OWASP・CIS 参照を表示します。
+- Trivy とオフラインデータベース、Nuclei テンプレートを更新しました。保存済みの外部スキャナー結果の取り込み・統合にも対応します。
+
+[変更点の詳細（英語・繁体字中国語）](docs/release/v0.5.3.md)。
 
 ## v0.5.2 の更新
 
