@@ -2,30 +2,30 @@
   "schema_version": "1.0.0",
   "engine_id": "trivy",
   "plan_kind": "managed_build",
-  "knowledge_date": "2026-10-15",
-  "support_until": "2027-01-13",
+  "knowledge_date": "2026-10-22",
+  "support_until": "2027-01-20",
   "maintenance_owner": "teddashh/ai-security-scanner maintainers",
   "update_procedure": "docs/engine-maintenance.md",
-  "publish_state": "published_managed_artifact",
+  "publish_state": "publication_in_progress",
   "source": {
     "repository": "https://github.com/aquasecurity/trivy",
-    "revision": "531360e5d2a88e732373f1614ba99a38738538b8",
-    "acquisition_source": "https://github.com/aquasecurity/trivy/commit/531360e5d2a88e732373f1614ba99a38738538b8",
+    "revision": "e713f67f7d54decdcd9b3132c9751833dcced698",
+    "acquisition_source": "https://github.com/aquasecurity/trivy/commit/e713f67f7d54decdcd9b3132c9751833dcced698",
     "local_research_checkout": ".upstreams/aquasecurity/trivy"
   },
   "verified_upstream_artifact": null,
   "final_artifact": {
     "repository": "ghcr.io/ted-h-com/ai-security-scanner-engine-trivy",
-    "tag": "0.76.0-1",
-    "digest": "sha256:254caf91721b880a9085e1e88e62f65848ca250b11ad8d5b5ba0f2ebf8470705"
+    "tag": "0.76.1-1",
+    "digest": null
   },
   "build_recipe": {
-    "source_revision": "531360e5d2a88e732373f1614ba99a38738538b8",
+    "source_revision": "e713f67f7d54decdcd9b3132c9751833dcced698",
     "source_archive": {
-      "url": "https://github.com/aquasecurity/trivy/archive/531360e5d2a88e732373f1614ba99a38738538b8.tar.gz",
-      "sha256": "sha256:2800c0c0991830fa2236817f77448e657cbabc77acf04a71cd4d0afcea66d6c0"
+      "url": "https://github.com/aquasecurity/trivy/archive/e713f67f7d54decdcd9b3132c9751833dcced698.tar.gz",
+      "sha256": "sha256:5bcd06d8bdae338978b8ef597cb23cd0ff2e710d1ea9097c1143ec6b07d362d6"
     },
-    "source_date_epoch": 1791974941,
+    "source_date_epoch": 1792578032,
     "target_platforms": [
       "linux/amd64",
       "linux/arm64"
@@ -38,8 +38,8 @@
     "base_images": [
       {
         "repository": "golang",
-        "tag": "1.27.2-alpine",
-        "digest": "sha256:f92b6ef800e499660581efdabdf25d9d817a9d124eaf900924f0504e7e27e12d"
+        "tag": "1.27.3-alpine",
+        "digest": "sha256:b8c9b82affbbb82a020bbcf998dad2ba9516944ac7e883524642a481a9505e9c"
       }
     ],
     "static_steps": [
@@ -49,39 +49,49 @@
         "-mod=readonly",
         "-trimpath"
       ]
-    ]
+    ],
+    "dependency_lock": {
+      "path": "go.sum",
+      "sha256": "sha256:24155b9b13b24ad37ca2938d53304974a18bc84e9db00dd77b0e707c838b1cd6"
+    }
   },
   "offline_data": {
     "standard_vulnerability_database": {
       "repository": "ghcr.io/aquasecurity/trivy-db",
-      "manifest": "sha256:52132f8ca6e26a5ebbc4d758a9b2f20c9537725635f185f9c19b0600f45fe3c1",
-      "layer": "sha256:330b31ecc8312e6f0a8eec86c328234acf84c43954846139522fb36df85b5ea6",
-      "updated_at": "2026-10-15T01:13:01.189995254Z"
+      "manifest": "sha256:4bf3ae89527fbbb3596748b1c9d294a8b240c49edc9f87e65947e42291bb0bf6",
+      "layer": "sha256:c6b2db527f049abfef0b2ea48e8ee38d7c5475c94612072b5eeca54c18fcb90b",
+      "layer_media_type": "application/vnd.aquasec.trivy.db.layer.v1.tar+gzip",
+      "layer_size": 135417365,
+      "updated_at": "2026-10-22T13:15:26.425424764Z",
+      "files": {
+        "trivy.db": "sha256:b21b4f3ced4ff587023a351dcb28c0cf1d72e71159a0161d05591cc2e611abf2",
+        "metadata.json": "sha256:8b0a74308b3dec2270f7298ced784a323863092487ee7cc22dde96946125feb6"
+      }
     },
     "java_index_database": {
       "repository": "ghcr.io/aquasecurity/trivy-java-db",
-      "manifest": "sha256:e578af6b1e7db314ec2d3714ba522af8e9cd59c1a4349b7d6f54d86b2b8125b0",
-      "layer": "sha256:33244241111425d2f4ae10daf1de961edd47673265862d7abac688a60948301c",
+      "manifest": "sha256:a805d22ec39082e3d0910a6c37ae4e85c666248293add991d2d2bf82237323a5",
+      "layer": "sha256:35c8f473bb7485db657c022eee43404fda3684fc3c0341aef3598db6016c28ca",
       "layer_media_type": "application/vnd.aquasec.trivy.javadb.layer.v1.tar+gzip",
-      "layer_size": 983567002,
-      "updated_at": "2026-10-15T00:58:48.745137381Z",
+      "layer_size": 987054496,
+      "updated_at": "2026-10-22T01:08:13.998271001Z",
       "files": {
-        "trivy-java.db": "sha256:c26ec91db03a11014dfa45909d2b5275c0e34c2dee276363bc0c9693375acc25",
-        "metadata.json": "sha256:486b01dacad2d0f5dc28006fef82f501249f8be922e2f6f037a61152b567f24d"
+        "trivy-java.db": "sha256:24d6c783ce89260282c46886b2dab64a69b7fcc31dae4447ed67194b38f77770",
+        "metadata.json": "sha256:1b91db7182eda1c8b74db15a4b515238617c5e179d9d1623b82ff0af4a8b4ee2"
       }
     }
   },
   "dockerfile": {
     "emitted": true,
     "path": "engines/images/trivy/Dockerfile",
-    "sha256": "sha256:12b1bcf3d93b94c68f37d4b134f0321f636267c899a9078e3137e1115a8d4271",
+    "sha256": "sha256:fbe6fc394f33ebe42076285cac553cfe2d360002e8c6072bc5f1cb16c0cd83ae",
     "reason": null
   },
   "wrapper": {
     "required": true,
     "strategy": "Invoke the pinned source build with its non-overlapping filesystem lockfile and rootfs individual-package analyzer profiles for repository and IaC working trees, plus an OS-package profile for single-image OCI layouts; checksum-verified standard vulnerability and Java index databases are embedded while every update path remains disabled.",
     "entrypoint": "/usr/local/bin/ai-security-scanner-engine-entrypoint",
-    "launcher_sha256": "sha256:fc81ca1d8703978576d7c2b79a1723777a69f8852fabb86902737b8f517e9399"
+    "launcher_sha256": "sha256:cbb21bd585184a6d43ebdee25b6864d0528510299facccfdceb53db187bb4d7a"
   },
   "analysis_profile": {
     "scanner": "vulnerability",
@@ -141,7 +151,13 @@
     "updates": false,
     "telemetry": false
   },
-  "publication": {
+  "publication": null,
+  "previous_artifact": {
+    "repository": "ghcr.io/ted-h-com/ai-security-scanner-engine-trivy",
+    "tag": "0.76.0-1",
+    "digest": "sha256:254caf91721b880a9085e1e88e62f65848ca250b11ad8d5b5ba0f2ebf8470705"
+  },
+  "previous_publication": {
     "workflow_run": "https://github.com/TED-H-com/ai-security-scanner/actions/runs/38696246466",
     "source_revision": "c989e75e1c3be7e7abad3395dcf5539cf2a96832",
     "platforms": [
@@ -155,5 +171,41 @@
     "anonymous_pull_verified": true,
     "evidence_artifact": "trivy-image-evidence-38696246466-2",
     "managed_smoke_evidence_sha256": "sha256:28d6c75952be69d34105138d35ccf66973237e0d2a81d35e167f2d2a98443e3a"
+  },
+  "upstream_update": {
+    "engine_version": "0.76.1",
+    "reported_version": null,
+    "source_revision": "e713f67f7d54decdcd9b3132c9751833dcced698",
+    "rule_version": "e713f67f7d54decdcd9b3132c9751833dcced698",
+    "knowledge_date": "2026-10-22",
+    "support_until": "2027-01-20",
+    "engine_provenance": {
+      "version": "0.76.1",
+      "source_repository": "https://github.com/aquasecurity/trivy",
+      "source_revision": "e713f67f7d54decdcd9b3132c9751833dcced698",
+      "source_ref": "v0.76.1",
+      "acquisition_source": "https://github.com/aquasecurity/trivy/commit/e713f67f7d54decdcd9b3132c9751833dcced698",
+      "artifact_source_revision": null,
+      "source_association": "source_build_required"
+    },
+    "rules_provenance": {
+      "mode": "embedded",
+      "identifier": "Trivy OS and library package analyzers",
+      "revision": "e713f67f7d54decdcd9b3132c9751833dcced698",
+      "acquisition_source": "https://github.com/aquasecurity/trivy/commit/e713f67f7d54decdcd9b3132c9751833dcced698"
+    },
+    "data_provenance": {
+      "mode": "embedded",
+      "identifier": "Trivy vulnerability database snapshot",
+      "revision": "sha256:4bf3ae89527fbbb3596748b1c9d294a8b240c49edc9f87e65947e42291bb0bf6",
+      "acquisition_source": "oci://ghcr.io/aquasecurity/trivy-db"
+    },
+    "knowledge_input": {
+      "kind": "embedded",
+      "identifier": "Trivy vulnerability database snapshot",
+      "version": "sha256:4bf3ae89527fbbb3596748b1c9d294a8b240c49edc9f87e65947e42291bb0bf6",
+      "acquisition_source": "oci://ghcr.io/aquasecurity/trivy-db",
+      "pin_state": "pinned_or_not_applicable"
+    }
   }
 }

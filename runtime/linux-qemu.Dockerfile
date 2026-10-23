@@ -65,7 +65,7 @@ RUN test "$TARGETPLATFORM" = "linux/amd64" \
       build-base=0.5-r3 \
       libcap-ng-static=0.8.5-r0 \
       libseccomp-static=2.6.1-r0 \
-      musl-dev=1.2.5-r23
+      musl-dev=1.2.5-r24
 
 COPY --from=virtiofsd . /src/
 WORKDIR /src

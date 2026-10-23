@@ -1,0 +1,33 @@
+{
+  "binary_sha256": "d1dfca6ae10a1ad4540bb94e64f0510077c47008920a9b554986b39dca573d83",
+  "database_metadata": {
+    "Version": 2,
+    "NextUpdate": "2026-10-23T13:15:26.425424534Z",
+    "UpdatedAt": "2026-10-22T13:15:26.425424764Z",
+    "DownloadedAt": "0001-01-01T00:00:00Z"
+  },
+  "results": [
+    {
+      "fixture": "php-vulnerable",
+      "installed_version": "8.3.6-0ubuntu0.24.04.12",
+      "matched_advisory_ids": [
+        "CVE-2026-109618",
+        "CVE-2026-109619"
+      ],
+      "raw_report_sha256": "af8fcb3328d28a57c6784e3cc84fbcd4420a55625c8132b41828a8656a6a6d28"
+    },
+    {
+      "fixture": "php-fixed",
+      "installed_version": "8.3.6-0ubuntu0.24.04.13",
+      "matched_advisory_ids": [],
+      "raw_report_sha256": "7b1e22473f2008303ba299a37bc5301125dbe129ba87ff0158cae7ee83835ca2"
+    }
+  ],
+  "checked_at": "2026-10-22T16:48:44Z",
+  "engine_version": "0.76.1",
+  "binary_archive_sha256": "c7cbe3137fb8a48a17574bede3dd6beb16742d1e9772929940fc90082c39d9c0",
+  "binary_source": "https://github.com/aquasecurity/trivy/releases/download/v0.76.1/trivy_0.76.1_Linux-64bit.tar.gz",
+  "database_manifest": "sha256:4bf3ae89527fbbb3596748b1c9d294a8b240c49edc9f87e65947e42291bb0bf6",
+  "vendor_advisory": "https://ubuntu.com/security/notices/USN-8948-1",
+  "method": "Real upstream execution on inert OCI layouts using offline OS package profile; no target network scan."
+}

@@ -724,6 +724,23 @@ func TestPinnedNucleiTemplateTreeWhenProvided(t *testing.T) {
 		t.Fatalf("derive pinned automatic profile: %v", err)
 	}
 	t.Logf("pinned Nuclei safe profile: templates=%d", len(profileIDs))
+	// The upstream PHP crash probe must remain outside this read-only profile.
+	// Inspect the upstream definition; never execute the denial-of-service probe.
+	crashID := "CVE-2026-109618"
+	crashPath, ok := index[crashID]
+	if !ok {
+		t.Fatalf("pinned tree is missing expected upstream crash template %s", crashID)
+	}
+	if err := validateSafeTemplate(crashPath, crashID); err == nil {
+		t.Fatal("upstream PHP crash template passed the read-only policy")
+	} else {
+		t.Logf("upstream PHP crash template excluded: %v", err)
+	}
+	for _, id := range profileIDs {
+		if id == crashID {
+			t.Fatal("upstream PHP crash template entered the automatic profile")
+		}
+	}
 	if len(profileIDs) != nucleiWebSafeTemplateCount || len(profileIDs) != len(profilePaths) {
 		t.Fatalf("pinned automatic profile is not materially broad and closed: ids=%d paths=%d", len(profileIDs), len(profilePaths))
 	}

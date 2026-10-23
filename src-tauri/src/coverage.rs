@@ -897,6 +897,7 @@ mod tests {
             error_message: None,
         };
         let run = ScanRun {
+            campaign_id: None,
             id: "scan-run".into(),
             case_id: "case-1".into(),
             sequence: 1,

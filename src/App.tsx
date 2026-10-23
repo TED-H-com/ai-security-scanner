@@ -2640,15 +2640,17 @@ export default function App() {
             onAuthorizationChanged={async () => {
               await loadSnapshot(currentCaseId, true);
             }}
-            onStartScan={(assetIds, modes, confirmation, externalScope, engineIds) => startScan({
+            onStartScan={(assetIds, modes, confirmation, externalScope, engineIds, campaignId) => startScan({
               caseId: currentCaseId,
               authorization: { assetIds, modes, confirmation, externalScope },
               engineIds,
+              campaignId,
             })}
-            onStartEnvironmentScan={(authorizations, engineAssetRoutes) => startScan({
+            onStartEnvironmentScan={(authorizations, engineAssetRoutes, campaignId) => startScan({
               caseId: currentCaseId,
               authorizations,
               engineAssetRoutes,
+              campaignId,
             })}
           />
         );

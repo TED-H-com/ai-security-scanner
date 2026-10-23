@@ -1,3 +1,4 @@
+import type { IncidentCampaignReport } from "./incidentFocusProfile";
 import type { InternalDeviceScanProfile } from "./internalDeviceProfile";
 import type { InternalEndpointScanProfile } from "./internalEndpointProfile";
 import type { InternalHostScanProfile } from "./internalHostProfile";
@@ -829,6 +830,7 @@ export type EngineRecoveryAction =
 /** Exact `EngineTaskKind` tags and fields serialized by the native Rust domain. */
 export type EngineTaskKindWire =
   | { kind: "catalog_engine" }
+  | { kind: "external_report_import"; sourceFormat: string; sourceSha256: string }
   | {
       kind: "built_in_localhost_tcp";
       port: number;
@@ -941,6 +943,7 @@ export interface EngineRun {
 }
 
 export interface ScanRun {
+  campaignId?: string;
   id: string;
   caseId: string;
   label: string;
@@ -1239,6 +1242,7 @@ export interface BeginnerUnavailableTechnicalValue {
 }
 
 export type BeginnerTechnicalExecution =
+  | { kind: "external_report_import"; engineId: string; sourceFormat: string; sourceSha256: string; contract: string }
   | {
       kind: "catalog_engine";
       engineId: string;
@@ -1372,6 +1376,7 @@ export interface BeginnerInventory {
 }
 
 export interface BeginnerMasterReport {
+  incidentFocus?: IncidentCampaignReport;
   schemaVersion: string;
   caseId: string;
   runId: string;

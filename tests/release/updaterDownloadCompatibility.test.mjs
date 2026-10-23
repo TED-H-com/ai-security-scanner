@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { writeIncidentScanPack } from "../../scripts/release/incident-scan-pack.mjs";
 import { execFileSync, spawnSync } from "node:child_process";
 import { closeSync, openSync, readFileSync } from "node:fs";
 import { copyFile, cp, mkdir, mkdtemp, readFile, readdir, rm } from "node:fs/promises";
@@ -92,6 +93,7 @@ before(async () => {
   await writeJsonAtomic(packageJson, { release: { channel: "prerelease", target: "0.2.0" } });
   const input = path.join(temporary, "input");
   await mkdir(input);
+  await writeIncidentScanPack(input, VERSION, COMMIT);
   for (const [platform, [kind, name]] of Object.entries(PAYLOADS)) {
     const requested = platform === "linux-x86_64" ? ["deb", "rpm", "appimage"]
       : platform === "windows-x86_64" ? ["nsis", "msi"] : ["dmg"];

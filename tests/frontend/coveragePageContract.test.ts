@@ -264,7 +264,7 @@ test("the desktop submits authorization and Start through one native command", (
   const progressStart = appSource.indexOf("case \"progress\"", coverageStart);
   const coverageWiring = appSource.slice(coverageStart, progressStart);
   assert.match(coverageWiring, /onStartScan=\{[\s\S]*startScan\(\{[\s\S]*authorization:/u);
-  assert.match(coverageWiring, /onStartScan=\{\(assetIds, modes, confirmation, externalScope, engineIds\)[\s\S]*engineIds,/u);
+  assert.match(coverageWiring, /onStartScan=\{\(assetIds, modes, confirmation, externalScope, engineIds, campaignId\)[\s\S]*engineIds,[\s\S]*campaignId,/u);
   assert.doesNotMatch(coverageWiring, /scannerService\.approveScope|executeAction\("scope"/u);
 
   const serviceStart = scannerServiceSource.indexOf("async startScan(input: StartScanInput)");

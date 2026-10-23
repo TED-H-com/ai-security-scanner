@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 
 import { caseIdentityPresentation } from "../caseIdentityPresentation";
 import { Icon } from "../components/Icon";
+import { CombinedReportExport } from "../components/CombinedReportExport";
 import { EmptyState, InlineNotice, PageHeader } from "../components/Shared";
 import { StatusPill } from "../components/StatusPill";
 import {
@@ -738,6 +739,9 @@ export function ExportPage({ workspace, selectedRunId, runningScanResultsPending
           </article>
         </section>
       </details>
+
+      <CombinedReportExport key={workspace.case.id} caseId={workspace.case.id} runs={workspace.runs}
+        nativeMode={!demoMode} busy={busy} />
 
       <details className="section-block page-secondary-feature export-history-section">
         <summary className="export-history-summary">

@@ -178,6 +178,31 @@ enum Command {
         #[command(subcommand)]
         command: BootstrapCommand,
     },
+    /// Preview one native Strix vulnerabilities.json report without executing it.
+    ExternalReportPreview {
+        #[arg(long)]
+        report: PathBuf,
+    },
+    /// Import up to sixteen previewed report bindings with bounded concurrent readers.
+    ExternalReportImportBatch {
+        #[arg(long)]
+        case_id: String,
+        #[arg(long)]
+        manifest: PathBuf,
+    },
+    /// Import findings from one previewed target into an existing project asset.
+    ExternalReportImport {
+        #[arg(long)]
+        case_id: String,
+        #[arg(long)]
+        asset_id: String,
+        #[arg(long)]
+        report: PathBuf,
+        #[arg(long)]
+        upstream_target: String,
+        #[arg(long)]
+        source_sha256: String,
+    },
     /// Check local storage, catalog, and container runtime readiness.
     Doctor,
 }
@@ -656,6 +681,9 @@ enum ScanCommand {
 
 #[derive(Debug, Args)]
 struct ScanPlanArgs {
+    /// Optional reviewed incident campaign, for example october-2026.
+    #[arg(long)]
+    campaign: Option<String>,
     #[arg(long)]
     case_id: String,
     /// Exact engine IDs. Omit to automatically plan every catalog engine
@@ -666,6 +694,9 @@ struct ScanPlanArgs {
 
 #[derive(Debug, Args)]
 struct RescanPlanArgs {
+    /// Optional reviewed incident campaign, for example october-2026.
+    #[arg(long)]
+    campaign: Option<String>,
     #[arg(long)]
     case_id: String,
     #[arg(long)]
@@ -694,6 +725,8 @@ struct ScanTransitionArgs {
 #[derive(Debug, Subcommand)]
 enum ExportCommand {
     Create(ExportCreateArgs),
+    /// Combine explicitly selected finished reports without running new checks.
+    Combine(ExportCombineArgs),
     Verify {
         #[arg(long)]
         case_id: Option<String>,
@@ -720,6 +753,30 @@ enum ExportIdentityCommand {
         #[arg(long)]
         acknowledge_lost_key_id: String,
     },
+}
+
+#[derive(Debug, Args)]
+struct ExportCombineArgs {
+    #[arg(long)]
+    case_id: String,
+    /// Two to sixteen explicit source run IDs, separated by commas or repeated.
+    #[arg(long, value_delimiter = ',', required = true)]
+    run_id: Vec<String>,
+    #[arg(long, value_enum)]
+    format: CombinedExportFormatArg,
+    /// Explicit local output filename. Existing files are never overwritten.
+    #[arg(long)]
+    destination: PathBuf,
+    #[arg(long, value_enum, default_value_t = RedactionArg::Standard)]
+    redaction: RedactionArg,
+    #[arg(long, value_enum, default_value_t = ReportLocaleArg::En)]
+    locale: ReportLocaleArg,
+}
+
+#[derive(Debug, Clone, Copy, ValueEnum)]
+enum CombinedExportFormatArg {
+    Html,
+    Json,
 }
 
 #[derive(Debug, Args)]
@@ -1078,6 +1135,51 @@ async fn execute(cli: Cli, option_sources: GlobalOptionSources) -> AppResult<u8>
     );
 
     match cli.command {
+        Command::ExternalReportPreview { report } => {
+            print_value(
+                &ai_security_scanner_lib::external_scanner_import::preview_external_scanner_import(
+                    &report,
+                )?,
+                cli.json,
+            )?;
+        }
+        Command::ExternalReportImportBatch { case_id, manifest } => {
+            let requests =
+                ai_security_scanner_lib::external_scanner_import::read_import_manifest(&manifest)?;
+            print_value(
+                &ai_security_scanner_lib::external_scanner_import::import_external_scanner_reports(
+                    &storage,
+                    &artifact_root,
+                    &case_id,
+                    &requests,
+                )?,
+                cli.json,
+            )?;
+        }
+        Command::ExternalReportImport {
+            case_id,
+            asset_id,
+            report,
+            upstream_target,
+            source_sha256,
+        } => {
+            let request =
+                ai_security_scanner_lib::external_scanner_import::ExternalScannerImportRequest {
+                    report_path: report,
+                    asset_id,
+                    upstream_target,
+                    source_sha256,
+                };
+            print_value(
+                &ai_security_scanner_lib::external_scanner_import::import_external_scanner_reports(
+                    &storage,
+                    &artifact_root,
+                    &case_id,
+                    &[request],
+                )?,
+                cli.json,
+            )?;
+        }
         #[cfg(feature = "installer-runtime-cache")]
         Command::WindowsInstallerRuntimeCache => {
             unreachable!("Windows installer runtime cache is early-dispatched")
@@ -1432,6 +1534,7 @@ fn command_requires_exclusive_data_directory(command: &Command) -> bool {
         // ProductUninstall is early-dispatched and acquires the same lease
         // before database/catalog initialization.
         Command::ProductUninstall(_) => false,
+        Command::ExternalReportImport { .. } | Command::ExternalReportImportBatch { .. } => true,
         Command::Case {
             command: CaseCommand::Delete { .. } | CaseCommand::DeleteArtifacts { .. },
         } => true,
@@ -2017,6 +2120,7 @@ fn execute_scan(
             let plan = service.plan_scan(
                 &args.case_id,
                 ScanPlanRequest {
+                    campaign_id: args.campaign,
                     engine_ids: args.engine,
                     engine_asset_routes: Vec::new(),
                 },
@@ -2041,6 +2145,7 @@ fn execute_scan(
                 &args.case_id,
                 &args.baseline_run_id,
                 ScanPlanRequest {
+                    campaign_id: args.campaign,
                     engine_ids: args.engine,
                     engine_asset_routes: Vec::new(),
                 },
@@ -2222,6 +2327,28 @@ fn execute_export(
     json_output: bool,
 ) -> AppResult<()> {
     match command {
+        ExportCommand::Combine(args) => {
+            use ai_security_scanner_lib::selected_run_report::{
+                SelectedRunReportFormat, export_selected_run_report,
+            };
+            let case = service.show_case(&args.case_id)?;
+            let format = match args.format {
+                CombinedExportFormatArg::Html => SelectedRunReportFormat::Html,
+                CombinedExportFormatArg::Json => SelectedRunReportFormat::Json,
+            };
+            let receipt = export_selected_run_report(
+                &case,
+                &args.run_id,
+                format,
+                &args.destination,
+                &ExportOptions {
+                    redaction: args.redaction.into(),
+                    include_raw_artifacts: false,
+                    locale: args.locale.into(),
+                },
+            )?;
+            print_value(&receipt, json_output)?;
+        }
         ExportCommand::Create(args) => {
             if args.include_raw_artifacts
                 && !matches!(
@@ -4219,6 +4346,7 @@ mod tests {
             .plan_scan(
                 &case_id,
                 ScanPlanRequest {
+                    campaign_id: None,
                     engine_ids: vec!["gitleaks".into()],
                     engine_asset_routes: Vec::new(),
                 },
@@ -4240,6 +4368,7 @@ mod tests {
             .plan_scan(
                 &case_id,
                 ScanPlanRequest {
+                    campaign_id: None,
                     engine_ids: vec!["gitleaks".into()],
                     engine_asset_routes: Vec::new(),
                 },
@@ -4281,6 +4410,7 @@ mod tests {
             .plan_scan(
                 &case_id,
                 ScanPlanRequest {
+                    campaign_id: None,
                     engine_ids: vec!["trivy".into()],
                     engine_asset_routes: Vec::new(),
                 },
@@ -4302,6 +4432,7 @@ mod tests {
             .plan_scan(
                 &case_id,
                 ScanPlanRequest {
+                    campaign_id: None,
                     engine_ids: vec!["gitleaks".into()],
                     engine_asset_routes: Vec::new(),
                 },
@@ -4369,6 +4500,7 @@ mod tests {
             .plan_scan(
                 &case_id,
                 ScanPlanRequest {
+                    campaign_id: None,
                     engine_ids: vec!["gitleaks".into()],
                     engine_asset_routes: Vec::new(),
                 },
@@ -4449,6 +4581,7 @@ mod tests {
                 .plan_scan(
                     &case_id,
                     ScanPlanRequest {
+                        campaign_id: None,
                         engine_ids: vec!["gitleaks".into()],
                         engine_asset_routes: Vec::new(),
                     },
@@ -4491,6 +4624,7 @@ mod tests {
             .plan_scan(
                 &case_id,
                 ScanPlanRequest {
+                    campaign_id: None,
                     engine_ids: vec!["gitleaks".into()],
                     engine_asset_routes: Vec::new(),
                 },
@@ -4532,6 +4666,7 @@ mod tests {
             .plan_scan(
                 &case_id,
                 ScanPlanRequest {
+                    campaign_id: None,
                     engine_ids: vec!["gitleaks".into()],
                     engine_asset_routes: Vec::new(),
                 },
@@ -4583,6 +4718,7 @@ mod tests {
             .plan_scan(
                 &case_id,
                 ScanPlanRequest {
+                    campaign_id: None,
                     engine_ids: vec!["gitleaks".into(), "mcp-armor".into()],
                     engine_asset_routes: Vec::new(),
                 },
@@ -4654,6 +4790,7 @@ mod tests {
             .plan_scan(
                 &case_id,
                 ScanPlanRequest {
+                    campaign_id: None,
                     engine_ids: vec!["trivy".into()],
                     engine_asset_routes: Vec::new(),
                 },
@@ -4675,6 +4812,7 @@ mod tests {
             .plan_scan(
                 &case_id,
                 ScanPlanRequest {
+                    campaign_id: None,
                     engine_ids: vec!["gitleaks".into(), "mcp-armor".into()],
                     engine_asset_routes: Vec::new(),
                 },
@@ -4717,6 +4855,7 @@ mod tests {
             .plan_scan(
                 &case_id,
                 ScanPlanRequest {
+                    campaign_id: None,
                     engine_ids: vec!["mcp-armor".into()],
                     engine_asset_routes: Vec::new(),
                 },
@@ -4775,6 +4914,7 @@ mod tests {
                 .plan_scan(
                     &case_id,
                     ScanPlanRequest {
+                        campaign_id: None,
                         engine_ids: vec!["gitleaks".into()],
                         engine_asset_routes: Vec::new(),
                     },
@@ -4837,6 +4977,7 @@ mod tests {
             .plan_scan(
                 &case_id,
                 ScanPlanRequest {
+                    campaign_id: None,
                     engine_ids: vec!["gitleaks".into(), "trivy".into()],
                     engine_asset_routes: Vec::new(),
                 },
@@ -4895,6 +5036,7 @@ mod tests {
                 .plan_scan(
                     &case_id,
                     ScanPlanRequest {
+                        campaign_id: None,
                         engine_ids: vec!["gitleaks".into()],
                         engine_asset_routes: Vec::new(),
                     },
@@ -4958,6 +5100,7 @@ mod tests {
             .plan_scan(
                 &case_id,
                 ScanPlanRequest {
+                    campaign_id: None,
                     engine_ids: vec!["gitleaks".into()],
                     engine_asset_routes: Vec::new(),
                 },
@@ -5017,6 +5160,7 @@ mod tests {
             .plan_scan(
                 &case_id,
                 ScanPlanRequest {
+                    campaign_id: None,
                     engine_ids: vec!["gitleaks".into()],
                     engine_asset_routes: Vec::new(),
                 },
@@ -5062,6 +5206,7 @@ mod tests {
             .plan_scan(
                 &planned_case_id,
                 ScanPlanRequest {
+                    campaign_id: None,
                     engine_ids: vec!["gitleaks".into()],
                     engine_asset_routes: Vec::new(),
                 },

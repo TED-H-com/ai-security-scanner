@@ -1,3 +1,4 @@
+import type { IncidentCampaignReport } from "../incidentFocusProfile";
 import { translateBilingualText } from "../i18n/core";
 import { agenticRadarFramework } from "../agenticRadarProfile";
 import { validatedModelEndpoint } from "../garakProfile";
@@ -223,6 +224,8 @@ interface NativeEngineRun {
     port?: unknown;
     timeout_ms?: unknown;
     payload_bytes?: unknown;
+    source_format?: unknown;
+    source_sha256?: unknown;
   };
   localhost_tcp_observation?: {
     outcome: string;
@@ -271,6 +274,7 @@ interface NativeEngineRun {
 }
 
 interface NativeScanRun {
+  campaign_id?: string | null;
   id: string;
   case_id: string;
   sequence: number;
@@ -364,6 +368,7 @@ interface NativeBeginnerInventory {
 }
 
 type NativeBeginnerTechnicalExecution =
+  | { kind: "external_report_import"; engine_id: string; source_format: string; source_sha256: string; contract: string }
   | {
       kind: "catalog_engine";
       engine_id: string;
@@ -399,6 +404,7 @@ type NativeBeginnerTechnicalExecution =
     };
 
 export interface NativeBeginnerMasterReport {
+  incident_focus?: IncidentCampaignReport | null;
   schema_version: string;
   case_id: string;
   run_id: string;
@@ -1929,6 +1935,12 @@ const mapEngineKnowledgeInput = (
 
 const mapEngineTaskKind = (taskKind: NativeEngineRun["task_kind"]): EngineTaskKind => {
   if (!taskKind || taskKind.kind === "catalog_engine") return { kind: "catalog_engine" };
+  if (taskKind.kind === "external_report_import") {
+    return typeof taskKind.source_format === "string" && taskKind.source_format === "strix-vulnerabilities-json/v1"
+      && typeof taskKind.source_sha256 === "string" && /^[0-9a-f]{64}$/u.test(taskKind.source_sha256)
+      ? { kind: "external_report_import", sourceFormat: taskKind.source_format, sourceSha256: taskKind.source_sha256 }
+      : { kind: "invalid_task" };
+  }
   if (
     taskKind.kind !== "built_in_localhost_tcp"
     || !Number.isInteger(taskKind.port)
@@ -2656,7 +2668,8 @@ export const adaptNativeCase = (
         taskKind,
       }) && taskKind.kind === "built_in_localhost_tcp" ? taskKind : undefined;
       const isBuiltInLocalhostTcp = Boolean(builtInLocalhostTask);
-      const manifest = isBuiltInLocalhostTcp ? undefined : manifestById.get(engineRun.engine_id);
+      const nonCatalogTask = isBuiltInLocalhostTcp || taskKind.kind === "external_report_import";
+      const manifest = nonCatalogTask ? undefined : manifestById.get(engineRun.engine_id);
       const status = taskKind.kind === "invalid_task"
         ? "not_executed"
         : mapEngineStatus(engineRun.status);
@@ -2707,13 +2720,13 @@ export const adaptNativeCase = (
           ? `127.0.0.1:${builtInLocalhostTask!.port} TCP`
           : manifest?.name ?? engineRun.engine_id,
         category: isBuiltInLocalhostTcp ? "built_in_localhost_tcp" : manifest?.category ?? "unknown",
-        version: isBuiltInLocalhostTcp
+        version: nonCatalogTask
           ? undefined
           : engineRun.engine_version ?? manifest?.version ?? adapterText("Not reported", "未回報"),
         reportedVersion: isBuiltInLocalhostTcp
           ? undefined
           : reportedScannerVersion(engineRun.reported_version),
-        digest: isBuiltInLocalhostTcp
+        digest: nonCatalogTask
           ? undefined
           : engineRun.image_digest ?? manifest?.imageDigest ?? adapterText("No image digest", "未提供映像摘要"),
         taskKind,
@@ -2811,6 +2824,7 @@ export const adaptNativeCase = (
       id: run.id,
       caseId: run.case_id,
       label: adapterText(`Scan ${run.sequence}`, `第 ${run.sequence} 次掃描`),
+      campaignId: run.campaign_id ?? undefined,
       sequence: run.sequence,
       verificationBaselineRunId: run.verification_baseline_run_id ?? undefined,
       requestOutcome,
@@ -3109,6 +3123,10 @@ const adaptBeginnerInventoryCounts = (counts: NativeBeginnerInventory["counts"])
 const adaptBeginnerTechnicalExecution = (
   execution: NativeBeginnerTechnicalExecution,
 ): BeginnerTechnicalExecution => {
+  if (execution.kind === "external_report_import") return {
+    kind: execution.kind, engineId: execution.engine_id, sourceFormat: execution.source_format,
+    sourceSha256: execution.source_sha256, contract: execution.contract,
+  };
   if (execution.kind === "catalog_engine") return {
     kind: execution.kind,
     engineId: execution.engine_id,
@@ -3209,6 +3227,7 @@ const mapBeginnerReportDataAvailability = (
 export const adaptBeginnerMasterReport = (
   report: NativeBeginnerMasterReport,
 ): BeginnerMasterReport => ({
+  incidentFocus: report.incident_focus ?? undefined,
   schemaVersion: report.schema_version,
   caseId: report.case_id,
   runId: report.run_id,

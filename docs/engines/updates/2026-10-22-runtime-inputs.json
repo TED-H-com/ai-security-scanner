@@ -1,0 +1,303 @@
+{
+  "schema_version": 1,
+  "recorded_at": "2026-10-22",
+  "purpose": "Immutable candidate build inputs; execution results are recorded separately.",
+  "upstream_sources": [
+    {
+      "name": "trivy",
+      "repository": "aquasecurity/trivy",
+      "revision": "e713f67f7d54decdcd9b3132c9751833dcced698",
+      "url": "https://github.com/aquasecurity/trivy/archive/e713f67f7d54decdcd9b3132c9751833dcced698.tar.gz",
+      "path": ".engine-cache/updates/2026-10-22/trivy.tar.gz",
+      "size": 56783318,
+      "sha256": "5bcd06d8bdae338978b8ef597cb23cd0ff2e710d1ea9097c1143ec6b07d362d6"
+    },
+    {
+      "name": "nuclei-templates",
+      "repository": "projectdiscovery/nuclei-templates",
+      "revision": "f938a3dd530c283e9387b518b97911152ff5846c",
+      "url": "https://github.com/projectdiscovery/nuclei-templates/archive/f938a3dd530c283e9387b518b97911152ff5846c.tar.gz",
+      "path": ".engine-cache/updates/2026-10-22/nuclei-templates.tar.gz",
+      "size": 9978423,
+      "sha256": "0e4475cb9d05f4cc28c248680e9883f0d4e26eb58c47bd07d7c4b107f0ddcbd7"
+    }
+  ],
+  "go_security_release": {
+    "advisory": "https://groups.google.com/g/golang-announce/c/66pojueaQek",
+    "cve": "CVE-2026-111943",
+    "trivy_toolchain": "1.27.3",
+    "nuclei_toolchain": "1.26.10"
+  },
+  "toolchains": {
+    "1.27.3": {
+      "repository": "docker.io/library/golang",
+      "tag": "1.27.3-alpine",
+      "index_digest": "sha256:b8c9b82affbbb82a020bbcf998dad2ba9516944ac7e883524642a481a9505e9c",
+      "linux_amd64_manifest": {
+        "mediaType": "application/vnd.oci.image.manifest.v1+json",
+        "digest": "sha256:bff16a94c0b4b6d9642581e2a3aa81beb3edb940b2f5a3aac1d22c6a68cb7747",
+        "size": 1921,
+        "annotations": {
+          "com.docker.official-images.bashbrew.arch": "amd64",
+          "org.opencontainers.image.base.digest": "sha256:c26612752c78b18faacd63c7d50f4592c2e7b0f25e0e20e82bd74e465c57ab0d",
+          "org.opencontainers.image.base.name": "alpine:3.24",
+          "org.opencontainers.image.created": "2026-10-21T22:57:59Z",
+          "org.opencontainers.image.revision": "41d9b4da70324ae7b6461ac2cc401b06719ff57d",
+          "org.opencontainers.image.source": "https://github.com/docker-library/golang.git#41d9b4da70324ae7b6461ac2cc401b06719ff57d:1.27/alpine3.24",
+          "org.opencontainers.image.url": "https://hub.docker.com/_/golang",
+          "org.opencontainers.image.version": "1.27.3-alpine3.24"
+        },
+        "platform": {
+          "architecture": "amd64",
+          "os": "linux"
+        }
+      }
+    },
+    "1.26.10": {
+      "repository": "docker.io/library/golang",
+      "tag": "1.26.10-alpine",
+      "index_digest": "sha256:27f2d3b83cfc5803c8078f8e730af0f7c431bf067afaec8f60a36fb763187cba",
+      "linux_amd64_manifest": {
+        "mediaType": "application/vnd.oci.image.manifest.v1+json",
+        "digest": "sha256:d1f3216ef30257c850cc136ba42a359ccd9d3e75f19b2c276e520c0b4ef327ce",
+        "size": 1922,
+        "annotations": {
+          "com.docker.official-images.bashbrew.arch": "amd64",
+          "org.opencontainers.image.base.digest": "sha256:c26612752c78b18faacd63c7d50f4592c2e7b0f25e0e20e82bd74e465c57ab0d",
+          "org.opencontainers.image.base.name": "alpine:3.24",
+          "org.opencontainers.image.created": "2026-10-21T22:58:01Z",
+          "org.opencontainers.image.revision": "650cf2f338d22da87df8c773cfc88afa26699502",
+          "org.opencontainers.image.source": "https://github.com/docker-library/golang.git#650cf2f338d22da87df8c773cfc88afa26699502:1.26/alpine3.24",
+          "org.opencontainers.image.url": "https://hub.docker.com/_/golang",
+          "org.opencontainers.image.version": "1.26.10-alpine3.24"
+        },
+        "platform": {
+          "architecture": "amd64",
+          "os": "linux"
+        }
+      }
+    }
+  },
+  "trivy_databases": {
+    "trivy-db": {
+      "repository": "ghcr.io/aquasecurity/trivy-db",
+      "tag": "2",
+      "manifest": "sha256:4bf3ae89527fbbb3596748b1c9d294a8b240c49edc9f87e65947e42291bb0bf6",
+      "manifest_document": {
+        "schemaVersion": 2,
+        "mediaType": "application/vnd.oci.image.manifest.v1+json",
+        "artifactType": "application/vnd.aquasec.trivy.config.v1+json",
+        "config": {
+          "mediaType": "application/vnd.oci.empty.v1+json",
+          "digest": "sha256:44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a",
+          "size": 2,
+          "data": "e30="
+        },
+        "layers": [
+          {
+            "mediaType": "application/vnd.aquasec.trivy.db.layer.v1.tar+gzip",
+            "digest": "sha256:c6b2db527f049abfef0b2ea48e8ee38d7c5475c94612072b5eeca54c18fcb90b",
+            "size": 135417365,
+            "annotations": {
+              "org.opencontainers.image.title": "db.tar.gz"
+            }
+          }
+        ],
+        "annotations": {
+          "org.opencontainers.image.created": "2026-10-22T13:25:26Z"
+        }
+      },
+      "files": {
+        "trivy.db": {
+          "sha256": "sha256:b21b4f3ced4ff587023a351dcb28c0cf1d72e71159a0161d05591cc2e611abf2",
+          "size": 1627246592
+        },
+        "metadata.json": {
+          "sha256": "sha256:8b0a74308b3dec2270f7298ced784a323863092487ee7cc22dde96946125feb6",
+          "size": 143
+        }
+      },
+      "metadata": {
+        "Version": 2,
+        "NextUpdate": "2026-10-23T13:15:26.425424534Z",
+        "UpdatedAt": "2026-10-22T13:15:26.425424764Z",
+        "DownloadedAt": "0001-01-01T00:00:00Z"
+      },
+      "checked_at": "2026-10-22T16:43:08.247769+00:00"
+    },
+    "trivy-java-db": {
+      "repository": "ghcr.io/aquasecurity/trivy-java-db",
+      "tag": "1",
+      "manifest": "sha256:a805d22ec39082e3d0910a6c37ae4e85c666248293add991d2d2bf82237323a5",
+      "manifest_document": {
+        "schemaVersion": 2,
+        "mediaType": "application/vnd.oci.image.manifest.v1+json",
+        "artifactType": "application/vnd.aquasec.trivy.config.v1+json",
+        "config": {
+          "mediaType": "application/vnd.oci.empty.v1+json",
+          "digest": "sha256:44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a",
+          "size": 2,
+          "data": "e30="
+        },
+        "layers": [
+          {
+            "mediaType": "application/vnd.aquasec.trivy.javadb.layer.v1.tar+gzip",
+            "digest": "sha256:35c8f473bb7485db657c022eee43404fda3684fc3c0341aef3598db6016c28ca",
+            "size": 987054496,
+            "annotations": {
+              "org.opencontainers.image.title": "javadb.tar.gz"
+            }
+          }
+        ],
+        "annotations": {
+          "org.opencontainers.image.created": "2026-10-22T01:10:16Z"
+        }
+      },
+      "files": {
+        "trivy-java.db": {
+          "sha256": "sha256:24d6c783ce89260282c46886b2dab64a69b7fcc31dae4447ed67194b38f77770",
+          "size": 1559470080
+        },
+        "metadata.json": {
+          "sha256": "sha256:1b91db7182eda1c8b74db15a4b515238617c5e179d9d1623b82ff0af4a8b4ee2",
+          "size": 143
+        }
+      },
+      "metadata": {
+        "Version": 1,
+        "NextUpdate": "2026-10-25T01:08:13.998270871Z",
+        "UpdatedAt": "2026-10-22T01:08:13.998271001Z",
+        "DownloadedAt": "0001-01-01T00:00:00Z"
+      },
+      "checked_at": "2026-10-22T16:43:23.119687+00:00"
+    }
+  },
+  "nuclei_profile": {
+    "revision": "f938a3dd530c283e9387b518b97911152ff5846c",
+    "profile_id": "nuclei_web_safe_v1",
+    "http_templates_indexed": 11713,
+    "safe_template_count": 4775,
+    "sorted_ids_newline_sha256": "sha256:a5716e7ae0223ae1f6ee42679202ecfc7d6c7e7690cc76ee5fbe676c6fef118e",
+    "selection": "Unchanged mechanical read-only HTTP filter, followed by upstream automatic scan.",
+    "campaign_intersection": {
+      "campaign_cves": [
+        "CVE-2026-105481",
+        "CVE-2026-105482",
+        "CVE-2026-105483",
+        "CVE-2026-106069",
+        "CVE-2026-106070",
+        "CVE-2026-106071",
+        "CVE-2026-106072",
+        "CVE-2026-106073",
+        "CVE-2026-106074",
+        "CVE-2026-109618",
+        "CVE-2026-109619",
+        "CVE-2026-110264",
+        "CVE-2026-111497",
+        "CVE-2026-111943",
+        "CVE-2026-96652",
+        "CVE-2026-96654",
+        "CVE-2026-96655",
+        "CVE-2026-96656"
+      ],
+      "matching_http_templates": [
+        {
+          "template_id": "CVE-2026-109618",
+          "in_safe_profile": false,
+          "cves": [
+            "CVE-2026-109618",
+            "CVE-2026-109619"
+          ],
+          "path": ".upstreams/projectdiscovery/nuclei-templates/http/cves/2026/CVE-2026-109618.yaml"
+        }
+      ],
+      "safe_intersection": []
+    }
+  },
+  "shared_launcher_recipe_changes": [
+    {
+      "engine_id": "grype",
+      "previous_recipe_launcher_sha256": "sha256:fc81ca1d8703978576d7c2b79a1723777a69f8852fabb86902737b8f517e9399",
+      "current_recipe_launcher_sha256": "sha256:cbb21bd585184a6d43ebdee25b6864d0528510299facccfdceb53db187bb4d7a",
+      "retained_published_image": {
+        "repository": "ghcr.io/ted-h-com/ai-security-scanner-engine-grype",
+        "tag": "0.120.1-1",
+        "digest": "sha256:9f030366bc950d408762adb2d641d70220fd6cee0175cbc5202e9418dbb05870"
+      },
+      "image_rebuilt": false,
+      "publication_record_unchanged": true
+    },
+    {
+      "engine_id": "kube-bench",
+      "previous_recipe_launcher_sha256": "sha256:fc81ca1d8703978576d7c2b79a1723777a69f8852fabb86902737b8f517e9399",
+      "current_recipe_launcher_sha256": "sha256:cbb21bd585184a6d43ebdee25b6864d0528510299facccfdceb53db187bb4d7a",
+      "retained_published_image": {
+        "repository": "ghcr.io/ted-h-com/ai-security-scanner-engine-kube-bench",
+        "tag": "0.16.0-5",
+        "digest": "sha256:0647e9469148f93cec540b5830e05987fae22c54b477769ac7ea81a3a4feec63"
+      },
+      "image_rebuilt": false,
+      "publication_record_unchanged": true
+    },
+    {
+      "engine_id": "kubescape",
+      "previous_recipe_launcher_sha256": "sha256:fc81ca1d8703978576d7c2b79a1723777a69f8852fabb86902737b8f517e9399",
+      "current_recipe_launcher_sha256": "sha256:cbb21bd585184a6d43ebdee25b6864d0528510299facccfdceb53db187bb4d7a",
+      "retained_published_image": {
+        "repository": "ghcr.io/ted-h-com/ai-security-scanner-engine-kubescape",
+        "tag": "4.0.16-1",
+        "digest": "sha256:bb7a8ee72d0bb7b6056b9715da102ae4d8160b0953643390ba5870f2c0bbca20"
+      },
+      "image_rebuilt": false,
+      "publication_record_unchanged": true
+    },
+    {
+      "engine_id": "semgrep",
+      "previous_recipe_launcher_sha256": "sha256:fc81ca1d8703978576d7c2b79a1723777a69f8852fabb86902737b8f517e9399",
+      "current_recipe_launcher_sha256": "sha256:cbb21bd585184a6d43ebdee25b6864d0528510299facccfdceb53db187bb4d7a",
+      "retained_published_image": {
+        "repository": "ghcr.io/ted-h-com/ai-security-scanner-engine-semgrep",
+        "tag": "1.181.0-1",
+        "digest": "sha256:f52ebbc2940ef0e1b459084c85c4fbd31c2616c4c3da501f7dae246050edc122"
+      },
+      "image_rebuilt": false,
+      "publication_record_unchanged": true
+    },
+    {
+      "engine_id": "trufflehog",
+      "previous_recipe_launcher_sha256": "sha256:fc81ca1d8703978576d7c2b79a1723777a69f8852fabb86902737b8f517e9399",
+      "current_recipe_launcher_sha256": "sha256:cbb21bd585184a6d43ebdee25b6864d0528510299facccfdceb53db187bb4d7a",
+      "retained_published_image": {
+        "repository": "ghcr.io/ted-h-com/ai-security-scanner-engine-trufflehog",
+        "tag": "3.99.2-1",
+        "digest": "sha256:691259f07fbc289dba87d9b365c2e001bc1a9a21fb7353089a95739f5d968212"
+      },
+      "image_rebuilt": false,
+      "publication_record_unchanged": true
+    },
+    {
+      "engine_id": "httpx",
+      "previous_recipe_launcher_sha256": "sha256:2aed1acdd32cd0a7db5ac911d43457647b0e93cbbca2f051080bed4eccd6a847",
+      "current_recipe_launcher_sha256": "sha256:9427ca7d24b2d1a115231b975b518de5acd90df7f1ff7b4a4812b06b97825868",
+      "retained_published_image": {
+        "repository": "ghcr.io/ted-h-com/ai-security-scanner-engine-httpx",
+        "tag": "1.12.0-1",
+        "digest": "sha256:c22c6ce992b1edb52811f608ed59a640eae9af8b38357f087707d7e64bac6113"
+      },
+      "image_rebuilt": false,
+      "publication_record_unchanged": true
+    },
+    {
+      "engine_id": "naabu",
+      "previous_recipe_launcher_sha256": "sha256:2aed1acdd32cd0a7db5ac911d43457647b0e93cbbca2f051080bed4eccd6a847",
+      "current_recipe_launcher_sha256": "sha256:9427ca7d24b2d1a115231b975b518de5acd90df7f1ff7b4a4812b06b97825868",
+      "retained_published_image": {
+        "repository": "ghcr.io/teddashh/ai-security-scanner-engine-naabu",
+        "tag": "2.6.1-7",
+        "digest": "sha256:e94240f4f067f39b7db9501a48c60411e6b29a215a11dda63406b9e62c061ab6"
+      },
+      "image_rebuilt": false,
+      "publication_record_unchanged": true
+    }
+  ]
+}

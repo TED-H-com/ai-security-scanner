@@ -34,6 +34,7 @@ import {
 } from "./release-metadata.mjs";
 import { publishedReleaseAssetName } from "./release-asset-name.mjs";
 import { UPDATER_DOWNLOAD_REPOSITORY } from "../publication-origins.mjs";
+import { incidentScanPackForRelease } from "./incident-scan-pack.mjs";
 
 const PUBLICATION_MODES = new Set(["commit-bound-qc", "public-github-release"]);
 
@@ -446,6 +447,29 @@ const RELEASE_COPY = new Map([
         "",
         "    xattr -dr com.apple.quarantine /Applications/ai-security-scanner.app",
         "",
+      ],
+    },
+  ],
+  [
+    "0.5.3",
+    {
+      updaterNotes: "October 21 incident scan pack: standard and focused package checks share one report with ISO / NIST references. 10/21 事件掃描包：一般掃描與事件套件檢查共用一份含 ISO／NIST 對照的報告。",
+      releaseNotes: [
+        "October 21 incident scan pack for the Windows, macOS and Linux desktop app.",
+        "",
+        "- Keep the standard scan, or select October 21–22 incident triage for applicable local Trivy package checks.",
+        "- Both modes use the same asset-first HTML / JSON report, with evidence-bound ISO/IEC 27001:2022, NIST CSF 2.0, AIDEFEND, OWASP and CIS references.",
+        "- Incident matches retain upstream findings; unverified checks, account investigations and pending advisories remain distinct.",
+        "- Import supported external scanner results and combine saved results while retaining their sources and coverage.",
+        "- The attached incident-scan-pack.json binds the campaign, its SHA-256 and report contract to this exact source commit.",
+        "",
+        "[Downloads and instructions](https://ted-h-com.github.io/ai-security-scanner/incident-october-21.html)",
+        "",
+        "### 繁體中文",
+        "",
+        "10/21 事件掃描包保留一般掃描，並加入適用本機副本的事件套件檢查。Mac、Windows、Linux 共用 HTML／JSON 報告與 ISO、NIST 等框架對照。特定漏洞未測試、需調查與公告待確認的狀態分別保留。",
+        "",
+        "Framework relationships support review; they are not certification or compliance determinations.",
       ],
     },
   ],
@@ -1213,6 +1237,15 @@ async function scopedFinalizeMain() {
     cyclonedxName,
     spdxName,
   ]) await copySelected(name);
+
+  const expectedScanPack = await incidentScanPackForRelease(version, commit);
+  if (expectedScanPack) {
+    const pack = await readJson(path.join(input, "incident-scan-pack.json"));
+    assert(pack.release_tag === tag && JSON.stringify(pack) === JSON.stringify(expectedScanPack),
+      "incident scan pack differs from the exact release source or report contract");
+    await copySelected("incident-scan-pack.json");
+    await copySelected("INCIDENT_SCAN_PACK.md");
+  }
 
   const includedPlatforms = new Map();
   for (const selection of selections) {

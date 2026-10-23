@@ -1,3 +1,4 @@
+import { IncidentFocusReport } from "../components/IncidentFocusReport";
 import { type FormEvent, type ReactNode, useEffect, useMemo, useRef, useState } from "react";
 import { ScannerMarkdown } from "../components/ScannerMarkdown";
 
@@ -2015,6 +2016,8 @@ function BeginnerReportOverview({ report, run }: { report: BeginnerMasterReport;
         <StatusPill label={text(summary.label)} tone={summary.tone} />
       </div>
 
+      {report.incidentFocus && <IncidentFocusReport report={report.incidentFocus} targets={report.requested.targets} />}
+
       <dl className="report-outcome-strip" aria-label={text(copy.masterTitle)}>
         <div>
           <dt>{text(copy.askedTitle)} <span>{formatNumber(report.requested.targets.length)}</span></dt>
@@ -2385,6 +2388,10 @@ function ReportEndMatter({ report, run }: { report: BeginnerMasterReport; run?: 
                     <span>{engineStatusMeta[task.status].label}</span>
                   </div>
                   <dl>
+                    {task.execution.kind === "external_report_import" && (
+                      <div><dt>{text({ en: "Imported external report", zhTW: "已匯入的外部報告" })}</dt>
+                        <dd>{text({ en: "Coverage unverified", zhTW: "涵蓋範圍未經驗證" })}<code>{task.execution.sourceFormat}</code><code>{task.execution.sourceSha256}</code></dd></div>
+                    )}
                     {task.execution.kind === "catalog_engine" && task.execution.engineVersion?.trim() && (
                       <div><dt>{text(copy.scannerVersion)}</dt><dd>{scannerVersionLabel(task.execution.engineVersion, task.execution.reportedVersion, "exact", locale)}</dd></div>
                     )}

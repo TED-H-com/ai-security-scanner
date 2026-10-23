@@ -1210,6 +1210,7 @@ mod tests {
     fn run(id: &str) -> ScanRun {
         let time = Utc.with_ymd_and_hms(2026, 8, 24, 12, 0, 0).unwrap();
         ScanRun {
+            campaign_id: None,
             id: id.into(),
             case_id: "case-1".into(),
             sequence: if id == "baseline" { 1 } else { 2 },

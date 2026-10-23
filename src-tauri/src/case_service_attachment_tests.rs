@@ -23,6 +23,7 @@ fn html_attachment_fixture() -> (Fixture, AssessmentCase, String) {
         .plan_scan(
             &created.id,
             ScanPlanRequest {
+                campaign_id: None,
                 engine_ids: vec!["gitleaks".into()],
                 engine_asset_routes: Vec::new(),
             },

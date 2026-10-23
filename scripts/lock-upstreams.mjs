@@ -1,12 +1,9 @@
 #!/usr/bin/env node
 
 import { execFileSync } from "node:child_process";
-import { readdirSync, statSync, writeFileSync } from "node:fs";
+import { existsSync, readdirSync, statSync, writeFileSync } from "node:fs";
 import { join, relative, resolve } from "node:path";
-
-const root = resolve(import.meta.dirname, "..");
-const upstreamRoot = join(root, ".upstreams");
-const outputPath = join(root, "engines", "upstreams.lock.json");
+import { pathToFileURL } from "node:url";
 
 const git = (directory, ...args) =>
   execFileSync("git", ["-C", directory, ...args], {
@@ -14,22 +11,39 @@ const git = (directory, ...args) =>
     stdio: ["ignore", "pipe", "pipe"],
   }).trim();
 
-const repositories = [];
+export function collectUpstreams(root) {
+  const upstreamRoot = join(root, ".upstreams");
+  const repositories = [];
+  const candidates = [];
 
-for (const owner of readdirSync(upstreamRoot).sort()) {
-  const ownerPath = join(upstreamRoot, owner);
-  if (!statSync(ownerPath).isDirectory()) continue;
+  for (const owner of readdirSync(upstreamRoot).sort()) {
+    const ownerPath = join(upstreamRoot, owner);
+    if (!statSync(ownerPath).isDirectory()) continue;
+    // Some research checkouts (for example QEMU) live directly under .upstreams.
+    // Never mistake their source directories for separate Git repositories.
+    if (existsSync(join(ownerPath, ".git"))) {
+      candidates.push(ownerPath);
+      continue;
+    }
 
-  for (const repository of readdirSync(ownerPath).sort()) {
-    const repositoryPath = join(ownerPath, repository);
-    if (!statSync(repositoryPath).isDirectory()) continue;
+    for (const repository of readdirSync(ownerPath).sort()) {
+      const repositoryPath = join(ownerPath, repository);
+      if (statSync(repositoryPath).isDirectory() && existsSync(join(repositoryPath, ".git"))) {
+        candidates.push(repositoryPath);
+      }
+    }
+  }
 
+  for (const repositoryPath of candidates) {
     try {
+      if (resolve(git(repositoryPath, "rev-parse", "--show-toplevel")) !== resolve(repositoryPath)) {
+        throw new Error("checkout path is not its Git worktree root");
+      }
       const remote = git(repositoryPath, "remote", "get-url", "origin")
         .replace(/\.git$/, "")
         .replace(/^git@github\.com:/, "https://github.com/");
       repositories.push({
-        id: `${owner}/${repository}`,
+        id: relative(upstreamRoot, repositoryPath),
         path: relative(root, repositoryPath),
         remote,
         branch: git(repositoryPath, "branch", "--show-current"),
@@ -40,14 +54,24 @@ for (const owner of readdirSync(upstreamRoot).sort()) {
       throw new Error(`Could not inspect ${repositoryPath}: ${error.message}`);
     }
   }
+  return repositories;
 }
 
-const lock = {
-  schema_version: "1.0.0",
-  generated_by: "scripts/lock-upstreams.mjs",
-  note: "Research/source checkout lock only. Engine release manifests independently pin tested tags, images, rule databases, and adapters.",
-  repositories,
-};
+export function writeLock(root) {
+  const outputPath = join(root, "engines", "upstreams.lock.json");
+  const repositories = collectUpstreams(root);
+  const lock = {
+    schema_version: "1.0.0",
+    generated_by: "scripts/lock-upstreams.mjs",
+    note: "Research/source checkout lock only. Engine release manifests independently pin tested tags, images, rule databases, and adapters.",
+    repositories,
+  };
 
-writeFileSync(outputPath, `${JSON.stringify(lock, null, 2)}\n`, "utf8");
-console.log(`Locked ${repositories.length} upstream repositories in ${outputPath}`);
+  writeFileSync(outputPath, `${JSON.stringify(lock, null, 2)}\n`, "utf8");
+  return { repositories, outputPath };
+}
+
+if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
+  const { repositories, outputPath } = writeLock(resolve(import.meta.dirname, ".."));
+  console.log(`Locked ${repositories.length} upstream repositories in ${outputPath}`);
+}

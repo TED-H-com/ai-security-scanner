@@ -1,0 +1,431 @@
+{
+  "schema_version": 1,
+  "id": "october-2026",
+  "title": "October 2026 incident triage",
+  "reviewed_at": "2026-10-22",
+  "engine_ids": [
+    "trivy"
+  ],
+  "mode": "upstream_package_triage",
+  "coverage_policy": "Only exact upstream advisory matches with current-run asset evidence are linked. Generic completion and zero findings do not clear individual incidents. Incident investigation and unpublished candidates remain separate.",
+  "issues": [
+    {
+      "id": "php2shell",
+      "title": "PHP2Shell",
+      "kind": "vulnerability",
+      "advisory_ids": [
+        "CVE-2026-109618",
+        "CVE-2026-109619",
+        "GHSA-w8hw-w9fx-j79w",
+        "GHSA-6wmf-4rv5-p3rp"
+      ],
+      "summary": "PHP confirmed two memory-safety vulnerabilities. Trivy package checks were verified with current upstream data; the latest Nuclei crash probe is intrusive and excluded from this mode.",
+      "next_action": "Check each deployed PHP runtime against the vendor advisory and distribution backports.",
+      "sources": [
+        "https://thephp.foundation/blog/2026/10/21/todays-php-security-release-and-how-were-strengthening-php-security/",
+        "https://ubuntu.com/security/notices/USN-8948-1",
+        "https://github.com/projectdiscovery/nuclei-templates/blob/f938a3dd530c283e9387b518b97911152ff5846c/http/cves/2026/CVE-2026-109618.yaml",
+        "https://www.greenbone.net/en/blog/php2shell-remote-code-execution-cve-2026-109618-cve-2026-109619/"
+      ],
+      "engine_ids": [
+        "trivy",
+        "nuclei",
+        "greenbone"
+      ],
+      "fixed_releases": [
+        "8.2.35",
+        "8.3.36",
+        "8.4.27",
+        "8.5.12"
+      ],
+      "published_at": "2026-10-21",
+      "cvss": {
+        "version": "4.0",
+        "score": 9.2
+      },
+      "summary_zh_tw": "PHP 已確認兩項記憶體安全漏洞；已以最新上游資料驗證 Trivy 套件檢查。Nuclei 最新範本會觸發崩潰探測，本模式不採用。",
+      "next_action_zh_tw": "依 PHP 官方公告及作業系統發行版的修補資訊，確認每個已部署的 PHP 執行環境。",
+      "verified_upstream_fixture": {
+        "engine": "trivy",
+        "version": "0.76.1",
+        "database_updated_at": "2026-10-22T13:15:26.425424764Z",
+        "database_manifest": "sha256:4bf3ae89527fbbb3596748b1c9d294a8b240c49edc9f87e65947e42291bb0bf6",
+        "input_profile": "container_image_oci_layout",
+        "distribution": "Ubuntu 24.04",
+        "package": "php8.3-cli",
+        "affected_fixture_version": "8.3.6-0ubuntu0.24.04.12",
+        "fixed_fixture_version": "8.3.6-0ubuntu0.24.04.13",
+        "matched_advisory_ids": [
+          "CVE-2026-109618",
+          "CVE-2026-109619"
+        ],
+        "scope": "Inert fixture proves upstream package matching; individual user assets still require their own run evidence."
+      }
+    },
+    {
+      "id": "plex2shell",
+      "title": "Plex2Shell",
+      "kind": "vulnerability",
+      "advisory_ids": [
+        "CVE-2026-96652",
+        "CVE-2026-96654",
+        "CVE-2026-96655",
+        "CVE-2026-96656"
+      ],
+      "summary": "Plex confirms an actively exploited chain. A version or open port alone does not establish compromise.",
+      "next_action": "Verify Plex Media Server 1.43.3.10861 or later and follow the vendor incident guidance for previously exposed servers.",
+      "sources": [
+        "https://forums.plex.tv/t/important-security-update-for-plex-media-server-v1-43-2-and-earlier/942319/3"
+      ],
+      "engine_ids": [
+        "trivy",
+        "nuclei",
+        "greenbone"
+      ],
+      "fixed_releases": [
+        "1.43.3.10861"
+      ],
+      "published_at": "2026-10-19",
+      "summary_zh_tw": "Plex 已確認此漏洞鏈遭到利用；版本資訊或開放連接埠本身無法判定是否已遭入侵。",
+      "next_action_zh_tw": "確認 Plex Media Server 為 1.43.3.10861 或更新版本；曾對外開放的伺服器另依官方指引調查。"
+    },
+    {
+      "id": "emudhra",
+      "title": "eMudhra intermediate certificates",
+      "kind": "investigation",
+      "advisory_ids": [],
+      "summary": "The vendor confirms weak keys in eight intermediate certificates. Checking a website does not audit client trust stores.",
+      "next_action": "Review browser, operating-system and application trust-store updates using the vendor notices.",
+      "sources": [
+        "https://emudhra.com/en/press-release/emudhra-statement-distrust-global-tls-intermediate-root-ca",
+        "https://emudhra.com/en/post/certificate-security-incident"
+      ],
+      "engine_ids": [],
+      "published_at": "2026-10-21",
+      "summary_zh_tw": "官方已確認八張中繼憑證使用弱金鑰。網站檢查無法涵蓋用戶端的信任憑證清單。",
+      "next_action_zh_tw": "依官方公告，檢查瀏覽器、作業系統與應用程式的信任憑證更新。"
+    },
+    {
+      "id": "cybercartel",
+      "title": "CyberCartel / Claude / Grok",
+      "kind": "investigation",
+      "advisory_ids": [],
+      "summary": "Straiker reports attacker misuse of AI services. This is a threat campaign, not a demonstrated vulnerability in every installation of those services.",
+      "next_action": "Review identity, application and endpoint telemetry with the incident-response team.",
+      "sources": [
+        "https://www.straiker.ai/blog/inside-carliy0s-how-cybercartel-used-multiple-ai-models-to-attack-latin-american-banks"
+      ],
+      "engine_ids": [],
+      "published_at": "2026-10-21",
+      "summary_zh_tw": "Straiker 報告攻擊者濫用 AI 服務；這是攻擊活動，不能據此判定所有相關服務的安裝環境都有漏洞。",
+      "next_action_zh_tw": "請事件應變人員檢查身分驗證、應用程式與端點活動紀錄。"
+    },
+    {
+      "id": "railway",
+      "title": "Railway credential exposure",
+      "kind": "investigation",
+      "advisory_ids": [],
+      "summary": "Railway reports possible access to environment variables. A repository or website scan cannot determine account exposure.",
+      "next_action": "Follow Railway account notices, rotate potentially exposed credentials through the provider and review service audit logs.",
+      "sources": [
+        "https://blog.railway.com/p/security-disclosure-wednesday-october-21st"
+      ],
+      "engine_ids": [],
+      "published_at": "2026-10-21",
+      "summary_zh_tw": "Railway 公告環境變數可能遭到存取；程式碼或網站掃描無法判定帳戶是否受到影響。",
+      "next_action_zh_tw": "依 Railway 帳戶通知處理可能外洩的憑證，並檢查相關服務的稽核紀錄。"
+    },
+    {
+      "id": "litellm",
+      "title": "LiteLLM 1.107.0 supply-chain incident",
+      "kind": "investigation",
+      "advisory_ids": [],
+      "summary": "The vendor confirms malicious 1.107.0 wheels and affected containers. A dependency scan cannot rule out past execution or credential theft.",
+      "next_action": "Review installation records and image digests offline; do not start Python or pip in a suspected environment. Follow the vendor recovery guidance.",
+      "sources": [
+        "https://docs.litellm.ai/blog/security-incident-oct-21-2026"
+      ],
+      "engine_ids": [],
+      "published_at": "2026-10-21",
+      "affected_releases": [
+        "1.107.0"
+      ],
+      "summary_zh_tw": "官方已確認 1.107.0 套件及部分容器映像遭植入惡意程式；相依套件掃描無法排除過去執行或憑證外洩。",
+      "next_action_zh_tw": "離線檢查安裝紀錄與映像摘要；不要在可疑環境啟動 Python 或 pip，並依官方指引復原。"
+    },
+    {
+      "id": "storm0940",
+      "title": "Storm-0940 / ARTEX / ConnectWise / Microsoft 365",
+      "kind": "investigation",
+      "advisory_ids": [],
+      "summary": "Microsoft describes abuse of previously authorized ConnectWise applications. Generic vulnerability and posture checks cannot establish tenant compromise.",
+      "next_action": "Preserve and review Entra service-principal sign-ins, application credential changes and Microsoft 365 audit logs using the vendor hunting guidance.",
+      "sources": [
+        "https://www.microsoft.com/en-us/security/blog/2026/10/21/storm-0940-uses-artex-agentic-ai-connectwise-supply-chain-compromise/"
+      ],
+      "engine_ids": [],
+      "published_at": "2026-10-21",
+      "summary_zh_tw": "Microsoft 報告已授權的 ConnectWise 應用程式遭到濫用；一般漏洞及設定檢查無法判定租用戶是否遭入侵。",
+      "next_action_zh_tw": "保留並依官方調查指引檢查 Entra 服務主體登入、應用程式憑證變更與 Microsoft 365 稽核紀錄。"
+    },
+    {
+      "id": "nodejs",
+      "title": "Node.js October security updates",
+      "kind": "vulnerability",
+      "advisory_ids": [
+        "CVE-2026-105482",
+        "CVE-2026-105483",
+        "CVE-2026-106069",
+        "CVE-2026-111497",
+        "CVE-2026-105481",
+        "CVE-2026-106072",
+        "CVE-2026-106074",
+        "CVE-2026-106070",
+        "CVE-2026-106071",
+        "CVE-2026-106073"
+      ],
+      "summary": "Node.js published runtime and dependency fixes, including eMudhra trust changes. A project manifest may omit the deployed runtime.",
+      "next_action": "Verify the deployed Node.js runtime against the fixed release for its branch.",
+      "sources": [
+        "https://nodejs.org/en/blog/vulnerability/october-2026-security-releases"
+      ],
+      "engine_ids": [
+        "trivy",
+        "greenbone"
+      ],
+      "fixed_releases": [
+        "22.23.4",
+        "24.22.1",
+        "26.12.1"
+      ],
+      "published_at": "2026-10-21",
+      "highest_vendor_severity": "high",
+      "summary_zh_tw": "Node.js 已發布執行環境與相依套件修補，包含 eMudhra 信任調整；專案檔案可能未記錄實際部署的版本。",
+      "next_action_zh_tw": "依官方公告確認已部署的 Node.js 執行環境，套用所用版本分支的修補。"
+    },
+    {
+      "id": "go-emudhra",
+      "title": "Go certificate distrust",
+      "kind": "vulnerability",
+      "advisory_ids": [
+        "CVE-2026-111943"
+      ],
+      "summary": "Go changed crypto/x509 verification to reject affected intermediates. Updating the build tool alone does not update deployed binaries.",
+      "next_action": "Verify applications were rebuilt and deployed with a corrected Go version.",
+      "sources": [
+        "https://github.com/golang/go/issues/82345",
+        "https://go.dev/doc/devel/release#go1.27.3"
+      ],
+      "engine_ids": [
+        "trivy"
+      ],
+      "fixed_releases": [
+        "1.26.10",
+        "1.27.3"
+      ],
+      "published_at": "2026-10-19",
+      "summary_zh_tw": "Go 已調整 crypto/x509 驗證以拒絕受影響的中繼憑證；僅更新建置工具不會更新已部署的程式。",
+      "next_action_zh_tw": "確認應用程式已使用修正版 Go 重新建置並部署。"
+    },
+    {
+      "id": "gitlab",
+      "title": "GitLab emergency update",
+      "kind": "vulnerability",
+      "advisory_ids": [
+        "CVE-2026-110264"
+      ],
+      "summary": "GitLab confirms unauthenticated code execution through integer overflow in regular-expression compilation.",
+      "next_action": "Verify the self-managed GitLab release against the vendor branch table and review vendor exploitation detections.",
+      "sources": [
+        "https://docs.gitlab.com/releases/patches/patch-release-gitlab-19-5-1-released/"
+      ],
+      "engine_ids": [
+        "trivy",
+        "nuclei",
+        "greenbone"
+      ],
+      "fixed_releases": [
+        "18.11.13",
+        "19.0.10",
+        "19.1.9",
+        "19.2.9",
+        "19.3.6",
+        "19.4.3",
+        "19.5.1"
+      ],
+      "published_at": "2026-10-21",
+      "cvss": {
+        "version": "3.1",
+        "score": 10.0
+      },
+      "summary_zh_tw": "GitLab 已確認正規表示式編譯中的整數溢位可導致未經驗證的程式碼執行。",
+      "next_action_zh_tw": "依官方版本分支表確認自管 GitLab 版本，並檢查官方提供的入侵跡象。"
+    },
+    {
+      "id": "onamae",
+      "title": "Onamae Desktop Cloud incident",
+      "kind": "investigation",
+      "advisory_ids": [],
+      "summary": "Onamae confirms unauthorized programs on some Desktop Cloud servers; disclosure concerns this service rather than all registered domains.",
+      "next_action": "Follow the provider notice and review affected server activity and credentials with the administrator.",
+      "sources": [
+        "https://www.onamae.com/news/article/11584"
+      ],
+      "engine_ids": [],
+      "published_at": "2026-10-21",
+      "summary_zh_tw": "Onamae 已確認部分 Desktop Cloud 伺服器遭植入未授權程式；公告範圍是該服務。",
+      "next_action_zh_tw": "依服務商公告，請管理員檢查受影響伺服器的活動紀錄與憑證。"
+    },
+    {
+      "id": "zdi-can-33549",
+      "title": "Linux ZDI-CAN-33549",
+      "kind": "advisory_pending",
+      "advisory_ids": [],
+      "summary": "Public ZDI and maintainer mail confirms KSMBD SMB Direct integer underflow. No public CVE mapping or distribution fixed-package mapping was verified.",
+      "next_action": "Track the linked maintainer thread and distribution advisory; retain full kernel package versions and relevant configuration for review.",
+      "sources": [
+        "https://www.zerodayinitiative.com/advisories/upcoming/",
+        "https://lists.openwall.net/linux-kernel/2026/10/21/2666",
+        "https://lists.openwall.net/linux-kernel/2026/10/21/2732"
+      ],
+      "engine_ids": [],
+      "candidate_id": "ZDI-CAN-33549",
+      "vendor": "Linux",
+      "vendor_notified_at": "2026-10-21",
+      "reported_mechanism": "SMB Direct integer underflow RCE",
+      "mechanism_verified": true,
+      "zdi_cvss_score": 9.0,
+      "summary_zh_tw": "ZDI 與維護者的公開郵件已確認KSMBD SMB Direct 整數下溢問題；尚未確認公開 CVE 對應及各發行版修補套件。",
+      "next_action_zh_tw": "追蹤所附維護者討論及發行版公告，保留完整核心套件版本與相關設定供管理員核對。",
+      "patch_status": "Maintainer requests retesting a for-7.5/smbdirect development branch; not a confirmed released fix."
+    },
+    {
+      "id": "zdi-can-33774",
+      "title": "Linux ZDI-CAN-33774",
+      "kind": "advisory_pending",
+      "advisory_ids": [],
+      "summary": "Public ZDI and maintainer mail confirms KSMBD protocol-dispatch race. No public CVE mapping or distribution fixed-package mapping was verified. The maintainer identifies a fix commit; shipped kernel releases remain unverified.",
+      "next_action": "Track the linked maintainer thread and distribution advisory; retain full kernel package versions and relevant configuration for review.",
+      "sources": [
+        "https://www.zerodayinitiative.com/advisories/upcoming/",
+        "https://lists.openwall.net/linux-kernel/2026/10/21/2694",
+        "https://lists.openwall.net/linux-kernel/2026/10/22/1149"
+      ],
+      "engine_ids": [],
+      "candidate_id": "ZDI-CAN-33774",
+      "vendor": "Linux",
+      "vendor_notified_at": "2026-10-21",
+      "reported_mechanism": "KSMBD race-condition RCE",
+      "mechanism_verified": true,
+      "zdi_cvss_score": 9.0,
+      "summary_zh_tw": "ZDI 與維護者的公開郵件已確認KSMBD 協定分派競爭條件問題；尚未確認公開 CVE 對應及各發行版修補套件。 維護者已指出修補提交，但尚未確認已發布核心版本。",
+      "next_action_zh_tw": "追蹤所附維護者討論及發行版公告，保留完整核心套件版本與相關設定供管理員核對。",
+      "maintainer_patch_reference": {
+        "commit": "68f410faedaf6ee74d81e574733c50ebcc1bd8ed",
+        "url": "https://git.kernel.org/pub/scm/linux/kernel/git/linkinjeon/smb.git/commit/?id=68f410faedaf6ee74d81e574733c50ebcc1bd8ed",
+        "status": "maintainer_reported_fix_not_distribution_release",
+        "source": "https://lists.openwall.net/linux-kernel/2026/10/22/1149"
+      }
+    },
+    {
+      "id": "zdi-can-33367",
+      "title": "Linux ZDI-CAN-33367",
+      "kind": "advisory_pending",
+      "advisory_ids": [],
+      "summary": "Public ZDI and maintainer mail confirms skb_zerocopy ownership handling. No public CVE mapping or distribution fixed-package mapping was verified.",
+      "next_action": "Track the linked maintainer thread and distribution advisory; retain full kernel package versions and relevant configuration for review.",
+      "sources": [
+        "https://www.zerodayinitiative.com/advisories/upcoming/",
+        "https://lists.openwall.net/linux-kernel/2026/10/21/2711",
+        "https://lists.openwall.net/linux-kernel/2026/10/22/297"
+      ],
+      "engine_ids": [],
+      "candidate_id": "ZDI-CAN-33367",
+      "vendor": "Linux",
+      "vendor_notified_at": "2026-10-21",
+      "reported_mechanism": "skb_zerocopy privilege escalation",
+      "mechanism_verified": true,
+      "zdi_cvss_score": 7.8,
+      "summary_zh_tw": "ZDI 與維護者的公開郵件已確認skb_zerocopy 所有權處理問題；尚未確認公開 CVE 對應及各發行版修補套件。",
+      "next_action_zh_tw": "追蹤所附維護者討論及發行版公告，保留完整核心套件版本與相關設定供管理員核對。",
+      "patch_status": "Maintainer reports a separate patch received and forthcoming publication; no release mapping verified."
+    },
+    {
+      "id": "zdi-can-34068",
+      "title": "Linux ZDI-CAN-34068",
+      "kind": "advisory_pending",
+      "advisory_ids": [],
+      "summary": "Public ZDI and maintainer mail confirms vmwgfx dirty-tracking out-of-bounds write. No public CVE mapping or distribution fixed-package mapping was verified.",
+      "next_action": "Track the linked maintainer thread and distribution advisory; retain full kernel package versions and relevant configuration for review.",
+      "sources": [
+        "https://www.zerodayinitiative.com/advisories/upcoming/",
+        "https://lists.openwall.net/linux-kernel/2026/10/22/308"
+      ],
+      "engine_ids": [],
+      "candidate_id": "ZDI-CAN-34068",
+      "vendor": "Linux",
+      "vendor_notified_at": "2026-10-21",
+      "reported_mechanism": "vmwgfx out-of-bounds privilege escalation",
+      "mechanism_verified": true,
+      "zdi_cvss_score": 8.8,
+      "summary_zh_tw": "ZDI 與維護者的公開郵件已確認vmwgfx dirty tracking 越界寫入問題；尚未確認公開 CVE 對應及各發行版修補套件。",
+      "next_action_zh_tw": "追蹤所附維護者討論及發行版公告，保留完整核心套件版本與相關設定供管理員核對。"
+    },
+    {
+      "id": "zdi-can-34076",
+      "title": "Linux ZDI-CAN-34076",
+      "kind": "advisory_pending",
+      "advisory_ids": [],
+      "summary": "Public ZDI and maintainer mail confirms nvmet Get Log Page uninitialized resource. No public CVE mapping or distribution fixed-package mapping was verified.",
+      "next_action": "Track the linked maintainer thread and distribution advisory; retain full kernel package versions and relevant configuration for review.",
+      "sources": [
+        "https://www.zerodayinitiative.com/advisories/upcoming/",
+        "https://lists.openwall.net/linux-kernel/2026/10/22/310"
+      ],
+      "engine_ids": [],
+      "candidate_id": "ZDI-CAN-34076",
+      "vendor": "Linux",
+      "vendor_notified_at": "2026-10-21",
+      "reported_mechanism": "NVMET uninitialized-memory disclosure",
+      "mechanism_verified": true,
+      "zdi_cvss_score": 8.6,
+      "summary_zh_tw": "ZDI 與維護者的公開郵件已確認nvmet Get Log Page 未初始化資源問題；尚未確認公開 CVE 對應及各發行版修補套件。",
+      "next_action_zh_tw": "追蹤所附維護者討論及發行版公告，保留完整核心套件版本與相關設定供管理員核對。"
+    },
+    {
+      "id": "zdi-can-32005",
+      "title": "ConnMan ZDI-CAN-32005",
+      "kind": "advisory_pending",
+      "advisory_ids": [],
+      "summary": "ZDI lists this candidate as awaiting public disclosure. The detailed mechanism, CVE mapping and fixed versions are unverified.",
+      "next_action": "Track the vendor and ZDI advisory; obtain package and configuration inventory for an administrator review.",
+      "sources": [
+        "https://www.zerodayinitiative.com/advisories/upcoming/"
+      ],
+      "engine_ids": [],
+      "candidate_id": "ZDI-CAN-32005",
+      "vendor": "ConnMan",
+      "vendor_notified_at": "2026-10-19",
+      "reported_mechanism": "search-domain TCP-query stack overflow",
+      "mechanism_verified": false,
+      "zdi_cvss_score": 7.8,
+      "summary_zh_tw": "ZDI 將此候選漏洞列為尚待公開；詳細機制、CVE 對應與修補版本尚未確認。",
+      "next_action_zh_tw": "追蹤官方與 ZDI 公告，備妥套件及設定清單供管理員檢視。"
+    }
+  ],
+  "reason_zh_tw": {
+    "upstream_advisory_match": "上游掃描器已回報此資產的相關漏洞公告；請檢視原始發現與證據。",
+    "no_applicable_check": "本次未記錄此資產適用的上游檢查。",
+    "knowledge_not_current": "掃描器資料早於本次事件整理日期，或未提供資料日期；尚未排除此問題。",
+    "specific_check_unverified": "本次未記錄相關上游發現；尚未確認這項特定漏洞檢查曾經執行。"
+  },
+  "upstream_review": {
+    "checked_at": "2026-10-22T16:45:51Z",
+    "nuclei_templates_commit": "f938a3dd530c283e9387b518b97911152ff5846c",
+    "nuclei_php_template": "intrusive_crash_probe_excluded",
+    "greenbone_php_notice": "enterprise_feed_announced_community_packaged_coverage_not_verified",
+    "zdi_mapping": "Five Linux mechanisms verified in primary mailing-list messages; all six CVE and distribution package mappings unverified.",
+    "safe_nuclei_campaign_intersection": 0,
+    "selection_evidence": "docs/engines/updates/2026-10-22-runtime-inputs.json"
+  }
+}

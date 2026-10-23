@@ -837,6 +837,39 @@ test("a packaged surface with a missing bridge stays native and fails visibly", 
   assert.equal(manifests.notice, undefined);
 });
 
+test("combined report export forwards selected sources and the native save path", async () => {
+  const destination = String.raw`C:\Users\example\Downloads\combined-report.html`;
+  const calls: Array<{ command: string; args: unknown }> = [];
+  const receipt = { case_id: "case-1", selected_run_ids: ["native-run", "strix-run"], format: "html",
+    path: destination, sha256: "a".repeat(64), created_at: "2026-10-22T12:00:00Z", redaction_profile: "standard" };
+  setTestWindow({ __TAURI_INTERNALS__: { invoke: async (command: string, args: unknown) => {
+    calls.push({ command, args });
+    if (command === "plugin:dialog|save") return destination;
+    if (command === COMMANDS.exportSelectedRunReport) return receipt;
+    throw new Error(`Unexpected command: ${command}`);
+  } } });
+  const input = { caseId: "case-1", runIds: ["native-run", "strix-run"], locale: "zh-Hant" as const,
+    format: "html" as const, redactSensitiveValues: true };
+  const result = await scannerService.exportSelectedRunReport(input);
+  assert.equal(result.mode, "native");
+  assert.deepEqual(result.data, receipt);
+  assert.deepEqual(calls.map((call) => call.command), ["plugin:dialog|save", COMMANDS.exportSelectedRunReport]);
+  assert.deepEqual(calls[1]?.args, { input: { ...input, destination } });
+});
+
+test("cancelling a combined report save creates no native export", async () => {
+  const calls: string[] = [];
+  setTestWindow({ __TAURI_INTERNALS__: { invoke: async (command: string) => {
+    calls.push(command);
+    if (command === "plugin:dialog|save") return null;
+    throw new Error(`Unexpected command: ${command}`);
+  } } });
+  const result = await scannerService.exportSelectedRunReport({ caseId: "case-1", runIds: ["one", "two"],
+    locale: "en", format: "json", redactSensitiveValues: true });
+  assert.equal(result.data, null);
+  assert.deepEqual(calls, ["plugin:dialog|save"]);
+});
+
 test("snapshot errors keep real state visible with persistent bilingual retry UI", async () => {
   const [app, shell, scanner, english, chinese] = await Promise.all([
     readFile(new URL("../../src/App.tsx", import.meta.url), "utf8"),

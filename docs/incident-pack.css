@@ -1,0 +1,16 @@
+.incident-hero { display: block; padding-bottom: 32px; }
+.incident-hero h1 { max-width: 950px; font-size: clamp(2rem, 5vw, 4rem); }
+.incident-hero .hero-copy { max-width: 760px; }
+.incident-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 20px; }
+.incident-card { padding: 24px; border: 1px solid var(--line); border-radius: var(--radius-md); background: var(--paper-strong); min-width: 0; }
+.incident-card h3 { margin-top: 0; }
+.incident-card p { color: var(--ink-soft); line-height: 1.6; }
+.incident-card .button { margin: 6px 8px 6px 0; }
+.incident-steps { padding-left: 24px; line-height: 1.8; }
+.incident-steps li { padding-left: 6px; margin-bottom: 12px; }
+.incident-detail { margin-block: 24px; line-height: 1.7; }
+.incident-detail summary { cursor: pointer; font-weight: 700; }
+.incident-detail a, .incident-card a, .incident-detail code { overflow-wrap: anywhere; }
+.incident-section { padding-block: 32px; }
+.incident-note { color: var(--ink-soft); font-size: .9rem; line-height: 1.6; }
+@media (max-width: 820px) { .incident-grid { grid-template-columns: 1fr; } }

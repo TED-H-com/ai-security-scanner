@@ -15,11 +15,12 @@ import {
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { UPDATER_DOWNLOAD_REPOSITORY } from "../publication-origins.mjs";
-import { PROJECT_ROOT, isSemver, readJson, runMain, sha256File, toPosix } from "./lib.mjs";
+import { PROJECT_ROOT, isSemver, readJson, runMain, sha256File, toPosix, writeJsonAtomic } from "./lib.mjs";
 import { createPlatformQualification } from "./platform-qualification.mjs";
 import { createReleaseCandidateLock } from "./release-candidate-lock.mjs";
 import { publishedReleaseAssetName } from "./release-asset-name.mjs";
 import { createPreparedReleaseMetadata } from "./release-metadata.mjs";
+import { incidentScanPackForRelease, writeIncidentScanPack } from "./incident-scan-pack.mjs";
 import { verifyUpdaterSignatures } from "./verify-updater-signatures.mjs";
 import {
   WINDOWS_EXTERNAL_EVIDENCE_RECEIPT_FILE,
@@ -954,6 +955,7 @@ async function main() {
     }
 
     await writeFile(path.join(release, "THIRD_PARTY_NOTICES.txt"), "fixture dependency notice\n");
+    await writeIncidentScanPack(release, VERSION, COMMIT);
     await writeFile(path.join(release, "ENGINE_NOTICES.md"), "# Fixture engine notice\n");
     await writeFile(path.join(release, "ENGINE_NOTICES.json"), "{\"engines\":[]}\n");
     await writeFile(path.join(release, "LICENSE.txt"), "Apache-2.0 fixture\n");
@@ -1011,6 +1013,21 @@ async function main() {
       "--publication-mode", "commit-bound-qc",
       "--tauri-config", tauriConfig,
     ]);
+    const scanPack = await incidentScanPackForRelease(VERSION, COMMIT);
+    if (scanPack) {
+      const exportedPack = await readJson(path.join(scopedAllOutput, "incident-scan-pack.json"));
+      if (JSON.stringify(exportedPack) !== JSON.stringify(scanPack)) {
+        throw new Error("finalization changed the campaign or shared report contract");
+      }
+      const packPath = path.join(release, "incident-scan-pack.json");
+      await writeJsonAtomic(packPath, { ...scanPack, report: { ...scanPack.report, certification: true } });
+      expectFailure(() => run("finalize-release.mjs", [
+        ...finalizeArguments.slice(0, 2),
+        "--out", path.join(temporary, "tampered-incident-pack"),
+        ...finalizeArguments.slice(4),
+      ]), "modified incident report contract");
+      await writeJsonAtomic(packPath, scanPack);
+    }
     const scopedAllMetadata = await readJson(path.join(scopedAllOutput, "release-metadata.json"));
     const scopedAllLatest = await readJson(path.join(scopedAllOutput, "latest.json"));
     for (const platform of scopedAllMetadata.distribution.platforms) {
@@ -1210,6 +1227,7 @@ async function main() {
 
     const scopedWindowsInput = path.join(temporary, "windows-only-input");
     await mkdir(scopedWindowsInput);
+    await writeIncidentScanPack(scopedWindowsInput, VERSION, COMMIT);
     await mergeFlat(outputs[2], scopedWindowsInput);
     for (const name of [
       "THIRD_PARTY_NOTICES.txt",

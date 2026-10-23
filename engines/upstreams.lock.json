@@ -4,11 +4,19 @@
   "note": "Research/source checkout lock only. Engine release manifests independently pin tested tags, images, rule databases, and adapters.",
   "repositories": [
     {
+      "id": "Armur-Ai/vibescan",
+      "path": ".upstreams/Armur-Ai/vibescan",
+      "remote": "https://github.com/Armur-Ai/vibescan",
+      "branch": "main",
+      "revision": "13412a57a1ce94345305140d8320ce7cc21b0f4f",
+      "shallow": true
+    },
+    {
       "id": "CISOfy/lynis",
       "path": ".upstreams/CISOfy/lynis",
       "remote": "https://github.com/CISOfy/lynis",
       "branch": "master",
-      "revision": "f1926dd4aed7e3885a99ffd05f4cd72d276a6607",
+      "revision": "9319416fa0726369ab0a48f686155a90363f3f9c",
       "shallow": true
     },
     {
@@ -16,7 +24,7 @@
       "path": ".upstreams/Checkmarx/kics",
       "remote": "https://github.com/Checkmarx/kics",
       "branch": "master",
-      "revision": "015905d9dcc2456ce41269b4cea45cb2858d9f5a",
+      "revision": "1f05308bc1f1068c41cdc3cb5a3c2d99732c56fd",
       "shallow": true
     },
     {
@@ -24,7 +32,7 @@
       "path": ".upstreams/DefectDojo/django-DefectDojo",
       "remote": "https://github.com/DefectDojo/django-DefectDojo",
       "branch": "master",
-      "revision": "28ca51e66d8436a10a31c4f093c2b4a1efff899d",
+      "revision": "8cbbe0d8c82d007662d270ccd7ab3365e2c84a83",
       "shallow": true
     },
     {
@@ -40,7 +48,7 @@
       "path": ".upstreams/OpenSCAP/openscap",
       "remote": "https://github.com/OpenSCAP/openscap",
       "branch": "main",
-      "revision": "c09abc323ef1ebfc6d34945256689848208bf425",
+      "revision": "af8cd99abf97f9f2c3b44378e144e88df634f56d",
       "shallow": true
     },
     {
@@ -56,7 +64,7 @@
       "path": ".upstreams/SpecterOps/BloodHound",
       "remote": "https://github.com/SpecterOps/BloodHound",
       "branch": "main",
-      "revision": "336bfbc1667fafa057671d9ccb815e5684b57761",
+      "revision": "4aac00037cec896dca96d524fec6fd654bdf7f84",
       "shallow": true
     },
     {
@@ -64,14 +72,14 @@
       "path": ".upstreams/aira-security/mcp-armor",
       "remote": "https://github.com/aira-security/mcp-armor",
       "branch": "main",
-      "revision": "6af4cee4665ab6242f02a88952f9127b6a04922a",
+      "revision": "2f82f6c369313d5e4fb4784fe99750749e7d61e2",
       "shallow": true
     },
     {
       "id": "anchore/grype",
       "path": ".upstreams/anchore/grype",
       "remote": "https://github.com/anchore/grype",
-      "branch": "main",
+      "branch": "",
       "revision": "6f8d854af29d3a3086b11a84afa51554a2a245fe",
       "shallow": true
     },
@@ -79,8 +87,16 @@
       "id": "anchore/syft",
       "path": ".upstreams/anchore/syft",
       "remote": "https://github.com/anchore/syft",
-      "branch": "main",
+      "branch": "",
       "revision": "b254e6d92f28c3868a755f62fb3ca8f26e9fee76",
+      "shallow": true
+    },
+    {
+      "id": "anthropics/oss-scanner",
+      "path": ".upstreams/anthropics/oss-scanner",
+      "remote": "https://github.com/anthropics/oss-scanner",
+      "branch": "main",
+      "revision": "7ef7e1fe3147f858e2213693ace698891811e4d5",
       "shallow": true
     },
     {
@@ -88,7 +104,7 @@
       "path": ".upstreams/aquasecurity/kube-bench",
       "remote": "https://github.com/aquasecurity/kube-bench",
       "branch": "main",
-      "revision": "9f133cb7509ce1dbedfc860e94474588000e25ac",
+      "revision": "e278a5915a982f2756026de6e2f9ca77077ef9f9",
       "shallow": true
     },
     {
@@ -103,7 +119,7 @@
       "id": "aquasecurity/trivy",
       "path": ".upstreams/aquasecurity/trivy",
       "remote": "https://github.com/aquasecurity/trivy",
-      "branch": "main",
+      "branch": "",
       "revision": "531360e5d2a88e732373f1614ba99a38738538b8",
       "shallow": true
     },
@@ -111,7 +127,7 @@
       "id": "bridgecrewio/checkov",
       "path": ".upstreams/bridgecrewio/checkov",
       "remote": "https://github.com/bridgecrewio/checkov",
-      "branch": "main",
+      "branch": "",
       "revision": "e40023ab262c7c8b7b0a8f0975072b42d1b601f9",
       "shallow": true
     },
@@ -120,7 +136,7 @@
       "path": ".upstreams/cartography-cncf/cartography",
       "remote": "https://github.com/cartography-cncf/cartography",
       "branch": "master",
-      "revision": "2b68f0250ce10635bc2c475f0a840a3b4359854c",
+      "revision": "4aa224b3936039229e9186d3e584af98448257ab",
       "shallow": true
     },
     {
@@ -128,7 +144,7 @@
       "path": ".upstreams/cisagov/ScubaGear",
       "remote": "https://github.com/cisagov/ScubaGear",
       "branch": "main",
-      "revision": "4d34e9a48e38ce5c2e14c0fdfbaee53e57594ae2",
+      "revision": "cce2bcf2d9081c2cf7f51571a3f986076c4d32b9",
       "shallow": true
     },
     {
@@ -144,7 +160,7 @@
       "path": ".upstreams/containers/podman",
       "remote": "https://github.com/containers/podman",
       "branch": "main",
-      "revision": "e14fafc21edcbd691ffbb5cab2d541d18de43838",
+      "revision": "304c946e317405c41c7f857abbf9b6580c5eaba0",
       "shallow": true
     },
     {
@@ -152,7 +168,7 @@
       "path": ".upstreams/dirkjanm/ROADtools",
       "remote": "https://github.com/dirkjanm/ROADtools",
       "branch": "master",
-      "revision": "f72a752700ff5142cc9bfd4cc90391ce5653415d",
+      "revision": "f7b0c4750197d939b77d39bc63d020017cf17030",
       "shallow": true
     },
     {
@@ -160,7 +176,7 @@
       "path": ".upstreams/docker/cli",
       "remote": "https://github.com/docker/cli",
       "branch": "master",
-      "revision": "28f756087eea5fa301f3fbf12b01ae62f91521c2",
+      "revision": "6d274590f2f63276a54da8adf475a455d21c1fdd",
       "shallow": true
     },
     {
@@ -168,7 +184,15 @@
       "path": ".upstreams/docker/compose",
       "remote": "https://github.com/docker/compose",
       "branch": "main",
-      "revision": "f72979427042620a94dd52ce78b39c68cb02c085",
+      "revision": "e18ab3d8797716b565e47b32f0ddb60e052fbbb6",
+      "shallow": true
+    },
+    {
+      "id": "edward-playground/aidefense-framework",
+      "path": ".upstreams/edward-playground/aidefense-framework",
+      "remote": "https://github.com/edward-playground/aidefense-framework",
+      "branch": "",
+      "revision": "e10c1678ee49f03f8fb0c97d446ba3fbc3543655",
       "shallow": true
     },
     {
@@ -176,7 +200,7 @@
       "path": ".upstreams/falcosecurity/falco",
       "remote": "https://github.com/falcosecurity/falco",
       "branch": "master",
-      "revision": "130747499bb831ff8212af4da13c3fa9ffd7328b",
+      "revision": "4cea537828c2b33c11e2c2a9427251682dfa1136",
       "shallow": true
     },
     {
@@ -192,7 +216,7 @@
       "path": ".upstreams/google/osv-scanner",
       "remote": "https://github.com/google/osv-scanner",
       "branch": "main",
-      "revision": "7898d8dc34ad9a6b09e7063f93fb253e792f3e68",
+      "revision": "ffeae830de4c0dd2dfa692c276e5db221b778a1a",
       "shallow": true
     },
     {
@@ -200,7 +224,7 @@
       "path": ".upstreams/greenbone/greenbone-container-images",
       "remote": "https://github.com/greenbone/greenbone-container-images",
       "branch": "main",
-      "revision": "17294427cafae1e38e35dc56e41c1be9c8d6d902",
+      "revision": "2cee47228b5f010f2460583c53c75bb23a487baa",
       "shallow": true
     },
     {
@@ -208,7 +232,7 @@
       "path": ".upstreams/greenbone/greenbone-feed-sync",
       "remote": "https://github.com/greenbone/greenbone-feed-sync",
       "branch": "main",
-      "revision": "84cc452fa0876a9a6a0971ee9bfe6a027aca7374",
+      "revision": "78fdd159acebed61eb25999ab5f5627f1c07d1af",
       "shallow": true
     },
     {
@@ -216,7 +240,7 @@
       "path": ".upstreams/greenbone/gsa",
       "remote": "https://github.com/greenbone/gsa",
       "branch": "main",
-      "revision": "bc507ec04e4f4debad3c705379beb3dfada2cf48",
+      "revision": "345bde855ac1ffd9b84c013f22480d9c5bb620e5",
       "shallow": true
     },
     {
@@ -224,7 +248,7 @@
       "path": ".upstreams/greenbone/gvmd",
       "remote": "https://github.com/greenbone/gvmd",
       "branch": "main",
-      "revision": "16c99dea6d17e59bd3b9b6a4773611f24ba051ca",
+      "revision": "86df994688c840d43cd686750f401ab0f9e64c64",
       "shallow": true
     },
     {
@@ -232,7 +256,7 @@
       "path": ".upstreams/greenbone/openvas-compose",
       "remote": "https://github.com/greenbone/openvas-compose",
       "branch": "main",
-      "revision": "99ed1dc18af1eb7f3a2968273d0a6cdddd6db835",
+      "revision": "402e517730fa9b3618df9ffe9f6137b54c6917c9",
       "shallow": true
     },
     {
@@ -256,14 +280,14 @@
       "path": ".upstreams/greenbone/ospd-openvas",
       "remote": "https://github.com/greenbone/ospd-openvas",
       "branch": "main",
-      "revision": "ac545a15d5a6f4df687f144090e9b6ff2fd660a2",
+      "revision": "b5fa7b035871dd4d1381a069fc36081806af6bbc",
       "shallow": true
     },
     {
       "id": "kubescape/kubescape",
       "path": ".upstreams/kubescape/kubescape",
       "remote": "https://github.com/kubescape/kubescape",
-      "branch": "master",
+      "branch": "",
       "revision": "d0ea07bcd9d7ab1640dcd6527d0e68a34f10da0e",
       "shallow": true
     },
@@ -272,7 +296,7 @@
       "path": ".upstreams/maester365/maester",
       "remote": "https://github.com/maester365/maester",
       "branch": "main",
-      "revision": "6bf1d98f094fc7a68e449d2f40f73ef820b72ee3",
+      "revision": "0a84dc481c624cc4bc3e219ecd91906633be0c24",
       "shallow": true
     },
     {
@@ -280,7 +304,7 @@
       "path": ".upstreams/moby/moby",
       "remote": "https://github.com/moby/moby",
       "branch": "master",
-      "revision": "b985e2313a8676e18072b442911fc8f64f17d440",
+      "revision": "b711d21792db6db488de976eb3c4a653c92c3bc3",
       "shallow": true
     },
     {
@@ -304,7 +328,7 @@
       "path": ".upstreams/ocsf/ocsf-schema",
       "remote": "https://github.com/ocsf/ocsf-schema",
       "branch": "main",
-      "revision": "40a1511e014da94d2d7a2ff964089425d0d479dd",
+      "revision": "837699648bc05fae330c4e2a8b402e0d16d5639e",
       "shallow": true
     },
     {
@@ -316,10 +340,18 @@
       "shallow": true
     },
     {
+      "id": "praetorian-inc/augustus",
+      "path": ".upstreams/praetorian-inc/augustus",
+      "remote": "https://github.com/praetorian-inc/augustus",
+      "branch": "main",
+      "revision": "13c96bc6a36f880e7f016e02da63eadd64b73674",
+      "shallow": true
+    },
+    {
       "id": "projectdiscovery/httpx",
       "path": ".upstreams/projectdiscovery/httpx",
       "remote": "https://github.com/projectdiscovery/httpx",
-      "branch": "dev",
+      "branch": "",
       "revision": "4b6a9a9d476f94a4f3a630f37051f5671ecfb1f8",
       "shallow": true
     },
@@ -328,7 +360,7 @@
       "path": ".upstreams/projectdiscovery/naabu",
       "remote": "https://github.com/projectdiscovery/naabu",
       "branch": "dev",
-      "revision": "ed04418a5b6602adb9c9f23e50b0317fde639bb7",
+      "revision": "506cf6a8291feff6f29a8d7eb10ee40155651b44",
       "shallow": true
     },
     {
@@ -336,7 +368,7 @@
       "path": ".upstreams/projectdiscovery/nuclei",
       "remote": "https://github.com/projectdiscovery/nuclei",
       "branch": "dev",
-      "revision": "84b464e6bdc2e9e964d4be19b1a603b2483f79fb",
+      "revision": "b0eeadc5541e3378fc2cc7a6f109e2eeb003c53b",
       "shallow": true
     },
     {
@@ -344,7 +376,7 @@
       "path": ".upstreams/projectdiscovery/nuclei-templates",
       "remote": "https://github.com/projectdiscovery/nuclei-templates",
       "branch": "main",
-      "revision": "24858b4bfabfa86f0bcfd36aea24fb535152b012",
+      "revision": "f938a3dd530c283e9387b518b97911152ff5846c",
       "shallow": true
     },
     {
@@ -352,15 +384,23 @@
       "path": ".upstreams/projectdiscovery/subfinder",
       "remote": "https://github.com/projectdiscovery/subfinder",
       "branch": "dev",
-      "revision": "51e9b9065e6afb66d3bca3705b21d84bb40354c4",
+      "revision": "b9239ac6abaeb389f36e4d0e1484394b697d7b91",
       "shallow": true
     },
     {
       "id": "prowler-cloud/prowler",
       "path": ".upstreams/prowler-cloud/prowler",
       "remote": "https://github.com/prowler-cloud/prowler",
-      "branch": "master",
+      "branch": "",
       "revision": "499fd637f3393b485833b08cdaf4172917c5698e",
+      "shallow": true
+    },
+    {
+      "id": "qemu",
+      "path": ".upstreams/qemu",
+      "remote": "https://gitlab.com/qemu-project/qemu",
+      "branch": "",
+      "revision": "aeec49e8170de7846f476124602cf7acd400c3df",
       "shallow": true
     },
     {
@@ -368,14 +408,14 @@
       "path": ".upstreams/salesforce/cloudsplaining",
       "remote": "https://github.com/salesforce/cloudsplaining",
       "branch": "master",
-      "revision": "5012eab1f7429ef3702e8f8379ed0a207ba77804",
+      "revision": "62df86e799c963a3131ead9ffc4e78d7d0ed9db6",
       "shallow": true
     },
     {
       "id": "semgrep/semgrep",
       "path": ".upstreams/semgrep/semgrep",
       "remote": "https://github.com/semgrep/semgrep",
-      "branch": "develop",
+      "branch": "",
       "revision": "72d3525fe7e02f486428386078f192f8c4756804",
       "shallow": true
     },
@@ -384,15 +424,15 @@
       "path": ".upstreams/silverhack/monkey365",
       "remote": "https://github.com/silverhack/monkey365",
       "branch": "main",
-      "revision": "7cfa39019496eb18ab920d6876e69e0b111613bf",
+      "revision": "577d68d877625a494fe7f71fbe972cdf85acb28a",
       "shallow": true
     },
     {
       "id": "splx-ai/agentic-radar",
       "path": ".upstreams/splx-ai/agentic-radar",
       "remote": "https://github.com/splx-ai/agentic-radar",
-      "branch": "main",
-      "revision": "65a7e4bd01e2034c7cb52e9620eeed287688cc53",
+      "branch": "research/json-contract-evaluation",
+      "revision": "1a3e4d81e3b122a69a529f1553a0b7239b64750d",
       "shallow": true
     },
     {
@@ -408,7 +448,7 @@
       "path": ".upstreams/tauri-apps/tauri",
       "remote": "https://github.com/tauri-apps/tauri",
       "branch": "dev",
-      "revision": "56d19c39e457b528433dc546106cd0bff4066bc2",
+      "revision": "ba1e205f3bfba19a9cbe6032bb4ece3068429d04",
       "shallow": true
     },
     {
@@ -416,14 +456,14 @@
       "path": ".upstreams/testssl/testssl.sh",
       "remote": "https://github.com/testssl/testssl.sh",
       "branch": "3.3dev",
-      "revision": "1283aff3d49763dffe20bd47c664308c6ec076cf",
+      "revision": "a7a74f8761f9be51e81860ef32fb77e6314ad070",
       "shallow": true
     },
     {
       "id": "trufflesecurity/trufflehog",
       "path": ".upstreams/trufflesecurity/trufflehog",
       "remote": "https://github.com/trufflesecurity/trufflehog",
-      "branch": "main",
+      "branch": "",
       "revision": "e76dff8a7e57d6df0c60ad8cbf5d5cba505a8fc9",
       "shallow": true
     },
@@ -433,21 +473,21 @@
       "remote": "https://github.com/turbot/pipe-fittings",
       "branch": "",
       "revision": "a5ad9a96275d58cb8d2cebe47ab7dd208021d830",
-      "shallow": false
+      "shallow": true
     },
     {
       "id": "turbot/powerpipe",
       "path": ".upstreams/turbot/powerpipe",
       "remote": "https://github.com/turbot/powerpipe",
       "branch": "develop",
-      "revision": "d549272fc8b872b27cbbe72cf1ae1abbcc77b1b1",
+      "revision": "d191b9dc62b041d7941351b6eb8823f722473dd6",
       "shallow": true
     },
     {
       "id": "turbot/steampipe",
       "path": ".upstreams/turbot/steampipe",
       "remote": "https://github.com/turbot/steampipe",
-      "branch": "develop",
+      "branch": "",
       "revision": "5c62651887b3e1d127049722e7216b915d4b075d",
       "shallow": true
     },
@@ -465,7 +505,15 @@
       "remote": "https://github.com/turbot/steampipe-postgres-fdw",
       "branch": "",
       "revision": "6d1d957d1330582b7af34064eaa9f8fa196d2918",
-      "shallow": false
+      "shallow": true
+    },
+    {
+      "id": "usestrix/strix",
+      "path": ".upstreams/usestrix/strix",
+      "remote": "https://github.com/usestrix/strix",
+      "branch": "main",
+      "revision": "0f81f40765f0329006a9a7d2eb97513f56743a9b",
+      "shallow": true
     },
     {
       "id": "usnistgov/OSCAL",
@@ -489,14 +537,14 @@
       "remote": "https://gitlab.com/virtio-fs/virtiofsd",
       "branch": "",
       "revision": "c2540f8db14caba81c1e37fba23fc7bf2cd7f0dd",
-      "shallow": false
+      "shallow": true
     },
     {
       "id": "wazuh/wazuh",
       "path": ".upstreams/wazuh/wazuh",
       "remote": "https://github.com/wazuh/wazuh",
       "branch": "main",
-      "revision": "f83861461173de20da5e569229113687a495ffce",
+      "revision": "dcb722fae3e85719eaaa006a45751c77819469e5",
       "shallow": true
     },
     {
@@ -504,7 +552,7 @@
       "path": ".upstreams/zaproxy/zaproxy",
       "remote": "https://github.com/zaproxy/zaproxy",
       "branch": "main",
-      "revision": "90068415b4ffb7b457fe4ecd816cc8369a85366b",
+      "revision": "61b35a7438142961148ad0816940e1e86b968c8e",
       "shallow": true
     }
   ]

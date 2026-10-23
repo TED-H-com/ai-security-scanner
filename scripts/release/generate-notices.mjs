@@ -1,4 +1,5 @@
 import { execFileSync } from "node:child_process";
+import { writeIncidentScanPack } from "./incident-scan-pack.mjs";
 import { copyFile, mkdir, readFile } from "node:fs/promises";
 import path from "node:path";
 import {
@@ -247,6 +248,8 @@ async function main() {
     engines,
   });
   await copyFile(path.join(PROJECT_ROOT, "LICENSE"), path.join(output, "LICENSE.txt"));
+
+  await writeIncidentScanPack(output, version, commit);
 
   const metadata = createPreparedReleaseMetadata({
     version,

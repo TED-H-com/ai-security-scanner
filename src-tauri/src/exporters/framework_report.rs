@@ -1708,6 +1708,7 @@ mod tests {
             observed_at: Some(time),
         });
         case.scan_runs.push(ScanRun {
+            campaign_id: None,
             id: "run-1".into(),
             case_id: case.id.clone(),
             sequence: 1,

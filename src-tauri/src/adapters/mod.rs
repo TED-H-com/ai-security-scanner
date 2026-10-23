@@ -5657,38 +5657,45 @@ fn extract_nuclei(parsed: &ParsedArtifact, warnings: &mut Vec<String>) -> Nuclei
         if let Some(matcher) = string_any(object, &["matcher-name", "matcher_name"]) {
             tags.push(format!("matcher:{}", safe_tag(&matcher)));
         }
-        records.push(with_weakness(
-            with_scanner_details(
-                record_with_derived_confidence!(
-                    pointer,
-                    rule_id,
-                    title,
-                    severity,
-                    redact_location(&target),
-                    string_any(object, &["asset_id"]),
-                    derived_confidence(ConfidenceBasisCode::TemplateMatcher),
-                    EvidenceKind::ExternalValidation,
-                    references_from(value),
-                    tags,
+        let aliases = reported_advisory_aliases(
+            string_advisory_ids(value.pointer("/info/classification/cve-id")),
+            &rule_id,
+        );
+        records.push(with_advisory_aliases(
+            with_weakness(
+                with_scanner_details(
+                    record_with_derived_confidence!(
+                        pointer,
+                        rule_id,
+                        title,
+                        severity,
+                        redact_location(&target),
+                        string_any(object, &["asset_id"]),
+                        derived_confidence(ConfidenceBasisCode::TemplateMatcher),
+                        EvidenceKind::ExternalValidation,
+                        references_from(value),
+                        tags,
+                    ),
+                    nested_string(value, &["info", "description"]),
+                    nested_string(value, &["info", "remediation"]),
+                    None,
+                    None,
                 ),
-                nested_string(value, &["info", "description"]),
-                nested_string(value, &["info", "remediation"]),
-                None,
-                None,
+                // Nuclei's template classification. It writes CWE ids lowercase
+                // (`cwe-78`) and publishes one unattributed score, which is the
+                // template author's, so the template engine is named as its source.
+                UpstreamWeakness {
+                    cwe_ids: cwe_identifiers(value.pointer("/info/classification/cwe-id")),
+                    cvss: cvss_score(
+                        "nuclei",
+                        nested_string(value, &["info", "classification", "cvss-metrics"]),
+                        cvss_base_score(value.pointer("/info/classification/cvss-score")),
+                    )
+                    .into_iter()
+                    .collect(),
+                },
             ),
-            // Nuclei's template classification. It writes CWE ids lowercase
-            // (`cwe-78`) and publishes one unattributed score, which is the
-            // template author's, so the template engine is named as its source.
-            UpstreamWeakness {
-                cwe_ids: cwe_identifiers(value.pointer("/info/classification/cwe-id")),
-                cvss: cvss_score(
-                    "nuclei",
-                    nested_string(value, &["info", "classification", "cvss-metrics"]),
-                    cvss_base_score(value.pointer("/info/classification/cvss-score")),
-                )
-                .into_iter()
-                .collect(),
-            },
+            aliases,
         ));
     }
     NucleiExtraction {
@@ -6264,47 +6271,51 @@ fn extract_greenbone(
                 tags,
             )
         };
-        records.push(with_weakness(
-            with_scanner_details(
-                record,
-                // Only these two result-level fields are copied from the product
-                // launcher, which writes them from the pinned feed metadata.
-                // `<description>` is the target-observed result message and must
-                // remain only in the raw artifact.
-                result.summary.clone(),
-                result.solution.clone(),
-                None,
-                None,
+        let aliases = reported_advisory_aliases(result.cves.clone(), &rule_id);
+        records.push(with_advisory_aliases(
+            with_weakness(
+                with_scanner_details(
+                    record,
+                    // Only these two result-level fields are copied from the product
+                    // launcher, which writes them from the pinned feed metadata.
+                    // `<description>` is the target-observed result message and must
+                    // remain only in the raw artifact.
+                    result.summary.clone(),
+                    result.solution.clone(),
+                    None,
+                    None,
+                ),
+                // GMP defines a result's `<severity>` as its CVSS base score, so it
+                // is republished under the name the reader's other tools use. The
+                // vector lives on the NVT rather than the result, so the version
+                // stays unstated instead of being guessed from the number.
+                //
+                // Only a positive score is one: GMP writes 0.0 for a Log result
+                // that was never scored, and printing "CVSS 0.0" beside it would
+                // read as a scored, harmless vulnerability rather than as an
+                // observation nobody rated.
+                UpstreamWeakness {
+                    cwe_ids: Vec::new(),
+                    cvss: positive_severity
+                        .then(|| {
+                            cvss_score(
+                                "greenbone",
+                                None,
+                                cvss_base_score(
+                                    result
+                                        .severity
+                                        .as_deref()
+                                        .map(|severity| Value::String(severity.to_owned()))
+                                        .as_ref(),
+                                ),
+                            )
+                        })
+                        .flatten()
+                        .into_iter()
+                        .collect(),
+                },
             ),
-            // GMP defines a result's `<severity>` as its CVSS base score, so it
-            // is republished under the name the reader's other tools use. The
-            // vector lives on the NVT rather than the result, so the version
-            // stays unstated instead of being guessed from the number.
-            //
-            // Only a positive score is one: GMP writes 0.0 for a Log result
-            // that was never scored, and printing "CVSS 0.0" beside it would
-            // read as a scored, harmless vulnerability rather than as an
-            // observation nobody rated.
-            UpstreamWeakness {
-                cwe_ids: Vec::new(),
-                cvss: positive_severity
-                    .then(|| {
-                        cvss_score(
-                            "greenbone",
-                            None,
-                            cvss_base_score(
-                                result
-                                    .severity
-                                    .as_deref()
-                                    .map(|severity| Value::String(severity.to_owned()))
-                                    .as_ref(),
-                            ),
-                        )
-                    })
-                    .flatten()
-                    .into_iter()
-                    .collect(),
-            },
+            aliases,
         ));
     }
     if saw_dead_host {
@@ -10037,6 +10048,48 @@ mod tests {
             warnings
                 .iter()
                 .any(|warning| warning.contains("attribute limit"))
+        );
+    }
+
+    #[test]
+    fn incident_focus_preserves_native_cve_aliases_from_greenbone_and_nuclei() {
+        let xml = br#"<results><result id="fixture"><host>198.51.100.7</host><port>443/tcp</port><result_type>alarm</result_type><severity>9.0</severity><qod><value>95</value></qod><asset_id>asset-7</asset_id><nvt oid="1.3.6.1.4.1.25623.1.0.100007"><name>Fixture detector</name><refs><ref type="cve" id="CVE-2026-109618"/></refs></nvt></result></results>"#;
+        let mut warnings = Vec::new();
+        let parsed = ParsedArtifact::Xml(parse_greenbone_xml(xml, &mut warnings).unwrap());
+        let result = extract_greenbone(&parsed, &mut warnings, &["asset-7".into()]);
+        assert!(warnings.is_empty(), "{warnings:?}");
+        assert_eq!(
+            result.records[0].mapping_source_rule.as_deref(),
+            Some("1.3.6.1.4.1.25623.1.0.100007")
+        );
+        assert_eq!(
+            result.records[0]
+                .scanner_details
+                .as_ref()
+                .unwrap()
+                .advisory_aliases,
+            ["CVE-2026-109618"]
+        );
+
+        let parsed = ParsedArtifact::Json(serde_json::json!({
+            "template-id": "fixture-product-check", "asset_id": "asset-7",
+            "matched-at": "https://example.invalid/", "info": {
+                "name": "Fixture detector", "severity": "high",
+                "classification": { "cve-id": ["CVE-2026-109618"] }
+            }
+        }));
+        let result = extract_nuclei(&parsed, &mut warnings);
+        assert_eq!(
+            result.records[0].mapping_source_rule.as_deref(),
+            Some("fixture-product-check")
+        );
+        assert_eq!(
+            result.records[0]
+                .scanner_details
+                .as_ref()
+                .unwrap()
+                .advisory_aliases,
+            ["CVE-2026-109618"]
         );
     }
 

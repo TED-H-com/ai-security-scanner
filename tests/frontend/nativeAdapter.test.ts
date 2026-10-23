@@ -5003,3 +5003,15 @@ test("package and secret problem groups keep their fields and omit empty ones", 
   assert.equal(Object.hasOwn(secret ?? {}, "installedVersion"), false);
   assert.equal(Object.hasOwn(secret ?? {}, "advisoryIds"), false);
 });
+
+test("imported Strix tasks retain file provenance without inventing scanner runtime or coverage", () => {
+  const workspace = adaptLocalhostCoverageFixture({
+    engine_id: "strix", task_kind: { kind: "external_report_import", source_format: "strix-vulnerabilities-json/v1", source_sha256: "a".repeat(64) },
+    status: "partially_completed", engine_version: null, image_digest: null,
+  });
+  const task = workspace.runs[0]!.engineRuns[0]!;
+  assert.deepEqual(task.taskKind, { kind: "external_report_import", sourceFormat: "strix-vulnerabilities-json/v1", sourceSha256: "a".repeat(64) });
+  assert.equal(task.version, undefined);
+  assert.equal(task.digest, undefined);
+  assert.equal(workspace.runs[0]!.coveredAssetCount, 0);
+});

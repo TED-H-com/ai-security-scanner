@@ -1106,6 +1106,7 @@ export const localizedCoverageDimension = (
     ["saved run summary", "保存的掃描摘要"],
     ["partly completed planned scan batches", "部分完成的計畫掃描批次"],
     ["completed planned scan batches", "已完成的計畫掃描批次"],
+    ["external report coverage", "外部報告涵蓋範圍"],
     ["additional packaged checks", "額外的內建檢查項目"],
     ["requested checks", "要求的檢查項目"],
   ] as const) {
@@ -1611,6 +1612,22 @@ const COVERAGE_GAP_PROSE: ReadonlyArray<readonly [string, string]> = [
   [
     "Retry this check to complete the missing coverage.",
     "重新執行這項檢查以完成缺少的涵蓋範圍。",
+  ],
+  [
+    "Imported findings are available; the original scanner's coverage was not verified.",
+    "已匯入發現事項；原始掃描工具的涵蓋範圍尚未驗證。",
+  ],
+  [
+    "The selected external report could not be imported.",
+    "無法匯入所選的外部報告。",
+  ],
+  [
+    "Select the report again and review its target.",
+    "請重新選擇報告並確認其目標。",
+  ],
+  [
+    "Review the imported findings and confirm the affected asset.",
+    "請檢視匯入的發現事項並確認受影響的資產。",
   ],
   [
     "Review the target and try this check again.",

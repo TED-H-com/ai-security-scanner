@@ -69,7 +69,7 @@
     "required": true,
     "strategy": "Validate each FrozenExternalScope grant and invoke one bounded TCP connect scan per grant without accepting arbitrary scanner arguments.",
     "entrypoint": "/usr/local/bin/ai-security-scanner-engine-entrypoint",
-    "launcher_sha256": "sha256:2aed1acdd32cd0a7db5ac911d43457647b0e93cbbca2f051080bed4eccd6a847"
+    "launcher_sha256": "sha256:9427ca7d24b2d1a115231b975b518de5acd90df7f1ff7b4a4812b06b97825868"
   },
   "managed_runtime": {
     "non_root_user": "65532:65532",

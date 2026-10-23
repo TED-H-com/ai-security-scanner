@@ -894,6 +894,7 @@ pub(crate) fn recognized_coverage_dimension_zh_hant(dimension: &str) -> Option<S
             "部分完成的計畫掃描批次",
         ),
         ("completed planned scan batches", "已完成的計畫掃描批次"),
+        ("external report coverage", "外部報告涵蓋範圍"),
         ("additional packaged checks", "額外的內建檢查項目"),
         ("requested checks", "要求的檢查項目"),
     ] {
@@ -1764,6 +1765,22 @@ fn strip_frame<'a>(value: &'a str, prefix: &str, suffix: &str) -> Option<&'a str
 /// Rust suite is the census, and a new sentence added there fails the test that
 /// exercises its path rather than passing silently in English.
 const COVERAGE_GAP_PROSE: &[(&str, &str)] = &[
+    (
+        "Imported findings are available; the original scanner's coverage was not verified.",
+        "已匯入發現事項；原始掃描工具的涵蓋範圍尚未驗證。",
+    ),
+    (
+        "The selected external report could not be imported.",
+        "無法匯入所選的外部報告。",
+    ),
+    (
+        "Select the report again and review its target.",
+        "請重新選擇報告並確認其目標。",
+    ),
+    (
+        "Review the imported findings and confirm the affected asset.",
+        "請檢視匯入的發現事項並確認受影響的資產。",
+    ),
     (
         "This check's packaged scanner cannot read this kind of target, so nothing was tested by it.",
         "這項檢查的內建掃描工具無法讀取這類目標，因此沒有測試任何內容。",

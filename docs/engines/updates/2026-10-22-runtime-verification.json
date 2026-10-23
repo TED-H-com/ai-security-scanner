@@ -1,0 +1,244 @@
+{
+  "schema_version": 1,
+  "recorded_at": "2026-10-22",
+  "platforms_tested": [
+    "linux/amd64"
+  ],
+  "registry_publication": false,
+  "stable_catalog_changed": false,
+  "candidate_catalog_path": "target/incident-release/candidate-inputs/catalog.json",
+  "candidate_catalog_sha256": "sha256:201a588fb5fa338e22721a133528654ae9004c2aafdf55b9d92ac7ba2b01349c",
+  "engines": {
+    "trivy": {
+      "qualification_files": {
+        "target/incident-release/evidence/core-engines/trivy/build-trivy-oci.log": {
+          "sha256": "sha256:29aa19ad974a769cdd5254e84d44703f0ec5f0da155254ee76135c84cdbdcda6",
+          "size_bytes": 5928
+        },
+        "target/incident-release/evidence/core-engines/trivy/build-trivy.log": {
+          "sha256": "sha256:303feb8fed46792ce277fae7d5ca99f0977565e714dccb6fcff0314c8d16c16e",
+          "size_bytes": 33500
+        },
+        "target/incident-release/evidence/core-engines/trivy/finish-trivy.log": {
+          "sha256": "sha256:338aaab84758c62b5a9b528586a8c689b4bc559d15185243ee817fd05164b299",
+          "size_bytes": 467
+        },
+        "target/incident-release/evidence/core-engines/trivy/java/trivy-individual-packages.json": {
+          "sha256": "sha256:a0b213025f90efd0afcf8d54b45b56c299ba1494d38d5fa346aa4d93248720fd",
+          "size_bytes": 6113
+        },
+        "target/incident-release/evidence/core-engines/trivy/java/trivy.json": {
+          "sha256": "sha256:9c7d2811fc9812354c1ddcc278c5ded28474ee667b03cc70475c212ade0f8634",
+          "size_bytes": 234
+        },
+        "target/incident-release/evidence/core-engines/trivy/java.log": {
+          "sha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "size_bytes": 0
+        },
+        "target/incident-release/evidence/core-engines/trivy/lockfile/trivy-individual-packages.json": {
+          "sha256": "sha256:3f69f041fd111b7b7441e9ca3b17af2d98b86570aa2d380c0f47a64e0630cf4d",
+          "size_bytes": 717
+        },
+        "target/incident-release/evidence/core-engines/trivy/lockfile/trivy.json": {
+          "sha256": "sha256:b99089904747ecfddd6a7e1da0e582fdb7a88020ef20e360e8d54da3586bbf09",
+          "size_bytes": 29983
+        },
+        "target/incident-release/evidence/core-engines/trivy/lockfile.log": {
+          "sha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "size_bytes": 0
+        },
+        "target/incident-release/evidence/core-engines/trivy/oci/trivy.json": {
+          "sha256": "sha256:6077b9e0e9ceefa4c2e679f3a1bdf0e088a4318b5a44acac037fa2a9ac4f288a",
+          "size_bytes": 1117
+        },
+        "target/incident-release/evidence/core-engines/trivy/oci.log": {
+          "sha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "size_bytes": 0
+        },
+        "target/incident-release/evidence/core-engines/trivy/php-fixed/trivy.json": {
+          "sha256": "sha256:389324ce65b99d63c3341626b7e89269c2bfea322fd62d08188d1b4f8716b733",
+          "size_bytes": 2240
+        },
+        "target/incident-release/evidence/core-engines/trivy/php-fixed.log": {
+          "sha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "size_bytes": 0
+        },
+        "target/incident-release/evidence/core-engines/trivy/php-vulnerable/trivy.json": {
+          "sha256": "sha256:83d810122c5fe1b3661739e387c0c06bb33e3fd53aedd4e19e30666566b08ef8",
+          "size_bytes": 12581
+        },
+        "target/incident-release/evidence/core-engines/trivy/php-vulnerable.log": {
+          "sha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "size_bytes": 0
+        },
+        "target/incident-release/evidence/core-engines/trivy/summary.json": {
+          "sha256": "sha256:adaaff89a190bfe42bf32aa0a13711218286bcb53596e68a8c8c8404faa37444",
+          "size_bytes": 1510
+        },
+        "target/incident-release/evidence/core-engines/trivy/trivy-buildinfo.log": {
+          "sha256": "sha256:f73d06bf84291462fe27570337795e897254d1b2aea7bce166cbb9efa8b6d6f9",
+          "size_bytes": 36808
+        },
+        "target/incident-release/evidence/core-engines/trivy/trivy-version.log": {
+          "sha256": "sha256:ef3dca17cdb8c01f3f70e252e5c2f55efe12e8b913b145c33d953d107a9a9bfa",
+          "size_bytes": 375
+        }
+      },
+      "qualification": {
+        "oci": {
+          "files": {
+            "trivy.json": "sha256:6077b9e0e9ceefa4c2e679f3a1bdf0e088a4318b5a44acac037fa2a9ac4f288a"
+          },
+          "vulnerability_count": 0,
+          "vulnerability_ids": [],
+          "exit_code": 0
+        },
+        "lockfile": {
+          "files": {
+            "trivy-individual-packages.json": "sha256:3f69f041fd111b7b7441e9ca3b17af2d98b86570aa2d380c0f47a64e0630cf4d",
+            "trivy.json": "sha256:b99089904747ecfddd6a7e1da0e582fdb7a88020ef20e360e8d54da3586bbf09"
+          },
+          "vulnerability_count": 5,
+          "vulnerability_ids": [
+            "CVE-2020-28500",
+            "CVE-2021-23337",
+            "CVE-2025-13465",
+            "CVE-2026-2950",
+            "CVE-2026-4800"
+          ],
+          "exit_code": 0
+        },
+        "java": {
+          "files": {
+            "trivy-individual-packages.json": "sha256:a0b213025f90efd0afcf8d54b45b56c299ba1494d38d5fa346aa4d93248720fd",
+            "trivy.json": "sha256:9c7d2811fc9812354c1ddcc278c5ded28474ee667b03cc70475c212ade0f8634"
+          },
+          "vulnerability_count": 1,
+          "vulnerability_ids": [
+            "CVE-2024-23672"
+          ],
+          "exit_code": 0
+        },
+        "php-vulnerable": {
+          "files": {
+            "trivy.json": "sha256:83d810122c5fe1b3661739e387c0c06bb33e3fd53aedd4e19e30666566b08ef8"
+          },
+          "vulnerability_count": 2,
+          "vulnerability_ids": [
+            "CVE-2026-109618",
+            "CVE-2026-109619"
+          ],
+          "exit_code": 0
+        },
+        "php-fixed": {
+          "files": {
+            "trivy.json": "sha256:389324ce65b99d63c3341626b7e89269c2bfea322fd62d08188d1b4f8716b733"
+          },
+          "vulnerability_count": 0,
+          "vulnerability_ids": [],
+          "exit_code": 0
+        }
+      },
+      "local_tag": "ai-security-scanner-engine-trivy:0.76.1-1-candidate",
+      "image_id": "sha256:4be21b1ceee363625cd86d2ce74a27627ce39ab59f9166748f7a509e91dac76a",
+      "catalog_reference": "ghcr.io/ted-h-com/ai-security-scanner-engine-trivy@sha256:4be21b1ceee363625cd86d2ce74a27627ce39ab59f9166748f7a509e91dac76a",
+      "manifest_digest": "sha256:4be21b1ceee363625cd86d2ce74a27627ce39ab59f9166748f7a509e91dac76a",
+      "platform": "linux/amd64",
+      "archive": "target/incident-release/local-images/sha256/4be21b1ceee363625cd86d2ce74a27627ce39ab59f9166748f7a509e91dac76a.tar",
+      "archive_sha256": "sha256:6e8af495646106c991e87512c949aaf66423381f44c3a12e9eefa573e26b569b",
+      "archive_bytes": 1175922688,
+      "verified_content_addressed_blobs": 13,
+      "published": false,
+      "signature_verified": false,
+      "recipe_sha256": "sha256:0e0d9ffc3b6cadd16c35869f22226e885828ac40ab64b94f5f76c335a1b6a5cb",
+      "dockerfile_sha256": "sha256:fbe6fc394f33ebe42076285cac553cfe2d360002e8c6072bc5f1cb16c0cd83ae",
+      "build_log_sha256": "sha256:303feb8fed46792ce277fae7d5ca99f0977565e714dccb6fcff0314c8d16c16e",
+      "oci_export_log_sha256": "sha256:29aa19ad974a769cdd5254e84d44703f0ec5f0da155254ee76135c84cdbdcda6"
+    },
+    "nuclei": {
+      "qualification_files": {
+        "target/incident-release/evidence/core-engines/nuclei/build-nuclei-oci.log": {
+          "sha256": "sha256:dc10078523f66c80bc9235ba86627f73b870b03aa95bf28a33ef2960d3aca67f",
+          "size_bytes": 5912
+        },
+        "target/incident-release/evidence/core-engines/nuclei/build-nuclei.log": {
+          "sha256": "sha256:fb93000f295a2b1c3553582cbc5df53f2457928443b784ab047249a0e6681b7e",
+          "size_bytes": 36259
+        },
+        "target/incident-release/evidence/core-engines/nuclei/finish-nuclei.log": {
+          "sha256": "sha256:e2e18b3ce668a46c2fe3ac4ed56e3601928cc54621e38be1cc75adb22d7bae1e",
+          "size_bytes": 362
+        },
+        "target/incident-release/evidence/core-engines/nuclei/network-evidence.json": {
+          "sha256": "sha256:d210b65f76a18bd4cdd3a183c559c532c25c45262c4fbb39274c575683888424",
+          "size_bytes": 156579
+        },
+        "target/incident-release/evidence/core-engines/nuclei/nuclei-buildinfo.log": {
+          "sha256": "sha256:1441e63ac62899b75b1628b746cdf8cc193d618d1659911d71ea0c2da85e6a6e",
+          "size_bytes": 36802
+        },
+        "target/incident-release/evidence/core-engines/nuclei/nuclei-version.log": {
+          "sha256": "sha256:fe4d8ac6be3e92b7965f2106c1f6dd54d3ec1f314e60e5df0ee99621a15b79cd",
+          "size_bytes": 204
+        },
+        "target/incident-release/evidence/core-engines/nuclei/output/nuclei.jsonl": {
+          "sha256": "sha256:b1d3fd3c3a95a94402fe12a48d56c5195bbb963b8422ca6498657d2230f12940",
+          "size_bytes": 13273
+        },
+        "target/incident-release/evidence/core-engines/nuclei/run.log": {
+          "sha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "size_bytes": 0
+        },
+        "target/incident-release/evidence/core-engines/nuclei/scope.json": {
+          "sha256": "sha256:ec51e9df9967cc812bdeb50da64b8fec07424ad8c58d8a49475771697075e4d5",
+          "size_bytes": 2161
+        },
+        "target/incident-release/evidence/core-engines/nuclei/summary.json": {
+          "sha256": "sha256:e734ed93601effe172a2dd57fdb1c1b7a1c4ee31b15f6ec56f970add7c156d8f",
+          "size_bytes": 269
+        }
+      },
+      "qualification": {
+        "automatic_status_exposure_detected": true,
+        "all_connections_authorized": true,
+        "record_count": 17,
+        "matched_template_ids": [
+          "default-nginx-page",
+          "nginx-status",
+          "nginx-version"
+        ],
+        "requests": 1073,
+        "connections": 1074,
+        "exit_code": 0
+      },
+      "local_tag": "ai-security-scanner-engine-nuclei:3.11.1-8-candidate",
+      "image_id": "sha256:a983a987bc9a5027a202e60a5694826abd31c6a9a1dd1457663da590b1c4985f",
+      "catalog_reference": "ghcr.io/ted-h-com/ai-security-scanner-engine-nuclei@sha256:a983a987bc9a5027a202e60a5694826abd31c6a9a1dd1457663da590b1c4985f",
+      "manifest_digest": "sha256:a983a987bc9a5027a202e60a5694826abd31c6a9a1dd1457663da590b1c4985f",
+      "platform": "linux/amd64",
+      "archive": "target/incident-release/local-images/sha256/a983a987bc9a5027a202e60a5694826abd31c6a9a1dd1457663da590b1c4985f.tar",
+      "archive_sha256": "sha256:7e2730759fd1e59bbe79f853d929754db6f50987d5809e653a55d682156dc924",
+      "archive_bytes": 53830656,
+      "verified_content_addressed_blobs": 17,
+      "published": false,
+      "signature_verified": false,
+      "recipe_sha256": "sha256:48895a5edc73a8d0e9979f824fe14f7f1c2d775961dff745c56533fe00b689c2",
+      "dockerfile_sha256": "sha256:cfacec60820ebcfefe326111f3c22b0d91e7cecad5a2c1a69e35ae272818fc11",
+      "build_log_sha256": "sha256:fb93000f295a2b1c3553582cbc5df53f2457928443b784ab047249a0e6681b7e",
+      "oci_export_log_sha256": "sha256:dc10078523f66c80bc9235ba86627f73b870b03aa95bf28a33ef2960d3aca67f"
+    }
+  },
+  "boundaries": {
+    "external_targets_scanned": false,
+    "nuclei_automatic_scan": true,
+    "nuclei_read_only_policy_unchanged": true,
+    "nuclei_intrusive_php_template_executed": false,
+    "trivy_runtime_updates": false,
+    "source_archive_and_go_sum_verified": true,
+    "shared_launcher_consumers_rebuilt": [
+      "trivy",
+      "nuclei"
+    ],
+    "other_published_engines_rebuilt": false
+  }
+}

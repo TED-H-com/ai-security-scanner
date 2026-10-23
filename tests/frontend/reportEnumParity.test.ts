@@ -304,6 +304,7 @@ test("the extractor reads real variants, not whatever the regex allows", () => {
   assert.deepEqual(rustTaggedVariants(beginnerReport, "TechnicalExecution"), [
     "catalog_engine",
     "built_in_localhost_tcp",
+    "external_report_import",
     "invalid_built_in_task",
   ]);
   assert.throws(

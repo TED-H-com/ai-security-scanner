@@ -42,3 +42,22 @@ test("case entry uses result eligibility while verification uses baseline eligib
   assert.match(cases, /const verificationBaselineRuns = runs\.filter\(isVerificationBaselineRun\)/u);
   assert.match(verification, /runs\.filter\(isVerificationBaselineRun\)/u);
 });
+
+test("imported evidence stays a result without becoming an executable verification baseline", () => {
+  const importedTask = {
+    taskKind: {
+      kind: "external_report_import" as const,
+      sourceFormat: "strix-vulnerabilities-json/v1",
+      sourceSha256: "a".repeat(64),
+    },
+  };
+  for (const status of ["partial", "failed", "completed"] as const) {
+    const run = { status, engineRuns: [importedTask] };
+    assert.equal(isTerminalResultRun(run), true);
+    assert.equal(isVerificationBaselineRun(run), false);
+  }
+  assert.equal(isVerificationBaselineRun({
+    status: "partial",
+    engineRuns: [importedTask, { taskKind: { kind: "catalog_engine" } }],
+  }), true);
+});
