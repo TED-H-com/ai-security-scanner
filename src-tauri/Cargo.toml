@@ -8,6 +8,7 @@ license = "Apache-2.0"
 rust-version = "1.98"
 
 
+
 repository = "https://github.com/TED-H-com/ai-security-scanner"
 homepage = "https://github.com/TED-H-com/ai-security-scanner"
 readme = "../README.md"
