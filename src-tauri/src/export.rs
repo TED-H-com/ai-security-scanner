@@ -4201,7 +4201,7 @@ mod tests {
             cwe_ids: vec![],
             cvss: vec![],
             advisory_aliases: vec![],
-            benchmarks: None,
+            benchmarks: vec![],
         };
         let replacements = Vec::new();
         let aliases = IamAliases::default();
