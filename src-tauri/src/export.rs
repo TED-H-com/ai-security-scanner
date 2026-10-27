@@ -4200,6 +4200,8 @@ mod tests {
             aws_iam_policy: None,
             cwe_ids: vec![],
             cvss: vec![],
+            advisory_aliases: vec![],
+            benchmarks: None,
         };
         let replacements = Vec::new();
         let aliases = IamAliases::default();
