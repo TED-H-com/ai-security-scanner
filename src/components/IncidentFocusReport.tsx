@@ -1,5 +1,6 @@
 import { useI18n } from "../i18n";
 import { incidentFocusCopy, incidentIssueGuidance, type IncidentCampaignReport } from "../incidentFocusProfile";
+import { maskSecrets } from "../technicalDetails";
 
 export function IncidentFocusReport({ report, targets }: {
   report: IncidentCampaignReport;
@@ -25,7 +26,7 @@ export function IncidentFocusReport({ report, targets }: {
           {report.issues.map((issue) => {
             const guidance = incidentIssueGuidance(issue, locale);
             return <tr key={`${issue.issue_id}-${issue.asset_id ?? "all"}`}>
-            <td>{issue.title}</td>
+            <td>{maskSecrets(issue.title)}</td>
             <td>{targets.find((target) => target.assetId === issue.asset_id)?.label
               ?? text({ en: "Incident context", zhTW: "事件資訊" })}</td>
             <td>{copy[issue.status]}</td>

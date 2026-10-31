@@ -1,6 +1,7 @@
 import { exposedCredentialNextStep } from "./findingNarrative.ts";
 import type { Locale } from "./i18n";
 import type { BeginnerReportFinding, BeginnerReportProblemGroup, Finding, Severity } from "./types";
+import { maskSecrets } from "./technicalDetails.ts";
 
 type ProblemFinding = Finding | BeginnerReportFinding;
 export interface ProblemRow<T extends ProblemFinding> {
@@ -48,16 +49,16 @@ export function projectProblemRows<T extends ProblemFinding>(
 }
 
 export function problemGroupTitle(group: BeginnerReportProblemGroup, locale: Locale): string {
-  if (locale !== "zh-TW") return group.title;
+  if (locale !== "zh-TW") return maskSecrets(group.title);
   switch (group.kind) {
     case "iam_password_policy": return "IAM 密碼政策需要調整";
     case "root_account_usage": return "最近使用過 root 帳號";
-    case "iam_policy_permissions": return `檢查 IAM policy 的權限：${group.policyName ?? "IAM policy"}`;
+    case "iam_policy_permissions": return `檢查 IAM policy 的權限：${maskSecrets(group.policyName ?? "IAM policy")}`;
     case "vulnerable_dependency":
-      return `有已知弱點的套件 ${group.packageName ?? ""} ${group.installedVersion ?? ""}（${(group.advisoryIds ?? []).join(" / ")}）`;
+      return `有已知弱點的套件 ${maskSecrets(group.packageName ?? "")} ${maskSecrets(group.installedVersion ?? "")}（${(group.advisoryIds ?? []).join(" / ")}）`;
     case "exposed_secret": return "檔案中發現機密";
     // The representative finding's own title, as on a single card.
-    case "code_weakness": return group.title;
+    case "code_weakness": return maskSecrets(group.title);
   }
 }
 

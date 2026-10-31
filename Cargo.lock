@@ -37,6 +37,7 @@ dependencies = [
  "minisign-verify",
  "nix",
  "quick-xml 0.42.0",
+ "regex",
  "reqwest",
  "rusqlite",
  "serde",
