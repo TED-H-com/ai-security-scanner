@@ -12,6 +12,17 @@ const privateKeyBlock = /-----BEGIN [^-\r\n]*PRIVATE KEY-----[\s\S]*?(?:-----END
  * Creates a bounded, display-safe version of backend diagnostics for an
  * opt-in technical-details disclosure. It never changes stored evidence.
  */
+export const maskSecrets = (value: string): string => {
+  return value
+    .replace(privateKeyBlock, "[REDACTED PRIVATE KEY]")
+    .replace(sensitiveHeader, (_match, prefix: string) => `${prefix}[REDACTED]`)
+    .replace(secretAssignment, (_match, name: string, separator: string) => `${name}${separator}[REDACTED]`)
+    .replace(bearerCredential, "Bearer [REDACTED]")
+    .replace(basicCredential, "Basic [REDACTED]")
+    .replace(jwtCredential, "[REDACTED JWT]")
+    .replace(awsAccessKey, "[REDACTED AWS ACCESS KEY]");
+};
+
 export const displaySafeTechnicalDetail = (value: unknown): string | undefined => {
   const raw = value instanceof Error
     ? value.message
@@ -21,18 +32,12 @@ export const displaySafeTechnicalDetail = (value: unknown): string | undefined =
   if (!raw) return undefined;
 
   const boundedInput = Array.from(raw).slice(0, maximumInputCharacters).join("");
-  const normalized = boundedInput
-    .replaceAll("\r\n", "\n")
-    .replaceAll("\r", "\n")
-    .replace(/[\u0000-\u0008\u000b\u000c\u000e-\u001f\u007f]/gu, " ")
-    .replace(privateKeyBlock, "[REDACTED PRIVATE KEY]")
-    .replace(sensitiveHeader, (_match, prefix: string) => `${prefix}[REDACTED]`)
-    .replace(secretAssignment, (_match, name: string, separator: string) => `${name}${separator}[REDACTED]`)
-    .replace(bearerCredential, "Bearer [REDACTED]")
-    .replace(basicCredential, "Basic [REDACTED]")
-    .replace(jwtCredential, "[REDACTED JWT]")
-    .replace(awsAccessKey, "[REDACTED AWS ACCESS KEY]")
-    .trim();
+  const normalized = maskSecrets(
+    boundedInput
+      .replaceAll("\r\n", "\n")
+      .replaceAll("\r", "\n")
+      .replace(/[\u0000-\u0008\u000b\u000c\u000e-\u001f\u007f]/gu, " ")
+  ).trim();
   if (!normalized) return undefined;
 
   const characters = Array.from(normalized);

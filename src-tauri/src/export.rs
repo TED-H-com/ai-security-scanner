@@ -1972,16 +1972,58 @@ fn redact_legacy_cloudsplaining_prose(title: &mut String, action: &mut String) {
         "Open the unredacted export to review the affected IAM policy and its next step.".into();
 }
 
+fn escape_html(value: &mut String) {
+    *value = value
+        .replace('&', "&amp;")
+        .replace('<', "&lt;")
+        .replace('>', "&gt;")
+        .replace('"', "&quot;")
+        .replace('\'', "&#39;");
+}
+
+fn mask_secrets(value: &mut String) {
+    use std::sync::OnceLock;
+    use regex::Regex;
+
+    static PRIVATE_KEY_BLOCK: OnceLock<Regex> = OnceLock::new();
+    static SENSITIVE_HEADER: OnceLock<Regex> = OnceLock::new();
+    static SECRET_ASSIGNMENT: OnceLock<Regex> = OnceLock::new();
+    static BEARER_CREDENTIAL: OnceLock<Regex> = OnceLock::new();
+    static BASIC_CREDENTIAL: OnceLock<Regex> = OnceLock::new();
+    static JWT_CREDENTIAL: OnceLock<Regex> = OnceLock::new();
+    static AWS_ACCESS_KEY: OnceLock<Regex> = OnceLock::new();
+
+    let private_key_block = PRIVATE_KEY_BLOCK.get_or_init(|| Regex::new(r"(?i)-----BEGIN [^-\r\n]*PRIVATE KEY-----[\s\S]*?(?:-----END [^-\r\n]*PRIVATE KEY-----|$)").unwrap());
+    let sensitive_header = SENSITIVE_HEADER.get_or_init(|| Regex::new(r"(?i)(\b(?:authorization|proxy-authorization|x-api-key)\b\s*:\s*)[^\r\n]*").unwrap());
+    let secret_assignment = SECRET_ASSIGNMENT.get_or_init(|| Regex::new(r#"(?i)\b(client[_ -]?secret|admin(?:istrator)?[_ -]?password|password|refresh[_ -]?token|access[_ -]?token|id[_ -]?token|session[_ -]?token|secret[_ -]?access[_ -]?key|code[_ -]?verifier|(?:x[_ -]?)?api[_ -]?key|private[_ -]?key)\b(\s*[:=]\s*)(?:"[^"]*"|'[^']*'|[^\s,;]+)"#).unwrap());
+    let bearer_credential = BEARER_CREDENTIAL.get_or_init(|| Regex::new(r"(?i)\bbearer\s+[a-z0-9._~+/=-]+").unwrap());
+    let basic_credential = BASIC_CREDENTIAL.get_or_init(|| Regex::new(r"(?i)\bbasic\s+[a-z0-9._~+/=-]+").unwrap());
+    let jwt_credential = JWT_CREDENTIAL.get_or_init(|| Regex::new(r"(?i)\b[a-z0-9_-]{16,}\.[a-z0-9_-]{16,}\.[a-z0-9_-]{8,}\b").unwrap());
+    let aws_access_key = AWS_ACCESS_KEY.get_or_init(|| Regex::new(r"\b(?:AKIA|ASIA)[A-Z0-9]{16}\b").unwrap());
+
+    *value = private_key_block.replace_all(value, "[REDACTED PRIVATE KEY]").into_owned();
+    *value = sensitive_header.replace_all(value, "${1}[REDACTED]").into_owned();
+    *value = secret_assignment.replace_all(value, "${1}${2}[REDACTED]").into_owned();
+    *value = bearer_credential.replace_all(value, "Bearer [REDACTED]").into_owned();
+    *value = basic_credential.replace_all(value, "Basic [REDACTED]").into_owned();
+    *value = jwt_credential.replace_all(value, "[REDACTED JWT]").into_owned();
+    *value = aws_access_key.replace_all(value, "[REDACTED AWS ACCESS KEY]").into_owned();
+}
+
 fn redact_scanner_finding_details(
     details: &mut ScannerFindingDetails,
     replacements: &[(String, String)],
     aliases: &IamAliases,
 ) {
-    if details.description.is_some() {
-        details.description = Some("[redacted scanner-provided description]".into());
+    if let Some(description) = &mut details.description {
+        mask_secrets(description);
+        redact_known_literals(description, replacements);
+        escape_html(description);
     }
-    if details.remediation.is_some() {
-        details.remediation = Some("[redacted scanner-provided remediation]".into());
+    if let Some(remediation) = &mut details.remediation {
+        mask_secrets(remediation);
+        redact_known_literals(remediation, replacements);
+        escape_html(remediation);
     }
     if let Some(installed_version) = &mut details.installed_version {
         redact_known_literals(installed_version, replacements);
@@ -4146,6 +4188,32 @@ mod tests {
         .unwrap_err();
         assert!(error.to_string().contains(&signing_identity.key_id));
         assert!(!missing_key_output.exists());
+    }
+
+    #[test]
+    fn redacts_secrets_in_description_while_preserving_text() {
+        let mut details = ScannerFindingDetails {
+            description: Some("Scanner description <script> client_secret = '12345';".to_owned()),
+            remediation: Some("Remove client_secret = '12345' from the code".to_owned()),
+            installed_version: None,
+            fixed_version: None,
+            aws_iam_policy: None,
+            cwe_ids: vec![],
+            cvss: vec![],
+            advisory_aliases: vec![],
+            benchmarks: vec![],
+        };
+        let replacements = Vec::new();
+        let aliases = IamAliases::default();
+        redact_scanner_finding_details(&mut details, &replacements, &aliases);
+        assert_eq!(
+            details.description.as_deref(),
+            Some("Scanner description &lt;script&gt; client_secret = [REDACTED];")
+        );
+        assert_eq!(
+            details.remediation.as_deref(),
+            Some("Remove client_secret = [REDACTED] from the code")
+        );
     }
 
     #[test]

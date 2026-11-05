@@ -6,6 +6,9 @@ authors = ["Ted Huang and ai-security-scanner contributors"]
 edition = "2024"
 license = "Apache-2.0"
 rust-version = "1.98"
+
+
+
 repository = "https://github.com/TED-H-com/ai-security-scanner"
 homepage = "https://github.com/TED-H-com/ai-security-scanner"
 readme = "../README.md"
@@ -108,6 +111,7 @@ uuid = { version = "1.25.0", features = ["v4", "serde"] }
 zeroize = { version = "1.9.0", features = ["derive"] }
 # Reuse the ZIP version already used by the desktop dependency tree.
 zip = { version = "=4.6.1", default-features = false, features = ["deflate-flate2"] }
+regex = "1.13.1"
 
 [dev-dependencies]
 tempfile = "3.27.0"

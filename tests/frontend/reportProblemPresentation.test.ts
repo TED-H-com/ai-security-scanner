@@ -122,6 +122,14 @@ test("package and secret cards use the recorded fields and the secret remedy", (
   assert.equal(problemGroupTitle(dependency, "zh-TW"), "有已知弱點的套件 pyyaml 5.3.1（CVE-2020-14343 / GHSA-8q59-q68h-6hv4）");
   assert.equal(problemGroupTitle(secret, "en"), "Secret found in a file");
   assert.equal(problemGroupTitle(secret, "zh-TW"), "檔案中發現機密");
+
+  const secretName = {
+    ...group,
+    kind: "code_weakness" as const,
+    title: "Leaked secret client_secret = '12345'",
+  };
+  assert.equal(problemGroupTitle(secretName, "en"), "Leaked secret client_secret = [REDACTED]");
+  assert.equal(problemGroupTitle(secretName, "zh-TW"), "Leaked secret client_secret = [REDACTED]");
   assert.equal(problemGroupAction(dependency, "en"), undefined);
   assert.equal(problemGroupAction(dependency, "zh-TW"), undefined);
   assert.equal(problemGroupImpact(dependency, "en"), undefined);
