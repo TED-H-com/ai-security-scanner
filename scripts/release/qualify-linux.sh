@@ -304,7 +304,7 @@ fi
 longest_gvproxy_socket="${podman_runtime}/$(printf '%030d' 0)-gvproxy.sock"
 longest_gvproxy_socket_bytes="$(node -e 'process.stdout.write(String(Buffer.byteLength(process.argv[1])))' "${longest_gvproxy_socket}")"
 if (( longest_gvproxy_socket_bytes > 103 )); then
-  printf 'Managed runtime Linux gvproxy socket exceeds Podman 5.8.2 path budget.\n' >&2
+  printf 'Managed runtime Linux gvproxy socket exceeds the Podman Unix-socket path budget.\n' >&2
   exit 1
 fi
 run_managed start start
