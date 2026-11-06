@@ -236,7 +236,7 @@ jobs:
             casework_cli_path: src-tauri/binaries/ai-security-scanner-cli-x86_64-unknown-linux-gnu
             expected: deb,rpm,appimage
           - platform: macos-universal
-            runner: macos-14
+            runner: macos-15
             rust_targets: x86_64-apple-darwin,aarch64-apple-darwin
             managed_runtime_target: universal-apple-darwin
             bundle_root: target/universal-apple-darwin/release/bundle
