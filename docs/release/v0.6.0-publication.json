@@ -1,0 +1,1291 @@
+{
+  "schema_version": "1.0.0",
+  "observed_at": "2026-11-06T11:44:12.747163+00:00",
+  "publication": {
+    "schema_version": 1,
+    "observed_at": "2026-11-06T11:42:42.067905+00:00",
+    "release": {
+      "tag": "v0.6.0",
+      "id": 436432573,
+      "url": "https://github.com/TED-H-com/ai-security-scanner/releases/tag/v0.6.0",
+      "published_at": "2026-11-06T11:41:54Z",
+      "prerelease": false,
+      "source_commit": "991a5983763f9621d79487e6f87bca517ca0977c"
+    },
+    "anonymous_download": true,
+    "stable_latest_verified": true,
+    "git_tag_target_verified": "991a5983763f9621d79487e6f87bca517ca0977c",
+    "all_public_files_match_frozen_artifact": true,
+    "latest_manifest_endpoints": [
+      {
+        "url": "https://github.com/TED-H-com/ai-security-scanner/releases/latest/download/latest.json",
+        "sha256": "fdeb7ebb87467b28fd6114155cb190353aaec454a795acc2c6cd949f8ddfe6db",
+        "version": "0.6.0"
+      },
+      {
+        "url": "https://github.com/teddashh/ai-security-scanner/releases/latest/download/latest.json",
+        "sha256": "fdeb7ebb87467b28fd6114155cb190353aaec454a795acc2c6cd949f8ddfe6db",
+        "version": "0.6.0"
+      }
+    ],
+    "legacy_updater_redirects": [
+      {
+        "url": "https://github.com/teddashh/ai-security-scanner/releases/download/v0.6.0/ai-security-scanner_0.6.0_universal.app.tar.gz",
+        "name": "ai-security-scanner_0.6.0_universal.app.tar.gz",
+        "bytes": 143691265,
+        "sha256": "085333be7c4fc9ec95a70a9067404e7d4dd65354a9ed1c4055868907b900f697"
+      },
+      {
+        "url": "https://github.com/teddashh/ai-security-scanner/releases/download/v0.6.0/ai-security-scanner_0.6.0_x64-setup.exe",
+        "name": "ai-security-scanner_0.6.0_x64-setup.exe",
+        "bytes": 32852409,
+        "sha256": "30f9786d13989dcbd5dc5ae41101bf2fb9a6dfbfa88cfa5a62a721bc4d371c53"
+      }
+    ],
+    "assets": [
+      {
+        "name": "ENGINE_NOTICES.json",
+        "path": "ENGINE_NOTICES.json",
+        "asset_id": 716971533,
+        "bytes": 15796,
+        "sha256": "aa86424276118b0333a0cdbfa2702d33732a71552b158db100c81da662024391"
+      },
+      {
+        "name": "ENGINE_NOTICES.md",
+        "path": "ENGINE_NOTICES.md",
+        "asset_id": 716971568,
+        "bytes": 5640,
+        "sha256": "73921f7a421a1187475216e7e975e26755fc57555b703c4859e379073f9c03dd"
+      },
+      {
+        "name": "LICENSE.txt",
+        "path": "LICENSE.txt",
+        "asset_id": 716971705,
+        "bytes": 11376,
+        "sha256": "2c932015241407e23ce7b557b89d284ea7d5f13fa056f480e91184f27e87bdc8"
+      },
+      {
+        "name": "RELEASE_NOTES.md",
+        "path": "RELEASE_NOTES.md",
+        "asset_id": 716972158,
+        "bytes": 2933,
+        "sha256": "ee68abc36ed600ca71a5d696a99df2a3c1c74c2d833f759b03f82c326c7b24a3"
+      },
+      {
+        "name": "SHA256SUMS-linux-x86_64.txt",
+        "path": "SHA256SUMS-linux-x86_64.txt",
+        "asset_id": 716972218,
+        "bytes": 979,
+        "sha256": "90359b6ef368fbf6206196735b875d33ac3f6c9b67a462a0bf51b0e5b7a4adb1"
+      },
+      {
+        "name": "SHA256SUMS-macos-universal.txt",
+        "path": "SHA256SUMS-macos-universal.txt",
+        "asset_id": 716972246,
+        "bytes": 1237,
+        "sha256": "4db26872fa5fbd6ec29026cf2a1ffb3fd3144d4e1f171a59a264fa750a153cba"
+      },
+      {
+        "name": "SHA256SUMS-windows-x86_64.txt",
+        "path": "SHA256SUMS-windows-x86_64.txt",
+        "asset_id": 716972268,
+        "bytes": 1227,
+        "sha256": "3399c42e060a78793b3d425396759a4098726ab58ec2ce298ee9a8b834a58ffe"
+      },
+      {
+        "name": "SHA256SUMS.txt",
+        "path": "SHA256SUMS.txt",
+        "asset_id": 716972290,
+        "bytes": 5064,
+        "sha256": "c16b78177cabc45193a6488a4a5ad4d75686798f75221bb01ff89d92df002bf2"
+      },
+      {
+        "name": "THIRD_PARTY_NOTICES.txt",
+        "path": "THIRD_PARTY_NOTICES.txt",
+        "asset_id": 716972309,
+        "bytes": 67284,
+        "sha256": "66afdb37d5c15a2a3d1eaa815a39ada6c72f3f7a020bfd5d6569ec306ddcbcae"
+      },
+      {
+        "name": "ai-security-scanner-0.6.0.cyclonedx.json",
+        "path": "ai-security-scanner-0.6.0.cyclonedx.json",
+        "asset_id": 716971112,
+        "bytes": 1672791,
+        "sha256": "abbc8b4c3656549876c4173d2c1978235ca208fa4f9ce539e612b18e021e4817"
+      },
+      {
+        "name": "ai-security-scanner-0.6.0.spdx.json",
+        "path": "ai-security-scanner-0.6.0.spdx.json",
+        "asset_id": 716971134,
+        "bytes": 2561960,
+        "sha256": "096948f196c729b428c86f97dc961abd252aa18dd0b996df2e52c2a4aba57d82"
+      },
+      {
+        "name": "ai-security-scanner-bootstrap-broker-0.6.0-linux-x86_64",
+        "path": "ai-security-scanner-bootstrap-broker-0.6.0-linux-x86_64",
+        "asset_id": 716971165,
+        "bytes": 10072896,
+        "sha256": "9151e56bc1eb413271347fa36d7f8c71d0c4b5650258240e0835c70f26cdb990"
+      },
+      {
+        "name": "ai-security-scanner-bootstrap-broker-0.6.0-macos-universal",
+        "path": "ai-security-scanner-bootstrap-broker-0.6.0-macos-universal",
+        "asset_id": 716971206,
+        "bytes": 16397248,
+        "sha256": "8db03073a7dd3aad9f3cd625468302486dbb51ec2ea016a355bfca503f0f305f"
+      },
+      {
+        "name": "ai-security-scanner-bootstrap-broker-0.6.0-windows-x86_64.exe",
+        "path": "ai-security-scanner-bootstrap-broker-0.6.0-windows-x86_64.exe",
+        "asset_id": 716971255,
+        "bytes": 7817728,
+        "sha256": "79fa4a9c722d253b7c52e7e21e455491dffae602b56913ba6654b8997955c50b"
+      },
+      {
+        "name": "ai-security-scanner-cli-0.6.0-linux-x86_64",
+        "path": "ai-security-scanner-cli-0.6.0-linux-x86_64",
+        "asset_id": 716971281,
+        "bytes": 27719552,
+        "sha256": "0e9c5fb7c8f967842dacc4c213b2b2482871828d49fc10d3d85eae61d3b28563"
+      },
+      {
+        "name": "ai-security-scanner-cli-0.6.0-macos-universal",
+        "path": "ai-security-scanner-cli-0.6.0-macos-universal",
+        "asset_id": 716971342,
+        "bytes": 48262432,
+        "sha256": "73f8399e32fce26384f835f7e23714ac8589a03eb86bfef1faa02dabb55c15ba"
+      },
+      {
+        "name": "ai-security-scanner-cli-0.6.0-windows-x86_64.exe",
+        "path": "ai-security-scanner-cli-0.6.0-windows-x86_64.exe",
+        "asset_id": 716971408,
+        "bytes": 22594048,
+        "sha256": "a5212b99e7c349640d48adc5e0c6761d73506a03e1c7f092bb8756e7ed0431aa"
+      },
+      {
+        "name": "ai-security-scanner-egress-gateway-0.6.0-linux-x86_64",
+        "path": "ai-security-scanner-egress-gateway-0.6.0-linux-x86_64",
+        "asset_id": 716971439,
+        "bytes": 2779240,
+        "sha256": "1530a2f6fe3569c90762cf2e68531983cf8e3f72c772e5317904caf8c213ff7f"
+      },
+      {
+        "name": "ai-security-scanner-egress-gateway-0.6.0-macos-universal",
+        "path": "ai-security-scanner-egress-gateway-0.6.0-macos-universal",
+        "asset_id": 716971463,
+        "bytes": 5536592,
+        "sha256": "5d46f268ea92465e47bb8d8ad80ac581dd13c493bfe756d71accd1923058a736"
+      },
+      {
+        "name": "ai-security-scanner-egress-gateway-0.6.0-windows-x86_64.exe",
+        "path": "ai-security-scanner-egress-gateway-0.6.0-windows-x86_64.exe",
+        "asset_id": 716971495,
+        "bytes": 3958272,
+        "sha256": "dbcacd412bd90e0854630a6c9f1f9bd5d647eab550a0cf9dad8cae15769ac0cc"
+      },
+      {
+        "name": "ai-security-scanner_0.6.0_amd64.deb",
+        "path": "ai-security-scanner_0.6.0_amd64.deb",
+        "asset_id": 716970411,
+        "bytes": 84414032,
+        "sha256": "912d954e250555cd1e6f53d020775417e897e055b778a8e7a4b2f3c8f74752c1"
+      },
+      {
+        "name": "ai-security-scanner_0.6.0_universal.app.tar.gz",
+        "path": "ai-security-scanner_0.6.0_universal.app.tar.gz",
+        "asset_id": 716970532,
+        "bytes": 143691265,
+        "sha256": "085333be7c4fc9ec95a70a9067404e7d4dd65354a9ed1c4055868907b900f697"
+      },
+      {
+        "name": "ai-security-scanner_0.6.0_universal.app.tar.gz.sig",
+        "path": "ai-security-scanner_0.6.0_universal.app.tar.gz.sig",
+        "asset_id": 716970716,
+        "bytes": 440,
+        "sha256": "caadc95f81ae340c0a1a4d4da5b34220597a8a4b1a88730b55f91e16a42926dd"
+      },
+      {
+        "name": "ai-security-scanner_0.6.0_universal.dmg",
+        "path": "ai-security-scanner_0.6.0_universal.dmg",
+        "asset_id": 716970740,
+        "bytes": 141283850,
+        "sha256": "380adb26598d3bbb4e7063916e4ad11e3d82b294c9df896d7aea5cd6873637f5"
+      },
+      {
+        "name": "ai-security-scanner_0.6.0_x64-setup.exe",
+        "path": "ai-security-scanner_0.6.0_x64-setup.exe",
+        "asset_id": 716971019,
+        "bytes": 32852409,
+        "sha256": "30f9786d13989dcbd5dc5ae41101bf2fb9a6dfbfa88cfa5a62a721bc4d371c53"
+      },
+      {
+        "name": "ai-security-scanner_0.6.0_x64-setup.exe.sig",
+        "path": "ai-security-scanner_0.6.0_x64-setup.exe.sig",
+        "asset_id": 716971090,
+        "bytes": 452,
+        "sha256": "dd6c221d7277f6e73d90ce0f8240970225933e777bbe0a2a57880a6e284c8948"
+      },
+      {
+        "name": "ai-security-scanner_0.6.0_x64_en-US.msi",
+        "path": "ai-security-scanner_0.6.0_x64_en-US.msi",
+        "asset_id": 716970929,
+        "bytes": 46186496,
+        "sha256": "b13ade47d7dd18e92e8f23b9bc305695d37583e2f4a659aee1ddd586aa17c528"
+      },
+      {
+        "name": "installers-linux-x86_64.json",
+        "path": "installers-linux-x86_64.json",
+        "asset_id": 716971626,
+        "bytes": 1653,
+        "sha256": "7b3be452cdffd10468036c118c9eb20c04509011b378e06c44fc0f8a08b16bb5"
+      },
+      {
+        "name": "installers-macos-universal.json",
+        "path": "installers-macos-universal.json",
+        "asset_id": 716971642,
+        "bytes": 2708,
+        "sha256": "3680096d722ad138ace4ebe60770ace0d74306fd584d5c75fabfa7f928f6a5d2"
+      },
+      {
+        "name": "installers-windows-x86_64.json",
+        "path": "installers-windows-x86_64.json",
+        "asset_id": 716971658,
+        "bytes": 2877,
+        "sha256": "733d37ddeb75ac728e2551188e31ff973f034f4e6df1f092d8b3345b084d5298"
+      },
+      {
+        "name": "latest.json",
+        "path": "latest.json",
+        "asset_id": 716971676,
+        "bytes": 4072,
+        "sha256": "fdeb7ebb87467b28fd6114155cb190353aaec454a795acc2c6cd949f8ddfe6db"
+      },
+      {
+        "name": "managed-runtime-linux-x86_64.NOTICES.txt",
+        "path": "managed-runtime-linux-x86_64.NOTICES.txt",
+        "asset_id": 716971796,
+        "bytes": 2505,
+        "sha256": "e72d42d8ad0a91429c56db8e0a0ab3a2fbc60e64e7dbc2230267b58842625286"
+      },
+      {
+        "name": "managed-runtime-linux-x86_64.cyclonedx.json",
+        "path": "managed-runtime-linux-x86_64.cyclonedx.json",
+        "asset_id": 716971730,
+        "bytes": 30643,
+        "sha256": "f033b9eae69ad7845bf369d1ec3659f829112e367720a70adda38ea3d426f5ee"
+      },
+      {
+        "name": "managed-runtime-linux-x86_64.manifest.json",
+        "path": "managed-runtime-linux-x86_64.manifest.json",
+        "asset_id": 716971763,
+        "bytes": 52946,
+        "sha256": "a768e8b92319eac1407b1ab73fadcf4b6582ebbd0bd4755ca3af1a41f1d8964e"
+      },
+      {
+        "name": "managed-runtime-linux-x86_64.spdx.json",
+        "path": "managed-runtime-linux-x86_64.spdx.json",
+        "asset_id": 716971815,
+        "bytes": 25032,
+        "sha256": "300cfb501c631472a21df6bb9c0ae1fd276cf1c054e8831ac595b1afdb7d1937"
+      },
+      {
+        "name": "managed-runtime-macos-universal.NOTICES.txt",
+        "path": "managed-runtime-macos-universal.NOTICES.txt",
+        "asset_id": 716971890,
+        "bytes": 1130,
+        "sha256": "3ff9a00b444fca00366ce725313cfdc856a9b6e42d50a9b9e404f4b6b5c2b710"
+      },
+      {
+        "name": "managed-runtime-macos-universal.cyclonedx.json",
+        "path": "managed-runtime-macos-universal.cyclonedx.json",
+        "asset_id": 716971838,
+        "bytes": 4935,
+        "sha256": "7edc2d901d5e28887404bbcd23e6c5c3c0716d2d811829aca4d333ad9b79eab1"
+      },
+      {
+        "name": "managed-runtime-macos-universal.manifest.json",
+        "path": "managed-runtime-macos-universal.manifest.json",
+        "asset_id": 716971863,
+        "bytes": 4640,
+        "sha256": "470fd782236000a33b18a084379c8c260097cf6c5ea988963e70d4ab90b6a24b"
+      },
+      {
+        "name": "managed-runtime-macos-universal.spdx.json",
+        "path": "managed-runtime-macos-universal.spdx.json",
+        "asset_id": 716971920,
+        "bytes": 3569,
+        "sha256": "65f724c15a37e0d1a499daceb398c3054f76c60bd85aa0c2f50ab862b3b01093"
+      },
+      {
+        "name": "managed-runtime-windows-x86_64.NOTICES.txt",
+        "path": "managed-runtime-windows-x86_64.NOTICES.txt",
+        "asset_id": 716972018,
+        "bytes": 1347,
+        "sha256": "d39eb0a019077584f57758d17f6398662dc6e40449d4aec152d6d414c37f1245"
+      },
+      {
+        "name": "managed-runtime-windows-x86_64.cyclonedx.json",
+        "path": "managed-runtime-windows-x86_64.cyclonedx.json",
+        "asset_id": 716971955,
+        "bytes": 4515,
+        "sha256": "978a7ef273649798fba602897f16fbbcf598101b9f5b6a4c0d60ef3e5ac4b420"
+      },
+      {
+        "name": "managed-runtime-windows-x86_64.manifest.json",
+        "path": "managed-runtime-windows-x86_64.manifest.json",
+        "asset_id": 716971982,
+        "bytes": 5056,
+        "sha256": "b530cf8f62196dd54e6b31b815202f565b3abb32593ee79c1ec834ded662edd0"
+      },
+      {
+        "name": "managed-runtime-windows-x86_64.spdx.json",
+        "path": "managed-runtime-windows-x86_64.spdx.json",
+        "asset_id": 716972053,
+        "bytes": 3571,
+        "sha256": "384f811c4db79a665600ede7457b3479f7c5b2339ad7cd069f7fb4590b95a9b7"
+      },
+      {
+        "name": "platform-qualification-linux-x86_64-deb.json",
+        "path": "platform-qualification-linux-x86_64-deb.json",
+        "asset_id": 716972078,
+        "bytes": 12757,
+        "sha256": "4f9335c62ea94c0b29e0a3164a2ade083ed090e2d44de736622d888e5f274847"
+      },
+      {
+        "name": "platform-qualification-macos-universal-dmg.json",
+        "path": "platform-qualification-macos-universal-dmg.json",
+        "asset_id": 716972092,
+        "bytes": 5895,
+        "sha256": "3727a93c8838e2ec1a3619799d4d4aed06677017d9bcc0de7f5d35ecd803d12f"
+      },
+      {
+        "name": "platform-qualification-windows-x86_64-msi.json",
+        "path": "platform-qualification-windows-x86_64-msi.json",
+        "asset_id": 716972108,
+        "bytes": 14251,
+        "sha256": "780fb281435f073c72ed469c0c3ffdeeadd36b85a8324b08828d760021dec7ab"
+      },
+      {
+        "name": "platform-qualification-windows-x86_64-nsis.json",
+        "path": "platform-qualification-windows-x86_64-nsis.json",
+        "asset_id": 716972136,
+        "bytes": 14274,
+        "sha256": "e487562a324567a57f4d2900d754e0d56bb132a26c93c90a623a10b34fec39d3"
+      },
+      {
+        "name": "release-assets.json",
+        "path": "release-assets.json",
+        "asset_id": 716972182,
+        "bytes": 11595,
+        "sha256": "5dc37a88ef1a7a32655bb050cada55fa24ffc0133873c3869758d0e38c9c154a"
+      },
+      {
+        "name": "release-metadata.json",
+        "path": "release-metadata.json",
+        "asset_id": 716972199,
+        "bytes": 11562,
+        "sha256": "5309a46326206e24dcbf79602dc8148e47816a60319ff3096d5899b50ada5bfe"
+      }
+    ]
+  },
+  "candidate": {
+    "run": {
+      "id": 42201363511,
+      "name": "Release desktop installers",
+      "path": ".github/workflows/release.yml",
+      "head_sha": "991a5983763f9621d79487e6f87bca517ca0977c",
+      "head_branch": "main",
+      "event": "workflow_dispatch",
+      "status": "completed",
+      "conclusion": "success",
+      "html_url": "https://github.com/TED-H-com/ai-security-scanner/actions/runs/42201363511",
+      "run_attempt": 1,
+      "created_at": "2026-11-06T10:16:11Z",
+      "updated_at": "2026-11-06T11:29:37Z"
+    },
+    "input_artifact": {
+      "id": 13498043044,
+      "name": "release-candidate-input-42201363511-1",
+      "digest": "sha256:d321b96b45d1e7524a7b88ba7558296d5244722d3968d14e78ac789f6f553998",
+      "size_in_bytes": 837737000,
+      "expired": false,
+      "workflow_run": {
+        "id": 42201363511,
+        "repository_id": 1344650415,
+        "head_repository_id": 1344650415,
+        "head_branch": "main",
+        "head_sha": "991a5983763f9621d79487e6f87bca517ca0977c"
+      }
+    }
+  },
+  "promotion": {
+    "run": {
+      "id": 42210726214,
+      "name": "Promote frozen desktop release candidate",
+      "path": ".github/workflows/promote-release.yml",
+      "head_sha": "991a5983763f9621d79487e6f87bca517ca0977c",
+      "head_branch": "main",
+      "event": "workflow_dispatch",
+      "status": "completed",
+      "conclusion": "success",
+      "html_url": "https://github.com/TED-H-com/ai-security-scanner/actions/runs/42210726214",
+      "run_attempt": 1,
+      "created_at": "2026-11-06T11:30:16Z",
+      "updated_at": "2026-11-06T11:41:58Z"
+    },
+    "finalized_artifact": {
+      "id": 13499690556,
+      "name": "release-finalized-42210726214-1",
+      "digest": "sha256:f584565d3e72e55ab7536b9e31a0c7cca6a89dc1ca7be105f54ccace59171536",
+      "size_in_bytes": 598143026,
+      "expired": false,
+      "workflow_run": {
+        "id": 42210726214,
+        "repository_id": 1344650415,
+        "head_repository_id": 1344650415,
+        "head_branch": "main",
+        "head_sha": "991a5983763f9621d79487e6f87bca517ca0977c"
+      }
+    }
+  },
+  "source_checks": [
+    {
+      "id": 42201360189,
+      "name": "CI",
+      "path": ".github/workflows/ci.yml",
+      "head_sha": "991a5983763f9621d79487e6f87bca517ca0977c",
+      "event": "workflow_dispatch",
+      "status": "completed",
+      "conclusion": "success",
+      "html_url": "https://github.com/TED-H-com/ai-security-scanner/actions/runs/42201360189",
+      "run_attempt": 1,
+      "created_at": "2026-11-06T10:16:09Z",
+      "updated_at": "2026-11-06T10:52:52Z"
+    },
+    {
+      "id": 42201361527,
+      "name": "CodeQL",
+      "path": ".github/workflows/codeql.yml",
+      "head_sha": "991a5983763f9621d79487e6f87bca517ca0977c",
+      "event": "push",
+      "status": "completed",
+      "conclusion": "success",
+      "html_url": "https://github.com/TED-H-com/ai-security-scanner/actions/runs/42201361527",
+      "run_attempt": 1,
+      "created_at": "2026-11-06T10:16:10Z",
+      "updated_at": "2026-11-06T10:27:01Z"
+    }
+  ],
+  "all_public_asset_provenance": [
+    {
+      "name": "ENGINE_NOTICES.json",
+      "sha256": "aa86424276118b0333a0cdbfa2702d33732a71552b158db100c81da662024391",
+      "source_commit": "991a5983763f9621d79487e6f87bca517ca0977c",
+      "signer": "https://github.com/TED-H-com/ai-security-scanner/.github/workflows/promote-release.yml@refs/heads/main",
+      "invocation": "https://github.com/TED-H-com/ai-security-scanner/actions/runs/42210726214/attempts/1",
+      "verification_receipt_sha256": "a161645ee26a409cfc6112832ab691658d66daa00a717f30ea13d72a70970d3c"
+    },
+    {
+      "name": "ENGINE_NOTICES.md",
+      "sha256": "73921f7a421a1187475216e7e975e26755fc57555b703c4859e379073f9c03dd",
+      "source_commit": "991a5983763f9621d79487e6f87bca517ca0977c",
+      "signer": "https://github.com/TED-H-com/ai-security-scanner/.github/workflows/promote-release.yml@refs/heads/main",
+      "invocation": "https://github.com/TED-H-com/ai-security-scanner/actions/runs/42210726214/attempts/1",
+      "verification_receipt_sha256": "a161645ee26a409cfc6112832ab691658d66daa00a717f30ea13d72a70970d3c"
+    },
+    {
+      "name": "LICENSE.txt",
+      "sha256": "2c932015241407e23ce7b557b89d284ea7d5f13fa056f480e91184f27e87bdc8",
+      "source_commit": "991a5983763f9621d79487e6f87bca517ca0977c",
+      "signer": "https://github.com/TED-H-com/ai-security-scanner/.github/workflows/promote-release.yml@refs/heads/main",
+      "invocation": "https://github.com/TED-H-com/ai-security-scanner/actions/runs/42210726214/attempts/1",
+      "verification_receipt_sha256": "a161645ee26a409cfc6112832ab691658d66daa00a717f30ea13d72a70970d3c"
+    },
+    {
+      "name": "RELEASE_NOTES.md",
+      "sha256": "ee68abc36ed600ca71a5d696a99df2a3c1c74c2d833f759b03f82c326c7b24a3",
+      "source_commit": "991a5983763f9621d79487e6f87bca517ca0977c",
+      "signer": "https://github.com/TED-H-com/ai-security-scanner/.github/workflows/promote-release.yml@refs/heads/main",
+      "invocation": "https://github.com/TED-H-com/ai-security-scanner/actions/runs/42210726214/attempts/1",
+      "verification_receipt_sha256": "a161645ee26a409cfc6112832ab691658d66daa00a717f30ea13d72a70970d3c"
+    },
+    {
+      "name": "SHA256SUMS-linux-x86_64.txt",
+      "sha256": "90359b6ef368fbf6206196735b875d33ac3f6c9b67a462a0bf51b0e5b7a4adb1",
+      "source_commit": "991a5983763f9621d79487e6f87bca517ca0977c",
+      "signer": "https://github.com/TED-H-com/ai-security-scanner/.github/workflows/promote-release.yml@refs/heads/main",
+      "invocation": "https://github.com/TED-H-com/ai-security-scanner/actions/runs/42210726214/attempts/1",
+      "verification_receipt_sha256": "a161645ee26a409cfc6112832ab691658d66daa00a717f30ea13d72a70970d3c"
+    },
+    {
+      "name": "SHA256SUMS-macos-universal.txt",
+      "sha256": "4db26872fa5fbd6ec29026cf2a1ffb3fd3144d4e1f171a59a264fa750a153cba",
+      "source_commit": "991a5983763f9621d79487e6f87bca517ca0977c",
+      "signer": "https://github.com/TED-H-com/ai-security-scanner/.github/workflows/promote-release.yml@refs/heads/main",
+      "invocation": "https://github.com/TED-H-com/ai-security-scanner/actions/runs/42210726214/attempts/1",
+      "verification_receipt_sha256": "a161645ee26a409cfc6112832ab691658d66daa00a717f30ea13d72a70970d3c"
+    },
+    {
+      "name": "SHA256SUMS-windows-x86_64.txt",
+      "sha256": "3399c42e060a78793b3d425396759a4098726ab58ec2ce298ee9a8b834a58ffe",
+      "source_commit": "991a5983763f9621d79487e6f87bca517ca0977c",
+      "signer": "https://github.com/TED-H-com/ai-security-scanner/.github/workflows/promote-release.yml@refs/heads/main",
+      "invocation": "https://github.com/TED-H-com/ai-security-scanner/actions/runs/42210726214/attempts/1",
+      "verification_receipt_sha256": "a161645ee26a409cfc6112832ab691658d66daa00a717f30ea13d72a70970d3c"
+    },
+    {
+      "name": "SHA256SUMS.txt",
+      "sha256": "c16b78177cabc45193a6488a4a5ad4d75686798f75221bb01ff89d92df002bf2",
+      "source_commit": "991a5983763f9621d79487e6f87bca517ca0977c",
+      "signer": "https://github.com/TED-H-com/ai-security-scanner/.github/workflows/promote-release.yml@refs/heads/main",
+      "invocation": "https://github.com/TED-H-com/ai-security-scanner/actions/runs/42210726214/attempts/1",
+      "verification_receipt_sha256": "a161645ee26a409cfc6112832ab691658d66daa00a717f30ea13d72a70970d3c"
+    },
+    {
+      "name": "THIRD_PARTY_NOTICES.txt",
+      "sha256": "66afdb37d5c15a2a3d1eaa815a39ada6c72f3f7a020bfd5d6569ec306ddcbcae",
+      "source_commit": "991a5983763f9621d79487e6f87bca517ca0977c",
+      "signer": "https://github.com/TED-H-com/ai-security-scanner/.github/workflows/promote-release.yml@refs/heads/main",
+      "invocation": "https://github.com/TED-H-com/ai-security-scanner/actions/runs/42210726214/attempts/1",
+      "verification_receipt_sha256": "a161645ee26a409cfc6112832ab691658d66daa00a717f30ea13d72a70970d3c"
+    },
+    {
+      "name": "ai-security-scanner-0.6.0.cyclonedx.json",
+      "sha256": "abbc8b4c3656549876c4173d2c1978235ca208fa4f9ce539e612b18e021e4817",
+      "source_commit": "991a5983763f9621d79487e6f87bca517ca0977c",
+      "signer": "https://github.com/TED-H-com/ai-security-scanner/.github/workflows/promote-release.yml@refs/heads/main",
+      "invocation": "https://github.com/TED-H-com/ai-security-scanner/actions/runs/42210726214/attempts/1",
+      "verification_receipt_sha256": "a161645ee26a409cfc6112832ab691658d66daa00a717f30ea13d72a70970d3c"
+    },
+    {
+      "name": "ai-security-scanner-0.6.0.spdx.json",
+      "sha256": "096948f196c729b428c86f97dc961abd252aa18dd0b996df2e52c2a4aba57d82",
+      "source_commit": "991a5983763f9621d79487e6f87bca517ca0977c",
+      "signer": "https://github.com/TED-H-com/ai-security-scanner/.github/workflows/promote-release.yml@refs/heads/main",
+      "invocation": "https://github.com/TED-H-com/ai-security-scanner/actions/runs/42210726214/attempts/1",
+      "verification_receipt_sha256": "a161645ee26a409cfc6112832ab691658d66daa00a717f30ea13d72a70970d3c"
+    },
+    {
+      "name": "ai-security-scanner-bootstrap-broker-0.6.0-linux-x86_64",
+      "sha256": "9151e56bc1eb413271347fa36d7f8c71d0c4b5650258240e0835c70f26cdb990",
+      "source_commit": "991a5983763f9621d79487e6f87bca517ca0977c",
+      "signer": "https://github.com/TED-H-com/ai-security-scanner/.github/workflows/promote-release.yml@refs/heads/main",
+      "invocation": "https://github.com/TED-H-com/ai-security-scanner/actions/runs/42210726214/attempts/1",
+      "verification_receipt_sha256": "a161645ee26a409cfc6112832ab691658d66daa00a717f30ea13d72a70970d3c"
+    },
+    {
+      "name": "ai-security-scanner-bootstrap-broker-0.6.0-macos-universal",
+      "sha256": "8db03073a7dd3aad9f3cd625468302486dbb51ec2ea016a355bfca503f0f305f",
+      "source_commit": "991a5983763f9621d79487e6f87bca517ca0977c",
+      "signer": "https://github.com/TED-H-com/ai-security-scanner/.github/workflows/promote-release.yml@refs/heads/main",
+      "invocation": "https://github.com/TED-H-com/ai-security-scanner/actions/runs/42210726214/attempts/1",
+      "verification_receipt_sha256": "a161645ee26a409cfc6112832ab691658d66daa00a717f30ea13d72a70970d3c"
+    },
+    {
+      "name": "ai-security-scanner-bootstrap-broker-0.6.0-windows-x86_64.exe",
+      "sha256": "79fa4a9c722d253b7c52e7e21e455491dffae602b56913ba6654b8997955c50b",
+      "source_commit": "991a5983763f9621d79487e6f87bca517ca0977c",
+      "signer": "https://github.com/TED-H-com/ai-security-scanner/.github/workflows/promote-release.yml@refs/heads/main",
+      "invocation": "https://github.com/TED-H-com/ai-security-scanner/actions/runs/42210726214/attempts/1",
+      "verification_receipt_sha256": "a161645ee26a409cfc6112832ab691658d66daa00a717f30ea13d72a70970d3c"
+    },
+    {
+      "name": "ai-security-scanner-cli-0.6.0-linux-x86_64",
+      "sha256": "0e9c5fb7c8f967842dacc4c213b2b2482871828d49fc10d3d85eae61d3b28563",
+      "source_commit": "991a5983763f9621d79487e6f87bca517ca0977c",
+      "signer": "https://github.com/TED-H-com/ai-security-scanner/.github/workflows/promote-release.yml@refs/heads/main",
+      "invocation": "https://github.com/TED-H-com/ai-security-scanner/actions/runs/42210726214/attempts/1",
+      "verification_receipt_sha256": "a161645ee26a409cfc6112832ab691658d66daa00a717f30ea13d72a70970d3c"
+    },
+    {
+      "name": "ai-security-scanner-cli-0.6.0-macos-universal",
+      "sha256": "73f8399e32fce26384f835f7e23714ac8589a03eb86bfef1faa02dabb55c15ba",
+      "source_commit": "991a5983763f9621d79487e6f87bca517ca0977c",
+      "signer": "https://github.com/TED-H-com/ai-security-scanner/.github/workflows/promote-release.yml@refs/heads/main",
+      "invocation": "https://github.com/TED-H-com/ai-security-scanner/actions/runs/42210726214/attempts/1",
+      "verification_receipt_sha256": "a161645ee26a409cfc6112832ab691658d66daa00a717f30ea13d72a70970d3c"
+    },
+    {
+      "name": "ai-security-scanner-cli-0.6.0-windows-x86_64.exe",
+      "sha256": "a5212b99e7c349640d48adc5e0c6761d73506a03e1c7f092bb8756e7ed0431aa",
+      "source_commit": "991a5983763f9621d79487e6f87bca517ca0977c",
+      "signer": "https://github.com/TED-H-com/ai-security-scanner/.github/workflows/promote-release.yml@refs/heads/main",
+      "invocation": "https://github.com/TED-H-com/ai-security-scanner/actions/runs/42210726214/attempts/1",
+      "verification_receipt_sha256": "a161645ee26a409cfc6112832ab691658d66daa00a717f30ea13d72a70970d3c"
+    },
+    {
+      "name": "ai-security-scanner-egress-gateway-0.6.0-linux-x86_64",
+      "sha256": "1530a2f6fe3569c90762cf2e68531983cf8e3f72c772e5317904caf8c213ff7f",
+      "source_commit": "991a5983763f9621d79487e6f87bca517ca0977c",
+      "signer": "https://github.com/TED-H-com/ai-security-scanner/.github/workflows/promote-release.yml@refs/heads/main",
+      "invocation": "https://github.com/TED-H-com/ai-security-scanner/actions/runs/42210726214/attempts/1",
+      "verification_receipt_sha256": "a161645ee26a409cfc6112832ab691658d66daa00a717f30ea13d72a70970d3c"
+    },
+    {
+      "name": "ai-security-scanner-egress-gateway-0.6.0-macos-universal",
+      "sha256": "5d46f268ea92465e47bb8d8ad80ac581dd13c493bfe756d71accd1923058a736",
+      "source_commit": "991a5983763f9621d79487e6f87bca517ca0977c",
+      "signer": "https://github.com/TED-H-com/ai-security-scanner/.github/workflows/promote-release.yml@refs/heads/main",
+      "invocation": "https://github.com/TED-H-com/ai-security-scanner/actions/runs/42210726214/attempts/1",
+      "verification_receipt_sha256": "a161645ee26a409cfc6112832ab691658d66daa00a717f30ea13d72a70970d3c"
+    },
+    {
+      "name": "ai-security-scanner-egress-gateway-0.6.0-windows-x86_64.exe",
+      "sha256": "dbcacd412bd90e0854630a6c9f1f9bd5d647eab550a0cf9dad8cae15769ac0cc",
+      "source_commit": "991a5983763f9621d79487e6f87bca517ca0977c",
+      "signer": "https://github.com/TED-H-com/ai-security-scanner/.github/workflows/promote-release.yml@refs/heads/main",
+      "invocation": "https://github.com/TED-H-com/ai-security-scanner/actions/runs/42210726214/attempts/1",
+      "verification_receipt_sha256": "a161645ee26a409cfc6112832ab691658d66daa00a717f30ea13d72a70970d3c"
+    },
+    {
+      "name": "ai-security-scanner_0.6.0_amd64.deb",
+      "sha256": "912d954e250555cd1e6f53d020775417e897e055b778a8e7a4b2f3c8f74752c1",
+      "source_commit": "991a5983763f9621d79487e6f87bca517ca0977c",
+      "signer": "https://github.com/TED-H-com/ai-security-scanner/.github/workflows/promote-release.yml@refs/heads/main",
+      "invocation": "https://github.com/TED-H-com/ai-security-scanner/actions/runs/42210726214/attempts/1",
+      "verification_receipt_sha256": "a161645ee26a409cfc6112832ab691658d66daa00a717f30ea13d72a70970d3c"
+    },
+    {
+      "name": "ai-security-scanner_0.6.0_universal.app.tar.gz",
+      "sha256": "085333be7c4fc9ec95a70a9067404e7d4dd65354a9ed1c4055868907b900f697",
+      "source_commit": "991a5983763f9621d79487e6f87bca517ca0977c",
+      "signer": "https://github.com/TED-H-com/ai-security-scanner/.github/workflows/promote-release.yml@refs/heads/main",
+      "invocation": "https://github.com/TED-H-com/ai-security-scanner/actions/runs/42210726214/attempts/1",
+      "verification_receipt_sha256": "a161645ee26a409cfc6112832ab691658d66daa00a717f30ea13d72a70970d3c"
+    },
+    {
+      "name": "ai-security-scanner_0.6.0_universal.app.tar.gz.sig",
+      "sha256": "caadc95f81ae340c0a1a4d4da5b34220597a8a4b1a88730b55f91e16a42926dd",
+      "source_commit": "991a5983763f9621d79487e6f87bca517ca0977c",
+      "signer": "https://github.com/TED-H-com/ai-security-scanner/.github/workflows/promote-release.yml@refs/heads/main",
+      "invocation": "https://github.com/TED-H-com/ai-security-scanner/actions/runs/42210726214/attempts/1",
+      "verification_receipt_sha256": "a161645ee26a409cfc6112832ab691658d66daa00a717f30ea13d72a70970d3c"
+    },
+    {
+      "name": "ai-security-scanner_0.6.0_universal.dmg",
+      "sha256": "380adb26598d3bbb4e7063916e4ad11e3d82b294c9df896d7aea5cd6873637f5",
+      "source_commit": "991a5983763f9621d79487e6f87bca517ca0977c",
+      "signer": "https://github.com/TED-H-com/ai-security-scanner/.github/workflows/promote-release.yml@refs/heads/main",
+      "invocation": "https://github.com/TED-H-com/ai-security-scanner/actions/runs/42210726214/attempts/1",
+      "verification_receipt_sha256": "a161645ee26a409cfc6112832ab691658d66daa00a717f30ea13d72a70970d3c"
+    },
+    {
+      "name": "ai-security-scanner_0.6.0_x64-setup.exe",
+      "sha256": "30f9786d13989dcbd5dc5ae41101bf2fb9a6dfbfa88cfa5a62a721bc4d371c53",
+      "source_commit": "991a5983763f9621d79487e6f87bca517ca0977c",
+      "signer": "https://github.com/TED-H-com/ai-security-scanner/.github/workflows/promote-release.yml@refs/heads/main",
+      "invocation": "https://github.com/TED-H-com/ai-security-scanner/actions/runs/42210726214/attempts/1",
+      "verification_receipt_sha256": "a161645ee26a409cfc6112832ab691658d66daa00a717f30ea13d72a70970d3c"
+    },
+    {
+      "name": "ai-security-scanner_0.6.0_x64-setup.exe.sig",
+      "sha256": "dd6c221d7277f6e73d90ce0f8240970225933e777bbe0a2a57880a6e284c8948",
+      "source_commit": "991a5983763f9621d79487e6f87bca517ca0977c",
+      "signer": "https://github.com/TED-H-com/ai-security-scanner/.github/workflows/promote-release.yml@refs/heads/main",
+      "invocation": "https://github.com/TED-H-com/ai-security-scanner/actions/runs/42210726214/attempts/1",
+      "verification_receipt_sha256": "a161645ee26a409cfc6112832ab691658d66daa00a717f30ea13d72a70970d3c"
+    },
+    {
+      "name": "ai-security-scanner_0.6.0_x64_en-US.msi",
+      "sha256": "b13ade47d7dd18e92e8f23b9bc305695d37583e2f4a659aee1ddd586aa17c528",
+      "source_commit": "991a5983763f9621d79487e6f87bca517ca0977c",
+      "signer": "https://github.com/TED-H-com/ai-security-scanner/.github/workflows/promote-release.yml@refs/heads/main",
+      "invocation": "https://github.com/TED-H-com/ai-security-scanner/actions/runs/42210726214/attempts/1",
+      "verification_receipt_sha256": "a161645ee26a409cfc6112832ab691658d66daa00a717f30ea13d72a70970d3c"
+    },
+    {
+      "name": "installers-linux-x86_64.json",
+      "sha256": "7b3be452cdffd10468036c118c9eb20c04509011b378e06c44fc0f8a08b16bb5",
+      "source_commit": "991a5983763f9621d79487e6f87bca517ca0977c",
+      "signer": "https://github.com/TED-H-com/ai-security-scanner/.github/workflows/promote-release.yml@refs/heads/main",
+      "invocation": "https://github.com/TED-H-com/ai-security-scanner/actions/runs/42210726214/attempts/1",
+      "verification_receipt_sha256": "a161645ee26a409cfc6112832ab691658d66daa00a717f30ea13d72a70970d3c"
+    },
+    {
+      "name": "installers-macos-universal.json",
+      "sha256": "3680096d722ad138ace4ebe60770ace0d74306fd584d5c75fabfa7f928f6a5d2",
+      "source_commit": "991a5983763f9621d79487e6f87bca517ca0977c",
+      "signer": "https://github.com/TED-H-com/ai-security-scanner/.github/workflows/promote-release.yml@refs/heads/main",
+      "invocation": "https://github.com/TED-H-com/ai-security-scanner/actions/runs/42210726214/attempts/1",
+      "verification_receipt_sha256": "a161645ee26a409cfc6112832ab691658d66daa00a717f30ea13d72a70970d3c"
+    },
+    {
+      "name": "installers-windows-x86_64.json",
+      "sha256": "733d37ddeb75ac728e2551188e31ff973f034f4e6df1f092d8b3345b084d5298",
+      "source_commit": "991a5983763f9621d79487e6f87bca517ca0977c",
+      "signer": "https://github.com/TED-H-com/ai-security-scanner/.github/workflows/promote-release.yml@refs/heads/main",
+      "invocation": "https://github.com/TED-H-com/ai-security-scanner/actions/runs/42210726214/attempts/1",
+      "verification_receipt_sha256": "a161645ee26a409cfc6112832ab691658d66daa00a717f30ea13d72a70970d3c"
+    },
+    {
+      "name": "latest.json",
+      "sha256": "fdeb7ebb87467b28fd6114155cb190353aaec454a795acc2c6cd949f8ddfe6db",
+      "source_commit": "991a5983763f9621d79487e6f87bca517ca0977c",
+      "signer": "https://github.com/TED-H-com/ai-security-scanner/.github/workflows/promote-release.yml@refs/heads/main",
+      "invocation": "https://github.com/TED-H-com/ai-security-scanner/actions/runs/42210726214/attempts/1",
+      "verification_receipt_sha256": "a161645ee26a409cfc6112832ab691658d66daa00a717f30ea13d72a70970d3c"
+    },
+    {
+      "name": "managed-runtime-linux-x86_64.NOTICES.txt",
+      "sha256": "e72d42d8ad0a91429c56db8e0a0ab3a2fbc60e64e7dbc2230267b58842625286",
+      "source_commit": "991a5983763f9621d79487e6f87bca517ca0977c",
+      "signer": "https://github.com/TED-H-com/ai-security-scanner/.github/workflows/promote-release.yml@refs/heads/main",
+      "invocation": "https://github.com/TED-H-com/ai-security-scanner/actions/runs/42210726214/attempts/1",
+      "verification_receipt_sha256": "a161645ee26a409cfc6112832ab691658d66daa00a717f30ea13d72a70970d3c"
+    },
+    {
+      "name": "managed-runtime-linux-x86_64.cyclonedx.json",
+      "sha256": "f033b9eae69ad7845bf369d1ec3659f829112e367720a70adda38ea3d426f5ee",
+      "source_commit": "991a5983763f9621d79487e6f87bca517ca0977c",
+      "signer": "https://github.com/TED-H-com/ai-security-scanner/.github/workflows/promote-release.yml@refs/heads/main",
+      "invocation": "https://github.com/TED-H-com/ai-security-scanner/actions/runs/42210726214/attempts/1",
+      "verification_receipt_sha256": "a161645ee26a409cfc6112832ab691658d66daa00a717f30ea13d72a70970d3c"
+    },
+    {
+      "name": "managed-runtime-linux-x86_64.manifest.json",
+      "sha256": "a768e8b92319eac1407b1ab73fadcf4b6582ebbd0bd4755ca3af1a41f1d8964e",
+      "source_commit": "991a5983763f9621d79487e6f87bca517ca0977c",
+      "signer": "https://github.com/TED-H-com/ai-security-scanner/.github/workflows/promote-release.yml@refs/heads/main",
+      "invocation": "https://github.com/TED-H-com/ai-security-scanner/actions/runs/42210726214/attempts/1",
+      "verification_receipt_sha256": "a161645ee26a409cfc6112832ab691658d66daa00a717f30ea13d72a70970d3c"
+    },
+    {
+      "name": "managed-runtime-linux-x86_64.spdx.json",
+      "sha256": "300cfb501c631472a21df6bb9c0ae1fd276cf1c054e8831ac595b1afdb7d1937",
+      "source_commit": "991a5983763f9621d79487e6f87bca517ca0977c",
+      "signer": "https://github.com/TED-H-com/ai-security-scanner/.github/workflows/promote-release.yml@refs/heads/main",
+      "invocation": "https://github.com/TED-H-com/ai-security-scanner/actions/runs/42210726214/attempts/1",
+      "verification_receipt_sha256": "a161645ee26a409cfc6112832ab691658d66daa00a717f30ea13d72a70970d3c"
+    },
+    {
+      "name": "managed-runtime-macos-universal.NOTICES.txt",
+      "sha256": "3ff9a00b444fca00366ce725313cfdc856a9b6e42d50a9b9e404f4b6b5c2b710",
+      "source_commit": "991a5983763f9621d79487e6f87bca517ca0977c",
+      "signer": "https://github.com/TED-H-com/ai-security-scanner/.github/workflows/promote-release.yml@refs/heads/main",
+      "invocation": "https://github.com/TED-H-com/ai-security-scanner/actions/runs/42210726214/attempts/1",
+      "verification_receipt_sha256": "a161645ee26a409cfc6112832ab691658d66daa00a717f30ea13d72a70970d3c"
+    },
+    {
+      "name": "managed-runtime-macos-universal.cyclonedx.json",
+      "sha256": "7edc2d901d5e28887404bbcd23e6c5c3c0716d2d811829aca4d333ad9b79eab1",
+      "source_commit": "991a5983763f9621d79487e6f87bca517ca0977c",
+      "signer": "https://github.com/TED-H-com/ai-security-scanner/.github/workflows/promote-release.yml@refs/heads/main",
+      "invocation": "https://github.com/TED-H-com/ai-security-scanner/actions/runs/42210726214/attempts/1",
+      "verification_receipt_sha256": "a161645ee26a409cfc6112832ab691658d66daa00a717f30ea13d72a70970d3c"
+    },
+    {
+      "name": "managed-runtime-macos-universal.manifest.json",
+      "sha256": "470fd782236000a33b18a084379c8c260097cf6c5ea988963e70d4ab90b6a24b",
+      "source_commit": "991a5983763f9621d79487e6f87bca517ca0977c",
+      "signer": "https://github.com/TED-H-com/ai-security-scanner/.github/workflows/promote-release.yml@refs/heads/main",
+      "invocation": "https://github.com/TED-H-com/ai-security-scanner/actions/runs/42210726214/attempts/1",
+      "verification_receipt_sha256": "a161645ee26a409cfc6112832ab691658d66daa00a717f30ea13d72a70970d3c"
+    },
+    {
+      "name": "managed-runtime-macos-universal.spdx.json",
+      "sha256": "65f724c15a37e0d1a499daceb398c3054f76c60bd85aa0c2f50ab862b3b01093",
+      "source_commit": "991a5983763f9621d79487e6f87bca517ca0977c",
+      "signer": "https://github.com/TED-H-com/ai-security-scanner/.github/workflows/promote-release.yml@refs/heads/main",
+      "invocation": "https://github.com/TED-H-com/ai-security-scanner/actions/runs/42210726214/attempts/1",
+      "verification_receipt_sha256": "a161645ee26a409cfc6112832ab691658d66daa00a717f30ea13d72a70970d3c"
+    },
+    {
+      "name": "managed-runtime-windows-x86_64.NOTICES.txt",
+      "sha256": "d39eb0a019077584f57758d17f6398662dc6e40449d4aec152d6d414c37f1245",
+      "source_commit": "991a5983763f9621d79487e6f87bca517ca0977c",
+      "signer": "https://github.com/TED-H-com/ai-security-scanner/.github/workflows/promote-release.yml@refs/heads/main",
+      "invocation": "https://github.com/TED-H-com/ai-security-scanner/actions/runs/42210726214/attempts/1",
+      "verification_receipt_sha256": "a161645ee26a409cfc6112832ab691658d66daa00a717f30ea13d72a70970d3c"
+    },
+    {
+      "name": "managed-runtime-windows-x86_64.cyclonedx.json",
+      "sha256": "978a7ef273649798fba602897f16fbbcf598101b9f5b6a4c0d60ef3e5ac4b420",
+      "source_commit": "991a5983763f9621d79487e6f87bca517ca0977c",
+      "signer": "https://github.com/TED-H-com/ai-security-scanner/.github/workflows/promote-release.yml@refs/heads/main",
+      "invocation": "https://github.com/TED-H-com/ai-security-scanner/actions/runs/42210726214/attempts/1",
+      "verification_receipt_sha256": "a161645ee26a409cfc6112832ab691658d66daa00a717f30ea13d72a70970d3c"
+    },
+    {
+      "name": "managed-runtime-windows-x86_64.manifest.json",
+      "sha256": "b530cf8f62196dd54e6b31b815202f565b3abb32593ee79c1ec834ded662edd0",
+      "source_commit": "991a5983763f9621d79487e6f87bca517ca0977c",
+      "signer": "https://github.com/TED-H-com/ai-security-scanner/.github/workflows/promote-release.yml@refs/heads/main",
+      "invocation": "https://github.com/TED-H-com/ai-security-scanner/actions/runs/42210726214/attempts/1",
+      "verification_receipt_sha256": "a161645ee26a409cfc6112832ab691658d66daa00a717f30ea13d72a70970d3c"
+    },
+    {
+      "name": "managed-runtime-windows-x86_64.spdx.json",
+      "sha256": "384f811c4db79a665600ede7457b3479f7c5b2339ad7cd069f7fb4590b95a9b7",
+      "source_commit": "991a5983763f9621d79487e6f87bca517ca0977c",
+      "signer": "https://github.com/TED-H-com/ai-security-scanner/.github/workflows/promote-release.yml@refs/heads/main",
+      "invocation": "https://github.com/TED-H-com/ai-security-scanner/actions/runs/42210726214/attempts/1",
+      "verification_receipt_sha256": "a161645ee26a409cfc6112832ab691658d66daa00a717f30ea13d72a70970d3c"
+    },
+    {
+      "name": "platform-qualification-linux-x86_64-deb.json",
+      "sha256": "4f9335c62ea94c0b29e0a3164a2ade083ed090e2d44de736622d888e5f274847",
+      "source_commit": "991a5983763f9621d79487e6f87bca517ca0977c",
+      "signer": "https://github.com/TED-H-com/ai-security-scanner/.github/workflows/promote-release.yml@refs/heads/main",
+      "invocation": "https://github.com/TED-H-com/ai-security-scanner/actions/runs/42210726214/attempts/1",
+      "verification_receipt_sha256": "a161645ee26a409cfc6112832ab691658d66daa00a717f30ea13d72a70970d3c"
+    },
+    {
+      "name": "platform-qualification-macos-universal-dmg.json",
+      "sha256": "3727a93c8838e2ec1a3619799d4d4aed06677017d9bcc0de7f5d35ecd803d12f",
+      "source_commit": "991a5983763f9621d79487e6f87bca517ca0977c",
+      "signer": "https://github.com/TED-H-com/ai-security-scanner/.github/workflows/promote-release.yml@refs/heads/main",
+      "invocation": "https://github.com/TED-H-com/ai-security-scanner/actions/runs/42210726214/attempts/1",
+      "verification_receipt_sha256": "a161645ee26a409cfc6112832ab691658d66daa00a717f30ea13d72a70970d3c"
+    },
+    {
+      "name": "platform-qualification-windows-x86_64-msi.json",
+      "sha256": "780fb281435f073c72ed469c0c3ffdeeadd36b85a8324b08828d760021dec7ab",
+      "source_commit": "991a5983763f9621d79487e6f87bca517ca0977c",
+      "signer": "https://github.com/TED-H-com/ai-security-scanner/.github/workflows/promote-release.yml@refs/heads/main",
+      "invocation": "https://github.com/TED-H-com/ai-security-scanner/actions/runs/42210726214/attempts/1",
+      "verification_receipt_sha256": "a161645ee26a409cfc6112832ab691658d66daa00a717f30ea13d72a70970d3c"
+    },
+    {
+      "name": "platform-qualification-windows-x86_64-nsis.json",
+      "sha256": "e487562a324567a57f4d2900d754e0d56bb132a26c93c90a623a10b34fec39d3",
+      "source_commit": "991a5983763f9621d79487e6f87bca517ca0977c",
+      "signer": "https://github.com/TED-H-com/ai-security-scanner/.github/workflows/promote-release.yml@refs/heads/main",
+      "invocation": "https://github.com/TED-H-com/ai-security-scanner/actions/runs/42210726214/attempts/1",
+      "verification_receipt_sha256": "a161645ee26a409cfc6112832ab691658d66daa00a717f30ea13d72a70970d3c"
+    },
+    {
+      "name": "release-assets.json",
+      "sha256": "5dc37a88ef1a7a32655bb050cada55fa24ffc0133873c3869758d0e38c9c154a",
+      "source_commit": "991a5983763f9621d79487e6f87bca517ca0977c",
+      "signer": "https://github.com/TED-H-com/ai-security-scanner/.github/workflows/promote-release.yml@refs/heads/main",
+      "invocation": "https://github.com/TED-H-com/ai-security-scanner/actions/runs/42210726214/attempts/1",
+      "verification_receipt_sha256": "a161645ee26a409cfc6112832ab691658d66daa00a717f30ea13d72a70970d3c"
+    },
+    {
+      "name": "release-metadata.json",
+      "sha256": "5309a46326206e24dcbf79602dc8148e47816a60319ff3096d5899b50ada5bfe",
+      "source_commit": "991a5983763f9621d79487e6f87bca517ca0977c",
+      "signer": "https://github.com/TED-H-com/ai-security-scanner/.github/workflows/promote-release.yml@refs/heads/main",
+      "invocation": "https://github.com/TED-H-com/ai-security-scanner/actions/runs/42210726214/attempts/1",
+      "verification_receipt_sha256": "a161645ee26a409cfc6112832ab691658d66daa00a717f30ea13d72a70970d3c"
+    }
+  ],
+  "offered_platforms": [
+    {
+      "platform": "linux-x86_64",
+      "availability": "offered",
+      "reason": null,
+      "installers": [
+        {
+          "installerType": "appimage",
+          "availability": "not-offered",
+          "reason": "technical-qualification-not-observed",
+          "artifact": null
+        },
+        {
+          "installerType": "deb",
+          "availability": "offered",
+          "reason": null,
+          "artifact": {
+            "file": "ai-security-scanner_0.6.0_amd64.deb",
+            "bytes": 84414032,
+            "sha256": "912d954e250555cd1e6f53d020775417e897e055b778a8e7a4b2f3c8f74752c1",
+            "technicalQualification": {
+              "state": "passed",
+              "evidenceFile": "platform-qualification-linux-x86_64-deb.json",
+              "reason": null
+            },
+            "humanPath": {
+              "state": "not-observed",
+              "evidenceFile": null,
+              "reason": "exact-candidate-beginner-path-not-observed"
+            },
+            "operatingSystemSigning": {
+              "state": "not-configured",
+              "evidenceFile": null,
+              "reason": "artifact-has-no-verified-operating-system-signature"
+            },
+            "notarization": {
+              "state": "not-applicable",
+              "evidenceFile": null,
+              "reason": "apple-notarization-does-not-apply"
+            },
+            "windowsLifecycle": {
+              "state": "not-applicable",
+              "evidenceFiles": [],
+              "reason": "Windows lifecycle does not apply"
+            },
+            "windowsDataPreservation": {
+              "state": "not-applicable",
+              "evidenceFiles": [],
+              "reason": "Windows data preservation does not apply"
+            },
+            "updater": {
+              "state": "not-offered",
+              "payloadFile": null,
+              "signatureFile": null,
+              "targetKeys": [],
+              "reason": "no-valid-artifact-scoped-updater"
+            },
+            "provenanceAttestation": {
+              "state": "required-before-publication",
+              "provider": "GitHub artifact attestations",
+              "evidenceFile": null
+            },
+            "knownLimitations": [
+              "beginner-human-path-not-observed",
+              "operating-system-signing-not-configured",
+              "updater-not-offered-for-this-artifact"
+            ]
+          }
+        },
+        {
+          "installerType": "rpm",
+          "availability": "not-offered",
+          "reason": "technical-qualification-not-observed",
+          "artifact": null
+        }
+      ]
+    },
+    {
+      "platform": "macos-universal",
+      "availability": "offered",
+      "reason": null,
+      "installers": [
+        {
+          "installerType": "dmg",
+          "availability": "offered",
+          "reason": null,
+          "artifact": {
+            "file": "ai-security-scanner_0.6.0_universal.dmg",
+            "bytes": 141283850,
+            "sha256": "380adb26598d3bbb4e7063916e4ad11e3d82b294c9df896d7aea5cd6873637f5",
+            "technicalQualification": {
+              "state": "installer-passed-runtime-not-observed",
+              "evidenceFile": "platform-qualification-macos-universal-dmg.json",
+              "reason": null
+            },
+            "humanPath": {
+              "state": "not-observed",
+              "evidenceFile": null,
+              "reason": "exact-candidate-beginner-path-not-observed"
+            },
+            "operatingSystemSigning": {
+              "state": "not-configured",
+              "evidenceFile": null,
+              "reason": "artifact-has-no-verified-operating-system-signature"
+            },
+            "notarization": {
+              "state": "not-configured",
+              "evidenceFile": null,
+              "reason": "artifact-has-no-verified-apple-notarization"
+            },
+            "windowsLifecycle": {
+              "state": "not-applicable",
+              "evidenceFiles": [],
+              "reason": "Windows lifecycle does not apply"
+            },
+            "windowsDataPreservation": {
+              "state": "not-applicable",
+              "evidenceFiles": [],
+              "reason": "Windows data preservation does not apply"
+            },
+            "updater": {
+              "state": "signed",
+              "payloadFile": "ai-security-scanner_0.6.0_universal.app.tar.gz",
+              "signatureFile": "ai-security-scanner_0.6.0_universal.app.tar.gz.sig",
+              "targetKeys": [
+                "darwin-x86_64",
+                "darwin-x86_64-app",
+                "darwin-aarch64",
+                "darwin-aarch64-app"
+              ],
+              "reason": null
+            },
+            "provenanceAttestation": {
+              "state": "required-before-publication",
+              "provider": "GitHub artifact attestations",
+              "evidenceFile": null
+            },
+            "knownLimitations": [
+              "beginner-human-path-not-observed",
+              "operating-system-signing-not-configured",
+              "apple-notarization-not-configured",
+              "managed-runtime-not-observed-on-qualification-host"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "platform": "windows-x86_64",
+      "availability": "offered",
+      "reason": null,
+      "installers": [
+        {
+          "installerType": "msi",
+          "availability": "offered",
+          "reason": null,
+          "artifact": {
+            "file": "ai-security-scanner_0.6.0_x64_en-US.msi",
+            "bytes": 46186496,
+            "sha256": "b13ade47d7dd18e92e8f23b9bc305695d37583e2f4a659aee1ddd586aa17c528",
+            "technicalQualification": {
+              "state": "passed",
+              "evidenceFile": "platform-qualification-windows-x86_64-msi.json",
+              "reason": null
+            },
+            "humanPath": {
+              "state": "not-observed",
+              "evidenceFile": null,
+              "reason": "exact-candidate-beginner-path-not-observed"
+            },
+            "operatingSystemSigning": {
+              "state": "not-configured",
+              "evidenceFile": null,
+              "reason": "artifact-has-no-verified-operating-system-signature"
+            },
+            "notarization": {
+              "state": "not-applicable",
+              "evidenceFile": null,
+              "reason": "apple-notarization-does-not-apply"
+            },
+            "windowsLifecycle": {
+              "state": "not-observed",
+              "evidenceFiles": [],
+              "reason": "equivalent-msi-lifecycle-not-observed"
+            },
+            "windowsDataPreservation": {
+              "state": "not-observed",
+              "evidenceFiles": [],
+              "reason": "equivalent-msi-data-preservation-not-observed"
+            },
+            "updater": {
+              "state": "not-offered",
+              "payloadFile": null,
+              "signatureFile": null,
+              "targetKeys": [],
+              "reason": "no-valid-artifact-scoped-updater"
+            },
+            "provenanceAttestation": {
+              "state": "required-before-publication",
+              "provider": "GitHub artifact attestations",
+              "evidenceFile": null
+            },
+            "knownLimitations": [
+              "beginner-human-path-not-observed",
+              "operating-system-signing-not-configured",
+              "windows-lifecycle-not-observed",
+              "windows-data-preservation-not-observed",
+              "updater-not-offered-for-this-artifact"
+            ]
+          }
+        },
+        {
+          "installerType": "nsis",
+          "availability": "offered",
+          "reason": null,
+          "artifact": {
+            "file": "ai-security-scanner_0.6.0_x64-setup.exe",
+            "bytes": 32852409,
+            "sha256": "30f9786d13989dcbd5dc5ae41101bf2fb9a6dfbfa88cfa5a62a721bc4d371c53",
+            "technicalQualification": {
+              "state": "passed",
+              "evidenceFile": "platform-qualification-windows-x86_64-nsis.json",
+              "reason": null
+            },
+            "humanPath": {
+              "state": "not-observed",
+              "evidenceFile": null,
+              "reason": "exact-candidate-beginner-path-not-observed"
+            },
+            "operatingSystemSigning": {
+              "state": "not-configured",
+              "evidenceFile": null,
+              "reason": "artifact-has-no-verified-operating-system-signature"
+            },
+            "notarization": {
+              "state": "not-applicable",
+              "evidenceFile": null,
+              "reason": "apple-notarization-does-not-apply"
+            },
+            "windowsLifecycle": {
+              "state": "not-observed",
+              "evidenceFiles": [],
+              "reason": "real-installed-app-localhost-lifecycle-not-observed"
+            },
+            "windowsDataPreservation": {
+              "state": "not-observed",
+              "evidenceFiles": [],
+              "reason": "exact-current-candidate-nsis-data-preservation-not-observed"
+            },
+            "updater": {
+              "state": "signed",
+              "payloadFile": "ai-security-scanner_0.6.0_x64-setup.exe",
+              "signatureFile": "ai-security-scanner_0.6.0_x64-setup.exe.sig",
+              "targetKeys": [
+                "windows-x86_64",
+                "windows-x86_64-nsis"
+              ],
+              "reason": null
+            },
+            "provenanceAttestation": {
+              "state": "required-before-publication",
+              "provider": "GitHub artifact attestations",
+              "evidenceFile": null
+            },
+            "knownLimitations": [
+              "beginner-human-path-not-observed",
+              "operating-system-signing-not-configured",
+              "windows-lifecycle-not-observed",
+              "windows-data-preservation-not-observed"
+            ]
+          }
+        }
+      ]
+    }
+  ],
+  "installed_artifact_observations": [
+    {
+      "qualification_id": "linux-x86_64-deb",
+      "state": "passed",
+      "installer": {
+        "bundleType": "deb",
+        "file": "ai-security-scanner_0.6.0_amd64.deb",
+        "bytes": 84414032,
+        "sha256": "912d954e250555cd1e6f53d020775417e897e055b778a8e7a4b2f3c8f74752c1"
+      },
+      "desktop_startup": "passed",
+      "managed_runtime_operations": {
+        "initial_status": "passed",
+        "install": "passed",
+        "installed_status": "passed",
+        "start": "passed",
+        "running_status": "passed",
+        "stop": "passed",
+        "stopped_status": "passed",
+        "uninstall_purge": "passed",
+        "final_status": "passed"
+      },
+      "gateway_readiness": "passed",
+      "container_execution": "passed",
+      "controlled_engine": "gitleaks",
+      "controlled_finding_count": 0,
+      "cleanup": {
+        "managedRuntimePurged": true,
+        "machineImageCachePurged": true,
+        "installerRemoved": true,
+        "privateDataRemoved": true
+      },
+      "evidence_file": "platform-qualification-linux-x86_64-deb.json"
+    },
+    {
+      "qualification_id": "macos-universal-dmg",
+      "state": "installer_passed_runtime_not_observed",
+      "installer": {
+        "bundleType": "dmg",
+        "file": "ai-security-scanner_0.6.0_universal.dmg",
+        "bytes": 141283850,
+        "sha256": "380adb26598d3bbb4e7063916e4ad11e3d82b294c9df896d7aea5cd6873637f5"
+      },
+      "desktop_startup": "passed",
+      "managed_runtime_operations": {
+        "initial_status": "not_observed",
+        "install": "not_observed",
+        "installed_status": "not_observed",
+        "start": "not_observed",
+        "running_status": "not_observed",
+        "stop": "not_observed",
+        "stopped_status": "not_observed",
+        "uninstall_purge": "not_observed",
+        "final_status": "not_observed"
+      },
+      "gateway_readiness": "not_observed",
+      "container_execution": "not_observed",
+      "controlled_engine": null,
+      "controlled_finding_count": null,
+      "cleanup": {
+        "diskImageDetached": true,
+        "installedApplicationRemoved": true,
+        "privateDataRemoved": true,
+        "managedRuntimeState": "not_created",
+        "machineImageCacheState": "not_created"
+      },
+      "evidence_file": "platform-qualification-macos-universal-dmg.json"
+    },
+    {
+      "qualification_id": "windows-x86_64-msi",
+      "state": "passed",
+      "installer": {
+        "bundleType": "msi",
+        "file": "ai-security-scanner_0.6.0_x64_en-US.msi",
+        "bytes": 46186496,
+        "sha256": "b13ade47d7dd18e92e8f23b9bc305695d37583e2f4a659aee1ddd586aa17c528"
+      },
+      "desktop_startup": "passed",
+      "managed_runtime_operations": {
+        "initial_status": "passed",
+        "install": "passed",
+        "installed_status": "passed",
+        "start": "passed",
+        "running_status": "passed",
+        "stop": "passed",
+        "stopped_status": "passed",
+        "uninstall_purge": "passed",
+        "final_status": "passed"
+      },
+      "gateway_readiness": "passed",
+      "container_execution": "passed",
+      "controlled_engine": "gitleaks",
+      "controlled_finding_count": 0,
+      "cleanup": {
+        "managedRuntimePurged": true,
+        "machineImageCachePurged": true,
+        "installerRemoved": true,
+        "privateDataRemoved": true
+      },
+      "evidence_file": "platform-qualification-windows-x86_64-msi.json"
+    },
+    {
+      "qualification_id": "windows-x86_64-nsis",
+      "state": "passed",
+      "installer": {
+        "bundleType": "nsis",
+        "file": "ai-security-scanner_0.6.0_x64-setup.exe",
+        "bytes": 32852409,
+        "sha256": "30f9786d13989dcbd5dc5ae41101bf2fb9a6dfbfa88cfa5a62a721bc4d371c53"
+      },
+      "desktop_startup": "passed",
+      "managed_runtime_operations": {
+        "initial_status": "passed",
+        "install": "passed",
+        "installed_status": "passed",
+        "start": "passed",
+        "running_status": "passed",
+        "stop": "passed",
+        "stopped_status": "passed",
+        "uninstall_purge": "passed",
+        "final_status": "passed"
+      },
+      "gateway_readiness": "passed",
+      "container_execution": "passed",
+      "controlled_engine": "gitleaks",
+      "controlled_finding_count": 0,
+      "cleanup": {
+        "managedRuntimePurged": true,
+        "machineImageCachePurged": true,
+        "installerRemoved": true,
+        "privateDataRemoved": true
+      },
+      "evidence_file": "platform-qualification-windows-x86_64-nsis.json"
+    }
+  ],
+  "verification": {
+    "all_public_bytes_match_frozen_artifact": true,
+    "all_public_asset_provenance_verified": true,
+    "legacy_updater_redirects_verified": true,
+    "finalized_metadata_and_updater_signatures_verified": true,
+    "three_desktop_platforms_offered": true
+  },
+  "engine_publication_record": "../engines/updates/2026-11-06-publications.json"
+}

@@ -6,11 +6,11 @@ The product owner selects the version, channel, source commit, supported install
 
 ## Current release
 
-[v0.5.2](https://github.com/TED-H-com/ai-security-scanner/releases/tag/v0.5.2) is the current **stable/latest** desktop release for **Linux, macOS and Windows**, published on 2026-10-16. It updates ten scanning engines and offline data, and repairs bounded Windows runtime execution on recent WSL. [Candidate 38828427832](https://github.com/TED-H-com/ai-security-scanner/actions/runs/38828427832) built exact source `7af85506691028b3e52d2c3c0cb2a5af0d092b3c`; [promotion 38834571528](https://github.com/TED-H-com/ai-security-scanner/actions/runs/38834571528) published the frozen files through normal `release-publication` approval. All 49 public files matched the frozen bytes; source provenance, updater signatures and legacy updater redirects passed verification. See the [delivery record](release/v0.5.2.md).
+[v0.6.0](https://github.com/TED-H-com/ai-security-scanner/releases/tag/v0.6.0) is the current **stable/latest** desktop release for **Linux, macOS and Windows**, published on 2026-11-06. It updates eighteen managed scanner images, the official KICS image, reviewed rules and offline data, application dependencies and the private scan runtime. [Candidate 42201363511](https://github.com/TED-H-com/ai-security-scanner/actions/runs/42201363511) built exact source `991a5983763f9621d79487e6f87bca517ca0977c`; [promotion 42210726214](https://github.com/TED-H-com/ai-security-scanner/actions/runs/42210726214) published the frozen files through normal `release-publication` approval. All 49 public files matched the frozen bytes; every file's source provenance, updater signatures and legacy updater redirects passed verification. See the [delivery record](release/v0.6.0.md).
 
-GitHub records `prerelease: false`; metadata records `releaseChannel: stable` and `stableTarget: 0.5.2`. macOS and Windows NSIS have updater targets; Debian and MSI do not. Windows installers are unsigned; macOS is not notarized. Windows installed-app lifecycle, upgrade/data-preservation and exact-candidate beginner human-path observations remain absent; macOS managed-runtime execution was not observed on the qualification host. AppImage and RPM are not offered.
+GitHub records `prerelease: false`; metadata records `releaseChannel: stable` and `stableTarget: 0.6.0`. The delivery record lists the exact offered installers and updater targets. Windows installers are unsigned and macOS is not notarized. Artifact-specific human-path, managed-runtime, Windows lifecycle and data-preservation observations remain in the [publication record](release/v0.6.0-publication.json).
 
-The previous stable [v0.5.1](release/v0.5.1.md) and earlier releases retain their original files and observations.
+The previous stable [v0.5.3](release/v0.5.3.md) and earlier releases retain their original files and observations.
 
 ## Release identity
 
