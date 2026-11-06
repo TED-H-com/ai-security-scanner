@@ -273,8 +273,8 @@
       }
     ],
     "patch_audit": {
-      "reviewed_on": "2026-10-14",
-      "review_due": "2026-11-14",
+      "reviewed_on": "2026-11-06",
+      "review_due": "2026-12-06",
       "applicable_upstream_version": "5.47.0",
       "applicable_source_revision": "555a4cc469907e26ef007eb79af2b6cb4bddd6c6",
       "capability": "Use one non-refreshing Azure ARM access token for one exact enabled subscription, or read one exact GCP project without ambient project/organization/tenant enumeration.",
@@ -306,13 +306,13 @@
               "path": "prowler/providers/azure/lib/arguments/arguments.py",
               "upstream_source": "https://github.com/prowler-cloud/prowler/blob/555a4cc469907e26ef007eb79af2b6cb4bddd6c6/prowler/providers/azure/lib/arguments/arguments.py",
               "before_sha256": "sha256:fc48fdd229d5760f5675f06032e05df8e54ee8777dd04a60aecc093615474068",
-              "after_sha256": "sha256:fc48fdd229d5760f5675f06032e05df8e54ee8777dd04a60aecc093615474068"
+              "after_sha256": "sha256:afb7c9b47f1b9b2354774579121db4f1c26d6b03112a3d0407fb4f14ad8625af"
             },
             {
               "path": "prowler/providers/common/provider.py",
               "upstream_source": "https://github.com/prowler-cloud/prowler/blob/555a4cc469907e26ef007eb79af2b6cb4bddd6c6/prowler/providers/common/provider.py",
               "before_sha256": "sha256:1080b11456deb6426307167067a3066ec79c87c7af07bb85dd3c507d6c76a1da",
-              "after_sha256": "sha256:1080b11456deb6426307167067a3066ec79c87c7af07bb85dd3c507d6c76a1da"
+              "after_sha256": "sha256:bd65d893c106cf47389cd17071f96002e7302706b07ebb17cdca6c10f95f3f27"
             },
             {
               "path": "tests/providers/azure/azure_access_token_auth_test.py",
@@ -348,7 +348,7 @@
               "path": "prowler/providers/gcp/services/cloudresourcemanager/cloudresourcemanager_service.py",
               "upstream_source": "https://github.com/prowler-cloud/prowler/blob/555a4cc469907e26ef007eb79af2b6cb4bddd6c6/prowler/providers/gcp/services/cloudresourcemanager/cloudresourcemanager_service.py",
               "before_sha256": "sha256:029725c008bf0ed0d6c8cdb8ba1a378d40e584dc49ee40e021c4955e4e5688f3",
-              "after_sha256": "sha256:029725c008bf0ed0d6c8cdb8ba1a378d40e584dc49ee40e021c4955e4e5688f3"
+              "after_sha256": "sha256:379876877311fe2f4aa17bb9d5b132c85baaf2081210aebf6da59472cc11c9fe"
             },
             {
               "path": "tests/providers/gcp/services/cloudresourcemanager/cloudresourcemanager_service_test.py",
@@ -366,7 +366,7 @@
               "path": "prowler/providers/gcp/gcp_provider.py",
               "upstream_source": "https://github.com/prowler-cloud/prowler/blob/555a4cc469907e26ef007eb79af2b6cb4bddd6c6/prowler/providers/gcp/gcp_provider.py",
               "before_sha256": "sha256:36287ddfe2a79b9a61ca71b926b69cde43202f658c55e6a144794b1aa3bba3ae",
-              "after_sha256": "sha256:9ae2691559660ca902ab3b282fb1a5611bb47ca11f3118d34500dac847770c77"
+              "after_sha256": "sha256:c30756aaaa1ce3739c6bf2a023b4ab633656c767f1e6fa1e84ba4ff9fff1c34f"
             },
             {
               "path": "tests/providers/gcp/gcp_exact_projects_test.py",
@@ -384,7 +384,7 @@
               "path": "prowler/lib/outputs/finding.py",
               "upstream_source": "https://github.com/prowler-cloud/prowler/blob/555a4cc469907e26ef007eb79af2b6cb4bddd6c6/prowler/lib/outputs/finding.py",
               "before_sha256": "sha256:756c9c456cd511d16edc1b6b0180f7aa4e34b66419d1ea3caf73bfe8e5d92a9b",
-              "after_sha256": "sha256:756c9c456cd511d16edc1b6b0180f7aa4e34b66419d1ea3caf73bfe8e5d92a9b"
+              "after_sha256": "sha256:17cdb7c2d851ada5e61269bd50a22636dec119dc1e3c71c233785f9d84fcabff"
             },
             {
               "path": "prowler/providers/azure/azure_provider.py",
@@ -408,7 +408,7 @@
               "path": "prowler/providers/azure/azure_provider.py",
               "upstream_source": "https://github.com/prowler-cloud/prowler/blob/555a4cc469907e26ef007eb79af2b6cb4bddd6c6/prowler/providers/azure/azure_provider.py",
               "before_sha256": "sha256:421c9c913ee62076a3305ef1feca6130f87d5ab508a0cb20cd704f1cf1241460",
-              "after_sha256": "sha256:8e54390485d31feeb5e114db2c24933f3c73a4f22f2532b5c18583f9520c9cbb"
+              "after_sha256": "sha256:51cef0e3e7ed819144959f62389d3eb169b97aa37baf37aab66d4c290d21bf14"
             },
             {
               "path": "tests/providers/azure/azure_access_token_auth_test.py",

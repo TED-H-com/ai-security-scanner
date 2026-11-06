@@ -6,6 +6,20 @@ import { parse } from "yaml";
 const root = new URL("../../", import.meta.url);
 const readJson = async (path) => JSON.parse(await readFile(new URL(path, root), "utf8"));
 
+test("Prowler publication checks the patched runtime files", async () => {
+  const plan = await readJson("engines/images/prowler/plan.json");
+  const workflow = await readFile(new URL(".github/workflows/engine-images-cloud.yml", root), "utf8");
+  const finalHashes = new Map();
+  for (const patch of plan.build_recipe.patch_audit.patches) {
+    for (const file of patch.files) finalHashes.set(file.path, file.after_sha256);
+  }
+  for (const file of plan.downstream_runtime_patches.runtime_files) {
+    assert.equal(finalHashes.get(file.path), file.post_sha256, `${file.path}: sequential patch audit differs`);
+    assert.ok(workflow.includes(`"${file.path}": "${file.post_sha256.slice(7)}"`),
+      `${file.path}: publication would compare patched bytes to an upstream baseline`);
+  }
+});
+
 test("engine workflow coordinates follow the source recipe instead of reusing a retained image tag", async () => {
   const workflows = await readdir(new URL(".github/workflows/", root));
   const checked = new Set();
