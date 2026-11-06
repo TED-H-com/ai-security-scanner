@@ -231,7 +231,7 @@ export async function createPlatformFixture(
       schema_version: "3",
       management_contract_revision: "2026-08-29.1",
       bundle_id: platform === "windows-x86_64" ? "podman-machine" : "release-self-test",
-      runtime_version: platform === "windows-x86_64" ? "5.8.9" : VERSION,
+      runtime_version: platform === "windows-x86_64" ? "5.8.2" : VERSION,
       driver_path: runtimeBinaryRelative,
       files: [{
         path: runtimeBinaryRelative,

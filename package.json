@@ -1,10 +1,10 @@
 {
   "name": "ai-security-scanner",
   "private": true,
-  "version": "0.5.3",
+  "version": "0.6.0",
   "release": {
     "channel": "stable",
-    "target": "0.5.3"
+    "target": "0.6.0"
   },
   "description": "One guided desktop app for security checks across websites, networks, code, IaC, cloud, containers, and Kubernetes.",
   "license": "Apache-2.0",
@@ -33,7 +33,7 @@
     "validate:aidefend": "node scripts/validate-aidefend-snapshot.mjs",
     "validate:engine-line-endings": "node scripts/validate-engine-line-endings.mjs",
     "validate:engine-input-hashes": "git ls-files -z -- engines/images | node scripts/validate-engine-input-hashes.mjs",
-    "validate:engines": "node scripts/validate-engine-line-endings.mjs && node scripts/validate-engine-catalog.mjs && node --test tests/engines/prowlerCatalogContract.test.mjs && npm run validate:engine-input-hashes",
+    "validate:engines": "node scripts/validate-engine-line-endings.mjs && node scripts/validate-engine-catalog.mjs && node --test tests/engines/*.test.mjs && npm run validate:engine-input-hashes",
     "validate:usability-evidence": "node scripts/validate-usability-evidence.mjs",
     "verify:vendored-glib": "bash scripts/verify-vendored-glib.sh",
     "desktop:prepare-sidecar": "node scripts/release/build-sidecar.mjs",

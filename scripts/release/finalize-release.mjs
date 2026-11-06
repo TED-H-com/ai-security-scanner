@@ -474,6 +474,25 @@ const RELEASE_COPY = new Map([
     },
   ],
   [
+    "0.6.0",
+    {
+      updaterNotes: "Updated security engines, November vulnerability data, and the private scan runtime. 掃描引擎、11 月漏洞資料與專用執行環境同步更新。",
+      releaseNotes: [
+        "Refresh the desktop scanner's upstream engines and private runtime while keeping one guided scan and one combined report.",
+        "",
+        "- Update Checkov, CloudQuery's compatible CLI, Garak, Greenbone, Grype, KICS, Kubescape, Maester, Naabu, Prowler, ScubaGear, Semgrep, Steampipe, Syft, Trivy and TruffleHog.",
+        "- Refresh Nuclei's safe HTTP templates, signed Greenbone feeds and offline vulnerability databases. Preserve upstream identifiers, evidence and remediation.",
+        "- Update the private runtime to Podman 5.8.9 and machine OS 5.8.9-1, with QEMU 11.1.3, gvproxy 0.9.0 and vfkit 0.6.4. Retain support for the existing desktop platforms.",
+        "- Update application dependencies and the ZIP report library, including fixes for upstream ZIP security advisories.",
+        "- Preserve existing local cases and historical report provenance. Provider permissions and scan authorization boundaries remain explicit.",
+        "",
+        "### 繁體中文",
+        "",
+        "同步更新掃描引擎、規則、離線漏洞資料與專用執行環境，保留原有引導式掃描及整合報告。Microsoft 365 檢查使用新版 Maester、ScubaGear 與 PowerShell；網站檢查採用新版安全 HTTP 模板。既有案件與歷史報告來源資訊完整保留。",
+      ],
+    },
+  ],
+  [
     "1.0.0",
     {
       updaterNotes:
