@@ -923,8 +923,24 @@
           "path": ".engine-cache/updates/2026-11-06/runtime/windows/managed-runtime/manifest.json",
           "sha256": "sha256:b530cf8f62196dd54e6b31b815202f565b3abb32593ee79c1ec834ded662edd0",
           "bytes": 5056
+        },
+        {
+          "path": ".engine-cache/updates/2026-11-06/runtime/linux-qualification.json",
+          "sha256": "sha256:344ad41bf44a9941ef8c6872d44ecfe5d8d27d5a606cc2029466c24dadf70e12",
+          "bytes": 1237
+        },
+        {
+          "path": ".engine-cache/updates/2026-11-06/runtime/linux-egress-qualification.json",
+          "sha256": "sha256:87da4351d59e8b83de758937bdb82e1ce6d91b4b3a9afcc42f72f8a8fed4ba72",
+          "bytes": 1396
         }
-      ]
+      ],
+      "linux_native_container": "passed",
+      "linux_native_gateway": "passed",
+      "native_probe_product_version": "0.5.3",
+      "linux_native_cleanup": "passed: exact owned machine, private payload and image cache removed; CLI returned not_installed"
     }
-  }
+  },
+  "record_scope": "Local build and fixture execution; these local image IDs were not published. Public image identities are recorded separately.",
+  "publication_record": "2026-11-06-publications.json"
 }

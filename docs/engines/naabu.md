@@ -4,12 +4,12 @@ Finds open TCP ports with a connect scan through the managed gateway on authoriz
 
 | Item | Value |
 | --- | --- |
-| Upstream | [projectdiscovery/naabu](https://github.com/projectdiscovery/naabu) v2.6.1, revision `5a0ca8bde91b5bb16213e9e8b5c6871eac954bd8` |
-| Image | `ghcr.io/teddashh/ai-security-scanner-engine-naabu:2.6.1-7`, built from 51b8abf for linux/amd64 and linux/arm64. The digest is pinned in `engines/catalog.json` and `plan.json` `final_artifact` |
+| Upstream | [projectdiscovery/naabu](https://github.com/projectdiscovery/naabu), version `2.7.0`, revision `041b70fd396e95b5ed2c19f879c18247078243bc`. Rules/data identities are pinned in `engines/catalog.json`. |
+| Image | `ghcr.io/ted-h-com/ai-security-scanner-engine-naabu:2.7.0-1`, published for linux/amd64 and linux/arm64 by [run 42186918910](https://github.com/TED-H-com/ai-security-scanner/actions/runs/42186918910) from `5ba7d2e20f6eb8913aeb3097bed43860451ee522`. Exact digests and verified attestations are in [the publication record](updates/2026-11-06-publications.json). |
 | Build inputs | `engines/images/naabu/Dockerfile` (checksum-pinned source archive, version and `go.sum` checks, `go mod verify`, `-mod=readonly`, `CGO_ENABLED=0`, `FROM scratch`), `SOURCE.md`, `plan.json`, and the [external launcher](external-launcher.md) |
 | Launcher | `naabuInvocation` and `runNaabuLauncherV2` in `engines/images/external-launcher/main.go`; command `--engine naabu --scope /run/ai-security-scanner/scope.json --output /output --journal-version 2 --journal-plan /run/ai-security-scanner/execution-journal-v2.json` |
 | Adapter | `extract_naabu_inventory` in `src-tauri/src/adapters/mod.rs`; journal reconciliation in `apply_naabu_launcher_v2_execution_report` and `adapt_and_persist_naabu_attempt` (`src-tauri/src/case_service.rs`) |
-| Publish workflow | `.github/workflows/engine-images-external.yml`, matrix entry `naabu` / `2.6.1-7` |
+| Publish workflow | `.github/workflows/engine-images-external.yml`, matrix entry `naabu` / `2.7.0-1` |
 
 ## Local build and update entry
 

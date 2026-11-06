@@ -22,7 +22,7 @@ const managedCloudIds = new Set([
   "steampipe",
 ]);
 const managedExternalContracts = new Map([
-  ["naabu", { tag: "2.6.1-7" }],
+  ["naabu", { tag: "2.7.0-1" }],
   ["httpx", { tag: "1.12.0-2" }],
   ["nuclei", { tag: "3.11.1-9" }],
 ]);
@@ -314,7 +314,7 @@ const managedLocalK8sContracts = new Map([
     ],
   }],
   ["kube-bench", {
-    tag: "0.16.0-5",
+    tag: "0.16.0-6",
     planKind: "managed_build",
     license: { disposition: "allow", sourceOfferPath: null },
     immutableDockerfileInputs: [

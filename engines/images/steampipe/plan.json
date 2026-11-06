@@ -6,7 +6,7 @@
   "support_until": "2026-12-25",
   "maintenance_owner": "teddashh/ai-security-scanner maintainers",
   "update_procedure": "docs/engine-maintenance.md",
-  "publish_state": "publication_in_progress",
+  "publish_state": "published_managed_artifact",
   "source": {
     "repository": "https://github.com/turbot/steampipe",
     "revision": "4269e1dc4865647605da6af8f1828e77278106a0",
@@ -16,9 +16,22 @@
   "final_artifact": {
     "repository": "ghcr.io/ted-h-com/ai-security-scanner-engine-steampipe",
     "tag": "2.4.9-1",
-    "digest": null
+    "digest": "sha256:34228da01ceb8bf5b8d0a67eecb4f62607bff9ce9fb1451251aad2e0cb5d99d0"
   },
-  "publication": null,
+  "publication": {
+    "workflow_run": "https://github.com/TED-H-com/ai-security-scanner/actions/runs/42186918801",
+    "source_revision": "5ba7d2e20f6eb8913aeb3097bed43860451ee522",
+    "platforms": [
+      "linux/amd64",
+      "linux/arm64"
+    ],
+    "platform_digests": {
+      "linux/amd64": "sha256:d7cda6a2e4930400bbf111107bee5327dbfdb223aa5aa1e6a852bd2733d1bd02",
+      "linux/arm64": "sha256:3178ab7a5724a343851cf344655038268c15076c004bbdf396e3a4ae646c28fc"
+    },
+    "anonymous_pull_verified": true,
+    "evidence_artifact": "steampipe-image-evidence-42186918801-1"
+  },
   "build_recipe": {
     "source_revision": "4269e1dc4865647605da6af8f1828e77278106a0",
     "source_archive": {
@@ -134,60 +147,5 @@
     "rationale": "The image embeds exact AGPL-3.0-only Steampipe source and build scripts, Apache-2.0 plugin/FDW source, and the PostgreSQL notice.",
     "source_offer_path": "engines/images/steampipe/SOURCE-OFFER.md"
   },
-  "blockers": [],
-  "previous_artifact": {
-    "repository": "ghcr.io/ted-h-com/ai-security-scanner-engine-steampipe",
-    "tag": "2.4.7-1",
-    "digest": "sha256:a9b872c076e6bc38c24a939ee936272408887e75962e1ab04486c70a83f56de9"
-  },
-  "previous_publication": {
-    "workflow_run": "https://github.com/TED-H-com/ai-security-scanner/actions/runs/38689379709",
-    "source_revision": "28bd1a3e23c961ce734503a6eeb59aa7d124ea4f",
-    "platforms": [
-      "linux/amd64",
-      "linux/arm64"
-    ],
-    "platform_digests": {
-      "linux/amd64": "sha256:076654bfb46f68e7d5ec07241018ad1f797e81defe9f4e39be78c8cc42fc6be7",
-      "linux/arm64": "sha256:0887c4a9d9864aca021e73fc6ce00638d8f46c0b16fceb8df149959792b7bd3e"
-    },
-    "anonymous_pull_verified": true,
-    "evidence_artifact": "steampipe-image-evidence-38689379709-3"
-  },
-  "upstream_update": {
-    "engine_version": "2.4.9",
-    "reported_version": null,
-    "source_revision": "4269e1dc4865647605da6af8f1828e77278106a0",
-    "rule_version": "bb6992d4748caab938e2c691be977d6610fc1fab",
-    "knowledge_date": "2026-11-01",
-    "support_until": "2026-12-25",
-    "engine_provenance": {
-      "version": "2.4.9",
-      "source_repository": "https://github.com/turbot/steampipe",
-      "source_revision": "4269e1dc4865647605da6af8f1828e77278106a0",
-      "source_ref": "v2.4.9",
-      "acquisition_source": "https://github.com/turbot/steampipe/commit/4269e1dc4865647605da6af8f1828e77278106a0",
-      "artifact_source_revision": null,
-      "source_association": "source_build_required"
-    },
-    "rules_provenance": {
-      "mode": "embedded",
-      "identifier": "Steampipe AWS plugin v1.34.1",
-      "revision": "bb6992d4748caab938e2c691be977d6610fc1fab",
-      "acquisition_source": "https://github.com/turbot/steampipe-plugin-aws/commit/bb6992d4748caab938e2c691be977d6610fc1fab"
-    },
-    "data_provenance": {
-      "mode": "runtime_live",
-      "identifier": "AWS IAM inventory",
-      "revision": null,
-      "acquisition_source": "AWS IAM and STS APIs authorized by the case-scoped read-only role"
-    },
-    "knowledge_input": {
-      "kind": "runtime_live",
-      "identifier": "AWS IAM inventory",
-      "version": null,
-      "acquisition_source": "AWS IAM and STS APIs authorized by the case-scoped read-only role",
-      "pin_state": "runtime_live"
-    }
-  }
+  "blockers": []
 }

@@ -4,12 +4,12 @@ Collects HTTP service facts (status code, scheme, port, TLS) from one approved o
 
 | Item | Value |
 | --- | --- |
-| Upstream | [projectdiscovery/httpx](https://github.com/projectdiscovery/httpx), version `1.12.0`, source ref `v1.12.0`, revision `4b6a9a9d476f94a4f3a630f37051f5671ecfb1f8`. |
-| Image | `ghcr.io/ted-h-com/ai-security-scanner-engine-httpx:1.12.0-1` (`plan_kind: managed_source_image`), published for linux/amd64 and linux/arm64 by [this run](https://github.com/TED-H-com/ai-security-scanner/actions/runs/38761785926) from `f4489920283b9d897a8183469c9637f778e1310f`. Exact index/platform digests and verified evidence are in `engines/catalog.json` and `plan.json`. |
+| Upstream | [projectdiscovery/httpx](https://github.com/projectdiscovery/httpx), version `1.12.0`, revision `4b6a9a9d476f94a4f3a630f37051f5671ecfb1f8`. Rules/data identities are pinned in `engines/catalog.json`. |
+| Image | `ghcr.io/ted-h-com/ai-security-scanner-engine-httpx:1.12.0-2`, published for linux/amd64 and linux/arm64 by [run 42186918910](https://github.com/TED-H-com/ai-security-scanner/actions/runs/42186918910) from `5ba7d2e20f6eb8913aeb3097bed43860451ee522`. Exact digests and verified attestations are in [the publication record](updates/2026-11-06-publications.json). |
 | Build inputs | `engines/images/httpx/Dockerfile` (checksum-pinned source archive, version and `go.sum` checks, `go mod verify`, the DNS patch below, `-mod=readonly`, `CGO_ENABLED=0`, `FROM scratch`), `patch_live_dns.go`, `patch_live_dns_test.go`, `SOURCE.md`, `plan.json`, and the [external launcher](external-launcher.md) |
 | Launcher | `httpxInvocation` in `engines/images/external-launcher/main.go`; command `--engine httpx --scope /run/ai-security-scanner/scope.json --output /output` |
 | Adapter | `extract_httpx_inventory` in `src-tauri/src/adapters/mod.rs` |
-| Publish workflow | `.github/workflows/engine-images-external.yml`, matrix entry `httpx` / `1.12.0-1` |
+| Publish workflow | `.github/workflows/engine-images-external.yml`, matrix entry `httpx` / `1.12.0-2` |
 
 ## Local build and update entry
 

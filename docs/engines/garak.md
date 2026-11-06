@@ -1,12 +1,12 @@
 # Garak
 
-Garak 0.17.0 is published, independently verified and optionally dispatchable on main for v0.4.0. Both platform bytes and signed source/SBOM evidence are verified; six controlled native TLS scenarios passed again by the public amd64 digest. See the [publication record](garak-publication-2026-10-04.md). The owner authorized this integration for v0.4.0. It contacts one explicitly approved OpenAI-compatible HTTPS chat API and model; no owner endpoint or credential was used for development QA.
+Garak 0.17.1 is published and independently verified for the 0.6.0 update. Both platform digests and signed source/SBOM evidence are verified; six controlled native TLS scenarios pass by the public amd64 digest. It contacts one explicitly approved OpenAI-compatible HTTPS chat API and model; no owner endpoint or credential was used for development QA.
 
 | Item | Reviewed input |
 | --- | --- |
-| Upstream | [NVIDIA/garak](https://github.com/NVIDIA/garak/tree/93aa9cdec309ec4170559676f1826ea2a679920c), native 0.17.0, Apache-2.0 |
+| Upstream | [NVIDIA/garak](https://github.com/NVIDIA/garak), version `0.17.1`, revision `7aa740fe7412cc9bc33cdc39ca211843223cd3e1`. Rules/data identities are pinned in `engines/catalog.json`. |
 | Native source archive | `sha256:34a7e31c9ca7efb00d00509f3397e8f25e87b88239c2c78d21fc9c54740b5fce` |
-| Managed candidate | `ghcr.io/teddashh/ai-security-scanner-engine-garak:0.17.0-1`; independently verified and admitted |
+| Image | `ghcr.io/ted-h-com/ai-security-scanner-engine-garak:0.17.1-1`, published for linux/amd64 and linux/arm64 by [run 42186918863](https://github.com/TED-H-com/ai-security-scanner/actions/runs/42186918863) from `5ba7d2e20f6eb8913aeb3097bed43860451ee522`. Exact digests and verified attestations are in [the publication record](updates/2026-11-06-publications.json). |
 | Build context | Repository root; [Dockerfile](../../engines/images/garak/Dockerfile), [complete recipe and hashes](../../engines/images/garak/plan.json) |
 | Runtime | Python 3.11.16 slim at `sha256:9c900dea9e8fb7e16277c179b555cc72d29a352dbc33cff48ad5a0412fd5bfc7`; uid65532, read-only rootfs, bounded tmpfs, managed egress |
 | Dependencies | 36 hash-locked binary runtime distributions; three separately hash-locked build tools excluded from runtime; unchanged langdetect 1.0.9 source built into a Python 3 wheel |
@@ -14,7 +14,7 @@ Garak 0.17.0 is published, independently verified and optionally dispatchable on
 | Output | Native `/output/report.jsonl`; execution/hashed request receipts under `/output/upstream/`, outside adapter input |
 | Publication | [Dedicated workflow](../../.github/workflows/engine-image-garak.yml), immutable guard, controlled native smoke, signed provenance and four per-platform SBOMs, then promotion |
 
-Start updates with the [all-image notebook](image-build-index.md). Reproduce with `docker buildx build --platform linux/amd64 --load -t aiss-garak-local:0.17.0-1 -f engines/images/garak/Dockerfile .`, then `python3 engines/images/garak/testdata/native_smoke.py --image aiss-garak-local:0.17.0-1 --output-dir <new-empty-task-directory>`. The helper creates its own internal-only network, TLS certificate, mock SOCKS gateway and synthetic key, then removes its own containers, network and temporary output. Cleanup uses uid0 with only DAC_OVERRIDE on the generated fixture directory; the scanner itself retains cap-drop ALL. No external model or owner credential store is used.
+Start updates with the [all-image notebook](image-build-index.md). Reproduce with `docker buildx build --platform linux/amd64 --load -t aiss-garak-local:0.17.1-1 -f engines/images/garak/Dockerfile .`, then `python3 engines/images/garak/testdata/native_smoke.py --image aiss-garak-local:0.17.1-1 --output-dir <new-empty-task-directory>`. The helper creates its own internal-only network, TLS certificate, mock SOCKS gateway and synthetic key, then removes its own containers, network and temporary output. Cleanup uses uid0 with only DAC_OVERRIDE on the generated fixture directory; the scanner itself retains cap-drop ALL. No external model or owner credential store is used.
 
 ## Current input and execution
 

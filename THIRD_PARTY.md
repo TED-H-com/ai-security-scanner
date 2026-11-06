@@ -2,7 +2,7 @@
 
 Status: current source and artifact inventory
 
-Last updated: 2026-09-10
+Last updated: 2026-11-06
 
 Exact engine artifacts: [`engines/catalog.json`](engines/catalog.json)
 
@@ -33,14 +33,14 @@ Release automation generates locked dependency notices, engine notices, managed-
 | Prowler | [prowler-cloud/prowler](https://github.com/prowler-cloud/prowler) | Apache-2.0 | Project-managed image with exact AWS-account, Azure-subscription, and GCP-project IAM profiles and required notices | ALLOW |
 | ScoutSuite | [nccgroup/ScoutSuite](https://github.com/nccgroup/ScoutSuite) | GPL-2.0-only | Project-managed image carrying exact source, patch, build recipe, and notices | SOURCE_OFFER |
 | Cloudsplaining | [salesforce/cloudsplaining](https://github.com/salesforce/cloudsplaining) | BSD-3-Clause | Project-managed image with the upstream notice | ALLOW |
-| ScubaGear | [cisagov/ScubaGear](https://github.com/cisagov/ScubaGear) | CC0-1.0 plus pinned module terms | Wrapper-hardened project-managed image published at immutable `1.8.0-8` digest; anonymous pull verified; module source and notices retained | ALLOW |
-| Maester | [maester365/maester](https://github.com/maester365/maester) | MIT plus pinned module terms | Wrapper-hardened project-managed image published at immutable `2.0.0-9` digest; anonymous pull verified; module source and notices retained | ALLOW |
+| ScubaGear | [cisagov/ScubaGear](https://github.com/cisagov/ScubaGear) | CC0-1.0 plus pinned module terms | Wrapper-hardened project-managed image published at immutable `2.0.0-1` digest; anonymous pull verified; module source and notices retained | ALLOW |
+| Maester | [maester365/maester](https://github.com/maester365/maester) | MIT plus pinned module terms | Wrapper-hardened project-managed image published at immutable `2.3.0-1` digest; anonymous pull verified; module source and notices retained | ALLOW |
 | Naabu | [projectdiscovery/naabu](https://github.com/projectdiscovery/naabu) | MIT upstream; Apache-2.0 launcher | Project-managed image with fixed bounded launcher | ALLOW |
 | httpx | [projectdiscovery/httpx](https://github.com/projectdiscovery/httpx) | MIT upstream; Apache-2.0 launcher | Project-managed image with fixed bounded launcher | ALLOW |
 | Nuclei and selected templates | [projectdiscovery/nuclei](https://github.com/projectdiscovery/nuclei), [nuclei-templates](https://github.com/projectdiscovery/nuclei-templates) | MIT upstream; Apache-2.0 launcher | Project-managed image with one pinned snapshot and an upstream-driven read-only profile | ALLOW |
 | Greenbone scanner and feed | [greenbone/openvas-scanner](https://github.com/greenbone/openvas-scanner) | GPL-2.0-only scanner; pinned feed GPL/ODbL terms; Apache-2.0 launcher | Project-managed direct-`openvasd` image carrying exact scanner/feed source and notices; no gvmd, GSA, OSPd, or feed-sync runtime | SOURCE_OFFER |
-| OWASP ZAP 2.17.0 | [zaproxy/zaproxy](https://github.com/zaproxy/zaproxy/tree/2665d972f6d587ba4773a95053ac39af3fdf8df9) | Apache-2.0 | Experimental adapter over an exact verified upstream image; automation and dispatch remain blocked | UPSTREAM_PINNED |
-| Semgrep | [semgrep/semgrep](https://github.com/semgrep/semgrep), [semgrep/semgrep-rules](https://github.com/semgrep/semgrep-rules) | LGPL-2.1-or-later scanner; Apache-2.0 product rules/launcher; legacy rules retain LGPL 2.1 plus Commons Clause | Published `1.174.0-4` combines 1,493 selected legacy upstream rules with four product rules and retains selected originals, notices and ID provenance | SOURCE_OFFER |
+| OWASP ZAP 2.17.0 | [zaproxy/zaproxy](https://github.com/zaproxy/zaproxy/tree/2665d972f6d587ba4773a95053ac39af3fdf8df9) | Apache-2.0 | Verified upstream image used by the explicitly approved passive website profile, with bounded native request pacing and preserved upstream alerts | UPSTREAM_PINNED |
+| Semgrep | [semgrep/semgrep](https://github.com/semgrep/semgrep), [semgrep/semgrep-rules](https://github.com/semgrep/semgrep-rules) | LGPL-2.1-or-later scanner; Apache-2.0 product rules/launcher; legacy rules retain LGPL 2.1 plus Commons Clause | Published `1.184.0-1` combines 1,493 selected legacy upstream rules with four product rules and retains selected originals, notices and ID provenance | SOURCE_OFFER |
 | Gitleaks 8.30.1 | [gitleaks/gitleaks](https://github.com/gitleaks/gitleaks/tree/v8.30.1) | MIT upstream; Apache-2.0 project launcher | Project-managed source build with a fixed non-shell launcher, scanner-owned rules, and redacted directory-scan output | ALLOW |
 | TruffleHog | [trufflesecurity/trufflehog](https://github.com/trufflesecurity/trufflehog) | AGPL-3.0; Apache-2.0 launcher | Project-managed source build restricted to offline filesystem scanning | SOURCE_OFFER |
 | Checkov | [bridgecrewio/checkov](https://github.com/bridgecrewio/checkov) | Apache-2.0 plus dependency/policy terms | Project-managed image with dependency notices | ALLOW |
@@ -50,7 +50,7 @@ Release automation generates locked dependency notices, engine notices, managed-
 | Syft | [anchore/syft](https://github.com/anchore/syft) | Apache-2.0 | Project-managed image with required notices | ALLOW |
 | Kubescape | [kubescape/kubescape](https://github.com/kubescape/kubescape) | Apache-2.0 scanner and pinned regolibrary artifacts | Project-managed offline manifest scanner image | ALLOW |
 | kube-bench | [aquasecurity/kube-bench](https://github.com/aquasecurity/kube-bench) | Apache-2.0 | Project-managed source build with benchmark configuration over a bounded node snapshot | ALLOW |
-| garak | [NVIDIA/garak](https://github.com/NVIDIA/garak/tree/93aa9cdec309ec4170559676f1826ea2a679920c) | Apache-2.0 at the audited revision | Unchanged native REST/DAN/ANSI source in published immutable `0.17.0-1`; fixed-profile HTTPS wrapper, typed exact input and one-shot local key. Anonymous platform bytes, signed source/SBOM evidence and six-case native TLS QA verified | ALLOW |
+| garak | [NVIDIA/garak](https://github.com/NVIDIA/garak/tree/7aa740fe7412cc9bc33cdc39ca211843223cd3e1) | Apache-2.0 at the audited revision | Unchanged native REST/DAN/ANSI source in published immutable `0.17.1-1`; fixed-profile HTTPS wrapper, typed exact input and one-shot local key. Anonymous platform bytes, signed source/SBOM evidence and six-case native TLS QA verified | ALLOW |
 | Agentic Radar | [splx-ai/agentic-radar](https://github.com/splx-ai/agentic-radar/tree/65a7e4bd01e2034c7cb52e9620eeed287688cc53) | Apache-2.0 at the audited revision | Published offline workflow-inventory image with an audited machine-output patch; typed framework selection, no hosted assessment or target execution | ALLOW — Apache-2.0 |
 | MCP Armor | [aira-security/mcp-armor](https://github.com/aira-security/mcp-armor/tree/6af4cee4665ab6242f02a88952f9127b6a04922a) | Apache-2.0 source at the audited revision; model terms are separate and excluded | Project-managed configuration-only image published at immutable `1.0.2-config-only.1` digest; dispatchable, not default-enabled; model files excluded | ALLOW |
 

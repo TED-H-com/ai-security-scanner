@@ -14,7 +14,7 @@ use zeroize::Zeroizing;
 
 pub const ENGINE_ID: &str = "garak";
 pub const PROFILE_ID: &str = "garak_https_v1";
-pub const SOURCE_REVISION: &str = "93aa9cdec309ec4170559676f1826ea2a679920c";
+pub const SOURCE_REVISION: &str = "7aa740fe7412cc9bc33cdc39ca211843223cd3e1";
 pub const METADATA_KEY: &str = "model_endpoint";
 pub const ENDPOINT_NAMESPACE: &str = "ai-security-scanner:model-endpoint";
 pub const MODEL_NAMESPACE: &str = "ai-security-scanner:model-id";

@@ -6,7 +6,7 @@
   "support_until": "2026-12-11",
   "maintenance_owner": "teddashh/ai-security-scanner maintainers",
   "update_procedure": "docs/engine-maintenance.md",
-  "publish_state": "publication_in_progress",
+  "publish_state": "published_managed_artifact",
   "source": {
     "repository": "https://github.com/NVIDIA/garak",
     "revision": "7aa740fe7412cc9bc33cdc39ca211843223cd3e1",
@@ -17,7 +17,7 @@
   "final_artifact": {
     "repository": "ghcr.io/ted-h-com/ai-security-scanner-engine-garak",
     "tag": "0.17.1-1",
-    "digest": null
+    "digest": "sha256:96124a114bfed67edff72d969e320c7df1d8940567a2a6cb155162859195c8a3"
   },
   "build_recipe": {
     "source_revision": "7aa740fe7412cc9bc33cdc39ca211843223cd3e1",
@@ -145,7 +145,21 @@
     "source_offer_path": null
   },
   "blockers": [],
-  "publication": null,
+  "publication": {
+    "workflow_run": "https://github.com/TED-H-com/ai-security-scanner/actions/runs/42186918863",
+    "source_revision": "5ba7d2e20f6eb8913aeb3097bed43860451ee522",
+    "platforms": [
+      "linux/amd64",
+      "linux/arm64"
+    ],
+    "platform_digests": {
+      "linux/amd64": "sha256:bb0bf303b359b6d118672faf04b77757543f411f6b29c633f940892811ad4279",
+      "linux/arm64": "sha256:13c33a721aae16a5922ab0982deaa9621acba5cf650fbc821f27076ba714b180"
+    },
+    "anonymous_pull_verified": true,
+    "evidence_artifact": "garak-image-evidence-42186918863-1",
+    "managed_smoke_evidence_sha256": "sha256:b8739dd3706fa47976308bc99e300dc5e94fa488372b1090f0c61dee5c543c1e"
+  },
   "managed_runtime": {
     "non_root_user": "65532:65532",
     "read_only_rootfs": true,
@@ -183,61 +197,5 @@
     "local_image_id": "sha256:49b92a92a73c44c016a293affaf39a855e21eadc89ffdeff7610bcb11eca0f0e",
     "smoke_runner": "engines/images/garak/testdata/native_smoke.py",
     "result": "Final local native 0.17.1 build passed positive and clean runs (54 prompts/four native detector pairs), redirect refusal, TLS refusal, six-second deadline, and graceful cancellation with private partial native JSONL retained and no requests after stop. The repeatable helper cleaned its own isolated fixture. No public artifact or arm64 native execution is claimed."
-  },
-  "previous_artifact": {
-    "repository": "ghcr.io/teddashh/ai-security-scanner-engine-garak",
-    "tag": "0.17.0-1",
-    "digest": "sha256:8a39b5812a4fd5aa2caecfef089ff85c39709f1bc00afa3328714346baab222f"
-  },
-  "previous_publication": {
-    "workflow_run": "https://github.com/teddashh/ai-security-scanner/actions/runs/37185013509",
-    "source_revision": "c9945b672853585be832a0ff978b16a7166b92b6",
-    "platforms": [
-      "linux/amd64",
-      "linux/arm64"
-    ],
-    "platform_digests": {
-      "linux/amd64": "sha256:21f2e097684de81183fb1a5815e93b78dd013bf076cc1ad5804845179acb805d",
-      "linux/arm64": "sha256:732d0e8038ef6a3e1bce66fbe956e034a662e4125c8f819b91609e718d003bb6"
-    },
-    "anonymous_pull_verified": true,
-    "evidence_artifact": "garak-image-evidence-37185013509-1",
-    "managed_smoke_evidence_sha256": "sha256:c6c6a42f0d377195e7b2078f31401318cb32b3748d9990af60f9e993625dd53a"
-  },
-  "upstream_update": {
-    "engine_version": "0.17.1",
-    "source_revision": "7aa740fe7412cc9bc33cdc39ca211843223cd3e1",
-    "rule_version": null,
-    "reported_version": null,
-    "knowledge_date": "2026-10-16",
-    "support_until": "2026-12-11",
-    "engine_provenance": {
-      "version": "0.17.1",
-      "source_repository": "https://github.com/NVIDIA/garak",
-      "source_revision": "7aa740fe7412cc9bc33cdc39ca211843223cd3e1",
-      "source_ref": "v0.17.1",
-      "acquisition_source": "https://github.com/NVIDIA/garak/commit/7aa740fe7412cc9bc33cdc39ca211843223cd3e1",
-      "artifact_source_revision": null,
-      "source_association": "source_build_required"
-    },
-    "rules_provenance": {
-      "mode": "embedded",
-      "identifier": "garak packaged probes and detectors",
-      "revision": null,
-      "acquisition_source": "https://github.com/NVIDIA/garak/tree/7aa740fe7412cc9bc33cdc39ca211843223cd3e1/garak/probes"
-    },
-    "data_provenance": {
-      "mode": "runtime_bound",
-      "identifier": "the AI model endpoint named by the case scope grant",
-      "revision": null,
-      "acquisition_source": "assessment_case"
-    },
-    "knowledge_input": {
-      "kind": "runtime_bound",
-      "identifier": "the AI model endpoint named by the case scope grant",
-      "version": null,
-      "acquisition_source": "assessment_case",
-      "pin_state": "runtime_bound"
-    }
   }
 }

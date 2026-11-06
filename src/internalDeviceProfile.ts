@@ -5,7 +5,7 @@ export type InternalDeviceScanProfile = "internal_device_https";
 export type InternalDeviceEndpointError = WebsiteInputError | "https_required";
 
 const GREENBONE_TEMPLATE_REVISION =
-  "greenbone-community-feed@816c24126e0375d32c667b78d20342ce7c58ec58";
+  "greenbone-community-feed@a2e53c2e30f1fa5408369cb5cf99653a3e08e9df";
 
 /**
  * These are reporting VTs, not inventory VTs. Each one can emit a Greenbone

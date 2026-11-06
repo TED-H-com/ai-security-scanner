@@ -31,6 +31,8 @@ const platformDigests = {
   "linux/arm64": `sha256:${"33".repeat(32)}`,
 };
 const specs = {
+  cloudquery: { tag: "3.5.3-aws9.2.0-file1.0.4-1", group: "cloud", workflow: ".github/workflows/engine-images-cloud.yml" },
+  greenbone: { tag: "23.52.9-feed202611060607-1", group: "greenbone", workflow: ".github/workflows/engine-image-greenbone.yml", sourceDateEpoch: "1793881759" },
   steampipe: { tag: "2.4.9-1", group: "cloud", workflow: ".github/workflows/engine-images-cloud.yml" },
   prowler: { tag: "5.47.0-1", group: "cloud", workflow: ".github/workflows/engine-images-cloud.yml" },
   checkov: { tag: "3.4.3-1", group: "standalone", workflow: ".github/workflows/engine-image-checkov.yml", sourceDateEpoch: "1793640074" },
@@ -433,6 +435,26 @@ async function createArtifact(testContext, engine, { largeSbom = false } = {}) {
         }
         : { ...common, platforms, public: true };
     if (spec.group === "cloud") summary.platformDigests = platformDigests;
+    if (spec.group === "greenbone") {
+      delete summary.platforms;
+      const xml = Buffer.from('<results><result><nvt oid="1.3.6.1.4.1.25623.1.0.108252"/></result></results>\n');
+      const xmlSha256 = `sha256:${sha256(xml)}`;
+      Object.assign(summary, {
+        indexDigest, platformDigests, anonymousPullVerified: true, managedSmokeEvidenceSha256: xmlSha256,
+        nativeImageIdentityMatchesFinal: true, reusedSignedIndex: false,
+        upstream: { scannerRevision: "cbd9081531ea6602bea7356aa371200979c1e961",
+          scannerSourceSha256: "ea798d3dcf2ca43b93be9bee9b644c699632226e5fa7659dbe40f6f4bd128f63",
+          feedRevision: "a2e53c2e30f1fa5408369cb5cf99653a3e08e9df", feedVersion: "202611060607-community", notusRevision: "202611060538" },
+        managedProxy: { kind: "socks5h", directEgressDenied: true, unauthorizedPortDenied: true },
+        realScan: { selectedOid: "1.3.6.1.4.1.25623.1.0.108252", authorizedTarget: "172.29.251.10:8080/tcp",
+          xmlResults: 5, actionableAlarms: 1, adapterFindings: 1, adapterWarnings: 0, xmlSha256 },
+      });
+      await writeFile(path.join(root, "greenbone-anonymous-smoke.xml"), xml);
+      await writeFile(path.join(root, "greenbone-anonymous-smoke.log"), 'xml_results=5 actionable_alarms=1\n{"finding_count":1,"warnings":[]}\n');
+      await writeJson(path.join(root, "greenbone-index.json"), { schemaVersion: 2, manifests: platforms.map((platform) => ({
+        digest: platformDigests[platform], platform: { os: "linux", architecture: platform.split("/")[1] },
+      })) });
+    }
     if (spec.group === "standalone") delete summary.engine;
     if (spec.sourceDateEpoch) summary.sourceDateEpoch = spec.sourceDateEpoch;
     await writeJson(path.join(root, `${engine}-image-manifest.json`), summary);
@@ -466,7 +488,7 @@ async function createArtifact(testContext, engine, { largeSbom = false } = {}) {
       });
     }
   }
-  if (!["cloud", "standalone"].includes(spec.group)) await sealRoot(root);
+  if (!["cloud", "standalone", "greenbone"].includes(spec.group)) await sealRoot(root);
   return root;
 }
 
@@ -528,6 +550,23 @@ async function mutateNested(root, engine, mutate) {
   await sealRoot(root);
 }
 
+test("Greenbone publication rejects changed XML and native platform identities", async (t) => {
+  for (const mutation of ["xml", "platform", "feed", "native", "scope"]) {
+    const artifact = await createArtifact(t, "greenbone");
+    const summaryFile = path.join(artifact, "greenbone-image-manifest.json");
+    const summary = JSON.parse(await readFile(summaryFile, "utf8"));
+    if (mutation === "xml") await writeFile(path.join(artifact, "greenbone-anonymous-smoke.xml"), "changed native evidence");
+    if (mutation === "platform") summary.platformDigests["linux/arm64"] = indexDigest;
+    if (mutation === "feed") summary.upstream.feedRevision = sourceRevision;
+    if (mutation === "native") summary.nativeImageIdentityMatchesFinal = false;
+    if (mutation === "scope") summary.managedProxy.unauthorizedPortDenied = false;
+    await writeJson(summaryFile, summary);
+    const result = runVerifier("greenbone", artifact);
+    assert.notEqual(result.status, 0, mutation);
+    assert.match(result.stderr, /Greenbone/u);
+  }
+});
+
 async function mutateRootSummary(root, engine, mutate) {
   const summaryFile = path.join(root, `${engine}-image-manifest.json`);
   const summary = JSON.parse(await readFile(summaryFile, "utf8"));
@@ -553,7 +592,7 @@ test("publication verifier accepts every fixed engine and the gateway with one n
     assert.equal(payload.workflowRun, `https://github.com/${repository}/actions/runs/${runId}`);
     assert.equal(payload.runId, runId);
     assert.equal(payload.runAttempt, attempt);
-    if (["cloud", "standalone"].includes(spec.group)) assert.equal(payload.evidence.rootChecksumReceiptSha256, null);
+    if (["cloud", "standalone", "greenbone"].includes(spec.group)) assert.equal(payload.evidence.rootChecksumReceiptSha256, null);
     else assert.match(payload.evidence.rootChecksumReceiptSha256, /^sha256:[0-9a-f]{64}$/u);
     assert.match(payload.evidence.nestedChecksumReceiptSha256, /^sha256:[0-9a-f]{64}$/u);
     assert.equal(payload.evidence.sbomCount, 4);

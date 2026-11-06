@@ -6,7 +6,7 @@
   "support_until": "2023-04-10",
   "maintenance_owner": "teddashh/ai-security-scanner maintainers",
   "update_procedure": "docs/engine-maintenance.md",
-  "publish_state": "publication_in_progress",
+  "publish_state": "published_managed_artifact",
   "source": {
     "repository": "https://github.com/cloudquery/cloudquery",
     "revision": "086baf7f70ee3c1069513d41f321720a5e7d2bb9",
@@ -16,9 +16,22 @@
   "final_artifact": {
     "repository": "ghcr.io/ted-h-com/ai-security-scanner-engine-cloudquery",
     "tag": "3.5.3-aws9.2.0-file1.0.4-1",
-    "digest": null
+    "digest": "sha256:a895b51ad24432921f602f1b22a6107b15133a726b3f2ac71c3c5a8def4cbaec"
   },
-  "publication": null,
+  "publication": {
+    "workflow_run": "https://github.com/TED-H-com/ai-security-scanner/actions/runs/42186918801",
+    "source_revision": "5ba7d2e20f6eb8913aeb3097bed43860451ee522",
+    "platforms": [
+      "linux/amd64",
+      "linux/arm64"
+    ],
+    "platform_digests": {
+      "linux/amd64": "sha256:0ddc7ff28fed4c30746ddccde4cdbb6ac28c72c2beb18b4a68933a930230c98d",
+      "linux/arm64": "sha256:f71975ebb98799ba03c3a3dae0e3bbb2cc79c4811d5b93aa6591bcabb9618adb"
+    },
+    "anonymous_pull_verified": true,
+    "evidence_artifact": "cloudquery-image-evidence-42186918801-1"
+  },
   "build_recipe": {
     "source_revision": "086baf7f70ee3c1069513d41f321720a5e7d2bb9",
     "source_archive": {
@@ -134,60 +147,5 @@
     "rationale": "The image embeds the exact MPL-2.0 CLI, AWS and file source archives, dependency locks, local-plugin configuration, build recipe, launcher source, and license notice.",
     "source_offer_path": "engines/images/cloudquery/SOURCE-OFFER.md"
   },
-  "blockers": [],
-  "previous_artifact": {
-    "repository": "ghcr.io/teddashh/ai-security-scanner-engine-cloudquery",
-    "tag": "2.0.31-aws9.2.0-6",
-    "digest": "sha256:e80bc6914b9a007b2a1e8978a222ff7b0ead657d004ca22f410270d086c3be82"
-  },
-  "previous_publication": {
-    "workflow_run": "https://github.com/teddashh/ai-security-scanner/actions/runs/37044614517",
-    "source_revision": "dfe8af1721cd165a629a4d438318661e940c13d8",
-    "platforms": [
-      "linux/amd64",
-      "linux/arm64"
-    ],
-    "platform_digests": {
-      "linux/amd64": "sha256:4f614b7566278180822d959b9b2cc66652ce88beafc9124688934f19d64ecba6",
-      "linux/arm64": "sha256:fa2c195713c2238e509dde5f4afaef484a3d5860bb7386e632d7fd08f0b0faba"
-    },
-    "anonymous_pull_verified": true,
-    "evidence_artifact": "cloudquery-image-evidence-37044614517-1"
-  },
-  "upstream_update": {
-    "engine_version": "3.5.3-aws9.2.0-file1.0.4",
-    "source_revision": "086baf7f70ee3c1069513d41f321720a5e7d2bb9",
-    "rule_version": "804be3a90d6f15d3e6c662c0eb7afa88a9596180",
-    "reported_version": null,
-    "knowledge_date": "2023-01-10",
-    "support_until": "2023-04-10",
-    "engine_provenance": {
-      "version": "3.5.3-aws9.2.0-file1.0.4",
-      "source_repository": "https://github.com/cloudquery/cloudquery",
-      "source_revision": "086baf7f70ee3c1069513d41f321720a5e7d2bb9",
-      "source_ref": "cli-v3.5.3",
-      "acquisition_source": "https://github.com/cloudquery/cloudquery/commit/086baf7f70ee3c1069513d41f321720a5e7d2bb9",
-      "artifact_source_revision": null,
-      "source_association": "source_build_required"
-    },
-    "rules_provenance": {
-      "mode": "embedded",
-      "identifier": "CloudQuery AWS source plugin v9.2.0 and fixed seven-table IAM profile",
-      "revision": "804be3a90d6f15d3e6c662c0eb7afa88a9596180",
-      "acquisition_source": "https://github.com/cloudquery/cloudquery/commit/804be3a90d6f15d3e6c662c0eb7afa88a9596180"
-    },
-    "data_provenance": {
-      "mode": "runtime_live",
-      "identifier": "AWS IAM inventory",
-      "revision": null,
-      "acquisition_source": "AWS IAM and STS APIs authorized by the case-scoped read-only role"
-    },
-    "knowledge_input": {
-      "kind": "runtime_live",
-      "identifier": "AWS IAM inventory",
-      "version": "AWS source plugin v9.2.0 (2023-01-10)",
-      "acquisition_source": "AWS IAM and STS APIs authorized by the case-scoped read-only role",
-      "pin_state": "runtime_live"
-    }
-  }
+  "blockers": []
 }

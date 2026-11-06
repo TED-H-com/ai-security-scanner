@@ -20,6 +20,8 @@ const MAX_SBOM_BYTES = 16 * 1024 * 1024;
 const MAX_CHECKSUM_BYTES = 64 * 1024;
 
 const ENGINE_SPECS = Object.freeze({
+  cloudquery: { tag: "3.5.3-aws9.2.0-file1.0.4-1", group: "cloud", workflow: ".github/workflows/engine-images-cloud.yml" },
+  greenbone: { tag: "23.52.9-feed202611060607-1", group: "greenbone", workflow: ".github/workflows/engine-image-greenbone.yml", sourceDateEpoch: "1793881759" },
   steampipe: { tag: "2.4.9-1", group: "cloud", workflow: ".github/workflows/engine-images-cloud.yml" },
   prowler: { tag: "5.47.0-1", group: "cloud", workflow: ".github/workflows/engine-images-cloud.yml" },
   checkov: { tag: "3.4.3-1", group: "standalone", workflow: ".github/workflows/engine-image-checkov.yml", sourceDateEpoch: "1793640074" },
@@ -270,8 +272,9 @@ function expectedNestedFiles(engine) {
 
 function expectedArtifactFiles(engine, spec) {
   const nested = expectedNestedFiles(engine).map((file) => `${engine}/${file}`);
-  const expected = [...(["cloud", "standalone"].includes(spec.group) ? [] : ["SHA256SUMS.txt"]), `${engine}/SHA256SUMS.txt`, ...nested];
+  const expected = [...(["cloud", "standalone", "greenbone"].includes(spec.group) ? [] : ["SHA256SUMS.txt"]), `${engine}/SHA256SUMS.txt`, ...nested];
   if (spec.group !== "gateway") expected.push(`${engine}-image-manifest.json`);
+  if (spec.group === "greenbone") expected.push("greenbone-index.json", "greenbone-anonymous-smoke.log", "greenbone-anonymous-smoke.xml");
   if (spec.group === "local") {
     expected.push(`${engine}-managed-smoke/SHA256SUMS.txt`);
     expected.push(...spec.smokeFiles.map((file) => `${engine}-managed-smoke/${file}`));
@@ -660,7 +663,10 @@ async function verifyRootSummary({ files, engine, spec, sourceRevision, evidence
   const common = ["schemaVersion", ...(spec.group === "standalone" ? [] : ["engine"]), "image", "tag", "digest", "sourceRevision"];
   exactKeys(
     summary,
-    spec.group === "local"
+    spec.group === "greenbone"
+      ? [...common, "indexDigest", "platformDigests", "sourceDateEpoch", "public", "anonymousPullVerified",
+        "managedSmokeEvidenceSha256", "nativeImageIdentityMatchesFinal", "reusedSignedIndex", "upstream", "managedProxy", "realScan"]
+      : spec.group === "local"
       ? [...common, "platformDigests", "anonymousPullVerified", "managedSmokeEvidenceSha256"]
       : spec.group === "m365"
         ? [...common, "platforms", "platformDigests", "public", "anonymousPullVerified", "smoke"]
@@ -675,6 +681,36 @@ async function verifyRootSummary({ files, engine, spec, sourceRevision, evidence
   assert(summary.image === evidence.image && summary.tag === evidence.tag, "root image summary repository/tag mismatch");
   assert(summary.digest === evidence.indexDigest, "root image summary index digest mismatch");
   assert(summary.sourceRevision === sourceRevision && summary.sourceRevision === evidence.sourceRevision, "root image summary source revision mismatch");
+  if (spec.group === "greenbone") {
+    assert(summary.indexDigest === evidence.indexDigest && summary.public === true && summary.anonymousPullVerified === true &&
+      summary.sourceDateEpoch === spec.sourceDateEpoch && summary.nativeImageIdentityMatchesFinal === true && summary.reusedSignedIndex === false,
+    "Greenbone publication must bind the newly tested native images");
+    exactKeys(summary.platformDigests, PLATFORMS, "Greenbone platform digests");
+    const index = await readJson(files, "greenbone-index.json", "Greenbone published index");
+    assert(index.schemaVersion === 2 && index.manifests?.length === 2, "Greenbone published index must contain exactly two native platforms");
+    for (const platform of PLATFORMS) {
+      const entries = index.manifests.filter((entry) => `${entry.platform?.os}/${entry.platform?.architecture}` === platform);
+      assert(entries.length === 1 && entries[0].digest === platformRecords.get(platform).digest &&
+        summary.platformDigests[platform] === entries[0].digest, "Greenbone native platform digest mismatch");
+    }
+    assert(isDeepStrictEqual(summary.upstream, {
+      scannerRevision: "cbd9081531ea6602bea7356aa371200979c1e961",
+      scannerSourceSha256: "ea798d3dcf2ca43b93be9bee9b644c699632226e5fa7659dbe40f6f4bd128f63",
+      feedRevision: "a2e53c2e30f1fa5408369cb5cf99653a3e08e9df", feedVersion: "202611060607-community", notusRevision: "202611060538",
+    }), "Greenbone scanner/feed source closure mismatch");
+    assert(isDeepStrictEqual(summary.managedProxy, { kind: "socks5h", directEgressDenied: true, unauthorizedPortDenied: true }),
+      "Greenbone managed proxy boundary differs");
+    const xml = await readInventoryFile(files, "greenbone-anonymous-smoke.xml", 16 * 1024 * 1024, "Greenbone native XML");
+    const digest = `sha256:${sha256(xml)}`;
+    assert(summary.managedSmokeEvidenceSha256 === digest && isDeepStrictEqual(summary.realScan, {
+      selectedOid: "1.3.6.1.4.1.25623.1.0.108252", authorizedTarget: "172.29.251.10:8080/tcp",
+      xmlResults: 5, actionableAlarms: 1, adapterFindings: 1, adapterWarnings: 0, xmlSha256: digest,
+    }), "Greenbone real scan evidence differs");
+    const log = utf8(await readInventoryFile(files, "greenbone-anonymous-smoke.log", 16 * 1024 * 1024, "Greenbone native smoke log"), "Greenbone smoke log");
+    assert(log.includes("xml_results=5 actionable_alarms=1") && log.includes('"finding_count":1') && log.includes('"warnings":[]'),
+      "Greenbone native smoke log lacks the normalized completed result");
+    return digest;
+  }
   if (["cloud", "standalone"].includes(spec.group)) {
     assert(summary.public === true, "root summary must record public access");
     assert(isDeepStrictEqual(summary.platforms, PLATFORMS), "root summary platform list mismatch");
@@ -782,7 +818,7 @@ async function verifyPublicationArtifact(args) {
   const rootCovered = expectedFiles.filter((relative) => relative !== "SHA256SUMS.txt");
   // These established publishers seal the nested signed evidence; their root
   // summaries are cross-checked against that evidence below.
-  const rootReceipt = ["cloud", "standalone"].includes(spec.group)
+  const rootReceipt = ["cloud", "standalone", "greenbone"].includes(spec.group)
     ? { receiptSha256: null, checksums: new Map() }
     : await verifyChecksums(files, "SHA256SUMS.txt", rootCovered, { rootStyle: true });
   const nestedExpected = expectedNestedFiles(args.engine);
@@ -809,7 +845,7 @@ async function verifyPublicationArtifact(args) {
     platformRecords,
   });
 
-  let managedSmokeEvidenceSha256;
+  let managedSmokeEvidenceSha256 = spec.group === "greenbone" ? expectedSmokeReceipt : undefined;
   if (spec.group === "local") {
     const smoke = await verifyChecksums(
       files,

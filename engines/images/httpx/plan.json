@@ -6,7 +6,7 @@
   "support_until": "2026-12-07",
   "maintenance_owner": "teddashh/ai-security-scanner maintainers",
   "update_procedure": "docs/engine-maintenance.md",
-  "publish_state": "publication_in_progress",
+  "publish_state": "published_managed_artifact",
   "source": {
     "repository": "https://github.com/projectdiscovery/httpx",
     "revision": "4b6a9a9d476f94a4f3a630f37051f5671ecfb1f8",
@@ -16,9 +16,22 @@
   "final_artifact": {
     "repository": "ghcr.io/ted-h-com/ai-security-scanner-engine-httpx",
     "tag": "1.12.0-2",
-    "digest": null
+    "digest": "sha256:c57d177d9c719c54c0f9cde0f054023501933487a2bcd7abb527bce47c12caa8"
   },
-  "publication": null,
+  "publication": {
+    "workflow_run": "https://github.com/TED-H-com/ai-security-scanner/actions/runs/42186918910",
+    "source_revision": "5ba7d2e20f6eb8913aeb3097bed43860451ee522",
+    "platforms": [
+      "linux/amd64",
+      "linux/arm64"
+    ],
+    "platform_digests": {
+      "linux/amd64": "sha256:3b1551be9fd82f4a5a66dd87bd03f861d65f926cfc66a2060d15fea46cdaea37",
+      "linux/arm64": "sha256:72e949e91c23ff861afed66411f845ce713e57dccf9ce5e94303773e644f0b14"
+    },
+    "anonymous_pull_verified": true,
+    "evidence_artifact": "httpx-image-evidence-42186918910-1"
+  },
   "build_recipe": {
     "source_revision": "4b6a9a9d476f94a4f3a630f37051f5671ecfb1f8",
     "source_archive": {
@@ -126,60 +139,5 @@
     "rationale": "MIT upstream code and the Apache-2.0 project launcher permit redistribution with notices.",
     "source_offer_path": null
   },
-  "blockers": [],
-  "previous_artifact": {
-    "repository": "ghcr.io/ted-h-com/ai-security-scanner-engine-httpx",
-    "tag": "1.12.0-1",
-    "digest": "sha256:c22c6ce992b1edb52811f608ed59a640eae9af8b38357f087707d7e64bac6113"
-  },
-  "previous_publication": {
-    "workflow_run": "https://github.com/TED-H-com/ai-security-scanner/actions/runs/38761785926",
-    "source_revision": "f4489920283b9d897a8183469c9637f778e1310f",
-    "platforms": [
-      "linux/amd64",
-      "linux/arm64"
-    ],
-    "platform_digests": {
-      "linux/amd64": "sha256:68becce895a925feec25e091321ccd7ffca59c43cf51f0689ddf9865f1f8d5e4",
-      "linux/arm64": "sha256:bbe8f76f04d40afe8d42764362022084b2a9479c9841ec2bcfd05174cf0b0bb3"
-    },
-    "anonymous_pull_verified": true,
-    "evidence_artifact": "httpx-image-evidence-38761785926-1"
-  },
-  "upstream_update": {
-    "engine_version": "1.12.0",
-    "source_revision": "4b6a9a9d476f94a4f3a630f37051f5671ecfb1f8",
-    "rule_version": null,
-    "reported_version": null,
-    "knowledge_date": "2026-09-08",
-    "support_until": "2026-12-07",
-    "engine_provenance": {
-      "version": "1.12.0",
-      "source_repository": "https://github.com/projectdiscovery/httpx",
-      "source_revision": "4b6a9a9d476f94a4f3a630f37051f5671ecfb1f8",
-      "source_ref": "v1.12.0",
-      "acquisition_source": "https://github.com/projectdiscovery/httpx/commit/4b6a9a9d476f94a4f3a630f37051f5671ecfb1f8",
-      "artifact_source_revision": null,
-      "source_association": "source_build_required"
-    },
-    "rules_provenance": {
-      "mode": "not_applicable",
-      "identifier": "HTTP metadata collection has no external rule pack",
-      "revision": null,
-      "acquisition_source": null
-    },
-    "data_provenance": {
-      "mode": "runtime_live",
-      "identifier": "authorized HTTP service observations",
-      "revision": null,
-      "acquisition_source": "only services in the case scope grant"
-    },
-    "knowledge_input": {
-      "kind": "runtime_live",
-      "identifier": "authorized HTTP service observations",
-      "version": null,
-      "acquisition_source": "only services in the case scope grant",
-      "pin_state": "runtime_live"
-    }
-  }
+  "blockers": []
 }

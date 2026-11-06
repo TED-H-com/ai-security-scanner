@@ -50,7 +50,7 @@ test("the generic HTTPS-management profile stays pinned to exact Greenbone TLS v
   assert.equal(internalDeviceHttpsProfile.label.en, "HTTPS management-service security");
   assert.equal(
     internalDeviceHttpsProfile.templateRevision,
-    "greenbone-community-feed@816c24126e0375d32c667b78d20342ce7c58ec58",
+    "greenbone-community-feed@a2e53c2e30f1fa5408369cb5cf99653a3e08e9df",
   );
   assert.deepEqual(internalDeviceHttpsProfile.engineIds, ["greenbone"]);
   assert.deepEqual(internalDeviceHttpsProfile.ratePolicy, {
@@ -72,14 +72,14 @@ test("the generic HTTPS-management profile stays pinned to exact Greenbone TLS v
 test("the frontend profile matches the existing Greenbone direct-launcher boundary", () => {
   assert.match(
     greenboneLauncherSource,
-    /feedRevision\s+= "816c24126e0375d32c667b78d20342ce7c58ec58"/u,
+    /feedRevision\s+= "a2e53c2e30f1fa5408369cb5cf99653a3e08e9df"/u,
   );
   assert.match(greenboneLauncherSource, /maxSelectedVTsPerGrant\s+= 128/u);
   assert.match(greenboneLauncherSource, /external\.Activity != "active_external"/u);
   assert.match(greenboneLauncherSource, /the Greenbone profile does not expand network targets/u);
 
   const greenbone = engineCatalog.find(({ id }) => id === "greenbone");
-  assert.equal(greenbone?.rule_version, "816c24126e0375d32c667b78d20342ce7c58ec58");
+  assert.equal(greenbone?.rule_version, "a2e53c2e30f1fa5408369cb5cf99653a3e08e9df");
   assert.ok(greenbone?.direct_network_contract?.protocols?.includes("https"));
   assert.deepEqual(greenbone?.direct_network_contract?.target_kinds, ["hostname", "address"]);
 });
@@ -117,7 +117,7 @@ test("one exact HTTPS management URL produces one bounded generic Greenbone rout
       timeoutSeconds: 15,
     },
     templatePolicy: {
-      revision: "greenbone-community-feed@816c24126e0375d32c667b78d20342ce7c58ec58",
+      revision: "greenbone-community-feed@a2e53c2e30f1fa5408369cb5cf99653a3e08e9df",
       allowedTemplateIds: [...internalDeviceHttpsProfile.allowedTemplateIds],
       allowHeadless: false,
       allowOutOfBand: false,

@@ -12,7 +12,7 @@ export const declaredHostScanProfileByWire = {
 } as const satisfies Record<string, InternalHostScanProfile>;
 
 export const INTERNAL_HOST_GREENBONE_REVISION =
-  "greenbone-community-feed@816c24126e0375d32c667b78d20342ce7c58ec58" as const;
+  "greenbone-community-feed@a2e53c2e30f1fa5408369cb5cf99653a3e08e9df" as const;
 
 export const INTERNAL_HOST_DEFAULT_PORTS = [
   22,

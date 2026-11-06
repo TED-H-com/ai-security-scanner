@@ -4,7 +4,7 @@
 
 _Updated 2026-11-06._
 
-The [November 6 upstream review](engines/updates/2026-11-06.md) checks all 25 engines, updates eleven engine versions and offline data, and refreshes application dependencies. Managed replacements remain local source candidates; KICS uses its verified official image. CI document and contract tests: 105 tests cover the current source boundaries. The published desktop remains v0.5.3; see [the incident release record](release/v0.5.3.md) for its scope and publication observations.
+The [November 6 upstream review](engines/updates/2026-11-06.md) checks all 25 engines and prepares eighteen managed image replacements, new rules/data, application dependencies and the Podman runtime. Thirteen replacements are independently verified and catalog-pinned; KICS uses its verified official image. CI document and contract tests: 105 tests cover the current source boundaries. The published desktop remains v0.5.3; see [the incident release record](release/v0.5.3.md) for its scope and publication observations.
 
 This page summarizes current engineering status for contributors. It is not a product specification
 or release declaration. [The product specification](product-spec.md) remains the source of truth for
@@ -64,7 +64,7 @@ current scan capability.
 
 ## Grype repository scan
 
-The current catalog pins Grype to `0.117.0-4`. A controlled Linux repository scan recorded 81 Grype
+A historical controlled Linux repository scan using Grype `0.117.0-4` recorded 81 Grype
 findings (10 critical, 32 high, 33 medium, 6 low), with Grype completed and exit code 0. The full run
 recorded 192 findings, 8 completed checks, and 2 not executed: Agentic Radar had no runnable release,
 and MCP Armor had no selected MCP configuration. These are results for that fixture, not promised

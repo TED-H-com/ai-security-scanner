@@ -4,8 +4,8 @@ Runs kube-bench's unmodified upstream CIS Kubernetes 1.11 node profile (`--bench
 
 | Item | Value |
 | --- | --- |
-| Upstream | [aquasecurity/kube-bench](https://github.com/aquasecurity/kube-bench), version `0.16.0`, source ref `main`, revision `9f133cb7509ce1dbedfc860e94474588000e25ac`. The source is unchanged, one commit after the v0.16.0 release on main. This publication rebuilds the shared launcher. |
-| Image | `ghcr.io/ted-h-com/ai-security-scanner-engine-kube-bench:0.16.0-5` (`plan_kind: managed_build`), published for linux/amd64 and linux/arm64 by [this run](https://github.com/TED-H-com/ai-security-scanner/actions/runs/38696246466) from `c989e75e1c3be7e7abad3395dcf5539cf2a96832`. Exact index/platform digests and verified evidence are in `engines/catalog.json` and `plan.json`. |
+| Upstream | [aquasecurity/kube-bench](https://github.com/aquasecurity/kube-bench), version `source@9f133cb7509ce1dbedfc860e94474588000e25ac`, revision `9f133cb7509ce1dbedfc860e94474588000e25ac`. Rules/data identities are pinned in `engines/catalog.json`. |
+| Image | `ghcr.io/ted-h-com/ai-security-scanner-engine-kube-bench:0.16.0-6`, published for linux/amd64 and linux/arm64 by [run 42186918847](https://github.com/TED-H-com/ai-security-scanner/actions/runs/42186918847) from `5ba7d2e20f6eb8913aeb3097bed43860451ee522`. Exact digests and verified attestations are in [the publication record](updates/2026-11-06-publications.json). |
 | Build inputs | `engines/images/kube-bench/`: `Dockerfile`, `cfg/config.yaml`, `SNAPSHOT-PROFILE.md`, `plan.json`, `testdata/` (input marker and a five-file `node-snapshot/`); the shared launcher `engines/images/local-launcher/` (`go.mod`, `main.go`, `main_test.go`) |
 | Launcher | Shared [local launcher](local-launcher.md), `engines/images/local-launcher/main.go`: `planInvocation`, `verifyEngineInputs`, `loadNodeSnapshot`, `validateNodeSnapshot`, `runSnapshotPS`, `runSnapshotStat`, `rewriteSnapshotPaths`, `execute`, `validateEvidence` |
 | Wrapper | `cfg/config.yaml`, a product-owned kube-bench config that points the kubelet and proxy files at `/workspace/node-snapshot/`; the launcher binary doubles as `ps` and `stat` |

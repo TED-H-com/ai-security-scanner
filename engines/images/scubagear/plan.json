@@ -6,7 +6,7 @@
   "support_until": "2026-11-22",
   "maintenance_owner": "teddashh/ai-security-scanner maintainers",
   "update_procedure": "docs/engine-maintenance.md",
-  "publish_state": "publication_in_progress",
+  "publish_state": "published_managed_artifact",
   "source": {
     "repository": "https://github.com/cisagov/ScubaGear",
     "revision": "6e5a1a421b36c5a1fb3fd983b8c4bcd5b7a6c61d",
@@ -17,9 +17,22 @@
   "final_artifact": {
     "repository": "ghcr.io/ted-h-com/ai-security-scanner-engine-scubagear",
     "tag": "2.0.0-1",
-    "digest": null
+    "digest": "sha256:f4e0fea4cc018c7802d0d930362b430d41c1b4ed79f283a5fef36c88be12fbc5"
   },
-  "publication": null,
+  "publication": {
+    "workflow_run": "https://github.com/TED-H-com/ai-security-scanner/actions/runs/42186918838",
+    "source_revision": "5ba7d2e20f6eb8913aeb3097bed43860451ee522",
+    "platforms": [
+      "linux/amd64",
+      "linux/arm64"
+    ],
+    "platform_digests": {
+      "linux/amd64": "sha256:c79d12d83a0c7dec29355fb4d713f821d693c0ceb55df34d6585535b4feca57c",
+      "linux/arm64": "sha256:363b0b5b4124d5316178530472b3b4a860b80934bdb45c0ae2387b54d350f416"
+    },
+    "anonymous_pull_verified": true,
+    "evidence_artifact": "scubagear-image-evidence-42186918838-1"
+  },
   "build_recipe": {
     "source_revision": "6e5a1a421b36c5a1fb3fd983b8c4bcd5b7a6c61d",
     "source_archive": {
@@ -136,60 +149,5 @@
     "rationale": "CC0-1.0 engine source, MIT Graph authentication, and Apache-2.0 dependency notices are embedded in the managed image.",
     "source_offer_path": null
   },
-  "blockers": [],
-  "previous_artifact": {
-    "repository": "ghcr.io/teddashh/ai-security-scanner-engine-scubagear",
-    "tag": "1.8.0-8",
-    "digest": "sha256:9933c263fee77b187f2b763ffc0b490a0e220effb8b011c8a204abb23d340cc7"
-  },
-  "previous_publication": {
-    "workflow_run": "https://github.com/teddashh/ai-security-scanner/actions/runs/37063438651",
-    "source_revision": "31ae95d43840ff5ca67f80d476d91a4cb384a216",
-    "platforms": [
-      "linux/amd64",
-      "linux/arm64"
-    ],
-    "platform_digests": {
-      "linux/amd64": "sha256:39a6adf8a8ab3fe8290caedb11624e8310bdbab405be5051ddaffd90cdd4ed78",
-      "linux/arm64": "sha256:15217107b457e6ae8c62704a4a1f48320e463decfdfe43600b4b43b0e749fb1a"
-    },
-    "anonymous_pull_verified": true,
-    "evidence_artifact": "scubagear-image-evidence-37063438651-1"
-  },
-  "upstream_update": {
-    "engine_version": "2.0.0",
-    "source_revision": "6e5a1a421b36c5a1fb3fd983b8c4bcd5b7a6c61d",
-    "rule_version": "6e5a1a421b36c5a1fb3fd983b8c4bcd5b7a6c61d",
-    "reported_version": null,
-    "knowledge_date": "2026-10-22",
-    "support_until": "2026-11-22",
-    "engine_provenance": {
-      "version": "2.0.0",
-      "source_repository": "https://github.com/cisagov/ScubaGear",
-      "source_revision": "6e5a1a421b36c5a1fb3fd983b8c4bcd5b7a6c61d",
-      "source_ref": "v2.0.0",
-      "acquisition_source": "https://github.com/cisagov/ScubaGear/commit/6e5a1a421b36c5a1fb3fd983b8c4bcd5b7a6c61d",
-      "artifact_source_revision": null,
-      "source_association": "source_build_required"
-    },
-    "rules_provenance": {
-      "mode": "embedded",
-      "identifier": "CISA ScubaGear baselines",
-      "revision": "6e5a1a421b36c5a1fb3fd983b8c4bcd5b7a6c61d",
-      "acquisition_source": "https://github.com/cisagov/ScubaGear/commit/6e5a1a421b36c5a1fb3fd983b8c4bcd5b7a6c61d"
-    },
-    "data_provenance": {
-      "mode": "runtime_live",
-      "identifier": "Microsoft Entra ID configuration",
-      "revision": null,
-      "acquisition_source": "Microsoft Graph authorized by the case-scoped read-only tenant grant"
-    },
-    "knowledge_input": {
-      "kind": "runtime_live",
-      "identifier": "Microsoft Entra ID configuration",
-      "version": null,
-      "acquisition_source": "Microsoft Graph authorized by the case-scoped read-only tenant grant",
-      "pin_state": "runtime_live"
-    }
-  }
+  "blockers": []
 }

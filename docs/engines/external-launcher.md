@@ -5,7 +5,7 @@ The project-owned Go entrypoint in the Naabu, httpx and Nuclei images. It turns 
 | Item | Value |
 | --- | --- |
 | Upstream | None. Project code using only the Go standard library (`go.mod`: `go 1.26`, no requirements) |
-| Image | Built into `ghcr.io/teddashh/ai-security-scanner-engine-naabu:2.6.1-7`, `ghcr.io/ted-h-com/ai-security-scanner-engine-httpx:1.12.0-1`, `ghcr.io/teddashh/ai-security-scanner-engine-nuclei:3.11.1-7`. The catalog pins each digest; the corresponding engine plan records its own publication source and evidence. |
+| Image | Built into the verified `ghcr.io/ted-h-com/ai-security-scanner-engine-{naabu,httpx,nuclei}` images at tags `2.7.0-1`, `1.12.0-2` and `3.11.1-9`, respectively. The catalog pins each digest; the engine plans and [publication record](updates/2026-11-06-publications.json) bind their exact build sources and attestations. |
 | Build inputs | `engines/images/external-launcher/`: `main.go`, `main_test.go`, `go.mod`, `testdata/naabu-launcher-plan-v2.json`, `testdata/naabu-launcher-plan-v3.json`, `NOTICE.md`. Each engine Dockerfile runs `go test ./...`, then builds `/usr/local/bin/ai-security-scanner-engine-entrypoint` |
 | Launcher | `--engine <id> --scope /run/ai-security-scanner/scope.json --output /output`. Naabu adds `--journal-version 2 --journal-plan /run/ai-security-scanner/execution-journal-v2.json` |
 | Adapter | `extract_naabu_inventory`, `extract_httpx_inventory` and `extract_nuclei` in `src-tauri/src/adapters/mod.rs` |

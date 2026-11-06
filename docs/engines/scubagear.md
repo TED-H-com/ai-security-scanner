@@ -4,9 +4,9 @@ Checks one approved Microsoft 365 tenant (asset kind `tenant`, provider `microso
 
 | Item | Value |
 | --- | --- |
-| Upstream | [cisagov/ScubaGear](https://github.com/cisagov/ScubaGear) 1.8.0, revision `4d34e9a48e38ce5c2e14c0fdfbaee53e57594ae2` |
-| Image | `ghcr.io/teddashh/ai-security-scanner-engine-scubagear:1.8.0-8`. The digest is pinned in `engines/catalog.json`. |
-| Build inputs | `engines/images/scubagear/`: `Dockerfile`, `Dockerfile.dockerignore`, `dependencies.lock.json`, `THIRD-PARTY-NOTICES.md`; `engines/images/m365-launcher/`: `main.go`, `go.mod`, `prepare_source.py`; the pinned source archive, Microsoft.Graph.Authentication 2.25.0, powershell-yaml 0.4.12, OPA 1.19.0 static binaries (amd64, arm64), digest-pinned base images |
+| Upstream | [cisagov/ScubaGear](https://github.com/cisagov/ScubaGear), version `2.0.0`, revision `6e5a1a421b36c5a1fb3fd983b8c4bcd5b7a6c61d`. Rules/data identities are pinned in `engines/catalog.json`. |
+| Image | `ghcr.io/ted-h-com/ai-security-scanner-engine-scubagear:2.0.0-1`, published for linux/amd64 and linux/arm64 by [run 42186918838](https://github.com/TED-H-com/ai-security-scanner/actions/runs/42186918838) from `5ba7d2e20f6eb8913aeb3097bed43860451ee522`. Exact digests and verified attestations are in [the publication record](updates/2026-11-06-publications.json). |
+| Build inputs | `engines/images/scubagear/`: `Dockerfile`, `Dockerfile.dockerignore`, `dependencies.lock.json`, `THIRD-PARTY-NOTICES.md`; `engines/images/m365-launcher/`: `main.go`, `go.mod`, `prepare_source.py`; the pinned source archive, official PowerShell 7.6.9 archives, Microsoft.Graph.Authentication 2.25.0, powershell-yaml 0.4.12, OPA 1.19.0 static binaries (amd64, arm64), digest-pinned base images |
 | Launcher | `/usr/local/bin/ai-security-scanner-m365-launcher` ([shared launcher](m365-launcher.md)) |
 | Wrapper | `engines/images/scubagear/run-scubagear.ps1`, installed as `/opt/ai-security-scanner/run-scubagear.ps1` |
 | Adapter | `extract_scubagear` → `extract_m365` in `src-tauri/src/adapters/mod.rs` |
@@ -88,12 +88,12 @@ Upstream detection is unmodified. The image carries the pinned ScubaGear source,
 
 After [docs/engine-maintenance.md](../engine-maintenance.md) §4:
 
-1. Move together: plan `source` and `build_recipe` (revision, archive URL and sha256, `source_date_epoch`), the lock, `CONTRACTS["scubagear"]` in `prepare_source.py`, the Dockerfile (`ADD --checksum`, version label, `1.8.0` check), the wrapper's `Provenance.engine_version` and `source_revision`, `engines/catalog.json`, `engines/upstreams.lock.json`.
+1. Move together: plan `source` and `build_recipe` (revision, archive URL and sha256, `source_date_epoch`), the lock, `CONTRACTS["scubagear"]` in `prepare_source.py`, the Dockerfile (`ADD --checksum`, version label, `2.0.0` check), the wrapper's `Provenance.engine_version` and `source_revision`, `engines/catalog.json`, `engines/upstreams.lock.json`.
 2. Pin what upstream pins: `MaximumVersion` in `PowerShell/ScubaGear/RequiredVersions.ps1` (Graph auth, powershell-yaml) and `OPAVersion` in `ScubaConfigDefaults.json`.
 3. Re-read the report shape: `Results[].Controls[]` keys (`Control ID`, `Requirement`, `Result`, `OriginalResult`, `Criticality`), the verdict and criticality vocabularies, the `ReportSummary` counters, the badge markup.
 4. Keep what `managedM365Contracts` and `validateManagedM365Image` in `scripts/validate-engine-catalog.mjs` require: `$control.PSObject.Properties['Criticality']` (never `$control.Criticality`); `$severity = switch ($criticality.ToLowerInvariant()) {` with exactly the six reviewed values, then `default { 'unknown' }`; `SourceCriticality = $criticality`; `$result = switch -Regex ($verdict) {` with exactly `'^Pass$'` and `'^(Fail|Warning)$'`, then `default { $null }`; `if ($null -eq $result) { continue }`; `passes`, `failures` and `warnings` as `[int]`; `normalized_results = $normalized.Count`; `-ProductNames @('aad')`, `-M365Environment 'commercial'`, `-SkipDoH $true`; `Connect-MgGraph -AccessToken $secureToken`, `Get-MgContext`, `Disconnect-MgGraph`; and none of `Invoke-WebRequest`, `Invoke-RestMethod`, `raw.githubusercontent.com`, `Resolve-DnsName`, `Test-NetConnection`, `MSGRAPH_ACCESS_TOKEN=`. A change to a verdict arm must also change `normalization_shortfall` in the adapter.
 5. Rerun the permission check above and update all five places.
-6. Bump the image tag, and Maester's ([publishing](m365-launcher.md#publishing)). `grep -rn "1.8.0-8" --exclude-dir=node_modules --exclude-dir=target --exclude-dir=.git --exclude-dir=.upstreams` finds the workflow matrix, the Dockerfile label, `plan.json`, `engines/catalog.json`, `scripts/validate-engine-catalog.mjs`, `scripts/release/verify-publication-artifact.mjs`, `tests/release/verifyPublicationArtifact.test.mjs`, `THIRD_PARTY.md`, `docs/engine-catalog.md` and this page.
+6. Bump the image tag, and Maester's ([publishing](m365-launcher.md#publishing)). `grep -rn "2.0.0-1" --exclude-dir=node_modules --exclude-dir=target --exclude-dir=.git --exclude-dir=.upstreams` finds the workflow matrix, the Dockerfile label, `plan.json`, `engines/catalog.json`, `scripts/validate-engine-catalog.mjs`, `scripts/release/verify-publication-artifact.mjs`, `tests/release/verifyPublicationArtifact.test.mjs`, `THIRD_PARTY.md`, `docs/engine-catalog.md` and this page.
 7. After a live run, compare in the engine run's `attempt-<n>/output/` directory. An empty diff means every upstream Fail and Warning became exactly one finding:
 
    ```sh

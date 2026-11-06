@@ -4,8 +4,8 @@ Runs Syft over a `repository` snapshot (`dir:`) or a single-image OCI layout (`o
 
 | Item | Value |
 | --- | --- |
-| Upstream | [anchore/syft](https://github.com/anchore/syft), version `1.54.1`, source ref `v1.54.1`, revision `b254e6d92f28c3868a755f62fb3ca8f26e9fee76`. The official `anchore/syft:v1.54.1` base is pinned by index digest. Both platform OCI revision labels match this source; no upstream signature verification is claimed. |
-| Image | `ghcr.io/ted-h-com/ai-security-scanner-engine-syft:1.54.1-1` (`plan_kind: managed_rebase`), published for linux/amd64 and linux/arm64 by [this run](https://github.com/TED-H-com/ai-security-scanner/actions/runs/38704467877) from `c989e75e1c3be7e7abad3395dcf5539cf2a96832`. Exact index/platform digests and verified evidence are in `engines/catalog.json` and `plan.json`. |
+| Upstream | [anchore/syft](https://github.com/anchore/syft), version `1.57.0`, revision `30f4bce762f31136e055f2965185f12eb95fbe47`. Rules/data identities are pinned in `engines/catalog.json`. |
+| Image | `ghcr.io/ted-h-com/ai-security-scanner-engine-syft:1.57.0-1`, published for linux/amd64 and linux/arm64 by [run 42186918845](https://github.com/TED-H-com/ai-security-scanner/actions/runs/42186918845) from `5ba7d2e20f6eb8913aeb3097bed43860451ee522`. Exact digests and verified attestations are in [the publication record](updates/2026-11-06-publications.json). |
 | Build inputs | `engines/images/syft/Dockerfile` and `plan.json` only. The Dockerfile is `FROM` the upstream image by digest and adds labels, `HOME`, `XDG_CACHE_HOME`, `SYFT_CACHE_DIR=/tmp/ai-security-scanner-cache/syft`, `SYFT_CHECK_FOR_APP_UPDATE=false` and `USER 65532:65532`. Nothing is compiled or downloaded (`build_recipe: null`). |
 | Launcher | None: upstream `ENTRYPOINT ["/syft"]` receives the catalog `command`. The [local launcher](local-launcher.md) is not used. |
 | Adapter | `extract_syft_inventory` in `src-tauri/src/adapters/mod.rs` |
@@ -60,7 +60,7 @@ Follow [section 4](../engine-maintenance.md#4-updating-an-engine), then:
   - In `src-tauri/tests/local_case_lifecycle.rs`: `typed_container_and_kubernetes_inputs_complete_the_product_lifecycle`, which checks the OCI command and that components attach to the OCI asset, and `local_case_lifecycle_preserves_scope_evidence_and_comparison_truth`.
   - `unsafe_typed_input_commands_isolate_only_their_engine` in `src-tauri/src/registry.rs`.
   - The publish workflow never runs the image. Before pinning, run it by hand over a repository snapshot and an OCI layout.
-- **Hard-coded values.** Keep managed tag `1.54.1-1`, reported version `1.54.1`, full source revision, workflow selector, Dockerfile labels, catalog/plan identity and publication verifier aligned. Search current source with `rg` when updating; preserve dated records and captured fixtures. `support_until` is 2027-01-04.
+- **Hard-coded values.** Keep managed tag `1.57.0-1`, engine version `1.57.0`, source and rule revisions, workflow checks, Dockerfile labels, catalog/plan identity and publication verifier aligned. Preserve dated records and captured fixtures. `support_until` is 2027-01-04.
 - **Compare with raw output.** `jq '.artifacts | length' syft.json` should equal the normalized component count. List with `jq -r '.artifacts[] | [.name, .version, .type, .purl] | @tsv' syft.json | sort | uniq -c`; rows with the same `purl` show as one component in the report.
 - **Publishing.** The current `1.54.1-1` publication binds the recorded inputs at `c989e75e1c3be7e7abad3395dcf5539cf2a96832` in [this run](https://github.com/TED-H-com/ai-security-scanner/actions/runs/38704467877). Existing-tag reuse requires verified provenance and matching executable inputs. Any changed image input requires a new immutable tag.
 

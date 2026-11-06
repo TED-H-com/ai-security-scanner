@@ -1,0 +1,414 @@
+{
+  "schema_version": 1,
+  "reviewed_on": "2026-11-06",
+  "verification_method": "verify-publication-artifact.mjs: exact inventory/checksums, two-platform SBOMs, GitHub/Sigstore cryptographic provenance and SBOM verification against the public OCI digests",
+  "publications": [
+    {
+      "verification": {
+        "schemaVersion": 1,
+        "engine": "checkov",
+        "image": "ghcr.io/ted-h-com/ai-security-scanner-engine-checkov",
+        "tag": "3.4.3-1",
+        "indexDigest": "sha256:4c53f0df460de4a1a4eef7ef4b92302114dcc9688c8fbe07ebc2db898817acce",
+        "platformDigests": {
+          "linux/amd64": "sha256:020d313948c6d069f8962436620bc39394c6866dcc91244c3aa4aad837f10ac0",
+          "linux/arm64": "sha256:d0c28b589bf2076bc9871c4570c2ba2c68c3e84efa32822e0f6be01fa95845e0"
+        },
+        "sourceRevision": "5ba7d2e20f6eb8913aeb3097bed43860451ee522",
+        "workflowRun": "https://github.com/TED-H-com/ai-security-scanner/actions/runs/42186918805",
+        "runId": "42186918805",
+        "runAttempt": "1",
+        "evidence": {
+          "rootChecksumReceiptSha256": null,
+          "nestedChecksumReceiptSha256": "sha256:8a43e3a485c0c5f4fa3ebfccd15e44b4ecb40611d6bb1b90fce002cd09c58911",
+          "rootChecksumEntries": 0,
+          "nestedChecksumEntries": 10,
+          "sbomCount": 4,
+          "attestationCount": 5
+        }
+      },
+      "github_artifact": {
+        "id": 13488755836,
+        "name": "checkov-image-evidence-42186918805-1",
+        "digest": "sha256:baf63548f137352b9d3a6e56d50e3ffa4dc55389bc8faa6993baeae11a794d08",
+        "size_in_bytes": 3341787
+      }
+    },
+    {
+      "verification": {
+        "schemaVersion": 1,
+        "engine": "cloudquery",
+        "image": "ghcr.io/ted-h-com/ai-security-scanner-engine-cloudquery",
+        "tag": "3.5.3-aws9.2.0-file1.0.4-1",
+        "indexDigest": "sha256:a895b51ad24432921f602f1b22a6107b15133a726b3f2ac71c3c5a8def4cbaec",
+        "platformDigests": {
+          "linux/amd64": "sha256:0ddc7ff28fed4c30746ddccde4cdbb6ac28c72c2beb18b4a68933a930230c98d",
+          "linux/arm64": "sha256:f71975ebb98799ba03c3a3dae0e3bbb2cc79c4811d5b93aa6591bcabb9618adb"
+        },
+        "sourceRevision": "5ba7d2e20f6eb8913aeb3097bed43860451ee522",
+        "workflowRun": "https://github.com/TED-H-com/ai-security-scanner/actions/runs/42186918801",
+        "runId": "42186918801",
+        "runAttempt": "1",
+        "evidence": {
+          "rootChecksumReceiptSha256": null,
+          "nestedChecksumReceiptSha256": "sha256:f3b93141d02b422e47da8cfa67d6c117c6a122701322beea76475c086d4e22d2",
+          "rootChecksumEntries": 0,
+          "nestedChecksumEntries": 10,
+          "sbomCount": 4,
+          "attestationCount": 5
+        }
+      },
+      "github_artifact": {
+        "id": 13487743250,
+        "name": "cloudquery-image-evidence-42186918801-1",
+        "digest": "sha256:c7055d50e0c1d90991b98e2a40502ca57654599a8d58c4cc56913ea5cd0d2535",
+        "size_in_bytes": 301997
+      }
+    },
+    {
+      "verification": {
+        "schemaVersion": 1,
+        "engine": "garak",
+        "image": "ghcr.io/ted-h-com/ai-security-scanner-engine-garak",
+        "tag": "0.17.1-1",
+        "indexDigest": "sha256:96124a114bfed67edff72d969e320c7df1d8940567a2a6cb155162859195c8a3",
+        "platformDigests": {
+          "linux/amd64": "sha256:bb0bf303b359b6d118672faf04b77757543f411f6b29c633f940892811ad4279",
+          "linux/arm64": "sha256:13c33a721aae16a5922ab0982deaa9621acba5cf650fbc821f27076ba714b180"
+        },
+        "sourceRevision": "5ba7d2e20f6eb8913aeb3097bed43860451ee522",
+        "workflowRun": "https://github.com/TED-H-com/ai-security-scanner/actions/runs/42186918863",
+        "runId": "42186918863",
+        "runAttempt": "1",
+        "evidence": {
+          "rootChecksumReceiptSha256": "sha256:4a5e0041ebd96bf4f077ccf6c4d9425de0cdcc611d654a6b57bcf9603c6502d7",
+          "nestedChecksumReceiptSha256": "sha256:8b731cf3a3ddd0f7693812539e67c456e875dfeb362af33daf76f7c9d256037d",
+          "rootChecksumEntries": 16,
+          "nestedChecksumEntries": 10,
+          "sbomCount": 4,
+          "attestationCount": 5,
+          "managedSmokeEvidenceSha256": "sha256:b8739dd3706fa47976308bc99e300dc5e94fa488372b1090f0c61dee5c543c1e"
+        }
+      },
+      "github_artifact": {
+        "id": 13488695831,
+        "name": "garak-image-evidence-42186918863-1",
+        "digest": "sha256:9d5e40679d2270de424eb4763ba1dfa3d6897cd0770e21e52768e6f91e3c2458",
+        "size_in_bytes": 3043718
+      }
+    },
+    {
+      "verification": {
+        "schemaVersion": 1,
+        "engine": "greenbone",
+        "image": "ghcr.io/ted-h-com/ai-security-scanner-engine-greenbone",
+        "tag": "23.52.9-feed202611060607-1",
+        "indexDigest": "sha256:27e2a2fe5aceb8a81e65279dddae6a3e66f5e21208a7bb28d00d42bc3fae269f",
+        "platformDigests": {
+          "linux/amd64": "sha256:2f893a411da537dc41c7951f6d34a5eefb6fa16ac185f52bf567da85f122e7ce",
+          "linux/arm64": "sha256:fad8efdec14ef561c70859791a40b9216b81a503815a7853ffb3bba187d7a76b"
+        },
+        "sourceRevision": "5ba7d2e20f6eb8913aeb3097bed43860451ee522",
+        "workflowRun": "https://github.com/TED-H-com/ai-security-scanner/actions/runs/42186918908",
+        "runId": "42186918908",
+        "runAttempt": "1",
+        "evidence": {
+          "rootChecksumReceiptSha256": null,
+          "nestedChecksumReceiptSha256": "sha256:2c202310d04e73cc5f51213a35d40791c86db1c2d305db53259274b42dd0b316",
+          "rootChecksumEntries": 0,
+          "nestedChecksumEntries": 10,
+          "sbomCount": 4,
+          "attestationCount": 5,
+          "managedSmokeEvidenceSha256": "sha256:60455e2cc82d0538de9a42b20a7fd71f47448be7c7ee9223081ec3cc3654db7a"
+        }
+      },
+      "github_artifact": {
+        "id": 13490066083,
+        "name": "greenbone-image-evidence-42186918908-1",
+        "digest": "sha256:21bf555b064a959b39e3ef400f02450f22f6b0fe1171c570d3919aa3252c9550",
+        "size_in_bytes": 9630356
+      }
+    },
+    {
+      "verification": {
+        "schemaVersion": 1,
+        "engine": "httpx",
+        "image": "ghcr.io/ted-h-com/ai-security-scanner-engine-httpx",
+        "tag": "1.12.0-2",
+        "indexDigest": "sha256:c57d177d9c719c54c0f9cde0f054023501933487a2bcd7abb527bce47c12caa8",
+        "platformDigests": {
+          "linux/amd64": "sha256:3b1551be9fd82f4a5a66dd87bd03f861d65f926cfc66a2060d15fea46cdaea37",
+          "linux/arm64": "sha256:72e949e91c23ff861afed66411f845ce713e57dccf9ce5e94303773e644f0b14"
+        },
+        "sourceRevision": "5ba7d2e20f6eb8913aeb3097bed43860451ee522",
+        "workflowRun": "https://github.com/TED-H-com/ai-security-scanner/actions/runs/42186918910",
+        "runId": "42186918910",
+        "runAttempt": "1",
+        "evidence": {
+          "rootChecksumReceiptSha256": "sha256:6e0f251ea0c3da11a5cd95c172fe9c5e8d8c78124c77acc6a3aff85fb1a6604d",
+          "nestedChecksumReceiptSha256": "sha256:990684487eea14be1b9cd4cb43883a4c02ca6afac736b7cd7d75a8be9774338d",
+          "rootChecksumEntries": 12,
+          "nestedChecksumEntries": 10,
+          "sbomCount": 4,
+          "attestationCount": 5
+        }
+      },
+      "github_artifact": {
+        "id": 13487689351,
+        "name": "httpx-image-evidence-42186918910-1",
+        "digest": "sha256:ce68fd56c8d523ebb77594aa73bfab334d224deb5a73fd85292e1082481f056a",
+        "size_in_bytes": 273136
+      }
+    },
+    {
+      "verification": {
+        "schemaVersion": 1,
+        "engine": "kube-bench",
+        "image": "ghcr.io/ted-h-com/ai-security-scanner-engine-kube-bench",
+        "tag": "0.16.0-6",
+        "indexDigest": "sha256:7ad529776f8379b9d04c682eb66080e2dcf6bd68d5fb821919e4422edf472834",
+        "platformDigests": {
+          "linux/amd64": "sha256:8f27a4f04b348071ae2aacea170522d2b512be13dda2a4789bb21b8bab012866",
+          "linux/arm64": "sha256:9323d01925670a9be96d255904a33065a1e8cfbe45d754b1fb91c4cba46bdaec"
+        },
+        "sourceRevision": "5ba7d2e20f6eb8913aeb3097bed43860451ee522",
+        "workflowRun": "https://github.com/TED-H-com/ai-security-scanner/actions/runs/42186918847",
+        "runId": "42186918847",
+        "runAttempt": "1",
+        "evidence": {
+          "rootChecksumReceiptSha256": "sha256:52c76708dcebea5e12bdba8d604b3d25d81d5a9688f6fd2b4a3ae97fc80f10a1",
+          "nestedChecksumReceiptSha256": "sha256:5c87c116cec8da2fe37fb8903021d388c6ec651e0988e171cae02a64d7b64699",
+          "rootChecksumEntries": 14,
+          "nestedChecksumEntries": 10,
+          "sbomCount": 4,
+          "attestationCount": 5,
+          "managedSmokeEvidenceSha256": "sha256:f9a2f171b0ba51ba6f6fcc6882354d7f51e473bef03be232d3ece382a06a3635"
+        }
+      },
+      "github_artifact": {
+        "id": 13489947506,
+        "name": "kube-bench-image-evidence-42186918847-1",
+        "digest": "sha256:63ba93000c24f01ed783b2dd6e95afe2ce204747d2757766fa0b0c363d6f97c4",
+        "size_in_bytes": 303217
+      }
+    },
+    {
+      "verification": {
+        "schemaVersion": 1,
+        "engine": "maester",
+        "image": "ghcr.io/ted-h-com/ai-security-scanner-engine-maester",
+        "tag": "2.3.0-1",
+        "indexDigest": "sha256:26d09ababddce478e321702aa296dccc10dc7b06a7447dc6eb50ab6808a021e1",
+        "platformDigests": {
+          "linux/amd64": "sha256:45cfa4d388669d2baa263f89987366f10056c2e761c5352b2bcf2bc2149b3ce6",
+          "linux/arm64": "sha256:2b96e6b9d6bafc0bfc41a560548f3b8c83fa4b582363eb9de4d05722a1ab8d1e"
+        },
+        "sourceRevision": "5ba7d2e20f6eb8913aeb3097bed43860451ee522",
+        "workflowRun": "https://github.com/TED-H-com/ai-security-scanner/actions/runs/42186918838",
+        "runId": "42186918838",
+        "runAttempt": "1",
+        "evidence": {
+          "rootChecksumReceiptSha256": "sha256:f11d7072afed147126cc12ded5249d927b5b42f185d119aa75ab50c4d31be75d",
+          "nestedChecksumReceiptSha256": "sha256:e6820fea89247727799858ea83eeb08ca61627e66600017aa7a394ace922a18a",
+          "rootChecksumEntries": 12,
+          "nestedChecksumEntries": 10,
+          "sbomCount": 4,
+          "attestationCount": 5
+        }
+      },
+      "github_artifact": {
+        "id": 13488785186,
+        "name": "maester-image-evidence-42186918838-1",
+        "digest": "sha256:9dc3488038412bdbed7257343a1713bafe5282e6edf975fb0d1e00279cf77f30",
+        "size_in_bytes": 2731547
+      }
+    },
+    {
+      "verification": {
+        "schemaVersion": 1,
+        "engine": "naabu",
+        "image": "ghcr.io/ted-h-com/ai-security-scanner-engine-naabu",
+        "tag": "2.7.0-1",
+        "indexDigest": "sha256:81a40b39bc62415498659247b5ef81f251f773905f3a70e460644e82be7ef3d9",
+        "platformDigests": {
+          "linux/amd64": "sha256:0b4270a42a061e6c22501cc012eb2e5b8458d7c9c9624ded58b9119d16c9691e",
+          "linux/arm64": "sha256:dc28fd28aab26f31d11033ea2b286401ca28acd3482c71e44495515b4ccdeea4"
+        },
+        "sourceRevision": "5ba7d2e20f6eb8913aeb3097bed43860451ee522",
+        "workflowRun": "https://github.com/TED-H-com/ai-security-scanner/actions/runs/42186918910",
+        "runId": "42186918910",
+        "runAttempt": "1",
+        "evidence": {
+          "rootChecksumReceiptSha256": "sha256:ca6f7da67a2d19c9e8c0df3410f36a99e3087ca41253743d72c23314780cec80",
+          "nestedChecksumReceiptSha256": "sha256:21c8d4850b6efccbb5044690a573decb3945152ccd3a6f7624c5f9180f1ec73d",
+          "rootChecksumEntries": 12,
+          "nestedChecksumEntries": 10,
+          "sbomCount": 4,
+          "attestationCount": 5
+        }
+      },
+      "github_artifact": {
+        "id": 13488535545,
+        "name": "naabu-image-evidence-42186918910-1",
+        "digest": "sha256:80efabe0dd60d7948dd598f06cb23ab67bdda01c7215a992dd76286b7646ab82",
+        "size_in_bytes": 196647
+      }
+    },
+    {
+      "verification": {
+        "schemaVersion": 1,
+        "engine": "nuclei",
+        "image": "ghcr.io/ted-h-com/ai-security-scanner-engine-nuclei",
+        "tag": "3.11.1-9",
+        "indexDigest": "sha256:eda3defb2027e4b0647b868bf8b2ff9ab5fef92f6c52c172e366ddafbc176632",
+        "platformDigests": {
+          "linux/amd64": "sha256:af465d72b3fbe12cdc1a4a1fc4915990ac4a70e547b9f35a7e910dba33bb4990",
+          "linux/arm64": "sha256:f8b7715ae6f7e8e96da4c88ae49d432cf8d9d4898911e5675590915bd4367f58"
+        },
+        "sourceRevision": "5ba7d2e20f6eb8913aeb3097bed43860451ee522",
+        "workflowRun": "https://github.com/TED-H-com/ai-security-scanner/actions/runs/42186918910",
+        "runId": "42186918910",
+        "runAttempt": "1",
+        "evidence": {
+          "rootChecksumReceiptSha256": "sha256:1eabe653af3575f0898b12b13d9c94c1321e856e34040cea28f66013d3fd97ea",
+          "nestedChecksumReceiptSha256": "sha256:0993d43da2e8e303719a8b211a8d6b6933ba36468d31013eed3c6683fa2fc9c9",
+          "rootChecksumEntries": 12,
+          "nestedChecksumEntries": 10,
+          "sbomCount": 4,
+          "attestationCount": 5
+        }
+      },
+      "github_artifact": {
+        "id": 13488033022,
+        "name": "nuclei-image-evidence-42186918910-1",
+        "digest": "sha256:fe3831d5fe52e5f900f24fa8633f0ac4228e40b0ee5e0dd006b4932f8da95085",
+        "size_in_bytes": 620650
+      }
+    },
+    {
+      "verification": {
+        "schemaVersion": 1,
+        "engine": "scubagear",
+        "image": "ghcr.io/ted-h-com/ai-security-scanner-engine-scubagear",
+        "tag": "2.0.0-1",
+        "indexDigest": "sha256:f4e0fea4cc018c7802d0d930362b430d41c1b4ed79f283a5fef36c88be12fbc5",
+        "platformDigests": {
+          "linux/amd64": "sha256:c79d12d83a0c7dec29355fb4d713f821d693c0ceb55df34d6585535b4feca57c",
+          "linux/arm64": "sha256:363b0b5b4124d5316178530472b3b4a860b80934bdb45c0ae2387b54d350f416"
+        },
+        "sourceRevision": "5ba7d2e20f6eb8913aeb3097bed43860451ee522",
+        "workflowRun": "https://github.com/TED-H-com/ai-security-scanner/actions/runs/42186918838",
+        "runId": "42186918838",
+        "runAttempt": "1",
+        "evidence": {
+          "rootChecksumReceiptSha256": "sha256:1ec29c81f9e2e6dd811f20244b808eaf73917f64310b36cde9026910935c75fd",
+          "nestedChecksumReceiptSha256": "sha256:da3d8af356aad218f783468bb7d4e6fe7b3d9f3cefaf574fc74b3cc788c7e38a",
+          "rootChecksumEntries": 12,
+          "nestedChecksumEntries": 10,
+          "sbomCount": 4,
+          "attestationCount": 5
+        }
+      },
+      "github_artifact": {
+        "id": 13488775166,
+        "name": "scubagear-image-evidence-42186918838-1",
+        "digest": "sha256:a4da5125fecb378d57821d98c3ca89641abe3b93b6bb9be1128e92d62d813413",
+        "size_in_bytes": 2899970
+      }
+    },
+    {
+      "verification": {
+        "schemaVersion": 1,
+        "engine": "semgrep",
+        "image": "ghcr.io/ted-h-com/ai-security-scanner-engine-semgrep",
+        "tag": "1.184.0-1",
+        "indexDigest": "sha256:773070a9f84d768e6d541d2e179955d5e1af63bd7f4abb02e668d581d116a342",
+        "platformDigests": {
+          "linux/amd64": "sha256:c4f2aa09a0ae9c1707e0a39096ead8cb8570a9b7675f9e9a048149ef5ba93234",
+          "linux/arm64": "sha256:03c02f6625221332add28932944c44b78a70b900fc467e85ed7b3630005a9e2a"
+        },
+        "sourceRevision": "5ba7d2e20f6eb8913aeb3097bed43860451ee522",
+        "workflowRun": "https://github.com/TED-H-com/ai-security-scanner/actions/runs/42186918847",
+        "runId": "42186918847",
+        "runAttempt": "1",
+        "evidence": {
+          "rootChecksumReceiptSha256": "sha256:f935f5996f262cca1ee27cab14961e48ae00b3e6c4a487960105bf40bccdf188",
+          "nestedChecksumReceiptSha256": "sha256:2d4dc785e3cdcbcc919e033b61f3eca1c365194a4d3bba7dbced80a68bd97b55",
+          "rootChecksumEntries": 42,
+          "nestedChecksumEntries": 10,
+          "sbomCount": 4,
+          "attestationCount": 5,
+          "managedSmokeEvidenceSha256": "sha256:faf95f3ea1587ae745f2b735ce97fb337ed6e383fe57b17e5e01c41dd8ebf928"
+        }
+      },
+      "github_artifact": {
+        "id": 13490405717,
+        "name": "semgrep-image-evidence-42186918847-1",
+        "digest": "sha256:11ccc2ef82550f7bdff6da4a6ec5c36c79f3d608188b56eb91f6c4ecf8fb9343",
+        "size_in_bytes": 2925928
+      }
+    },
+    {
+      "verification": {
+        "schemaVersion": 1,
+        "engine": "steampipe",
+        "image": "ghcr.io/ted-h-com/ai-security-scanner-engine-steampipe",
+        "tag": "2.4.9-1",
+        "indexDigest": "sha256:34228da01ceb8bf5b8d0a67eecb4f62607bff9ce9fb1451251aad2e0cb5d99d0",
+        "platformDigests": {
+          "linux/amd64": "sha256:d7cda6a2e4930400bbf111107bee5327dbfdb223aa5aa1e6a852bd2733d1bd02",
+          "linux/arm64": "sha256:3178ab7a5724a343851cf344655038268c15076c004bbdf396e3a4ae646c28fc"
+        },
+        "sourceRevision": "5ba7d2e20f6eb8913aeb3097bed43860451ee522",
+        "workflowRun": "https://github.com/TED-H-com/ai-security-scanner/actions/runs/42186918801",
+        "runId": "42186918801",
+        "runAttempt": "1",
+        "evidence": {
+          "rootChecksumReceiptSha256": null,
+          "nestedChecksumReceiptSha256": "sha256:0a13d638cd00a557e2a0c6eed022c751c3fe940d90887631ad459262e1f8250c",
+          "rootChecksumEntries": 0,
+          "nestedChecksumEntries": 10,
+          "sbomCount": 4,
+          "attestationCount": 5
+        }
+      },
+      "github_artifact": {
+        "id": 13488869763,
+        "name": "steampipe-image-evidence-42186918801-1",
+        "digest": "sha256:0eee5cde7369cb280e539fc36a49da5bc3e59c97fc54b7c9c8798ae462e5c026",
+        "size_in_bytes": 3781316
+      }
+    },
+    {
+      "verification": {
+        "schemaVersion": 1,
+        "engine": "syft",
+        "image": "ghcr.io/ted-h-com/ai-security-scanner-engine-syft",
+        "tag": "1.57.0-1",
+        "indexDigest": "sha256:f1a3d3a9186dadfddb12e78b9f858211bb7923ef929bc05bd3b82bd8867a7d35",
+        "platformDigests": {
+          "linux/amd64": "sha256:f6f6617b2da2adc849359856ef5fd66f4651ecf204b6ee051d89e642740f285a",
+          "linux/arm64": "sha256:fa3e7e657a6df59c2623ec7ff3ca2761513fa2ceee4885b7d68261eaef1481d8"
+        },
+        "sourceRevision": "5ba7d2e20f6eb8913aeb3097bed43860451ee522",
+        "workflowRun": "https://github.com/TED-H-com/ai-security-scanner/actions/runs/42186918845",
+        "runId": "42186918845",
+        "runAttempt": "1",
+        "evidence": {
+          "rootChecksumReceiptSha256": null,
+          "nestedChecksumReceiptSha256": "sha256:b813646e7f7729a5927ff84990afe1dcf7ac08fa1c75fb1eb56d1564b95d9b74",
+          "rootChecksumEntries": 0,
+          "nestedChecksumEntries": 10,
+          "sbomCount": 4,
+          "attestationCount": 5
+        }
+      },
+      "github_artifact": {
+        "id": 13487369586,
+        "name": "syft-image-evidence-42186918845-1",
+        "digest": "sha256:8b6803f5ac78db475aa72fd1601d1d5de64e4f1df0e891810703af798dac7bc2",
+        "size_in_bytes": 484145
+      }
+    }
+  ]
+}

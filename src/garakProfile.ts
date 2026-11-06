@@ -1,7 +1,7 @@
 import type { ExternalScopeRequest, ModelEndpointInput } from "./types";
 
 export const garakProbeIds = ["dan.Dan_11_0", "dan.Dan_10_0", "dan.Dan_9_0", "ansiescape.AnsiEscaped"];
-export const garakSourceRevision = "93aa9cdec309ec4170559676f1826ea2a679920c";
+export const garakSourceRevision = "7aa740fe7412cc9bc33cdc39ca211843223cd3e1";
 
 export const validatedModelEndpoint = (endpoint: string, model: string): ModelEndpointInput | undefined => {
   endpoint = endpoint.trim(); model = model.trim();

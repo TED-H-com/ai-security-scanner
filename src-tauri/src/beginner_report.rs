@@ -35,9 +35,9 @@ const GREENBONE_ENGINE_ID: &str = "greenbone";
 const GREENBONE_REMOTE_SAFE_PROFILE_ID: &str = "greenbone_remote_safe_v1";
 const NUCLEI_ENGINE_ID: &str = "nuclei";
 const NUCLEI_WEB_SAFE_PROFILE_ID: &str = "nuclei_web_safe_v1";
-const NUCLEI_TEMPLATE_REVISION: &str = "nuclei-templates@f938a3dd530c283e9387b518b97911152ff5846c";
+const NUCLEI_TEMPLATE_REVISION: &str = "nuclei-templates@79fb682760ab3d5b0e22afbb44709353cbebf023";
 const INTERNAL_DEVICE_TEMPLATE_REVISION: &str =
-    "greenbone-community-feed@816c24126e0375d32c667b78d20342ce7c58ec58";
+    "greenbone-community-feed@a2e53c2e30f1fa5408369cb5cf99653a3e08e9df";
 const INTERNAL_DEVICE_TLS_VULNERABILITY_OIDS: [&str; 11] = [
     "1.3.6.1.4.1.25623.1.0.111012",
     "1.3.6.1.4.1.25623.1.0.117274",
@@ -11553,7 +11553,7 @@ pub(crate) mod tests {
             .as_mut()
             .unwrap()
             .template_policy
-            .revision = "816c24126e0375d32c667b78d20342ce7c58ec58".into();
+            .revision = "a2e53c2e30f1fa5408369cb5cf99653a3e08e9df".into();
         let mut wrong_rate = base.clone();
         wrong_rate.scan_runs[0].scope_grant_snapshots[0]
             .external_scope

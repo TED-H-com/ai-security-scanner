@@ -6,7 +6,7 @@
   "support_until": "2026-11-22",
   "maintenance_owner": "teddashh/ai-security-scanner maintainers",
   "update_procedure": "docs/engine-maintenance.md",
-  "publish_state": "publication_in_progress",
+  "publish_state": "published_managed_artifact",
   "source": {
     "repository": "https://github.com/projectdiscovery/naabu",
     "revision": "041b70fd396e95b5ed2c19f879c18247078243bc",
@@ -16,9 +16,22 @@
   "final_artifact": {
     "repository": "ghcr.io/ted-h-com/ai-security-scanner-engine-naabu",
     "tag": "2.7.0-1",
-    "digest": null
+    "digest": "sha256:81a40b39bc62415498659247b5ef81f251f773905f3a70e460644e82be7ef3d9"
   },
-  "publication": null,
+  "publication": {
+    "workflow_run": "https://github.com/TED-H-com/ai-security-scanner/actions/runs/42186918910",
+    "source_revision": "5ba7d2e20f6eb8913aeb3097bed43860451ee522",
+    "platforms": [
+      "linux/amd64",
+      "linux/arm64"
+    ],
+    "platform_digests": {
+      "linux/amd64": "sha256:0b4270a42a061e6c22501cc012eb2e5b8458d7c9c9624ded58b9119d16c9691e",
+      "linux/arm64": "sha256:dc28fd28aab26f31d11033ea2b286401ca28acd3482c71e44495515b4ccdeea4"
+    },
+    "anonymous_pull_verified": true,
+    "evidence_artifact": "naabu-image-evidence-42186918910-1"
+  },
   "build_recipe": {
     "source_revision": "041b70fd396e95b5ed2c19f879c18247078243bc",
     "source_archive": {
@@ -91,60 +104,5 @@
     "rationale": "MIT upstream code and the Apache-2.0 project launcher permit redistribution with notices.",
     "source_offer_path": null
   },
-  "blockers": [],
-  "previous_artifact": {
-    "repository": "ghcr.io/teddashh/ai-security-scanner-engine-naabu",
-    "tag": "2.6.1-7",
-    "digest": "sha256:e94240f4f067f39b7db9501a48c60411e6b29a215a11dda63406b9e62c061ab6"
-  },
-  "previous_publication": {
-    "workflow_run": "https://github.com/teddashh/ai-security-scanner/actions/runs/36783633415",
-    "source_revision": "51b8abfd7abe5accaf0be59b9d50567bd206dfe8",
-    "platforms": [
-      "linux/amd64",
-      "linux/arm64"
-    ],
-    "platform_digests": {
-      "linux/amd64": "sha256:4774273c362d4392d2456767715710d801d41195603f331f2ab0a274045d181b",
-      "linux/arm64": "sha256:04898ca7f1cf6b7a41a588236b46c5b52c3d985b672be94b7b7a6b81281c1adf"
-    },
-    "anonymous_pull_verified": true,
-    "evidence_artifact": "naabu-image-evidence-36783633415-1"
-  },
-  "upstream_update": {
-    "engine_version": "2.7.0",
-    "reported_version": null,
-    "source_revision": "041b70fd396e95b5ed2c19f879c18247078243bc",
-    "rule_version": null,
-    "knowledge_date": "2026-10-28",
-    "support_until": "2026-11-22",
-    "engine_provenance": {
-      "version": "2.7.0",
-      "source_repository": "https://github.com/projectdiscovery/naabu",
-      "source_revision": "041b70fd396e95b5ed2c19f879c18247078243bc",
-      "source_ref": "v2.7.0",
-      "acquisition_source": "https://github.com/projectdiscovery/naabu/commit/041b70fd396e95b5ed2c19f879c18247078243bc",
-      "artifact_source_revision": null,
-      "source_association": "source_build_required"
-    },
-    "rules_provenance": {
-      "mode": "not_applicable",
-      "identifier": "TCP port discovery has no external rule pack",
-      "revision": null,
-      "acquisition_source": null
-    },
-    "data_provenance": {
-      "mode": "runtime_live",
-      "identifier": "authorized target reachability",
-      "revision": null,
-      "acquisition_source": "only addresses in the case scope grant"
-    },
-    "knowledge_input": {
-      "kind": "runtime_live",
-      "identifier": "authorized target reachability",
-      "version": null,
-      "acquisition_source": "only addresses in the case scope grant",
-      "pin_state": "runtime_live"
-    }
-  }
+  "blockers": []
 }

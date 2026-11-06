@@ -117,13 +117,13 @@ const DECLARED_HOST_SCAN_METADATA_KEY: &str = "declared_host_scan";
 const MAX_DECLARED_HOST_SCAN_PORTS: usize = 64;
 const DECLARED_WEBSITE_ENGINE_ID: &str = "nuclei";
 const DECLARED_WEBSITE_TEMPLATE_REVISION: &str =
-    "nuclei-templates@f938a3dd530c283e9387b518b97911152ff5846c";
+    "nuclei-templates@79fb682760ab3d5b0e22afbb44709353cbebf023";
 const NUCLEI_WEB_SAFE_PROFILE_ID: &str = "nuclei_web_safe_v1";
 const INTERNAL_DEVICE_ENGINE_ID: &str = "greenbone";
 const INTERNAL_DEVICE_TEMPLATE_REVISION: &str =
-    "greenbone-community-feed@816c24126e0375d32c667b78d20342ce7c58ec58";
+    "greenbone-community-feed@a2e53c2e30f1fa5408369cb5cf99653a3e08e9df";
 const INTERNAL_ENDPOINT_TEMPLATE_REVISION: &str =
-    "greenbone-community-feed@816c24126e0375d32c667b78d20342ce7c58ec58";
+    "greenbone-community-feed@a2e53c2e30f1fa5408369cb5cf99653a3e08e9df";
 const GREENBONE_REMOTE_SAFE_PROFILE_ID: &str = "greenbone_remote_safe_v1";
 const INTERNAL_DEVICE_TLS_VULNERABILITY_OIDS: [&str; 11] = [
     "1.3.6.1.4.1.25623.1.0.111012",
@@ -22933,7 +22933,7 @@ mod tests {
         };
         let (revision, allowed_template_ids) = if activity == ExternalActivity::ActiveExternal {
             (
-                "greenbone-community-feed@816c24126e0375d32c667b78d20342ce7c58ec58",
+                "greenbone-community-feed@a2e53c2e30f1fa5408369cb5cf99653a3e08e9df",
                 vec!["1.3.6.1.4.1.25623.1.0.10335".into()],
             )
         } else {

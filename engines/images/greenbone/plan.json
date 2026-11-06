@@ -6,7 +6,7 @@
   "support_until": "2026-11-22",
   "maintenance_owner": "teddashh/ai-security-scanner maintainers",
   "update_procedure": "docs/engine-maintenance.md",
-  "publish_state": "publication_in_progress",
+  "publish_state": "published_managed_artifact",
   "source": {
     "repository": "https://github.com/greenbone/openvas-scanner",
     "revision": "cbd9081531ea6602bea7356aa371200979c1e961",
@@ -16,7 +16,7 @@
   "final_artifact": {
     "repository": "ghcr.io/ted-h-com/ai-security-scanner-engine-greenbone",
     "tag": "23.52.9-feed202611060607-1",
-    "digest": null
+    "digest": "sha256:27e2a2fe5aceb8a81e65279dddae6a3e66f5e21208a7bb28d00d42bc3fae269f"
   },
   "build_recipe": {
     "source_revision": "cbd9081531ea6602bea7356aa371200979c1e961",
@@ -391,61 +391,19 @@
     "telemetry": false,
     "per_grant_target_execution": true
   },
-  "publication": null,
-  "previous_artifact": {
-    "repository": "ghcr.io/teddashh/ai-security-scanner-engine-greenbone",
-    "tag": "23.50.24-feed202610010558-1",
-    "digest": "sha256:d2e95d252272488891d04766e66362aacb234e1e2975dca27e834f0050a695c4"
-  },
-  "previous_publication": {
-    "workflow_run": "https://github.com/teddashh/ai-security-scanner/actions/runs/36871445150",
-    "source_revision": "16d0e116aa52166b581d7ec525faf992d4757c02",
+  "publication": {
+    "workflow_run": "https://github.com/TED-H-com/ai-security-scanner/actions/runs/42186918908",
+    "source_revision": "5ba7d2e20f6eb8913aeb3097bed43860451ee522",
     "platforms": [
       "linux/amd64",
       "linux/arm64"
     ],
     "platform_digests": {
-      "linux/amd64": "sha256:4f20d48627a667b1edf01772b005435b58d42019add3cee05a247e9507a23600",
-      "linux/arm64": "sha256:6d716a451bf80d081e6f8235c02e1fac30b727ed5bd776aa4b86782b18327c2a"
+      "linux/amd64": "sha256:2f893a411da537dc41c7951f6d34a5eefb6fa16ac185f52bf567da85f122e7ce",
+      "linux/arm64": "sha256:fad8efdec14ef561c70859791a40b9216b81a503815a7853ffb3bba187d7a76b"
     },
     "anonymous_pull_verified": true,
-    "evidence_artifact": "greenbone-image-evidence-36871445150-1",
+    "evidence_artifact": "greenbone-image-evidence-42186918908-1",
     "managed_smoke_evidence_sha256": "sha256:60455e2cc82d0538de9a42b20a7fd71f47448be7c7ee9223081ec3cc3654db7a"
-  },
-  "upstream_update": {
-    "engine_version": "23.52.9",
-    "source_revision": "cbd9081531ea6602bea7356aa371200979c1e961",
-    "rule_version": "a2e53c2e30f1fa5408369cb5cf99653a3e08e9df",
-    "reported_version": null,
-    "knowledge_date": "2026-11-06",
-    "support_until": "2026-11-22",
-    "engine_provenance": {
-      "version": "23.52.9",
-      "source_repository": "https://github.com/greenbone/openvas-scanner",
-      "source_revision": "cbd9081531ea6602bea7356aa371200979c1e961",
-      "source_ref": "v23.52.9",
-      "acquisition_source": "https://github.com/greenbone/openvas-scanner/commit/cbd9081531ea6602bea7356aa371200979c1e961",
-      "artifact_source_revision": null,
-      "source_association": "source_build_required"
-    },
-    "rules_provenance": {
-      "mode": "embedded",
-      "identifier": "Greenbone Community Feed vulnerability tests",
-      "revision": "a2e53c2e30f1fa5408369cb5cf99653a3e08e9df",
-      "acquisition_source": "registry.community.greenbone.net/community/vulnerability-tests@sha256:3a3cf9affb94ee3d714d3da7ebc35bf52bb0f1f32e5d196e82d2c3bf06b2b126"
-    },
-    "data_provenance": {
-      "mode": "embedded",
-      "identifier": "Greenbone Community Feed and Notus snapshot",
-      "revision": "a2e53c2e30f1fa5408369cb5cf99653a3e08e9df",
-      "acquisition_source": "registry.community.greenbone.net/community/vulnerability-tests@sha256:3a3cf9affb94ee3d714d3da7ebc35bf52bb0f1f32e5d196e82d2c3bf06b2b126"
-    },
-    "knowledge_input": {
-      "kind": "embedded",
-      "identifier": "Greenbone Community Feed snapshot",
-      "version": "202611060607-community",
-      "acquisition_source": "registry.community.greenbone.net/community/vulnerability-tests@sha256:3a3cf9affb94ee3d714d3da7ebc35bf52bb0f1f32e5d196e82d2c3bf06b2b126",
-      "pin_state": "pinned_or_not_applicable"
-    }
   }
 }

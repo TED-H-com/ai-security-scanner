@@ -36,7 +36,7 @@ test("the SSH endpoint profile is one fixed seven-check Greenbone profile", () =
   assert.deepEqual(internalEndpointProfiles.ssh.engineIds, ["greenbone"]);
   assert.equal(
     internalEndpointProfiles.ssh.templateRevision,
-    "greenbone-community-feed@816c24126e0375d32c667b78d20342ce7c58ec58",
+    "greenbone-community-feed@a2e53c2e30f1fa5408369cb5cf99653a3e08e9df",
   );
   assert.deepEqual(internalEndpointProfiles.ssh.ratePolicy, {
     requestsPerSecond: 2,
@@ -74,7 +74,7 @@ test("the serialized RDP endpoint profile is one fixed eleven-check Greenbone tr
   assert.deepEqual(internalEndpointProfiles.rdp_tls.engineIds, ["greenbone"]);
   assert.equal(
     internalEndpointProfiles.rdp_tls.templateRevision,
-    "greenbone-community-feed@816c24126e0375d32c667b78d20342ce7c58ec58",
+    "greenbone-community-feed@a2e53c2e30f1fa5408369cb5cf99653a3e08e9df",
   );
   assert.deepEqual(internalEndpointProfiles.rdp_tls.ratePolicy, {
     requestsPerSecond: 2,
@@ -115,7 +115,7 @@ test("the VNC endpoint profile is one fixed RFB transport check", () => {
   assert.deepEqual(internalEndpointProfiles.vnc.engineIds, ["greenbone"]);
   assert.equal(
     internalEndpointProfiles.vnc.templateRevision,
-    "greenbone-community-feed@816c24126e0375d32c667b78d20342ce7c58ec58",
+    "greenbone-community-feed@a2e53c2e30f1fa5408369cb5cf99653a3e08e9df",
   );
   assert.deepEqual(internalEndpointProfiles.vnc.ratePolicy, {
     requestsPerSecond: 2,
@@ -140,7 +140,7 @@ test("the SMTP endpoint profile checks cleartext AUTH and negotiable TLS without
   assert.deepEqual(internalEndpointProfiles.smtp.engineIds, ["greenbone"]);
   assert.equal(
     internalEndpointProfiles.smtp.templateRevision,
-    "greenbone-community-feed@816c24126e0375d32c667b78d20342ce7c58ec58",
+    "greenbone-community-feed@a2e53c2e30f1fa5408369cb5cf99653a3e08e9df",
   );
   assert.deepEqual(internalEndpointProfiles.smtp.ratePolicy, {
     requestsPerSecond: 2,
@@ -176,7 +176,7 @@ test("the Telnet endpoint profile checks only cleartext login-prompt exposure", 
   assert.deepEqual(internalEndpointProfiles.telnet.engineIds, ["greenbone"]);
   assert.equal(
     internalEndpointProfiles.telnet.templateRevision,
-    "greenbone-community-feed@816c24126e0375d32c667b78d20342ce7c58ec58",
+    "greenbone-community-feed@a2e53c2e30f1fa5408369cb5cf99653a3e08e9df",
   );
   assert.deepEqual(internalEndpointProfiles.telnet.ratePolicy, {
     requestsPerSecond: 2,
@@ -198,13 +198,13 @@ test("the Telnet endpoint profile checks only cleartext login-prompt exposure", 
 test("the endpoint profiles match the native and Greenbone launcher boundaries", () => {
   assert.match(
     greenboneLauncherSource,
-    /feedRevision\s+= "816c24126e0375d32c667b78d20342ce7c58ec58"/u,
+    /feedRevision\s+= "a2e53c2e30f1fa5408369cb5cf99653a3e08e9df"/u,
   );
   assert.match(greenboneLauncherSource, /maxSelectedVTsPerGrant\s+= 128/u);
   assert.match(greenboneLauncherSource, /the Greenbone profile does not expand network targets/u);
 
   const greenbone = engineCatalog.find(({ id }) => id === "greenbone");
-  assert.equal(greenbone?.rule_version, "816c24126e0375d32c667b78d20342ce7c58ec58");
+  assert.equal(greenbone?.rule_version, "a2e53c2e30f1fa5408369cb5cf99653a3e08e9df");
   assert.ok(greenbone?.direct_network_contract?.protocols?.includes("tcp"));
   assert.deepEqual(greenbone?.direct_network_contract?.target_kinds, ["hostname", "address"]);
 
