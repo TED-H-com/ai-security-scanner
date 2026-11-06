@@ -6554,7 +6554,7 @@ fn extract_garak(parsed: &ParsedArtifact, warnings: &mut Vec<String>) -> Vec<Sou
     }
     if inits
         .first()
-        .is_some_and(|r| r["garak_version"] == "0.17.0")
+        .is_some_and(|r| matches!(r["garak_version"].as_str(), Some("0.17.0" | "0.17.1")))
     {
         let expected = BTreeMap::from([
             ("dan.Dan_11_0", ("dan.DAN", 1_u64)),

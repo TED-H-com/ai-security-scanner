@@ -45,7 +45,7 @@ test('substituting the local source patch fails its locked identity check', () =
 });
 
 test('a different Go version cannot reuse the locked toolchain downloads', () => {
-  const result = verify((lock) => { lock.windows_podman_build.go_version = '1.27.3'; });
+  const result = verify((lock) => { lock.windows_podman_build.go_version = '1.27.2'; });
   assert.equal(result.status, 1);
   assert.match(result.stderr, /exact version and build platform/);
 });

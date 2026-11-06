@@ -1,11 +1,11 @@
 # Windows Podman native systemd backport
 
-WSL 2.9 and later changed distribution cgroup placement. Podman 5.8.2's nested
+WSL 2.9 and later changed distribution cgroup placement. Podman 5.8.9's nested
 systemd startup can consequently leave rootless containers without delegated
 memory controllers, making the product's bounded gateway and engine commands
 fail while writing `memory.max`.
 
-The Windows client is built from the same locked Podman 5.8.2 source revision,
+The Windows client is built from the same locked Podman 5.8.9 source revision,
 with the native systemd lifecycle changes from
 [upstream PR 29837](https://github.com/podman-container-tools/podman/pull/29837)
 at `1795fb6ee0b45902926e95a89ddd8a47ef02c3f3` backported in
@@ -15,7 +15,7 @@ uses systemctl for state and shutdown, and restarts sshd when its port changes.
 The guest also uses the systemd cgroup manager, as described in the
 [upstream WSL cgroup issue](https://github.com/podman-container-tools/podman/issues/29749).
 The Podman v6 module paths and new version-parsing helper from the draft are not
-needed by the 5.8.2 backport; product prerequisite handling remains in place.
+needed by the 5.8.9 backport; product prerequisite handling remains in place.
 
 One additional hidden Windows WSL client keeps the exact distribution alive while
 the managed machine is running: WSL does not count systemd services or an orphaned
@@ -31,10 +31,9 @@ The build uses no downloaded Go modules. Windows builds and independent Linux
 cross-builds must produce the exact same executable. Linux cross-building also
 requires `git`, `tar`, and `unzip`.
 
-The manifest identifies the component as `5.8.2-wsl-systemd.1` and includes the
+The manifest identifies the component as `5.8.9-wsl-systemd.1` and includes the
 source archive, patch, and complete build-input record. Podman's reported API
-version remains 5.8.2. The machine OS image and upstream Windows helper binaries
-retain their existing locked identities. The changed manifest selects a separate
+version remains 5.8.9. The machine OS advances to 5.8.9-1, with the upstream 5.8.9 Windows helper binaries. The changed manifest selects a separate
 private runtime generation through the existing ownership and collision rules.
 
 This changes only product-managed runtime provisioning. Scanner detectors,
@@ -44,7 +43,9 @@ installed MSI and NSIS qualifications with the rebuilt desktop trust anchor.
 
 ## Verification
 
-The source-built client was verified on Windows against the independent Linux
+The 2026-11-06 source rebase applies the same reviewed patch to 5.8.9 without offsets or rejected hunks. Go 1.27.3 rebuilds the offline vendored closure. The Linux build and the independent runtime vendor build must agree on the new locked executable. New Windows installer observations belong to the new release qualification, not the historical run below.
+
+The previous 5.8.2 source-built client was verified on Windows against the independent Linux
 cross-build's executable hash in [diagnostic run 38819201843](https://github.com/TED-H-com/ai-security-scanner/actions/runs/38819201843).
 Both installed MSI and NSIS CLI probes passed bounded container execution,
 egress gateway readiness, 30 seconds of idle time, and a stop/start followed by

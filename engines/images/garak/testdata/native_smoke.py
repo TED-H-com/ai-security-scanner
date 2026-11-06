@@ -156,7 +156,7 @@ def main():
             denied = root / "denied.jsonl"
             assert not denied.exists() or not denied.read_text().strip(), "native inference attempted an unapproved destination"
             (destination / "native-qa.json").write_text(json.dumps({"schema_version": 1, "platform": "linux/amd64",
-                "image": args.image, "image_id": identity["Id"], "native_version": "0.17.0", "network_internal": True,
+                "image": args.image, "image_id": identity["Id"], "native_version": "0.17.1", "network_internal": True,
                 "unapproved_destinations": 0, "cases": results}, indent=2) + "\n")
         finally:
             for container in reversed(containers):

@@ -3,16 +3,16 @@
   "engine_id": "maester",
   "source": {
     "repository": "https://github.com/maester365/maester",
-    "revision": "6bf1d98f094fc7a68e449d2f40f73ef820b72ee3",
-    "archive_url": "https://github.com/maester365/maester/archive/6bf1d98f094fc7a68e449d2f40f73ef820b72ee3.tar.gz",
-    "archive_sha256": "sha256:e634e9bc5521e27adf2fd766ddf34f993a492e5ab8a5c49499c76d7bac69e43f",
-    "module_version": "2.0.0",
+    "revision": "7413c42d3fcc724dfea94d2726e690ddd364d914",
+    "archive_url": "https://github.com/maester365/maester/archive/7413c42d3fcc724dfea94d2726e690ddd364d914.tar.gz",
+    "archive_sha256": "sha256:5abab2a96dc40ed6088734d1b60665b3c982be7f8f1fe5f8653474b494ef4e41",
+    "module_version": "2.3.0",
     "license": "MIT"
   },
   "runtime": {
-    "powershell_version": "7.5.0",
-    "source_repository": "https://github.com/PowerShell/PowerShell-Docker",
-    "source_revision": "e3f885c3eb5033f54ed2ebdf4218fddf51e27192",
+    "powershell_version": "7.6.9",
+    "source_repository": "https://github.com/PowerShell/PowerShell",
+    "source_revision": "bf5fc434120666e5f1a8d1dfd6ecac7efc17a4be",
     "images": {
       "linux/amd64": "mcr.microsoft.com/powershell:7.5-azurelinux-3.0@sha256:74b9b9d43da4d04c349bd358dd2db14ee01f0ab17769e402cf0ae4bd9fdd2f2b",
       "linux/arm64": "mcr.microsoft.com/powershell:7.5-azurelinux-3.0-arm64@sha256:60d31793816646c4dd80b719b350ca68c8a53c000cbb2740655ddafe5e127903"
@@ -44,12 +44,43 @@
   ],
   "test_profile": {
     "path": "/opt/ai-security-scanner/maester-tests/Maester/Entra",
-    "exclude_tags": ["MT.1025", "MT.1026", "MT.1027", "MT.1028", "MT.1030", "MT.1031", "MT.1182"],
+    "exclude_tags": [
+      "MT.1025",
+      "MT.1026",
+      "MT.1027",
+      "MT.1028",
+      "MT.1030",
+      "MT.1031",
+      "MT.1182"
+    ],
     "excluded_reason": "MT.1025-MT.1028 and MT.1030-MT.1031 fetch a mutable role-classification file from raw.githubusercontent.com; MT.1182 performs a DNS DMARC lookup. All are excluded from the Graph-only managed network closure.",
     "include_long_running": false,
     "include_preview": false,
     "version_check": false,
     "telemetry": false,
-    "network_destinations": ["graph.microsoft.com:443"]
-  }
+    "network_destinations": [
+      "graph.microsoft.com:443"
+    ]
+  },
+  "native_dependencies": [
+    {
+      "name": "PowerShell",
+      "version": "7.6.9",
+      "source_repository": "https://github.com/PowerShell/PowerShell",
+      "source_revision": "bf5fc434120666e5f1a8d1dfd6ecac7efc17a4be",
+      "license": "MIT",
+      "license_url": "https://raw.githubusercontent.com/PowerShell/PowerShell/bf5fc434120666e5f1a8d1dfd6ecac7efc17a4be/LICENSE.txt",
+      "license_sha256": "sha256:7c77a44a8acd9b41fdc209864a8016b3d430b5d0e09309818d5b7444336df744",
+      "artifacts": {
+        "linux/amd64": {
+          "url": "https://github.com/PowerShell/PowerShell/releases/download/v7.6.9/powershell-7.6.9-linux-x64.tar.gz",
+          "sha256": "sha256:1da6d6d6035d651f20e70ddee7c4c15ac6ab8b9fb40ee92240d91263f28a884b"
+        },
+        "linux/arm64": {
+          "url": "https://github.com/PowerShell/PowerShell/releases/download/v7.6.9/powershell-7.6.9-linux-arm64.tar.gz",
+          "sha256": "sha256:02eb9991af447c7e7fe881acde195961afd397c40b8eb1c2b3856b84ec2d85f2"
+        }
+      }
+    }
+  ]
 }

@@ -41,10 +41,7 @@ See the [image build index](image-build-index.md) for the repeatable local build
 
 ## Downstream changes
 
-- **Frozen pin.** `engines/upstream-refresh-policy.json` marks CloudQuery `frozen`: 2.0.31 is the last fully public CLI before the project stopped being fully open source, and a refresh would move the product onto a non-open-source upstream (`tests/ci/upstream-refresh.test.mjs` pins the reason). `knowledge_date` 2023-01-10 and `support_until` 2023-04-10 are kept on purpose; `validateCloudQueryPlan` requires the knowledge date and the catalog notice discloses the closure. It changes only by an owner decision to replace the engine.
-- **Local plugins only.** Both plugins run from `/usr/local/libexec` with `registry: local`, and `validateCloudQueryPlan` rejects hub or remote registry strings in `plugins.yml`, the launcher and the Dockerfile. Permanent while [section 4](../engine-maintenance.md#4-updating-an-engine) item 4 forbids runtime plugin downloads.
-- **File destination 1.0.4** instead of 1.0.2 (a56f0fb): 1.0.4 carries the upstream fix for the panic below and writes the same per-table layout.
-- **Exact AWS action list** (e57629e): `required_aws_actions` must equal `expectedAwsActions` in `validateCloudQueryPlan`. It moves only with the table list.
+- **Frozen plugin boundary.** `engines/upstream-refresh-policy.json` freezes automatic updates of the public AWS 9.2.0 / file 1.0.4 closure. The manually reviewed CLI replacement is 3.5.3: actual 6.49.2 execution rejects this protocol and directs users to CLI 3.0.1–3.5.3. CLI 3.5.3 negotiates both native plugins and retrieves the selected tables without registry access. The plugin knowledge date remains 2023-01-10, with support date 2023-04-10; a newer CLI does not refresh provider coverage.
 
 ## Lessons from real runs
 

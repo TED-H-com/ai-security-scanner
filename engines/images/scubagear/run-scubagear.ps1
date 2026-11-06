@@ -191,8 +191,8 @@ try {
         Product = 'Microsoft Entra ID'
         asset_id = $binding.AssetId
         Provenance = [ordered]@{
-            engine_version = '1.8.0'
-            source_revision = '4d34e9a48e38ce5c2e14c0fdfbaee53e57594ae2'
+            engine_version = '2.0.0'
+            source_revision = '6e5a1a421b36c5a1fb3fd983b8c4bcd5b7a6c61d'
             profile = 'aad-commercial-graph-token'
             products = @('aad')
             login = $false

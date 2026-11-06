@@ -16,7 +16,7 @@ import tempfile
 from pathlib import Path
 from urllib.parse import urlsplit
 
-SOURCE_REVISION = "93aa9cdec309ec4170559676f1826ea2a679920c"
+SOURCE_REVISION = "7aa740fe7412cc9bc33cdc39ca211843223cd3e1"
 PROBES = ("dan.Dan_11_0", "dan.Dan_10_0", "dan.Dan_9_0", "ansiescape.AnsiEscaped")
 SCOPE = Path("/run/ai-security-scanner/scope.json")
 CREDENTIALS = Path("/run/ai-security-scanner/credentials.json")

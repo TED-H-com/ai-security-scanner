@@ -40,7 +40,7 @@
       "path": ".upstreams/NVIDIA/garak",
       "remote": "https://github.com/NVIDIA/garak",
       "branch": "",
-      "revision": "93aa9cdec309ec4170559676f1826ea2a679920c",
+      "revision": "7aa740fe7412cc9bc33cdc39ca211843223cd3e1",
       "shallow": true
     },
     {
@@ -144,7 +144,7 @@
       "path": ".upstreams/cisagov/ScubaGear",
       "remote": "https://github.com/cisagov/ScubaGear",
       "branch": "main",
-      "revision": "cce2bcf2d9081c2cf7f51571a3f986076c4d32b9",
+      "revision": "6e5a1a421b36c5a1fb3fd983b8c4bcd5b7a6c61d",
       "shallow": true
     },
     {
@@ -152,7 +152,7 @@
       "path": ".upstreams/cloudquery/cloudquery",
       "remote": "https://github.com/cloudquery/cloudquery",
       "branch": "main",
-      "revision": "db391adb6f7282196d1848541ab29297cffc6058",
+      "revision": "086baf7f70ee3c1069513d41f321720a5e7d2bb9",
       "shallow": true
     },
     {
@@ -264,7 +264,7 @@
       "path": ".upstreams/greenbone/openvas-scanner",
       "remote": "https://github.com/greenbone/openvas-scanner",
       "branch": "main",
-      "revision": "dcd2be55045b6b63b4f954504d76cc26a09b583e",
+      "revision": "cbd9081531ea6602bea7356aa371200979c1e961",
       "shallow": true
     },
     {
@@ -296,7 +296,7 @@
       "path": ".upstreams/maester365/maester",
       "remote": "https://github.com/maester365/maester",
       "branch": "main",
-      "revision": "0a84dc481c624cc4bc3e219ecd91906633be0c24",
+      "revision": "7413c42d3fcc724dfea94d2726e690ddd364d914",
       "shallow": true
     },
     {
@@ -376,7 +376,7 @@
       "path": ".upstreams/projectdiscovery/nuclei-templates",
       "remote": "https://github.com/projectdiscovery/nuclei-templates",
       "branch": "main",
-      "revision": "f938a3dd530c283e9387b518b97911152ff5846c",
+      "revision": "79fb682760ab3d5b0e22afbb44709353cbebf023",
       "shallow": true
     },
     {

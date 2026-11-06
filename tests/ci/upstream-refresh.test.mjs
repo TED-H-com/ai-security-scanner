@@ -173,7 +173,7 @@ function policy(entries) {
 }
 
 test("a frozen engine is refused with its stated reason and cannot become a PR", async () => {
-  const frozenReason = "CloudQuery is deliberately pinned to v2.0.31 (knowledge_date 2023-01-10), the last fully public CloudQuery CLI before the project stopped being fully open source. A refresh would move the product onto a non-open-source upstream.";
+  const frozenReason = "CloudQuery retains the public AWS 9.2.0 and file 1.0.4 plugins (knowledge_date 2023-01-10). CLI 3.5.3 is the last version supporting their protocol; newer CLIs reject this closure. Automatic refreshes remain frozen pending a manually verified public plugin and protocol replacement.";
   const result = await refreshEngine({
     root: repositoryRoot,
     engineId: "cloudquery",

@@ -110,7 +110,7 @@ def verify_native_report(path):
             rows.append(json.loads(line))
     inits = [r for r in rows if r.get("entry_type") == "init"]
     completions = [r for r in rows if r.get("entry_type") == "completion"]
-    if len(inits) != 1 or inits[0].get("garak_version") != "0.17.0" or len(completions) != 1:
+    if len(inits) != 1 or inits[0].get("garak_version") != "0.17.1" or len(completions) != 1:
         raise BoundaryViolation("native_run_incomplete")
     if completions[0].get("run") != inits[0].get("run"):
         raise BoundaryViolation("native_run_identity_mismatch")

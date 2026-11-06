@@ -45,7 +45,7 @@ const (
 	feedMetadataPath         = feedRootPath + "/vt-metadata.json"
 	notusRootPath            = "/opt/greenbone/notus"
 	openvasdPath             = "/usr/local/bin/openvasd"
-	feedRevision             = "816c24126e0375d32c667b78d20342ce7c58ec58"
+	feedRevision             = "a2e53c2e30f1fa5408369cb5cf99653a3e08e9df"
 	templateRevision         = "greenbone-community-feed@" + feedRevision
 	remoteSafeProfileID      = "greenbone_remote_safe_v1"
 	tcpScannerOID            = "1.3.6.1.4.1.25623.1.0.10335"
@@ -1047,7 +1047,10 @@ func startOpenvasd(temporaryRoot, apiKey string) (*exec.Cmd, <-chan error, error
 	}
 	command := exec.Command(openvasdPath,
 		"--scanner-type", "openvasd",
-		"--storage-type", "inmemory",
+		// Upstream's inmemory mode now uses a SQLite database in /dev/shm.
+		// Keep that transient database inside the task's bounded /tmp mount.
+		"--storage-type", "fs",
+		"--storage-path", filepath.Join(temporaryRoot, "openvasd.db"),
 		"--feed-path", feedRootPath,
 		"--lock-file-dir", temporaryRoot,
 		"--advisories", filepath.Join(notusRootPath, "advisories"),

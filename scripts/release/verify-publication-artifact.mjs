@@ -20,24 +20,24 @@ const MAX_SBOM_BYTES = 16 * 1024 * 1024;
 const MAX_CHECKSUM_BYTES = 64 * 1024;
 
 const ENGINE_SPECS = Object.freeze({
-  steampipe: { tag: "2.4.7-1", group: "cloud", workflow: ".github/workflows/engine-images-cloud.yml" },
-  prowler: { tag: "5.44.0-1", group: "cloud", workflow: ".github/workflows/engine-images-cloud.yml" },
-  checkov: { tag: "3.3.29-1", group: "standalone", workflow: ".github/workflows/engine-image-checkov.yml", sourceDateEpoch: "1791891584" },
-  syft: { tag: "1.54.1-1", group: "standalone", workflow: ".github/workflows/engine-image-syft.yml" },
-  naabu: { tag: "2.6.1-7", group: "external", workflow: ".github/workflows/engine-images-external.yml" },
-  httpx: { tag: "1.12.0-1", group: "external", workflow: ".github/workflows/engine-images-external.yml" },
-  nuclei: { tag: "3.11.1-8", group: "external", workflow: ".github/workflows/engine-images-external.yml" },
-  semgrep: { tag: "1.181.0-1", group: "local", workflow: ".github/workflows/engine-images-local-k8s.yml", smokeFiles: ["semgrep.json"] },
-  trufflehog: { tag: "3.99.2-1", group: "local", workflow: ".github/workflows/engine-images-local-k8s.yml", smokeFiles: ["trufflehog.jsonl"] },
+  steampipe: { tag: "2.4.9-1", group: "cloud", workflow: ".github/workflows/engine-images-cloud.yml" },
+  prowler: { tag: "5.47.0-1", group: "cloud", workflow: ".github/workflows/engine-images-cloud.yml" },
+  checkov: { tag: "3.4.3-1", group: "standalone", workflow: ".github/workflows/engine-image-checkov.yml", sourceDateEpoch: "1793640074" },
+  syft: { tag: "1.57.0-1", group: "standalone", workflow: ".github/workflows/engine-image-syft.yml" },
+  naabu: { tag: "2.7.0-1", group: "external", workflow: ".github/workflows/engine-images-external.yml" },
+  httpx: { tag: "1.12.0-2", group: "external", workflow: ".github/workflows/engine-images-external.yml" },
+  nuclei: { tag: "3.11.1-9", group: "external", workflow: ".github/workflows/engine-images-external.yml" },
+  semgrep: { tag: "1.184.0-1", group: "local", workflow: ".github/workflows/engine-images-local-k8s.yml", smokeFiles: ["semgrep.json"] },
+  trufflehog: { tag: "3.99.8-1", group: "local", workflow: ".github/workflows/engine-images-local-k8s.yml", smokeFiles: ["trufflehog.jsonl"] },
   trivy: {
-    tag: "0.76.1-1",
+    tag: "0.76.2-1",
     group: "local",
     workflow: ".github/workflows/engine-images-local-k8s.yml",
     smokeFiles: ["trivy-oci.json", "trivy-library.json", "trivy-jar.json"],
   },
-  grype: { tag: "0.120.1-1", group: "local", workflow: ".github/workflows/engine-images-local-k8s.yml", smokeFiles: ["grype.json"] },
-  kubescape: { tag: "4.0.16-1", group: "local", workflow: ".github/workflows/engine-images-local-k8s.yml", smokeFiles: ["kubescape.json"] },
-  "kube-bench": { tag: "0.16.0-5", group: "local", workflow: ".github/workflows/engine-images-local-k8s.yml", smokeFiles: ["kube-bench.json"] },
+  grype: { tag: "0.121.2-1", group: "local", workflow: ".github/workflows/engine-images-local-k8s.yml", smokeFiles: ["grype.json"] },
+  kubescape: { tag: "4.0.19-1", group: "local", workflow: ".github/workflows/engine-images-local-k8s.yml", smokeFiles: ["kubescape.json"] },
+  "kube-bench": { tag: "0.16.0-6", group: "local", workflow: ".github/workflows/engine-images-local-k8s.yml", smokeFiles: ["kube-bench.json"] },
   "mcp-armor": {
     tag: "1.0.2-config-only.1",
     group: "local",
@@ -51,11 +51,11 @@ const ENGINE_SPECS = Object.freeze({
     smokeFiles: ["agentic-radar.json"],
   },
   garak: {
-    tag: "0.17.0-1", group: "local", workflow: ".github/workflows/engine-image-garak.yml",
+    tag: "0.17.1-1", group: "local", workflow: ".github/workflows/engine-image-garak.yml",
     smokeFiles: ["report.jsonl", "garak-execution.json", "native-qa.json"],
   },
-  scubagear: { tag: "1.8.0-8", group: "m365", workflow: ".github/workflows/engine-images-m365.yml" },
-  maester: { tag: "2.0.0-9", group: "m365", workflow: ".github/workflows/engine-images-m365.yml" },
+  scubagear: { tag: "2.0.0-1", group: "m365", workflow: ".github/workflows/engine-images-m365.yml" },
+  maester: { tag: "2.3.0-1", group: "m365", workflow: ".github/workflows/engine-images-m365.yml" },
   "egress-gateway": { tag: "0.3.0-1", group: "gateway", workflow: ".github/workflows/managed-egress-gateway-image.yml" },
 });
 
@@ -732,12 +732,12 @@ async function verifyGarakNativeEvidence(files, evidence) {
   }
   const init = rows.filter((row) => row.entry_type === "init");
   const terminal = rows.filter((row) => row.entry_type === "completion");
-  assert(init.length === 1 && init[0].garak_version === "0.17.0" && typeof init[0].run === "string" && init[0].run &&
+  assert(init.length === 1 && init[0].garak_version === "0.17.1" && typeof init[0].run === "string" && init[0].run &&
     terminal.length === 1 && terminal[0].run === init[0].run, "Garak native report lacks its matching terminal completion");
   validateEvals(rows.filter((row) => row.entry_type === "eval"), true);
   const receipt = await readJson(files, `${prefix}garak-execution.json`, "Garak native execution receipt");
   const qa = await readJson(files, `${prefix}native-qa.json`, "Garak controlled native QA");
-  assert(qa.schema_version === 1 && qa.platform === "linux/amd64" && qa.native_version === "0.17.0" &&
+  assert(qa.schema_version === 1 && qa.platform === "linux/amd64" && qa.native_version === "0.17.1" &&
     qa.image === `${evidence.image}@${evidence.indexDigest}` && DIGEST_PATTERN.test(qa.image_id) &&
     qa.network_internal === true && qa.unapproved_destinations === 0, "Garak native QA image or network identity differs");
   equalSet(qa.cases.map((result) => result.case), ["positive", "clean", "redirect", "bad-tls", "deadline", "cancelled"], "Garak native QA cases");

@@ -1,10 +1,10 @@
 # syntax=docker/dockerfile:1.7@sha256:a57df69d0ea827fb7266491f2813635de6f17269be881f696fbfdf2d83dda33e
 
-ARG SOURCE_REVISION=e27e4ab61ad85479a5d53dae9b08440bc63e72b3
+ARG SOURCE_REVISION=086baf7f70ee3c1069513d41f321720a5e7d2bb9
 ARG AWS_SOURCE_REVISION=804be3a90d6f15d3e6c662c0eb7afa88a9596180
 ARG FILE_SOURCE_REVISION=600ffdd2707af566e3c99469d84a34d94730aaa1
 
-FROM --platform=$BUILDPLATFORM golang:1.25.0-alpine3.22@sha256:f18a072054848d87a8077455f0ac8a25886f2397f88bfdd222d6fafbb5bba440 AS launcher
+FROM --platform=$BUILDPLATFORM golang:1.26.10-alpine@sha256:87c65a688975c0b1d4585d204874c45ca78354670e3a5f11368c5a492303d696 AS launcher
 ARG TARGETOS
 ARG TARGETARCH
 WORKDIR /src
@@ -16,11 +16,11 @@ RUN CGO_ENABLED=0 GOOS=${TARGETOS} GOARCH=${TARGETARCH} \
 FROM alpine:3.23@sha256:fd791d74b68913cbb027c6546007b3f0d3bc45125f797758156952bc2d6daf40 AS artifacts
 ARG TARGETARCH
 
-ADD --checksum=sha256:61d8304180f2cd1139d74db4185a5b1c99437cceb97bdb8acf0d1abd875106b1 \
-    https://github.com/cloudquery/cloudquery/releases/download/cli-v2.0.31/cloudquery_linux_amd64 \
+ADD --checksum=sha256:996fee38e47a629e6908b5a2662e9a96a4df717525eee5a3f6a757a76a6d8cba \
+    https://github.com/cloudquery/cloudquery/releases/download/cli-v3.5.3/cloudquery_linux_amd64 \
     /downloads/cloudquery-linux-amd64
-ADD --checksum=sha256:51f1e24bc05fbae03ebd45f55c456a522d62d55413ebd0a4d728cf1b36ec938d \
-    https://github.com/cloudquery/cloudquery/releases/download/cli-v2.0.31/cloudquery_linux_arm64 \
+ADD --checksum=sha256:4db2d20bc09fd35dc63497cd4db85297e2aaeff033e6fd7eca75c3e0672ba937 \
+    https://github.com/cloudquery/cloudquery/releases/download/cli-v3.5.3/cloudquery_linux_arm64 \
     /downloads/cloudquery-linux-arm64
 ADD --checksum=sha256:138cb293cc691725914bd59ab452fb29b13b32e1c92f3da1410720349ba9004d \
     https://github.com/cloudquery/cloudquery/releases/download/plugins-source-aws-v9.2.0/aws_linux_amd64.zip \
@@ -37,8 +37,8 @@ ADD --checksum=sha256:e8885e5f3e5ccd9325ed4f35e40774b649f88440fc2b4dc3a4a9a03ed9
 ADD --checksum=sha256:a4788989f99ab02144605539ab552e86c076405ac7516fb673e73ba6bda40c6b \
     https://github.com/cloudquery/cloudquery/archive/804be3a90d6f15d3e6c662c0eb7afa88a9596180.tar.gz \
     /downloads/aws-source.tar.gz
-ADD --checksum=sha256:21e18c3d1348243273231e72a39febd9d7429ac4f1ec36c5bf18c32d509e5996 \
-    https://github.com/cloudquery/cloudquery/archive/e27e4ab61ad85479a5d53dae9b08440bc63e72b3.tar.gz \
+ADD --checksum=sha256:ae47bd08e22aac0263784c1915c60d00111ef13145550c6d177af9fb24c7eeaf \
+    https://github.com/cloudquery/cloudquery/archive/086baf7f70ee3c1069513d41f321720a5e7d2bb9.tar.gz \
     /downloads/cli-source.tar.gz
 ADD --checksum=sha256:700e2008b33a31a6e396d1e348464d2e832c856fdd9b4e45362f90b84bf92a5f \
     https://github.com/cloudquery/cloudquery/archive/600ffdd2707af566e3c99469d84a34d94730aaa1.tar.gz \
@@ -89,15 +89,15 @@ LABEL org.opencontainers.image.title="ai-security-scanner CloudQuery engine" \
       org.opencontainers.image.description="Anonymous public CloudQuery AWS IAM inventory source closure with scanner-owned launcher" \
       org.opencontainers.image.source="https://github.com/teddashh/ai-security-scanner" \
       org.opencontainers.image.revision="${SOURCE_REVISION}" \
-      org.opencontainers.image.version="2.0.31-aws9.2.0-6" \
+      org.opencontainers.image.version="3.5.3-aws9.2.0-file1.0.4-1" \
       org.opencontainers.image.licenses="MPL-2.0" \
-      io.ai-security-scanner.cloudquery-cli.version="2.0.31" \
+      io.ai-security-scanner.cloudquery-cli.version="3.5.3" \
       io.ai-security-scanner.cloudquery-aws.version="9.2.0" \
       io.ai-security-scanner.cloudquery-file.version="1.0.4" \
       io.ai-security-scanner.cloudquery-cli.source-revision="${SOURCE_REVISION}" \
       io.ai-security-scanner.cloudquery-aws.source-revision="${AWS_SOURCE_REVISION}" \
       io.ai-security-scanner.cloudquery-file.source-revision="${FILE_SOURCE_REVISION}" \
-      io.ai-security-scanner.cloudquery-cli.source-archive-sha256="21e18c3d1348243273231e72a39febd9d7429ac4f1ec36c5bf18c32d509e5996" \
+      io.ai-security-scanner.cloudquery-cli.source-archive-sha256="ae47bd08e22aac0263784c1915c60d00111ef13145550c6d177af9fb24c7eeaf" \
       io.ai-security-scanner.cloudquery-aws.source-archive-sha256="a4788989f99ab02144605539ab552e86c076405ac7516fb673e73ba6bda40c6b" \
       io.ai-security-scanner.cloudquery-file.source-archive-sha256="700e2008b33a31a6e396d1e348464d2e832c856fdd9b4e45362f90b84bf92a5f" \
       io.ai-security-scanner.profile="aws-iam-us-east-1"
@@ -108,7 +108,7 @@ COPY --from=artifacts --chmod=0555 /out/cloudquery /app/cloudquery
 COPY --from=artifacts --chmod=0555 /out/cloudquery-source-aws /usr/local/libexec/cloudquery-source-aws
 COPY --from=artifacts --chmod=0555 /out/cloudquery-destination-file /usr/local/libexec/cloudquery-destination-file
 COPY --from=artifacts /out/LICENSE /usr/share/licenses/cloudquery/LICENSE
-COPY --from=artifacts /downloads/cli-source.tar.gz /usr/share/source/cloudquery/cli-e27e4ab.tar.gz
+COPY --from=artifacts /downloads/cli-source.tar.gz /usr/share/source/cloudquery/cli-086baf7.tar.gz
 COPY --from=artifacts /downloads/aws-source.tar.gz /usr/share/source/cloudquery/aws-804be3a.tar.gz
 COPY --from=artifacts /downloads/file-source.tar.gz /usr/share/source/cloudquery/file-600ffdd.tar.gz
 COPY engines/images/cloudquery/SOURCE-OFFER.md /usr/share/source/cloudquery/SOURCE-OFFER.md

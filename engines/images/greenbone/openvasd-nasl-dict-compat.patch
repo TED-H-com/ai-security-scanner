@@ -1,0 +1,30 @@
+--- a/rust/src/nasl/interpreter/nasl_value.rs
++++ b/rust/src/nasl/interpreter/nasl_value.rs
+@@ -233,9 +233,8 @@
+             }
+         } else if let Some(dict) = self.as_dict() {
+             let index = index.as_string().map_err(ExprError::rhs)?;
+-            dict.get(&index)
+-                .ok_or_else(|| ExprError::lhs(ErrorKind::DictKeyDoesNotExist(index)))
+-                .cloned()
++            // NASL associative arrays return NULL for an unset key.
++            Ok(dict.get(&index).cloned().unwrap_or(NaslValue::Null))
+         } else {
+             Err(ExprError::lhs(ErrorKind::ArrayOrDictExpected))
+         }
+--- a/rust/src/nasl/interpreter/tests/mod.rs
++++ b/rust/src/nasl/interpreter/tests/mod.rs
+@@ -326,6 +326,13 @@
+     NaslValue::Null,
+ );
+ 
++interpreter_test_ok!(
++    missing_dict_key,
++    "a['present'] = 1; a['missing'];",
++    1,
++    NaslValue::Null,
++);
++
+ interpreter_test_ok!(increment_assign, "j++; j;", NaslValue::Null, 1,);
+ interpreter_test_ok!(nonexistent_variable, "a += 12;", 12);
+ 

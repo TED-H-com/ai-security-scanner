@@ -14,7 +14,7 @@
     "local_research_checkout": ".upstreams/projectdiscovery/naabu"
   },
   "final_artifact": {
-    "repository": "ghcr.io/teddashh/ai-security-scanner-engine-naabu",
+    "repository": "ghcr.io/ted-h-com/ai-security-scanner-engine-naabu",
     "tag": "2.7.0-1",
     "digest": null
   },
@@ -56,7 +56,7 @@
     "required": true,
     "strategy": "Validate each FrozenExternalScope grant and invoke one bounded TCP connect scan per grant without accepting arbitrary scanner arguments.",
     "entrypoint": "/usr/local/bin/ai-security-scanner-engine-entrypoint",
-    "launcher_sha256": "sha256:9427ca7d24b2d1a115231b975b518de5acd90df7f1ff7b4a4812b06b97825868"
+    "launcher_sha256": "sha256:5b28835fa5f181a18ab8aec16278daef5bd287170839c7f4c4516468507c30fd"
   },
   "managed_runtime": {
     "non_root_user": "65532:65532",

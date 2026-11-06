@@ -11,21 +11,21 @@
   "components": [
     {
       "name": "cloudquery-cli",
-      "version": "2.0.31",
-      "release_ref": "cli-v2.0.31",
-      "source_revision": "e27e4ab61ad85479a5d53dae9b08440bc63e72b3",
+      "version": "3.5.3",
+      "release_ref": "cli-v3.5.3",
+      "source_revision": "086baf7f70ee3c1069513d41f321720a5e7d2bb9",
       "source_archive": {
-        "url": "https://github.com/cloudquery/cloudquery/archive/e27e4ab61ad85479a5d53dae9b08440bc63e72b3.tar.gz",
-        "sha256": "sha256:21e18c3d1348243273231e72a39febd9d7429ac4f1ec36c5bf18c32d509e5996"
+        "url": "https://github.com/cloudquery/cloudquery/archive/086baf7f70ee3c1069513d41f321720a5e7d2bb9.tar.gz",
+        "sha256": "sha256:ae47bd08e22aac0263784c1915c60d00111ef13145550c6d177af9fb24c7eeaf"
       },
       "artifacts": {
         "linux/amd64": {
-          "url": "https://github.com/cloudquery/cloudquery/releases/download/cli-v2.0.31/cloudquery_linux_amd64",
-          "sha256": "sha256:61d8304180f2cd1139d74db4185a5b1c99437cceb97bdb8acf0d1abd875106b1"
+          "url": "https://github.com/cloudquery/cloudquery/releases/download/cli-v3.5.3/cloudquery_linux_amd64",
+          "sha256": "sha256:996fee38e47a629e6908b5a2662e9a96a4df717525eee5a3f6a757a76a6d8cba"
         },
         "linux/arm64": {
-          "url": "https://github.com/cloudquery/cloudquery/releases/download/cli-v2.0.31/cloudquery_linux_arm64",
-          "sha256": "sha256:51f1e24bc05fbae03ebd45f55c456a522d62d55413ebd0a4d728cf1b36ec938d"
+          "url": "https://github.com/cloudquery/cloudquery/releases/download/cli-v3.5.3/cloudquery_linux_arm64",
+          "sha256": "sha256:4db2d20bc09fd35dc63497cd4db85297e2aaeff033e6fd7eca75c3e0672ba937"
         }
       }
     },

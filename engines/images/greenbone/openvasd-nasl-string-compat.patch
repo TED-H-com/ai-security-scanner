@@ -1,0 +1,90 @@
+--- a/rust/src/nasl/builtin/string/mod.rs
++++ b/rust/src/nasl/builtin/string/mod.rs
+@@ -117,7 +117,7 @@
+             }
+             Ok(())
+         }
+-        NaslValue::String(x) => write!(s, "{x}"),
++        NaslValue::String(x) => write!(s, "{}", decode_nasl_string(x)),
+         NaslValue::Number(x) => write!(s, "{x}"),
+         NaslValue::Boolean(x) => write!(s, "{}", *x as i32),
+         NaslValue::AttackCategory(x) => write!(s, "{}", *x as i32),
+@@ -128,6 +128,48 @@
+         _ => Ok(()),
+     }
+     .map_err(|e| e.into())
++}
++
++// Double-quoted NASL strings preserve escape sequences in the parser. The
++// string()/strcat() builtins apply the legacy conversion when concatenating
++// them, matching nasl_string() in the C interpreter.
++fn decode_nasl_string(value: &str) -> String {
++    let mut decoded = String::with_capacity(value.len());
++    let mut chars = value.chars();
++    while let Some(current) = chars.next() {
++        if current != '\\' {
++            decoded.push(current);
++            continue;
++        }
++
++        match chars.next() {
++            Some('n') => decoded.push('\n'),
++            Some('t') => decoded.push('\t'),
++            Some('r') => decoded.push('\r'),
++            Some('\\') => decoded.push('\\'),
++            Some('x') => {
++                let high = chars.next();
++                let low = chars.next();
++                match (
++                    high.and_then(|c| c.to_digit(16)),
++                    low.and_then(|c| c.to_digit(16)),
++                ) {
++                    (Some(high), Some(low)) => decoded.push(char::from((high * 16 + low) as u8)),
++                    _ => {
++                        if let Some(high) = high {
++                            decoded.push(high);
++                        }
++                        if let Some(low) = low {
++                            decoded.push(low);
++                        }
++                    }
++                }
++            }
++            Some(_) => {}
++            None => decoded.push('\\'),
++        }
++    }
++    decoded
+ }
+ 
+ /// NASL function to return uppercase equivalent of a given string
+@@ -480,7 +522,7 @@
+         hexstr,
+         hex,
+         (raw_string, "raw_string"),
+-        (raw_string, "strcat"),
++        (string, "strcat"),
+         tolower,
+         toupper,
+         strlen,
+--- a/rust/src/nasl/builtin/string/tests.rs
++++ b/rust/src/nasl/builtin/string/tests.rs
+@@ -59,6 +59,18 @@
+     check_code_result("string(0x7B, 1);", "1231");
+     check_code_result("string(0x7B, 1, 'Hallo');", "1231Hallo");
+     check_code_result("string(0x7B, 1, NULL, 'Hallo');", "1231Hallo");
++
++    // strcat has the same conversion semantics as string: in particular,
++    // numbers are decimal text rather than single raw bytes.
++    check_code_result(
++        "strcat('www/', 'example', '/', 8080, '/keepalive');",
++        "www/example/8080/keepalive",
++    );
++    check_code_result(
++        r#"string("GET / HTTP/1.1\r\nConnection: close\r\n\r\n");"#,
++        "GET / HTTP/1.1\r\nConnection: close\r\n\r\n",
++    );
++    check_code_result(r#"string("A\x42\tC\\D");"#, "AB\tC\\D");
+ }
+ 
+ #[test]

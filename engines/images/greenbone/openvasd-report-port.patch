@@ -1,25 +1,10 @@
-diff --git a/rust/src/models/result.rs b/rust/src/models/result.rs
-index c4fd1f8..935548e 100644
---- a/rust/src/models/result.rs
-+++ b/rust/src/models/result.rs
-@@ -26,7 +26,7 @@ pub struct Result {
-     pub oid: Option<String>,
-     #[serde(skip_serializing_if = "Option::is_none", default)]
-     /// Port
--    pub port: Option<i16>,
-+    pub port: Option<i32>,
-     #[serde(skip_serializing_if = "Option::is_none", default)]
-     /// Protocol the port corresponds to
-     pub protocol: Option<Protocol>,
-diff --git a/rust/src/nasl/builtin/report/mod.rs b/rust/src/nasl/builtin/report/mod.rs
-index 797d307..5633798 100644
 --- a/rust/src/nasl/builtin/report/mod.rs
 +++ b/rust/src/nasl/builtin/report/mod.rs
-@@ -25,6 +25,20 @@ impl Reporting {
+@@ -25,6 +25,20 @@
          result
      }
  
-+    fn result_port(value: &NaslValue) -> Option<i32> {
++    fn result_port(value: &NaslValue) -> Option<u16> {
 +        let port = match value {
 +            NaslValue::Number(value) => *value,
 +            NaslValue::String(value) => value.parse::<i64>().ok()?,
@@ -27,7 +12,7 @@ index 797d307..5633798 100644
 +            _ => return None,
 +        };
 +        if (1..=i64::from(u16::MAX)).contains(&port) {
-+            i32::try_from(port).ok()
++            u16::try_from(port).ok()
 +        } else {
 +            None
 +        }
@@ -36,24 +21,23 @@ index 797d307..5633798 100644
      async fn store_result(
          &self,
          typus: ResultType,
-@@ -38,8 +52,7 @@ impl Reporting {
+@@ -39,8 +53,7 @@
          let port = register
              .local_nasl_value("port")
              .ok()
 -            .map(|x| x.convert_to_number())
--            .map(|x: i64| x as i16);
+-            .map(|x: i64| x as u16);
 +            .and_then(Self::result_port);
  
          let protocol = match register
              .local_nasl_value("proto")
-diff --git a/rust/src/nasl/builtin/report/tests.rs b/rust/src/nasl/builtin/report/tests.rs
-index 7723c48..e0d8558 100644
 --- a/rust/src/nasl/builtin/report/tests.rs
 +++ b/rust/src/nasl/builtin/report/tests.rs
-@@ -71,6 +71,44 @@ async fn security_message() {
-     verify("security_message", ResultType::Alarm).await
+@@ -68,3 +68,42 @@
+     }
+     t.async_verify().await;
  }
- 
++
 +#[tokio::test]
 +async fn security_message_coerces_decimal_string_ports_without_wrapping() {
 +    let mut t = TestBuilder::default();
@@ -70,7 +54,7 @@ index 7723c48..e0d8558 100644
 +    );
 +    t.check_no_errors();
 +
-+    let (_, ctx) = t.results_and_ctx();
++    let ctx = t.ctx();
 +    for (id, expected) in [
 +        (0, Some(8080)),
 +        (1, Some(65535)),
@@ -92,190 +76,3 @@ index 7723c48..e0d8558 100644
 +    t.async_verify().await;
 +}
 +
- #[tokio::test]
- async fn error_message() {
-     verify("error_message", ResultType::Error).await
-diff --git a/rust/src/openvas/result_collector.rs b/rust/src/openvas/result_collector.rs
-index 325079f..62e1bbd 100644
---- a/rust/src/openvas/result_collector.rs
-+++ b/rust/src/openvas/result_collector.rs
-@@ -284,7 +284,7 @@ mod tests {
-             ip_address: Some("127.0.0.1".to_string()),
-             hostname: Some("example.com".to_string()),
-             oid: Some("12.11.10.9.8.7".to_string()),
--            port: Some(22i16),
-+            port: Some(22i32),
-             protocol: Some(Protocol::TCP),
-             message: Some("Something wrong".to_string()),
-             detail: None,
-diff --git a/rust/src/openvasd/database/sqlite/results.rs b/rust/src/openvasd/database/sqlite/results.rs
-index 18ddbcc..6e9db7b 100644
---- a/rust/src/openvasd/database/sqlite/results.rs
-+++ b/rust/src/openvasd/database/sqlite/results.rs
-@@ -6,6 +6,27 @@ use crate::database::{
-     dao::{DAOError, DAOPromiseRef, DAOStreamer, Execute, Fetch, StreamFetch},
-     sqlite::insert_values_chunked,
- };
-+
-+fn normalize_result_port(port: Option<i32>) -> Option<i32> {
-+    port.filter(|port| (1..=i32::from(u16::MAX)).contains(port))
-+}
-+
-+fn row_port(row: &SqliteRow) -> Option<i32> {
-+    match row.try_get::<Option<i32>, _>("port") {
-+        Ok(port) => {
-+            let normalized = normalize_result_port(port);
-+            if port.is_some() && normalized.is_none() {
-+                tracing::warn!(?port, "ignoring invalid result port in SQLite");
-+            }
-+            normalized
-+        }
-+        Err(error) => {
-+            tracing::warn!(%error, "ignoring result port with an invalid SQLite representation");
-+            None
-+        }
-+    }
-+}
-+
- fn row_to_result(row: SqliteRow) -> models::Result {
-     let detail = match (
-         row.try_get::<Option<String>, _>("detail_name")
-@@ -45,7 +66,7 @@ fn row_to_result(row: SqliteRow) -> models::Result {
-             .unwrap_or(None),
-         hostname: row.try_get::<Option<String>, _>("hostname").unwrap_or(None),
-         oid: row.try_get::<Option<String>, _>("oid").unwrap_or(None),
--        port: row.try_get::<Option<i16>, _>("port").unwrap_or(None),
-+        port: row_port(&row),
-         protocol: row
-             .try_get::<Option<String>, _>("protocol")
-             .unwrap_or(None)
-@@ -225,7 +246,7 @@ where
-                 .push_bind(result.ip_address.clone().unwrap_or_default())
-                 .push_bind(result.hostname.clone().unwrap_or_default())
-                 .push_bind(result.oid.clone().unwrap_or_default())
--                .push_bind(result.port.unwrap_or_default())
-+                .push_bind(normalize_result_port(result.port))
-                 .push_bind(result.protocol.map(|x| x.to_string()).unwrap_or_default())
-                 .push_bind(result.message.clone().unwrap_or_default())
-                 .push_bind(detail.name)
-@@ -243,3 +264,120 @@ where
- 
-     Ok(())
- }
-+
-+#[cfg(test)]
-+mod tests {
-+    use super::*;
-+    use sqlx::sqlite::SqlitePoolOptions;
-+
-+    async fn result_pool() -> SqlitePool {
-+        let pool = SqlitePoolOptions::new()
-+            .max_connections(1)
-+            .connect("sqlite::memory:")
-+            .await
-+            .unwrap();
-+        sqlx::query(
-+            r#"
-+            CREATE TABLE results (
-+                scan_id TEXT NOT NULL,
-+                id INTEGER NOT NULL,
-+                type TEXT,
-+                ip_address TEXT,
-+                hostname TEXT,
-+                oid TEXT,
-+                port INTEGER,
-+                protocol TEXT,
-+                message TEXT,
-+                detail_name TEXT,
-+                detail_value TEXT,
-+                source_type TEXT,
-+                source_name TEXT,
-+                source_description TEXT,
-+                PRIMARY KEY (scan_id, id)
-+            )
-+            "#,
-+        )
-+        .execute(&pool)
-+        .await
-+        .unwrap();
-+        pool
-+    }
-+
-+    #[tokio::test]
-+    async fn result_port_round_trip_preserves_null_and_full_u16_range() {
-+        let pool = result_pool().await;
-+        let ports = [
-+            None,
-+            Some(1),
-+            Some(32768),
-+            Some(65535),
-+            Some(0),
-+            Some(-1),
-+            Some(65536),
-+        ];
-+        let results = ports
-+            .into_iter()
-+            .map(|port| models::Result {
-+                port,
-+                ..Default::default()
-+            })
-+            .collect::<Vec<_>>();
-+
-+        try_store(&pool, "scan", &results).await.unwrap();
-+
-+        let stored = sqlx::query_scalar::<_, Option<i32>>(
-+            "SELECT port FROM results WHERE scan_id = ? ORDER BY id",
-+        )
-+        .bind("scan")
-+        .fetch_all(&pool)
-+        .await
-+        .unwrap();
-+        assert_eq!(
-+            stored,
-+            vec![
-+                None,
-+                Some(1),
-+                Some(32768),
-+                Some(65535),
-+                None,
-+                None,
-+                None,
-+            ]
-+        );
-+    }
-+
-+    #[tokio::test]
-+    async fn invalid_persisted_ports_are_not_exposed() {
-+        let pool = result_pool().await;
-+        for (id, port) in [0, -1, 65536].into_iter().enumerate() {
-+            sqlx::query("INSERT INTO results (scan_id, id, type, port) VALUES (?, ?, ?, ?)")
-+                .bind("corrupt")
-+                .bind(id as i64)
-+                .bind("log")
-+                .bind(port)
-+                .execute(&pool)
-+                .await
-+                .unwrap();
-+        }
-+
-+        let rows = sqlx::query(
-+            r#"
-+            SELECT id, type, ip_address, hostname, oid, port, protocol, message,
-+                detail_name, detail_value, source_type, source_name, source_description
-+            FROM results
-+            WHERE scan_id = ?
-+            ORDER BY id
-+            "#,
-+        )
-+        .bind("corrupt")
-+        .fetch_all(&pool)
-+        .await
-+        .unwrap();
-+        let ports = rows
-+            .into_iter()
-+            .map(row_to_result)
-+            .map(|result| result.port)
-+            .collect::<Vec<_>>();
-+        assert_eq!(ports, vec![None, None, None]);
-+    }
-+}

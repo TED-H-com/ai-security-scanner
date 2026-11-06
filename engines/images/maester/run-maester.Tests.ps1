@@ -320,8 +320,8 @@ Describe 'ConvertTo-ManagedMaesterDocument envelope' {
         $envelope.schema_version | Should -Be '1.0.0'
         $envelope.Engine | Should -Be 'Maester'
         $envelope.Product | Should -Be 'Microsoft Entra ID'
-        $envelope.Provenance.engine_version | Should -Be '2.0.0'
-        $envelope.Provenance.source_revision | Should -Be '6bf1d98f094fc7a68e449d2f40f73ef820b72ee3'
+        $envelope.Provenance.engine_version | Should -Be '2.3.0'
+        $envelope.Provenance.source_revision | Should -Be '7413c42d3fcc724dfea94d2726e690ddd364d914'
         $envelope.Provenance.profile | Should -Be 'entra-graph-token'
         $envelope.Provenance.test_path | Should -Be '/opt/ai-security-scanner/maester-tests/Maester/Entra'
         @($envelope.Provenance.excluded_tags) | Should -Be @('MT.1025', 'MT.1026', 'MT.1027', 'MT.1028', 'MT.1030', 'MT.1031', 'MT.1182')

@@ -1,32 +1,32 @@
 {
   "schema_version": "1",
-  "updated_at": "2026-10-15T00:00:00Z",
+  "updated_at": "2026-11-06T00:00:00Z",
   "management_contract_revision": "2026-08-29.1",
   "runtime": {
     "name": "Podman machine",
-    "version": "5.8.2",
+    "version": "5.8.9",
     "repository_url": "https://github.com/containers/podman",
-    "source_revision": "5b263b5f5b48004a87caac44e67349a8266d9ef4",
+    "source_revision": "40030f4073bd4e1bf4f2fd9df2f6952b4d9d350a",
     "license_spdx": "Apache-2.0",
-    "release_base_url": "https://github.com/podman-container-tools/podman/releases/download/v5.8.2/"
+    "release_base_url": "https://github.com/podman-container-tools/podman/releases/download/v5.8.9/"
   },
   "machine_os": {
     "name": "podman-machine-os",
-    "version": "5.8.2",
+    "version": "5.8.9-1",
     "repository_url": "https://github.com/containers/podman-machine-os",
-    "source_revision": "08298cbc1d1d5440fb0f071470b35abc37d31050",
+    "source_revision": "013eef241a979b28ff9b2d5693f58647bf04266c",
     "license_spdx": "Apache-2.0",
-    "release_base_url": "https://github.com/podman-container-tools/podman-machine-os/releases/download/v5.8.2/"
+    "release_base_url": "https://github.com/podman-container-tools/podman-machine-os/releases/download/v5.8.9-1/"
   },
   "linux_qemu": {
     "name": "QEMU",
-    "version": "11.0.3",
+    "version": "11.1.3",
     "repository_url": "https://gitlab.com/qemu-project/qemu",
-    "source_revision": "aeec49e8170de7846f476124602cf7acd400c3df",
+    "source_revision": "005c61c0ef6f6ae615283440b4bb7be51b2c6ddd",
     "license_spdx": "GPL-2.0-only",
-    "source_url": "https://download.qemu.org/qemu-11.0.3.tar.xz",
-    "source_sha256": "da5fcffc32762820568b828ed430a728864d34d50b6d2f30358597760cbb0523",
-    "source_size_bytes": 141366336,
+    "source_url": "https://download.qemu.org/qemu-11.1.3.tar.xz",
+    "source_sha256": "5a8289c7940dc77d3873c81a6c29ba3afe1446fc9d36e77fa1658cdbecb84b22",
+    "source_size_bytes": 141819712,
     "build_contract": {
       "build_platform": "linux/amd64",
       "target_list": "x86_64-softmmu",
@@ -94,27 +94,27 @@
   },
   "linux_gvproxy": {
     "name": "gvisor-tap-vsock gvproxy",
-    "version": "0.8.8",
+    "version": "0.9.0",
     "repository_url": "https://github.com/containers/gvisor-tap-vsock",
-    "source_revision": "74c28a6b57603c0f2b6d9aed1138af57758caf00",
+    "source_revision": "6dbb5d4fa0033356c72a201346f8350594229868",
     "license_spdx": "Apache-2.0",
-    "release_base_url": "https://github.com/containers/gvisor-tap-vsock/releases/download/v0.8.8/",
+    "release_base_url": "https://github.com/containers/gvisor-tap-vsock/releases/download/v0.9.0/",
     "asset": {
       "name": "gvproxy-linux-amd64",
-      "sha256": "453597b0254efbacb8c8ba60bd3796f143e749c67f85283defc20311a4ce944b",
-      "size_bytes": 12599588
+      "sha256": "95c0ee5b5e5d401094ed58ac2f984ba5e935c2cb416c8752329fcfacb721aa9a",
+      "size_bytes": 13623559
     },
     "locked_file": {
       "path": "bin/gvproxy",
-      "sha256": "453597b0254efbacb8c8ba60bd3796f143e749c67f85283defc20311a4ce944b",
-      "size_bytes": 12599588
+      "sha256": "95c0ee5b5e5d401094ed58ac2f984ba5e935c2cb416c8752329fcfacb721aa9a",
+      "size_bytes": 13623559
     }
   },
   "macos_vfkit": {
     "name": "vfkit",
-    "version": "0.6.1",
+    "version": "0.6.4",
     "repository_url": "https://github.com/crc-org/vfkit",
-    "source_revision": "97c536487a40f137bc12d6561aa70625a54a4b08",
+    "source_revision": "f02465693e0cec8bb3b92a9d8324644c63a2e7f2",
     "license_spdx": "Apache-2.0"
   },
   "release_targets": {
@@ -122,54 +122,54 @@
       "provider": "qemu",
       "client_asset": {
         "name": "podman-remote-static-linux_amd64.tar.gz",
-        "sha256": "88f7c21e8399a8f5edd1ef7b5c2e12b29706d0a4f24463f264a0e88d887ebbbf",
-        "size_bytes": 22718336
+        "sha256": "251efcf491bcae6f324c05380ca23ed4be30bd89cda8db0e1e6d58b0bba2c595",
+        "size_bytes": 23944289
       },
       "locked_client_file": {
         "path": "bin/podman",
-        "sha256": "3e7ff21529f030ed4d32463903603d9a00bbb303e5db11af73b8d6a412ef5656",
-        "size_bytes": 45598695
+        "sha256": "720dee01a2202088c0e73bebe81d0cb56e5154e212c29a7b6f0a974173e54bfb",
+        "size_bytes": 46809648
       },
       "machine_image": {
         "name": "podman-machine.x86_64.qemu.qcow2.zst",
-        "sha256": "f4df12b15e3f0f3248335c7f966f9cd46e8d1ecd7b3302d6061d3bc3cb8ab55b",
-        "size_bytes": 1168794958
+        "sha256": "1492d33dcd177a78d28862f01e4122cfab095e3ead7913d25c6c333b7626c2a5",
+        "size_bytes": 1001535337
       }
     },
     "universal-apple-darwin": {
       "provider": "applehv",
       "client_asset": {
         "name": "podman-installer-macos-universal.pkg",
-        "sha256": "17992d3fc5a9dc7bd6f591d1c5f5dcf13e064cc2e672e9cd456d4a5707ff97e1",
-        "size_bytes": 85861107
+        "sha256": "a0640e4e8ac7c8c092eca33f679e836095c5956b68c17196d3563b17cc2bb4de",
+        "size_bytes": 104085741
       },
       "locked_client_files": [
         {
           "path": "bin/podman",
-          "sha256": "60630ad80384a8345f632ad41de3e44e5b8f751b0f1d005e0b0f12cb4ac1b4dc",
-          "size_bytes": 86738976
+          "sha256": "12632964102d9d8261035f3a971d81855bc6da9c173691c82a29212435eac0e7",
+          "size_bytes": 88485824
         },
         {
           "path": "bin/vfkit",
-          "sha256": "9efae7452f740f9ecabe93d1a9c4cdab0c56000ae3b9a8456b76023854811693",
-          "size_bytes": 37655488
+          "sha256": "c1a5932bf99a3ae7e6010faa42aaa53761d9bfc01e38735f0d25c95d9bc1b37f",
+          "size_bytes": 66431920
         },
         {
           "path": "bin/gvproxy",
-          "sha256": "2ae47be98fb886acec7b38d4218d08e70f792e65b80df3ecacb68b406c215a17",
-          "size_bytes": 25009088
+          "sha256": "78be889e3c154ea19ef6a9f6bfdd098d2fa7e3b2f753ce23e2c78a23ed7681a9",
+          "size_bytes": 27024976
         }
       ],
       "machine_images": {
         "x86_64": {
           "name": "podman-machine.x86_64.applehv.raw.zst",
-          "sha256": "5efcf56a599919c786136faf8e4f48b25bf3865b5e8ea3302f6d705ba750afec",
-          "size_bytes": 1169098905
+          "sha256": "84ac0058a1d691f157caf69048499dc06ab0a7006a93ebeda8a60967f9ee7216",
+          "size_bytes": 1002295437
         },
         "aarch64": {
           "name": "podman-machine.aarch64.applehv.raw.zst",
-          "sha256": "2c0878ba6eaad525f7333b8013378d97468533ed8dd960215812d7c37db5aa61",
-          "size_bytes": 1003420703
+          "sha256": "5196ab050d38f01ae48435b96ef9fff30ad8b7f263aa63231022e46c382b9ba4",
+          "size_bytes": 930035066
         }
       }
     },
@@ -177,39 +177,39 @@
       "provider": "wsl",
       "client_asset": {
         "name": "podman-remote-release-windows_amd64.zip",
-        "sha256": "1b60aae4bd4879c3932c283d2070bb87116ec1f0ab3a4a98eff7e65f318f9e4e",
-        "size_bytes": 30780191
+        "sha256": "5829085422452f4159545325acd52764a4e343937c24087b57da3176a7dd70d7",
+        "size_bytes": 32691179
       },
       "locked_client_files": [
         {
           "path": "bin/podman.exe",
-          "sha256": "7fcf04af2896503991da8ab7e926ab42d42c64565cfd8e5704937d260628cf64",
-          "size_bytes": 31913472
+          "sha256": "b0a8f494f74b0d42d74041997c466f262e4d52c00b0666b9f19ccb2b2a074f4a",
+          "size_bytes": 32092160
         },
         {
           "path": "bin/gvproxy.exe",
-          "sha256": "8803caf895325dc2ea52337fa2c7c835c1f7f115b0bde71fdb1479d1b3710526",
-          "size_bytes": 12954624
+          "sha256": "b121cd05f5f8beb82d93598a074715e7b686adddd7382080e49dd0bc39bf3aa2",
+          "size_bytes": 13991424
         },
         {
           "path": "bin/win-sshproxy.exe",
-          "sha256": "afa4c0d97787f2a4e6509cfe472e9d2ceb5fcfd41a870e66687aa314909b4d10",
-          "size_bytes": 4826112
+          "sha256": "6b521a988ce3b493cbcbb3266eb08193e82066dbcd65a540e9245c16fdf99cda",
+          "size_bytes": 5651968
         }
       ],
       "machine_image": {
         "name": "podman-machine.x86_64.wsl.tar.zst",
-        "sha256": "e2b6cbcadd8b41b708fecb58a246a20d737dee0ef26872a3f75b575f77eba968",
-        "size_bytes": 257374129
+        "sha256": "5089400f5586e7bc65505bbf5a4e193374eea681a08a792745d22d73bf75704d",
+        "size_bytes": 248920453
       },
       "prerequisite": "WSL 2 must already be available. ai-security-scanner never enables Windows optional features or requests elevation."
     }
   },
   "windows_podman_build": {
-    "version": "5.8.2-wsl-systemd.1",
-    "source_url": "https://github.com/podman-container-tools/podman/archive/5b263b5f5b48004a87caac44e67349a8266d9ef4.tar.gz",
-    "source_sha256": "3a40c78cbf6058a888b92d285ca0df4267d65a4e0aad3074524530d28b2c7179",
-    "source_size_bytes": 21311134,
+    "version": "5.8.9-wsl-systemd.1",
+    "source_url": "https://github.com/podman-container-tools/podman/archive/40030f4073bd4e1bf4f2fd9df2f6952b4d9d350a.tar.gz",
+    "source_sha256": "cf959f74811fd30981223ca91b5dfb3a442eccd70587229679c3553e81db4f28",
+    "source_size_bytes": 20654176,
     "upstream_pull_request": "https://github.com/podman-container-tools/podman/pull/29837",
     "upstream_patch_revision": "1795fb6ee0b45902926e95a89ddd8a47ef02c3f3",
     "patch": {
@@ -217,17 +217,17 @@
       "sha256": "0df7db8c6f6eb7d172b4e0bc17420e80da3d979090178586193fabeb4ccd514e",
       "size_bytes": 8215
     },
-    "go_version": "1.27.2",
+    "go_version": "1.27.3",
     "go_toolchains": {
       "win32": {
-        "url": "https://go.dev/dl/go1.27.2.windows-amd64.zip",
-        "sha256": "1314008898bd40df77af4b014f777f08873dbdfbcd3d92308728ee03304fe04f",
-        "size_bytes": 79008081
+        "url": "https://go.dev/dl/go1.27.3.windows-amd64.zip",
+        "sha256": "f26081f438319757f8a1b46d7d0b2c5ec7583d4038e485e0aa725cfde7885fff",
+        "size_bytes": 79010309
       },
       "linux": {
-        "url": "https://go.dev/dl/go1.27.2.linux-amd64.tar.gz",
-        "sha256": "ecbadb99091a3f46e31f5f934b068b1864eafa7995211b39eaddf76996045fe5",
-        "size_bytes": 70590635
+        "url": "https://go.dev/dl/go1.27.3.linux-amd64.tar.gz",
+        "sha256": "65efbc80fdc1fa2cd2631cad5b481777a68e8725f34e89f50fc6ac714e379b40",
+        "size_bytes": 70588678
       }
     },
     "build_contract": {

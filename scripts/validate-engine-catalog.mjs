@@ -23,8 +23,8 @@ const managedCloudIds = new Set([
 ]);
 const managedExternalContracts = new Map([
   ["naabu", { tag: "2.6.1-7" }],
-  ["httpx", { tag: "1.12.0-1" }],
-  ["nuclei", { tag: "3.11.1-8" }],
+  ["httpx", { tag: "1.12.0-2" }],
+  ["nuclei", { tag: "3.11.1-9" }],
 ]);
 const managedExternalIds = new Set(managedExternalContracts.keys());
 const naabuLauncherJournalVersion = 2;
@@ -40,7 +40,7 @@ const naabuLauncherJournalV2Command = [
 ];
 const managedM365Contracts = new Map([
   ["scubagear", {
-    tag: "1.8.0-8",
+    tag: "2.0.0-1",
     sourceRatingField: "SourceCriticality",
     sourceRatingVariable: "$criticality",
     optionalPropertySnippet: "$control.PSObject.Properties['Criticality']",
@@ -65,7 +65,7 @@ const managedM365Contracts = new Map([
     carriedVerdictCounters: ["passes", "failures", "warnings"],
   }],
   ["maester", {
-    tag: "2.0.0-9",
+    tag: "2.3.0-1",
     sourceRatingField: "SourceSeverity",
     sourceRatingVariable: "$sourceSeverity",
     optionalPropertySnippet: "$test.PSObject.Properties['Severity']",
@@ -330,22 +330,22 @@ const managedLocalK8sContracts = new Map([
   }],
 ]);
 const managedGreenboneContract = {
-  tag: "23.50.24-feed202610010558-1",
+  tag: "23.52.9-feed202611060607-1",
   planKind: "multi_component_build",
   license: { disposition: "source_offer", sourceOfferPath: "engines/images/greenbone/SOURCE-OFFER.md" },
-  engineVersion: "23.50.24",
-  scannerRevision: "26465a11ff0e6a98d60a253265fab5974fc757b6",
-  scannerArchiveUrl: "https://github.com/greenbone/openvas-scanner/archive/refs/tags/v23.50.24.tar.gz",
-  scannerArchiveSha256: "sha256:af8b1e0175dfc57f38bdecc08607dbac294459e684e2f3e7d69c85101fa13517",
-  feedVersion: "202610010558-community",
-  feedRevision: "816c24126e0375d32c667b78d20342ce7c58ec58",
-  feedImageDigest: "sha256:86a44fb7a9f9b982d521f98914aba98846f573b4f9ec9e8c1007c4866ec943af",
-  notusRevision: "202610010540",
-  notusImageDigest: "sha256:f53836e6ac0eb3abb7f5ab74ccf93b8317fedd2ba5cd293473cd307c148fc4c3",
+  engineVersion: "23.52.9",
+  scannerRevision: "cbd9081531ea6602bea7356aa371200979c1e961",
+  scannerArchiveUrl: "https://github.com/greenbone/openvas-scanner/archive/cbd9081531ea6602bea7356aa371200979c1e961.tar.gz",
+  scannerArchiveSha256: "sha256:ea798d3dcf2ca43b93be9bee9b644c699632226e5fa7659dbe40f6f4bd128f63",
+  feedVersion: "202611060607-community",
+  feedRevision: "a2e53c2e30f1fa5408369cb5cf99653a3e08e9df",
+  feedImageDigest: "sha256:3a3cf9affb94ee3d714d3da7ebc35bf52bb0f1f32e5d196e82d2c3bf06b2b126",
+  notusRevision: "202611060538",
+  notusImageDigest: "sha256:cb3cc1ed07594e853493d3e1be9d320e60ed053951f1f43125cf791049d6a590",
   smokeOid: "1.3.6.1.4.1.25623.1.0.108252",
 };
 const greenbonePublicationBlocker =
-  "Publish and independently verify the Greenbone 23.50.24-feed202610010558-1 image for linux/amd64 and linux/arm64, then record its immutable digest and exact publication evidence.";
+  "Publish and independently verify the Greenbone 23.52.9-feed202611060607-1 image for linux/amd64 and linux/arm64, then record its immutable digest and exact publication evidence.";
 const managedEvidenceWorkflows = [
   ".github/workflows/engine-image-garak.yml",
   ".github/workflows/engine-image-agentic-radar.yml",
@@ -1405,6 +1405,10 @@ function validateGreenboneBuildClosure(plan, planRelative, dockerfileText) {
   for (const [name, relative] of [
     ["rustls-provider", "engines/images/greenbone/openvasd-rustls-provider.patch"],
     ["service-port", "engines/images/greenbone/openvasd-service-port.patch"],
+    ["nasl-local-declarations", "engines/images/greenbone/openvasd-nasl-local-declarations.patch"],
+    ["nasl-dict-compat", "engines/images/greenbone/openvasd-nasl-dict-compat.patch"],
+    ["nasl-string-compat", "engines/images/greenbone/openvasd-nasl-string-compat.patch"],
+    ["nasl-value-coercion", "engines/images/greenbone/openvasd-nasl-value-coercion.patch"],
     ["http-compat", "engines/images/greenbone/openvasd-http-compat.patch"],
     ["nasl-array-compat", "engines/images/greenbone/openvasd-nasl-array-compat.patch"],
     ["eregmatch-captures", "engines/images/greenbone/openvasd-eregmatch-captures.patch"],
@@ -1520,8 +1524,8 @@ function validatePublishedGreenboneImage(plan, planRelative, engine) {
   validateGreenboneBuildClosure(plan, planRelative, dockerfileText);
 }
 
-function validatePendingGreenboneImage(plan, planRelative, engine) {
-  if (!isPendingGreenbonePublication(plan, engine)) {
+function validatePendingGreenboneImage(plan, planRelative, engine, { upstreamReplacement = false } = {}) {
+  if (!upstreamReplacement && !isPendingGreenbonePublication(plan, engine)) {
     errors.push(`${planRelative}: Greenbone refresh must retain the currently published catalog image while the exact replacement awaits publication`);
     return;
   }
@@ -1795,7 +1799,7 @@ function validateCloudQueryPlan(plan, planRelative, engine) {
   }
 
   const expectedComponents = new Map([
-    ["cloudquery-cli", { version: "2.0.31", release_ref: "cli-v2.0.31", source_revision: "e27e4ab61ad85479a5d53dae9b08440bc63e72b3" }],
+    ["cloudquery-cli", { version: "3.5.3", release_ref: "cli-v3.5.3", source_revision: "086baf7f70ee3c1069513d41f321720a5e7d2bb9" }],
     ["cloudquery-source-aws", { version: "9.2.0", release_ref: "plugins-source-aws-v9.2.0", source_revision: "804be3a90d6f15d3e6c662c0eb7afa88a9596180" }],
     ["cloudquery-destination-file", { version: "1.0.4", release_ref: "plugins-destination-file-v1.0.4", source_revision: "600ffdd2707af566e3c99469d84a34d94730aaa1" }],
   ]);
@@ -2298,14 +2302,14 @@ function isPendingGarakPublication(plan, engine) {
     engine.status === "experimental" && engine.default_enabled === false && engine.compatibility?.runnable === false &&
     engine.compatibility?.artifact_state === "managed_build_plan" && plan.blockers?.length === 1 &&
     plan.final_artifact?.repository === managedRepository(engine, plan) &&
-    plan.final_artifact?.tag === "0.17.0-1" && plan.final_artifact?.digest === null &&
+    plan.final_artifact?.tag === "0.17.1-1" && plan.final_artifact?.digest === null &&
     engine.provenance?.engine?.artifact_source_revision === null &&
     engine.provenance?.engine?.source_association === "source_build_required";
 }
 
-function validateGarakImage(plan, planRelative, engine) {
-  const tag = "0.17.0-1";
-  const sourceRevision = "93aa9cdec309ec4170559676f1826ea2a679920c";
+function validateGarakImage(plan, planRelative, engine, { retainedTag = null } = {}) {
+  const tag = "0.17.1-1";
+  const sourceRevision = "7aa740fe7412cc9bc33cdc39ca211843223cd3e1";
   const repository = managedRepository(engine, plan);
   const recipe = plan.build_recipe;
   const dockerfileRelative = "engines/images/garak/Dockerfile";
@@ -2321,8 +2325,8 @@ function validateGarakImage(plan, planRelative, engine) {
     timeout_seconds: 20, deadline_seconds: 600,
   };
   if (plan.publish_state === "published_managed_artifact") {
-    if (engine.image?.repository !== repository || engine.image?.tag !== tag ||
-        plan.final_artifact?.repository !== repository || plan.final_artifact?.tag !== tag ||
+    if (engine.image?.repository !== repository || engine.image?.tag !== (retainedTag ?? tag) ||
+        plan.final_artifact?.repository !== repository || plan.final_artifact?.tag !== (retainedTag ?? tag) ||
         plan.final_artifact?.digest !== engine.image?.digest || engine.compatibility?.runnable !== true) {
       errors.push(`${planRelative}: Garak admission must name its exact independently verified immutable image`);
     }
@@ -2344,7 +2348,7 @@ function validateGarakImage(plan, planRelative, engine) {
   }
   const archives = [recipe?.source_archive, ...(recipe?.dependency_source_archives ?? [])];
   const expectedArchives = [
-    { url: `https://github.com/NVIDIA/garak/archive/${sourceRevision}.tar.gz`, sha256: "sha256:34a7e31c9ca7efb00d00509f3397e8f25e87b88239c2c78d21fc9c54740b5fce" },
+    { url: `https://github.com/NVIDIA/garak/archive/${sourceRevision}.tar.gz`, sha256: "sha256:22c1d011d86ea6375ddaf765a7ceae32cf3b889296336aaee233c196d204c378" },
     { url: "https://files.pythonhosted.org/packages/0e/72/a3add0e4eec4eb9e2569554f7c70f4a3c27712f40e3284d483e88094cc0e/langdetect-1.0.9.tar.gz", sha256: "sha256:cbc1fef89f8d062739774bd51eda3da3274006b3661d199c2655f6b3f6d605a0" },
   ];
   if (archives.length !== 2 || archives.some((archive, index) => archive?.url !== expectedArchives[index].url ||
@@ -2372,7 +2376,7 @@ function validateGarakImage(plan, planRelative, engine) {
   const base = "python:3.11.16-slim@sha256:9c900dea9e8fb7e16277c179b555cc72d29a352dbc33cff48ad5a0412fd5bfc7";
   const actualBases = [...dockerfile.matchAll(/^FROM\s+(\S+)/gm)].map((match) => match[1]);
   if (actualBases.length !== 2 || actualBases.some((reference) => reference !== base) ||
-      !deepEqual(recipe?.target_platforms, ["linux/amd64", "linux/arm64"]) || recipe?.source_date_epoch !== 1788977945 ||
+      !deepEqual(recipe?.target_platforms, ["linux/amd64", "linux/arm64"]) || recipe?.source_date_epoch !== 1792180550 ||
       recipe?.build_context?.path !== "." || recipe?.build_context?.dockerignore_path !== ".dockerignore" ||
       recipe?.build_context?.dockerignore_sha256 !== sha256File(resolve(root, ".dockerignore"))) {
     errors.push(`${planRelative}: Garak must preserve its reviewed build context, base image, epoch and platforms`);
@@ -2505,7 +2509,7 @@ function validateManagedExternalImage(plan, planRelative, engine, contract = man
   }
   if (engine.id === "nuclei") {
     const templates = recipe?.templates;
-    if (templates?.revision !== engine.rule_version || templates?.revision !== "f938a3dd530c283e9387b518b97911152ff5846c" || !templates?.source_archive?.url?.includes(templates.revision) || !digestPattern.test(templates?.source_archive?.sha256 ?? "")) {
+    if (templates?.revision !== engine.rule_version || templates?.revision !== "79fb682760ab3d5b0e22afbb44709353cbebf023" || !templates?.source_archive?.url?.includes(templates.revision) || !digestPattern.test(templates?.source_archive?.sha256 ?? "")) {
       errors.push(`${planRelative}: Nuclei template artifact is not the required exact revision`);
     } else if (!dockerfileText.includes(`ADD --checksum=${templates.source_archive.sha256}`) || !dockerfileText.includes(templates.source_archive.url)) {
       errors.push(`${planRelative}: Nuclei Dockerfile does not embed the declared exact template artifact`);
@@ -2513,7 +2517,7 @@ function validateManagedExternalImage(plan, planRelative, engine, contract = man
     if (!runtime?.template_policy ||
         runtime.template_policy.revision !== `nuclei-templates@${templates?.revision}` ||
         runtime.template_policy.profile_id !== "nuclei_web_safe_v1" ||
-        runtime.template_policy.derived_template_count !== 4775 ||
+        runtime.template_policy.derived_template_count !== 4777 ||
         runtime.template_policy.legacy_exact_allowlist_supported !== true ||
         runtime.template_policy.denied_capabilities?.some((value) => typeof value !== "string") ||
         runtime.template_policy.denied_capabilities?.length !== 6) {
@@ -2536,7 +2540,7 @@ function isPendingM365Publication(plan, engine) {
     engine.provenance?.engine?.source_association === "source_build_required";
 }
 
-function validateManagedM365Image(plan, planRelative, engine) {
+function validateManagedM365Image(plan, planRelative, engine, { retainedTag = null } = {}) {
   const contract = managedM365Contracts.get(engine.id);
   const expectedRepository = managedRepository(engine, plan);
   if (!contract) {
@@ -2544,7 +2548,7 @@ function validateManagedM365Image(plan, planRelative, engine) {
     return;
   }
   if (plan.publish_state === "published_managed_artifact") {
-    if (plan.final_artifact?.repository !== expectedRepository || plan.final_artifact?.tag !== contract.tag) {
+    if (plan.final_artifact?.repository !== expectedRepository || plan.final_artifact?.tag !== (retainedTag ?? contract.tag)) {
       errors.push(`${planRelative}: published Microsoft 365 artifact does not match the reviewed wrapper-hardened repository/tag`);
     }
     validatePublishedManagedEvidence(plan, planRelative, engine);
@@ -3024,8 +3028,16 @@ for (let engine of Array.isArray(catalog) ? catalog : []) {
         ...managedExternalContracts.get(engine.id), tag: plan.previous_artifact.tag,
         buildTag: plan.final_artifact.tag,
       });
+    } else if (engine.id === "greenbone") {
+      validatePublishedManagedEvidence(retainedPlan, planRelative, engine);
+      validatePendingGreenboneImage(plan, planRelative, engine, { upstreamReplacement: true });
+    } else if (managedM365Ids.has(engine.id)) {
+      validateManagedM365Image(retainedPlan, planRelative, engine, { retainedTag: plan.previous_artifact.tag });
+    } else if (engine.id === "garak") {
+      validateGarakImage(retainedPlan, planRelative, engine, { retainedTag: plan.previous_artifact.tag });
     } else if (managedCloudIds.has(engine.id)) {
       validateCloudManagedImage(retainedPlan, planRelative, engine);
+      if (engine.id === "cloudquery") validateCloudQueryPlan(retainedPlan, planRelative, engine);
     } else if (plan.plan_kind === "managed_rebase") {
       validateManagedRebase(retainedPlan, planRelative, engine);
     } else if (plan.plan_kind === "managed_source_image") {

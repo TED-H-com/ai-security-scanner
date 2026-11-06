@@ -1,0 +1,42 @@
+--- a/rust/src/nasl/interpreter/declare.rs
++++ b/rust/src/nasl/interpreter/declare.rs
+@@ -31,7 +31,9 @@
+             let value = RuntimeValue::Value(NaslValue::Null);
+             match scope_decl.scope {
+                 VarScope::Local => {
+-                    self.register.add_local(ident.to_str(), value);
++                    if self.register.named_local(ident.to_str()).is_none() {
++                        self.register.add_local(ident.to_str(), value);
++                    }
+                 }
+                 VarScope::Global => {
+                     self.register.add_global(ident.to_str(), value);
+@@ -88,4 +90,17 @@
+         );
+         t.ok("test(a: 1, b: 2);", 3);
+     }
++
++    #[test]
++    fn redeclaring_function_argument_as_local_preserves_its_value() {
++        let mut t = TestBuilder::default();
++        t.ok(
++            "function test(default) {
++                local_var default;
++                return default;
++            }",
++            NaslValue::Null,
++        );
++        t.ok("test(default: 80);", 80);
++    }
+ }
+--- a/rust/src/nasl/interpreter/register.rs
++++ b/rust/src/nasl/interpreter/register.rs
+@@ -168,7 +168,7 @@
+     }
+ 
+     /// Gets a reference to a RuntimeValue in the innermost scope by name
+-    fn named_local<'a>(&'a self, name: &'a str) -> Option<&'a RuntimeValue> {
++    pub(super) fn named_local<'a>(&'a self, name: &'a str) -> Option<&'a RuntimeValue> {
+         let scope_index = &self.scopes.len() - 1;
+         let scope = &self.scopes[scope_index];
+         let var = if scope.variables.contains_key(name) {

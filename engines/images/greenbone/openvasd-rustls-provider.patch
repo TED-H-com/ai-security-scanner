@@ -1,22 +1,6 @@
-From: ai-security-scanner maintainers
-Subject: [PATCH] openvasd: install a process-wide rustls crypto provider
-
-rustls 0.23 refuses to create a ClientConfig when dependency feature
-unification enables more than one provider.  openvasd's server-side TLS
-helper installs AWS-LC lazily, but NASL HTTP/TLS clients can run before that
-helper and panic the scan worker.  Install the same upstream-selected AWS-LC
-provider at process startup so every rustls client and server sees one
-unambiguous process-wide provider.
-
----
- rust/src/openvasd/main.rs | 7 +++++++
- 1 file changed, 7 insertions(+)
-
-diff --git a/rust/src/openvasd/main.rs b/rust/src/openvasd/main.rs
-index 7fb474be..a92374ab 100644
 --- a/rust/src/openvasd/main.rs
 +++ b/rust/src/openvasd/main.rs
-@@ -100,6 +100,13 @@ async fn build_runtime(config: Config) -> Result<RuntimeBuilder<End>> {
+@@ -84,6 +84,13 @@
  }
  
  async fn _main() -> Result<i32> {
@@ -30,5 +14,3 @@ index 7fb474be..a92374ab 100644
      let config = Config::load();
      let _guard = config.logging.init();
  
--- 
-2.47.3

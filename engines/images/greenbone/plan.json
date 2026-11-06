@@ -2,29 +2,29 @@
   "schema_version": "1.0.0",
   "engine_id": "greenbone",
   "plan_kind": "multi_component_build",
-  "knowledge_date": "2026-08-24",
+  "knowledge_date": "2026-11-06",
   "support_until": "2026-11-22",
   "maintenance_owner": "teddashh/ai-security-scanner maintainers",
   "update_procedure": "docs/engine-maintenance.md",
-  "publish_state": "published_managed_artifact",
+  "publish_state": "publication_in_progress",
   "source": {
     "repository": "https://github.com/greenbone/openvas-scanner",
-    "revision": "26465a11ff0e6a98d60a253265fab5974fc757b6",
-    "acquisition_source": "https://github.com/greenbone/openvas-scanner/commit/26465a11ff0e6a98d60a253265fab5974fc757b6"
+    "revision": "cbd9081531ea6602bea7356aa371200979c1e961",
+    "acquisition_source": "https://github.com/greenbone/openvas-scanner/commit/cbd9081531ea6602bea7356aa371200979c1e961"
   },
   "verified_upstream_artifact": null,
   "final_artifact": {
-    "repository": "ghcr.io/teddashh/ai-security-scanner-engine-greenbone",
-    "tag": "23.50.24-feed202610010558-1",
-    "digest": "sha256:d2e95d252272488891d04766e66362aacb234e1e2975dca27e834f0050a695c4"
+    "repository": "ghcr.io/ted-h-com/ai-security-scanner-engine-greenbone",
+    "tag": "23.52.9-feed202611060607-1",
+    "digest": null
   },
   "build_recipe": {
-    "source_revision": "26465a11ff0e6a98d60a253265fab5974fc757b6",
+    "source_revision": "cbd9081531ea6602bea7356aa371200979c1e961",
     "source_archive": {
-      "url": "https://github.com/greenbone/openvas-scanner/archive/refs/tags/v23.50.24.tar.gz",
-      "sha256": "sha256:af8b1e0175dfc57f38bdecc08607dbac294459e684e2f3e7d69c85101fa13517"
+      "url": "https://github.com/greenbone/openvas-scanner/archive/cbd9081531ea6602bea7356aa371200979c1e961.tar.gz",
+      "sha256": "sha256:ea798d3dcf2ca43b93be9bee9b644c699632226e5fa7659dbe40f6f4bd128f63"
     },
-    "source_date_epoch": 1787573675,
+    "source_date_epoch": 1793881759,
     "target_platforms": [
       "linux/amd64",
       "linux/arm64"
@@ -37,8 +37,8 @@
     "base_images": [
       {
         "repository": "golang",
-        "tag": "1.26.0-alpine",
-        "digest": "sha256:d4c4845f5d60c6a974c6000ce58ae079328d03ab7f721a0734277e69905473e5",
+        "tag": "1.26.10-alpine",
+        "digest": "sha256:87c65a688975c0b1d4585d204874c45ca78354670e3a5f11368c5a492303d696",
         "uses": [
           "build"
         ]
@@ -46,7 +46,7 @@
       {
         "repository": "registry.community.greenbone.net/community/vulnerability-tests",
         "tag": "community",
-        "digest": "sha256:86a44fb7a9f9b982d521f98914aba98846f573b4f9ec9e8c1007c4866ec943af",
+        "digest": "sha256:3a3cf9affb94ee3d714d3da7ebc35bf52bb0f1f32e5d196e82d2c3bf06b2b126",
         "uses": [
           "feed"
         ]
@@ -54,23 +54,23 @@
       {
         "repository": "registry.community.greenbone.net/community/notus-data",
         "tag": "community",
-        "digest": "sha256:f53836e6ac0eb3abb7f5ab74ccf93b8317fedd2ba5cd293473cd307c148fc4c3",
+        "digest": "sha256:cb3cc1ed07594e853493d3e1be9d320e60ed053951f1f43125cf791049d6a590",
         "uses": [
           "notus"
         ]
       },
       {
         "repository": "rust",
-        "tag": "1.98.0-bookworm",
-        "digest": "sha256:94e9efa4033213dbb70d4f665527e7ece3944ddb7ba1dd2e43f6fd6e2490af58",
+        "tag": "1.99.0-bookworm",
+        "digest": "sha256:114c7a4425406451c2866b6aafe69fe29b1b298832db1277d411ac73c82d04d6",
         "uses": [
           "build"
         ]
       },
       {
         "repository": "ghcr.io/greenbone/openvas-scanner",
-        "tag": "23.50.24",
-        "digest": "sha256:5b950bc273d1d5d123f15dfb7f373b0b3a3b7fb75f67286dfa28e88350a6eb33",
+        "tag": "23.52.9",
+        "digest": "sha256:d6d8288c22bc525e78e221a36c9db44328d3d9e0141f810c4216750ff0641ddc",
         "uses": [
           "runtime"
         ]
@@ -90,52 +90,72 @@
       {
         "path": "engines/images/greenbone/managed-socks-smoke.sh",
         "reason": "Runs the managed Greenbone SOCKS smoke verification but has no digest in the plan.",
-        "sha256": "sha256:16f3572607484e4b8ab34e7a7ba404880f9078b1f1aa32129b91ea4c40ba9f0f"
+        "sha256": "sha256:43c0e380bab147fb4da206b28206c0be3a51b9485a426aab61ffd84bf50e0728"
       },
       {
         "path": "engines/images/greenbone/openvasd-eregmatch-captures.patch",
         "reason": "Applied to the OpenVAS daemon source during the image build but absent from the plan.",
-        "sha256": "sha256:8e9ce5794e51abf78d77ea3c11931f50cf54f44be0d15becdd0a06c4f7b95d20"
+        "sha256": "sha256:d72d4cda3a61cfef5f5e347f83bdf1c08d78354d62c749339461a00443ac02db"
       },
       {
         "path": "engines/images/greenbone/openvasd-http-compat.patch",
         "reason": "Applied to the OpenVAS daemon source during the image build but absent from the plan.",
-        "sha256": "sha256:0aa8b07e43f2b21f32f7f2fa8181957b456248f0986de2723940809047a35eff"
+        "sha256": "sha256:963e48b293185a38cfff15e8cfeba045416ee353bed6878856b3280c367138ea"
       },
       {
         "path": "engines/images/greenbone/openvasd-nasl-array-compat.patch",
         "reason": "Applied to the OpenVAS daemon source during the image build but absent from the plan.",
-        "sha256": "sha256:affe3266602aade09416b68f2d085d1f390931d921a78eb7bb526451e1eeb891"
+        "sha256": "sha256:ea9d7ba960fad509c18924855a19b6e2499bf13fb25cfac4c66a02b82e708c20"
       },
       {
         "path": "engines/images/greenbone/openvasd-report-port.patch",
         "reason": "Applied to the OpenVAS daemon source during the image build but absent from the plan.",
-        "sha256": "sha256:f9440c30d1c13a0fc13165ae2cdece6faab39409b2656db61d781d1e0865ca1c"
+        "sha256": "sha256:83f53b7117047c17a7a8ccf9559daa5e9e1229f75eb3743bc966c93e04d796a4"
       },
       {
         "path": "engines/images/greenbone/openvasd-rustls-provider.patch",
         "reason": "Applied to the OpenVAS daemon source during the image build but absent from the plan.",
-        "sha256": "sha256:f401a3a174b6fe20fa187a1b74f53d1f9563a22c7a32bfc9aa122268d10e03c3"
+        "sha256": "sha256:2ab37a3514150ad3480c315e1ec73a2d6f1bade37ce787614fdfcd76245ed4b2"
       },
       {
         "path": "engines/images/greenbone/openvasd-service-port.patch",
         "reason": "Applied to the OpenVAS daemon source during the image build but absent from the plan.",
-        "sha256": "sha256:fd6409227338da73344657b5686c65bdf23a737da04f8bb3f7434eeb98da3424"
+        "sha256": "sha256:992ea5d22fe668e49793e0a8966f5c25de4c8ecb76c882953c72761e79c276f0"
       },
       {
         "path": "engines/images/greenbone/openvasd-socket-eof.patch",
         "reason": "Applied to the OpenVAS daemon source during the image build but absent from the plan.",
-        "sha256": "sha256:8decd85c3acd6592b8ed10dd74b6deece386d30a6d0136d4201ccf97c3394846"
+        "sha256": "sha256:e08d242a5741e1a30d2df067911fa21fa0b026ad47197125e035fe88b7cb15db"
+      },
+      {
+        "path": "engines/images/greenbone/openvasd-nasl-local-declarations.patch",
+        "sha256": "sha256:f77b19e2b4ebb91b4f28d7dfdde0331cfbedf0764a032c87f4152b32614f15a1",
+        "reason": "Focused compatibility change split from the former mixed service-port patch."
+      },
+      {
+        "path": "engines/images/greenbone/openvasd-nasl-dict-compat.patch",
+        "sha256": "sha256:1a455038bf209f95a3028fcc7447af29128477ce3b0f429ad696bb0e01bfccfe",
+        "reason": "Focused compatibility change split from the former mixed service-port patch."
+      },
+      {
+        "path": "engines/images/greenbone/openvasd-nasl-string-compat.patch",
+        "sha256": "sha256:685d9769142cc9cf70b6b0698bac8dc462c11a254a2420e20a66e048fe79de38",
+        "reason": "Focused compatibility change split from the former mixed service-port patch."
+      },
+      {
+        "path": "engines/images/greenbone/openvasd-nasl-value-coercion.patch",
+        "sha256": "sha256:cb3dc36c4b41412662844b1536d501f5da98a7c68d86a3d8b9178758e3fe92d6",
+        "reason": "Focused compatibility change split from the former mixed service-port patch."
       }
     ],
     "patch_audit": {
-      "reviewed_on": "2026-10-03",
-      "review_due": "2026-11-01",
-      "applicable_upstream_version": "23.50.24",
-      "applicable_source_revision": "26465a11ff0e6a98d60a253265fab5974fc757b6",
+      "reviewed_on": "2026-11-06",
+      "review_due": "2026-12-06",
+      "applicable_upstream_version": "23.52.9",
+      "applicable_source_revision": "cbd9081531ea6602bea7356aa371200979c1e961",
       "capability": "Run the pinned Community Feed using the upstream Rust scanner without TLS-provider panics, malformed HTTP, missing native NASL compatibility, lost service/result ports or unbounded closed-socket loops.",
       "contribution_status": "not_submitted",
-      "contribution_reason": "No contribution has been submitted. The compatibility series includes product execution boundaries and multiple legacy-interpreter discrepancies that require separate upstream reproductions and decisions; a single mixed upstream contribution is not practical. Keep the current reviewed bytes, and split the service-port compatibility hunks into separately reviewed changes before the next source rebase. Do not add another feature to this series.",
+      "contribution_reason": "No upstream contribution has been submitted. The former mixed service-port patch is now split into service ports, local declarations, missing dictionary keys, string conversion and value coercion. Upstream u16 result-port storage replaces the former model/SQLite width changes; only the remaining NASL coercion is carried. Every retained change has a focused native regression and a removal condition.",
       "security_owner": "teddashh/ai-security-scanner maintainers",
       "license_owner": "teddashh/ai-security-scanner maintainers",
       "maintenance_owner": "teddashh/ai-security-scanner maintainers",
@@ -149,119 +169,143 @@
       "patches": [
         {
           "path": "engines/images/greenbone/openvasd-rustls-provider.patch",
-          "sha256": "sha256:f401a3a174b6fe20fa187a1b74f53d1f9563a22c7a32bfc9aa122268d10e03c3",
+          "sha256": "sha256:2ab37a3514150ad3480c315e1ec73a2d6f1bade37ce787614fdfcd76245ed4b2",
           "files": [
             {
               "path": "rust/src/openvasd/main.rs",
-              "upstream_source": "https://github.com/greenbone/openvas-scanner/blob/26465a11ff0e6a98d60a253265fab5974fc757b6/rust/src/openvasd/main.rs",
-              "before_sha256": "sha256:7a9cad7786a1901116045998e93e1db5fdc183f9a2b902f11a0aea7a9f2418fa",
-              "after_sha256": "sha256:7928d7f42c1d1e67dbe2a7a86d5c31b125a2ccb617dc101fafdd10a490ef0f76"
+              "upstream_source": "https://github.com/greenbone/openvas-scanner/blob/cbd9081531ea6602bea7356aa371200979c1e961/rust/src/openvasd/main.rs",
+              "before_sha256": "sha256:9bae3bf18aee9e31a88b827ae93dbc349e3c109fdfa23d829c2543fa77d8ba92",
+              "after_sha256": "sha256:2e9f82a2dcea1d58af786913ecbc7652688540d7357bb9a2a37fffe0f992e7b2"
             }
           ]
         },
         {
           "path": "engines/images/greenbone/openvasd-service-port.patch",
-          "sha256": "sha256:fd6409227338da73344657b5686c65bdf23a737da04f8bb3f7434eeb98da3424",
+          "sha256": "sha256:992ea5d22fe668e49793e0a8966f5c25de4c8ecb76c882953c72761e79c276f0",
           "files": [
             {
               "path": "rust/src/nasl/builtin/find_service/mod.rs",
-              "upstream_source": "https://github.com/greenbone/openvas-scanner/blob/26465a11ff0e6a98d60a253265fab5974fc757b6/rust/src/nasl/builtin/find_service/mod.rs",
-              "before_sha256": "sha256:d757752d53e1342031d142bf6a15aa0da0bb5b56d12b43d417047865c20fbeae",
-              "after_sha256": "sha256:efe2e917914c87dcb0972900113f5f79f7e419ca8826f6a0ea66c8116147fdc5"
+              "upstream_source": "https://github.com/greenbone/openvas-scanner/blob/cbd9081531ea6602bea7356aa371200979c1e961/rust/src/nasl/builtin/find_service/mod.rs",
+              "before_sha256": "sha256:388b70106406d7e0107a2d4dc4dabc267d3eb3a9026ef309f559739403cda612",
+              "after_sha256": "sha256:ffde20b64eaaade2885df81ef4ae21122612063227aea81d007463e3790df636"
             },
             {
+              "path": "rust/src/scanner/vt_runner.rs",
+              "upstream_source": "https://github.com/greenbone/openvas-scanner/blob/cbd9081531ea6602bea7356aa371200979c1e961/rust/src/scanner/vt_runner.rs",
+              "before_sha256": "sha256:54d20a3f94df7b5051ae07b76a74e947d7ab8139c7a8060ca054a5f8484bdb92",
+              "after_sha256": "sha256:115e83159db9c4c1a3c798a9fbca22a45c2b20600718f88ee69683faed06d459"
+            }
+          ]
+        },
+        {
+          "path": "engines/images/greenbone/openvasd-nasl-local-declarations.patch",
+          "sha256": "sha256:f77b19e2b4ebb91b4f28d7dfdde0331cfbedf0764a032c87f4152b32614f15a1",
+          "files": [
+            {
+              "path": "rust/src/nasl/interpreter/declare.rs",
+              "upstream_source": "https://github.com/greenbone/openvas-scanner/blob/cbd9081531ea6602bea7356aa371200979c1e961/rust/src/nasl/interpreter/declare.rs",
+              "before_sha256": "sha256:215daeb63603cb0ee3e33a06c34d35d1fd4f88ebcad09b3c4ec2e080484f20d5",
+              "after_sha256": "sha256:6b3108fe3bc7c7440c295be330d539592e565a0b4b53e35348538b95de6141fb"
+            },
+            {
+              "path": "rust/src/nasl/interpreter/register.rs",
+              "upstream_source": "https://github.com/greenbone/openvas-scanner/blob/cbd9081531ea6602bea7356aa371200979c1e961/rust/src/nasl/interpreter/register.rs",
+              "before_sha256": "sha256:74abed2c0783176a1fde43e30a20aa6a5a1312be0bb785baa71c145d0e57944e",
+              "after_sha256": "sha256:f037582e24df1b24d8bdc662b09592004faa2c1612f9c0ecb70a3e19345ea8b2"
+            }
+          ]
+        },
+        {
+          "path": "engines/images/greenbone/openvasd-nasl-dict-compat.patch",
+          "sha256": "sha256:1a455038bf209f95a3028fcc7447af29128477ce3b0f429ad696bb0e01bfccfe",
+          "files": [
+            {
+              "path": "rust/src/nasl/interpreter/nasl_value.rs",
+              "upstream_source": "https://github.com/greenbone/openvas-scanner/blob/cbd9081531ea6602bea7356aa371200979c1e961/rust/src/nasl/interpreter/nasl_value.rs",
+              "before_sha256": "sha256:78a5ce80b45e88ef72e56975afaccfe384c2d2ba9a3be1326ea90fd90141c583",
+              "after_sha256": "sha256:b68c8b4c98d38ff480a636c49eefff27e1255c247774ec16c8f7673bb4951324"
+            },
+            {
+              "path": "rust/src/nasl/interpreter/tests/mod.rs",
+              "upstream_source": "https://github.com/greenbone/openvas-scanner/blob/cbd9081531ea6602bea7356aa371200979c1e961/rust/src/nasl/interpreter/tests/mod.rs",
+              "before_sha256": "sha256:07bc15c06876298061b4cd5ef3325f8ae7d42acee27a8443bd382346e3d7098b",
+              "after_sha256": "sha256:31297e4b260a0388eab885df1b8a10bd274bbeca5b8bc4a8ea3c1c22ba2fa185"
+            }
+          ]
+        },
+        {
+          "path": "engines/images/greenbone/openvasd-nasl-string-compat.patch",
+          "sha256": "sha256:685d9769142cc9cf70b6b0698bac8dc462c11a254a2420e20a66e048fe79de38",
+          "files": [
+            {
               "path": "rust/src/nasl/builtin/string/mod.rs",
-              "upstream_source": "https://github.com/greenbone/openvas-scanner/blob/26465a11ff0e6a98d60a253265fab5974fc757b6/rust/src/nasl/builtin/string/mod.rs",
+              "upstream_source": "https://github.com/greenbone/openvas-scanner/blob/cbd9081531ea6602bea7356aa371200979c1e961/rust/src/nasl/builtin/string/mod.rs",
               "before_sha256": "sha256:039530e2f1e6ceecd2491a51f42d43c1a0b22b8e2b608307fd2f5c3c0f64d59a",
               "after_sha256": "sha256:ac3fce76842a07e1a2fd785975900095629246d95138069f75a5e0ae82cc8947"
             },
             {
               "path": "rust/src/nasl/builtin/string/tests.rs",
-              "upstream_source": "https://github.com/greenbone/openvas-scanner/blob/26465a11ff0e6a98d60a253265fab5974fc757b6/rust/src/nasl/builtin/string/tests.rs",
-              "before_sha256": "sha256:cfc2c1c0c87741fc5bdf6ad24917da432f93693fe1b37eb873c67bd06e6a5860",
-              "after_sha256": "sha256:f248af887935b25430720c6c21e34b9111590811ecc78057c590931cfddc57b3"
-            },
-            {
-              "path": "rust/src/nasl/interpreter/declare.rs",
-              "upstream_source": "https://github.com/greenbone/openvas-scanner/blob/26465a11ff0e6a98d60a253265fab5974fc757b6/rust/src/nasl/interpreter/declare.rs",
-              "before_sha256": "sha256:215daeb63603cb0ee3e33a06c34d35d1fd4f88ebcad09b3c4ec2e080484f20d5",
-              "after_sha256": "sha256:6b3108fe3bc7c7440c295be330d539592e565a0b4b53e35348538b95de6141fb"
-            },
-            {
-              "path": "rust/src/nasl/interpreter/nasl_value.rs",
-              "upstream_source": "https://github.com/greenbone/openvas-scanner/blob/26465a11ff0e6a98d60a253265fab5974fc757b6/rust/src/nasl/interpreter/nasl_value.rs",
-              "before_sha256": "sha256:78a5ce80b45e88ef72e56975afaccfe384c2d2ba9a3be1326ea90fd90141c583",
-              "after_sha256": "sha256:b68c8b4c98d38ff480a636c49eefff27e1255c247774ec16c8f7673bb4951324"
-            },
-            {
-              "path": "rust/src/nasl/interpreter/register.rs",
-              "upstream_source": "https://github.com/greenbone/openvas-scanner/blob/26465a11ff0e6a98d60a253265fab5974fc757b6/rust/src/nasl/interpreter/register.rs",
-              "before_sha256": "sha256:947cb40912e7a7ca3c04ab184786ff6abefbd337f743bee5b8d8dce5cf5ce4a8",
-              "after_sha256": "sha256:29ffd705916cb06ac5d50d9b180296d7d6a693dc1716bad9f6aa84788d00f5b6"
-            },
-            {
-              "path": "rust/src/nasl/interpreter/tests/mod.rs",
-              "upstream_source": "https://github.com/greenbone/openvas-scanner/blob/26465a11ff0e6a98d60a253265fab5974fc757b6/rust/src/nasl/interpreter/tests/mod.rs",
-              "before_sha256": "sha256:0cabde0ca34d3e433f1f35c27cd9ebe155cfe9a38e096dc48f23034832f0555e",
-              "after_sha256": "sha256:a03d1e88e39a76f689b2168b0aae3bd4797fb064a301b73a3f8d544bbbe95559"
-            },
+              "upstream_source": "https://github.com/greenbone/openvas-scanner/blob/cbd9081531ea6602bea7356aa371200979c1e961/rust/src/nasl/builtin/string/tests.rs",
+              "before_sha256": "sha256:41a3da5b0a289572bc16d39d625095cb3779db8906c31fc7df48eaf6e8e2bdb6",
+              "after_sha256": "sha256:4c4eea55f7604e42a0a2d4e5508c45959182fed1098a9b7a3edd68b855b31636"
+            }
+          ]
+        },
+        {
+          "path": "engines/images/greenbone/openvasd-nasl-value-coercion.patch",
+          "sha256": "sha256:cb3dc36c4b41412662844b1536d501f5da98a7c68d86a3d8b9178758e3fe92d6",
+          "files": [
             {
               "path": "rust/src/nasl/utils/function/from_nasl_value.rs",
-              "upstream_source": "https://github.com/greenbone/openvas-scanner/blob/26465a11ff0e6a98d60a253265fab5974fc757b6/rust/src/nasl/utils/function/from_nasl_value.rs",
+              "upstream_source": "https://github.com/greenbone/openvas-scanner/blob/cbd9081531ea6602bea7356aa371200979c1e961/rust/src/nasl/utils/function/from_nasl_value.rs",
               "before_sha256": "sha256:737d45253ad7a08b70f5fb800f662341699cd9ce6e86ff07c7d3c161292e6c0d",
               "after_sha256": "sha256:1e1ee013da560be7d41500af7251ff4ce94676515ddbe6f4e88646839fb11962"
-            },
-            {
-              "path": "rust/src/scanner/vt_runner.rs",
-              "upstream_source": "https://github.com/greenbone/openvas-scanner/blob/26465a11ff0e6a98d60a253265fab5974fc757b6/rust/src/scanner/vt_runner.rs",
-              "before_sha256": "sha256:91ad8f166287679447956d468183c621b54424c3bc66eea89c857e2471baabf9",
-              "after_sha256": "sha256:554f59237872e292bce026ea3cd214c6079841b32fb25ba91c98d82874ef24c8"
             }
           ]
         },
         {
           "path": "engines/images/greenbone/openvasd-http-compat.patch",
-          "sha256": "sha256:0aa8b07e43f2b21f32f7f2fa8181957b456248f0986de2723940809047a35eff",
+          "sha256": "sha256:963e48b293185a38cfff15e8cfeba045416ee353bed6878856b3280c367138ea",
           "files": [
             {
               "path": "rust/src/nasl/builtin/http/mod.rs",
-              "upstream_source": "https://github.com/greenbone/openvas-scanner/blob/26465a11ff0e6a98d60a253265fab5974fc757b6/rust/src/nasl/builtin/http/mod.rs",
-              "before_sha256": "sha256:2d5d40f0ed6df9a20a80f9935c2634067ca3caeb66679cdb49bacab2fdeefb5a",
-              "after_sha256": "sha256:9779edf9451714d7f14a4e6269fca7424eb78d461ee3944611a721ecd3329935"
+              "upstream_source": "https://github.com/greenbone/openvas-scanner/blob/cbd9081531ea6602bea7356aa371200979c1e961/rust/src/nasl/builtin/http/mod.rs",
+              "before_sha256": "sha256:d6a36b0f2637c9d28db72bec2b24a19ad99348c97b25c2c9143e245723b62de5",
+              "after_sha256": "sha256:b851db5a3582102892ea814f0018d693729f3081155b3f3640cb7432ffc50610"
             }
           ]
         },
         {
           "path": "engines/images/greenbone/openvasd-nasl-array-compat.patch",
-          "sha256": "sha256:affe3266602aade09416b68f2d085d1f390931d921a78eb7bb526451e1eeb891",
+          "sha256": "sha256:ea9d7ba960fad509c18924855a19b6e2499bf13fb25cfac4c66a02b82e708c20",
           "files": [
             {
               "path": "rust/src/nasl/interpreter/nasl_value.rs",
-              "upstream_source": "https://github.com/greenbone/openvas-scanner/blob/26465a11ff0e6a98d60a253265fab5974fc757b6/rust/src/nasl/interpreter/nasl_value.rs",
+              "upstream_source": "https://github.com/greenbone/openvas-scanner/blob/cbd9081531ea6602bea7356aa371200979c1e961/rust/src/nasl/interpreter/nasl_value.rs",
               "before_sha256": "sha256:b68c8b4c98d38ff480a636c49eefff27e1255c247774ec16c8f7673bb4951324",
               "after_sha256": "sha256:778f59a04a826ce8e34128a1f3787632bc89e577f9f563aec72a7f290714c188"
             },
             {
               "path": "rust/src/nasl/interpreter/tests/mod.rs",
-              "upstream_source": "https://github.com/greenbone/openvas-scanner/blob/26465a11ff0e6a98d60a253265fab5974fc757b6/rust/src/nasl/interpreter/tests/mod.rs",
-              "before_sha256": "sha256:a03d1e88e39a76f689b2168b0aae3bd4797fb064a301b73a3f8d544bbbe95559",
-              "after_sha256": "sha256:f6ba89dea450ae5d245b04efa801b54b24600ca22bdcd60e24083ce2be6641c9"
+              "upstream_source": "https://github.com/greenbone/openvas-scanner/blob/cbd9081531ea6602bea7356aa371200979c1e961/rust/src/nasl/interpreter/tests/mod.rs",
+              "before_sha256": "sha256:31297e4b260a0388eab885df1b8a10bd274bbeca5b8bc4a8ea3c1c22ba2fa185",
+              "after_sha256": "sha256:a7a54f9318a865cf0b96bbad97423c7dda0218ff4555ec24265f6235d4d3fb49"
             }
           ]
         },
         {
           "path": "engines/images/greenbone/openvasd-eregmatch-captures.patch",
-          "sha256": "sha256:8e9ce5794e51abf78d77ea3c11931f50cf54f44be0d15becdd0a06c4f7b95d20",
+          "sha256": "sha256:d72d4cda3a61cfef5f5e347f83bdf1c08d78354d62c749339461a00443ac02db",
           "files": [
             {
               "path": "rust/src/nasl/builtin/regex/mod.rs",
-              "upstream_source": "https://github.com/greenbone/openvas-scanner/blob/26465a11ff0e6a98d60a253265fab5974fc757b6/rust/src/nasl/builtin/regex/mod.rs",
+              "upstream_source": "https://github.com/greenbone/openvas-scanner/blob/cbd9081531ea6602bea7356aa371200979c1e961/rust/src/nasl/builtin/regex/mod.rs",
               "before_sha256": "sha256:0d15e800e34ba079232fbd3023e47ad6abf2fcf8f7e42c794124a220af9083de",
               "after_sha256": "sha256:d78c5e6d442f6b9b6bf5a5e30ef6eb71eabe22c3caba9ec93f0faa33da915fbf"
             },
             {
               "path": "rust/src/nasl/builtin/regex/tests.rs",
-              "upstream_source": "https://github.com/greenbone/openvas-scanner/blob/26465a11ff0e6a98d60a253265fab5974fc757b6/rust/src/nasl/builtin/regex/tests.rs",
+              "upstream_source": "https://github.com/greenbone/openvas-scanner/blob/cbd9081531ea6602bea7356aa371200979c1e961/rust/src/nasl/builtin/regex/tests.rs",
               "before_sha256": "sha256:ee73c2337fd53135eac7e0ed6492f27abf1f552af6b6fb0cf837dd65173027a1",
               "after_sha256": "sha256:63449bad44ce472ff1a12ee248cd97fdd7e4cf632862a506a05d29eb15168898"
             }
@@ -269,49 +313,31 @@
         },
         {
           "path": "engines/images/greenbone/openvasd-report-port.patch",
-          "sha256": "sha256:f9440c30d1c13a0fc13165ae2cdece6faab39409b2656db61d781d1e0865ca1c",
+          "sha256": "sha256:83f53b7117047c17a7a8ccf9559daa5e9e1229f75eb3743bc966c93e04d796a4",
           "files": [
             {
-              "path": "rust/src/models/result.rs",
-              "upstream_source": "https://github.com/greenbone/openvas-scanner/blob/26465a11ff0e6a98d60a253265fab5974fc757b6/rust/src/models/result.rs",
-              "before_sha256": "sha256:d04e63530c205eb96be1f463b19808dd334e5373e0e7b1fd943496cdf1b631ec",
-              "after_sha256": "sha256:43904f509d3f6031d557b9c45bce4a77cba9231e9c5ecaabcb91578325798f5c"
-            },
-            {
               "path": "rust/src/nasl/builtin/report/mod.rs",
-              "upstream_source": "https://github.com/greenbone/openvas-scanner/blob/26465a11ff0e6a98d60a253265fab5974fc757b6/rust/src/nasl/builtin/report/mod.rs",
-              "before_sha256": "sha256:e0d81f0fd7f5fcb9299297d7266625d6923ab6a734ba45cc1c6c2e35c10539de",
-              "after_sha256": "sha256:9288f84812474351d39003f22a8164a381edcbcb8a8087953d045dad0488e665"
+              "upstream_source": "https://github.com/greenbone/openvas-scanner/blob/cbd9081531ea6602bea7356aa371200979c1e961/rust/src/nasl/builtin/report/mod.rs",
+              "before_sha256": "sha256:08e5d27e18d2f813f86e5ab3e4c6bfbf47a9bf5d502530adab51efff3dc70afe",
+              "after_sha256": "sha256:7f662cfe53ad988fc7970c3d042f063ec2a09fd6a36e5896d627d551cdfbba13"
             },
             {
               "path": "rust/src/nasl/builtin/report/tests.rs",
-              "upstream_source": "https://github.com/greenbone/openvas-scanner/blob/26465a11ff0e6a98d60a253265fab5974fc757b6/rust/src/nasl/builtin/report/tests.rs",
-              "before_sha256": "sha256:9491e797c9fd8ae7b0912072eaef300879ad215247c7e198646e159ddb846228",
-              "after_sha256": "sha256:c628017c3065ccde371654899f14f74a8acc2ad1ab298a3236f04946d4aad957"
-            },
-            {
-              "path": "rust/src/openvas/result_collector.rs",
-              "upstream_source": "https://github.com/greenbone/openvas-scanner/blob/26465a11ff0e6a98d60a253265fab5974fc757b6/rust/src/openvas/result_collector.rs",
-              "before_sha256": "sha256:5a61a0b98c264ab05e6934a15080212b538c765b967836ffda1740817646228e",
-              "after_sha256": "sha256:69ee3a4d8ee95184436a743b8e9f117b5ba746d177b61115c05bc2e388c12b26"
-            },
-            {
-              "path": "rust/src/openvasd/database/sqlite/results.rs",
-              "upstream_source": "https://github.com/greenbone/openvas-scanner/blob/26465a11ff0e6a98d60a253265fab5974fc757b6/rust/src/openvasd/database/sqlite/results.rs",
-              "before_sha256": "sha256:f7304a90b88028efe2ada5e11d404df35ce8012b2777a007a7174b1c25a6218e",
-              "after_sha256": "sha256:6c519fe38d6f7840b9b34261cc1015cf1dac2b3d0f5ae0eba56e38811e6655d4"
+              "upstream_source": "https://github.com/greenbone/openvas-scanner/blob/cbd9081531ea6602bea7356aa371200979c1e961/rust/src/nasl/builtin/report/tests.rs",
+              "before_sha256": "sha256:73e3e9e6d1c4ffd5361d4bbf6497cf27fc160ed297b3696c22bd340fd7de9ebe",
+              "after_sha256": "sha256:d28a1fae28e3e894484df5e65175f6a7ddfc23454c41945a71ef4943cec10d00"
             }
           ]
         },
         {
           "path": "engines/images/greenbone/openvasd-socket-eof.patch",
-          "sha256": "sha256:8decd85c3acd6592b8ed10dd74b6deece386d30a6d0136d4201ccf97c3394846",
+          "sha256": "sha256:e08d242a5741e1a30d2df067911fa21fa0b026ad47197125e035fe88b7cb15db",
           "files": [
             {
               "path": "rust/src/nasl/builtin/network/socket.rs",
-              "upstream_source": "https://github.com/greenbone/openvas-scanner/blob/26465a11ff0e6a98d60a253265fab5974fc757b6/rust/src/nasl/builtin/network/socket.rs",
-              "before_sha256": "sha256:1dcfe84fb66690a0a2075aa5bee7859e8096caf96858ff3546517267a3eadaa7",
-              "after_sha256": "sha256:6e8e2087ae259b349e653fb7a86726778750c8c8236f59ce71c420f111eb70b1"
+              "upstream_source": "https://github.com/greenbone/openvas-scanner/blob/cbd9081531ea6602bea7356aa371200979c1e961/rust/src/nasl/builtin/network/socket.rs",
+              "before_sha256": "sha256:177e47fb65516c7f13f752a3a2a2854f13a05b095f49cdf4031a92c6df91accd",
+              "after_sha256": "sha256:f4fa4a347130c3129d99a5975938124cf0198dc3ad89d561a710a539a6b9c22b"
             }
           ]
         }
@@ -321,14 +347,14 @@
   "dockerfile": {
     "emitted": true,
     "path": "engines/images/greenbone/Dockerfile",
-    "sha256": "sha256:d6441621463a317e0ee808ebc4aea36459a37496c4a02b0b54a85299cbe19db2",
+    "sha256": "sha256:aeae895995e0c3e35838a43d4cce4148bfbb64860574127b2536cc4b93d3ffde",
     "reason": null
   },
   "wrapper": {
     "required": true,
     "strategy": "Run the direct scanner once per exact grant and relay only the authorized original target through the managed SOCKS gateway.",
     "entrypoint": "/usr/local/bin/ai-security-scanner-engine-entrypoint",
-    "launcher_sha256": "sha256:64a5b8c574092bf93ac6ea76a006064425b149ad5d65ee17168aded672ae7458"
+    "launcher_sha256": "sha256:4bd4458e005143bcf23157d34fc05c9b31966681648d3122d47c27e49b278969"
   },
   "command": [
     "--engine",
@@ -365,7 +391,13 @@
     "telemetry": false,
     "per_grant_target_execution": true
   },
-  "publication": {
+  "publication": null,
+  "previous_artifact": {
+    "repository": "ghcr.io/teddashh/ai-security-scanner-engine-greenbone",
+    "tag": "23.50.24-feed202610010558-1",
+    "digest": "sha256:d2e95d252272488891d04766e66362aacb234e1e2975dca27e834f0050a695c4"
+  },
+  "previous_publication": {
     "workflow_run": "https://github.com/teddashh/ai-security-scanner/actions/runs/36871445150",
     "source_revision": "16d0e116aa52166b581d7ec525faf992d4757c02",
     "platforms": [
@@ -379,5 +411,41 @@
     "anonymous_pull_verified": true,
     "evidence_artifact": "greenbone-image-evidence-36871445150-1",
     "managed_smoke_evidence_sha256": "sha256:60455e2cc82d0538de9a42b20a7fd71f47448be7c7ee9223081ec3cc3654db7a"
+  },
+  "upstream_update": {
+    "engine_version": "23.52.9",
+    "source_revision": "cbd9081531ea6602bea7356aa371200979c1e961",
+    "rule_version": "a2e53c2e30f1fa5408369cb5cf99653a3e08e9df",
+    "reported_version": null,
+    "knowledge_date": "2026-11-06",
+    "support_until": "2026-11-22",
+    "engine_provenance": {
+      "version": "23.52.9",
+      "source_repository": "https://github.com/greenbone/openvas-scanner",
+      "source_revision": "cbd9081531ea6602bea7356aa371200979c1e961",
+      "source_ref": "v23.52.9",
+      "acquisition_source": "https://github.com/greenbone/openvas-scanner/commit/cbd9081531ea6602bea7356aa371200979c1e961",
+      "artifact_source_revision": null,
+      "source_association": "source_build_required"
+    },
+    "rules_provenance": {
+      "mode": "embedded",
+      "identifier": "Greenbone Community Feed vulnerability tests",
+      "revision": "a2e53c2e30f1fa5408369cb5cf99653a3e08e9df",
+      "acquisition_source": "registry.community.greenbone.net/community/vulnerability-tests@sha256:3a3cf9affb94ee3d714d3da7ebc35bf52bb0f1f32e5d196e82d2c3bf06b2b126"
+    },
+    "data_provenance": {
+      "mode": "embedded",
+      "identifier": "Greenbone Community Feed and Notus snapshot",
+      "revision": "a2e53c2e30f1fa5408369cb5cf99653a3e08e9df",
+      "acquisition_source": "registry.community.greenbone.net/community/vulnerability-tests@sha256:3a3cf9affb94ee3d714d3da7ebc35bf52bb0f1f32e5d196e82d2c3bf06b2b126"
+    },
+    "knowledge_input": {
+      "kind": "embedded",
+      "identifier": "Greenbone Community Feed snapshot",
+      "version": "202611060607-community",
+      "acquisition_source": "registry.community.greenbone.net/community/vulnerability-tests@sha256:3a3cf9affb94ee3d714d3da7ebc35bf52bb0f1f32e5d196e82d2c3bf06b2b126",
+      "pin_state": "pinned_or_not_applicable"
+    }
   }
 }

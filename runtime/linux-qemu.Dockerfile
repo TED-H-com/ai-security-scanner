@@ -21,7 +21,7 @@ RUN test "$TARGETPLATFORM" = "linux/amd64" \
       py3-pip=25.1.1-r1 \
       py3-setuptools=80.9.0-r2 \
       py3-wheel=0.46.3-r0 \
-      python3=3.12.15-r0 \
+      python3=3.12.16-r0 \
       zlib-dev=1.3.2-r1 \
       zlib-static=1.3.2-r1
 

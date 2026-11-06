@@ -31,23 +31,23 @@ const platformDigests = {
   "linux/arm64": `sha256:${"33".repeat(32)}`,
 };
 const specs = {
-  steampipe: { tag: "2.4.7-1", group: "cloud", workflow: ".github/workflows/engine-images-cloud.yml" },
-  prowler: { tag: "5.44.0-1", group: "cloud", workflow: ".github/workflows/engine-images-cloud.yml" },
-  checkov: { tag: "3.3.29-1", group: "standalone", workflow: ".github/workflows/engine-image-checkov.yml", sourceDateEpoch: "1791891584" },
-  syft: { tag: "1.54.1-1", group: "standalone", workflow: ".github/workflows/engine-image-syft.yml" },
-  naabu: { tag: "2.6.1-7", group: "external" },
-  httpx: { tag: "1.12.0-1", group: "external" },
-  nuclei: { tag: "3.11.1-8", group: "external" },
-  semgrep: { tag: "1.181.0-1", group: "local", smokeFiles: ["semgrep.json"] },
-  trufflehog: { tag: "3.99.2-1", group: "local", smokeFiles: ["trufflehog.jsonl"] },
-  trivy: { tag: "0.76.1-1", group: "local", smokeFiles: ["trivy-oci.json", "trivy-library.json", "trivy-jar.json"] },
-  grype: { tag: "0.120.1-1", group: "local", smokeFiles: ["grype.json"] },
-  kubescape: { tag: "4.0.16-1", group: "local", smokeFiles: ["kubescape.json"] },
-  "kube-bench": { tag: "0.16.0-5", group: "local", smokeFiles: ["kube-bench.json"] },
+  steampipe: { tag: "2.4.9-1", group: "cloud", workflow: ".github/workflows/engine-images-cloud.yml" },
+  prowler: { tag: "5.47.0-1", group: "cloud", workflow: ".github/workflows/engine-images-cloud.yml" },
+  checkov: { tag: "3.4.3-1", group: "standalone", workflow: ".github/workflows/engine-image-checkov.yml", sourceDateEpoch: "1793640074" },
+  syft: { tag: "1.57.0-1", group: "standalone", workflow: ".github/workflows/engine-image-syft.yml" },
+  naabu: { tag: "2.7.0-1", group: "external" },
+  httpx: { tag: "1.12.0-2", group: "external" },
+  nuclei: { tag: "3.11.1-9", group: "external" },
+  semgrep: { tag: "1.184.0-1", group: "local", smokeFiles: ["semgrep.json"] },
+  trufflehog: { tag: "3.99.8-1", group: "local", smokeFiles: ["trufflehog.jsonl"] },
+  trivy: { tag: "0.76.2-1", group: "local", smokeFiles: ["trivy-oci.json", "trivy-library.json", "trivy-jar.json"] },
+  grype: { tag: "0.121.2-1", group: "local", smokeFiles: ["grype.json"] },
+  kubescape: { tag: "4.0.19-1", group: "local", smokeFiles: ["kubescape.json"] },
+  "kube-bench": { tag: "0.16.0-6", group: "local", smokeFiles: ["kube-bench.json"] },
   "agentic-radar": { tag: "0.14.1-1", group: "local", smokeFiles: ["agentic-radar.json"], workflow: ".github/workflows/engine-image-agentic-radar.yml" },
-  garak: { tag: "0.17.0-1", group: "local", smokeFiles: ["report.jsonl", "garak-execution.json", "native-qa.json"], workflow: ".github/workflows/engine-image-garak.yml" },
-  scubagear: { tag: "1.8.0-8", group: "m365" },
-  maester: { tag: "2.0.0-9", group: "m365" },
+  garak: { tag: "0.17.1-1", group: "local", smokeFiles: ["report.jsonl", "garak-execution.json", "native-qa.json"], workflow: ".github/workflows/engine-image-garak.yml" },
+  scubagear: { tag: "2.0.0-1", group: "m365" },
+  maester: { tag: "2.3.0-1", group: "m365" },
   "egress-gateway": { tag: "0.3.0-1", group: "gateway" },
 };
 const workflows = {
@@ -375,7 +375,7 @@ async function createArtifact(testContext, engine, { largeSbom = false } = {}) {
     await mkdir(smoke);
     for (const file of spec.smokeFiles) await writeFile(path.join(smoke, file), `fixture evidence for ${engine} ${file}\n`);
     if (engine === "garak") {
-      const raw = await readFile(path.join(projectRoot, "src-tauri/tests/fixtures/adapters/garak-0.17.0-native.jsonl"));
+      const raw = Buffer.from((await readFile(path.join(projectRoot, "src-tauri/tests/fixtures/adapters/garak-0.17.0-native.jsonl"), "utf8")).replaceAll("0.17.0", "0.17.1"));
       const evals = raw.toString("utf8").trim().split("\n").map((line) => JSON.parse(line)).filter((row) => row.entry_type === "eval")
         .map(({ probe, detector, fails, total_evaluated, total_processed, nones }) => ({ probe, detector, fails, total_evaluated, total_processed, nones }));
       const receipt = { schema_version: "1", profile_id: "garak_https_v1", complete: true, reason: null, max_http_attempts: 64,
@@ -391,7 +391,7 @@ async function createArtifact(testContext, engine, { largeSbom = false } = {}) {
       await writeFile(path.join(smoke, "report.jsonl"), raw);
       await writeJson(path.join(smoke, "garak-execution.json"), receipt);
       await writeJson(path.join(smoke, "native-qa.json"), { schema_version: 1, platform: "linux/amd64", image: `${image}@${indexDigest}`,
-        image_id: platformDigests["linux/amd64"], native_version: "0.17.0", network_internal: true, unapproved_destinations: 0, cases });
+        image_id: platformDigests["linux/amd64"], native_version: "0.17.1", network_internal: true, unapproved_destinations: 0, cases });
     }
     await writeChecksums(path.join(smoke, "SHA256SUMS.txt"), smoke, spec.smokeFiles);
     smokeReceipt = `sha256:${sha256(await readFile(path.join(smoke, "SHA256SUMS.txt")))}`;

@@ -2,7 +2,7 @@
 
 ARG SOURCE_DATE_EPOCH=1787553065
 
-FROM --platform=$BUILDPLATFORM golang:1.26.10-alpine@sha256:27f2d3b83cfc5803c8078f8e730af0f7c431bf067afaec8f60a36fb763187cba AS build
+FROM --platform=$BUILDPLATFORM golang:1.26.10-alpine@sha256:87c65a688975c0b1d4585d204874c45ca78354670e3a5f11368c5a492303d696 AS build
 
 ARG TARGETOS
 ARG TARGETARCH
@@ -24,8 +24,8 @@ RUN go test ./... \
 ADD --checksum=sha256:233fd559f0f2287310709ed0f19613a9e298dbff03ee7f9e0905a0709e8537e4 \
     https://github.com/projectdiscovery/nuclei/archive/a8c88feb4a1c8e961b7902534ce3af97e9d524a4.tar.gz \
     /tmp/nuclei-source.tar.gz
-ADD --checksum=sha256:0e4475cb9d05f4cc28c248680e9883f0d4e26eb58c47bd07d7c4b107f0ddcbd7 \
-    https://github.com/projectdiscovery/nuclei-templates/archive/f938a3dd530c283e9387b518b97911152ff5846c.tar.gz \
+ADD --checksum=sha256:c5c158cb79368158a8fc85aad4ee504c7d6483b0891d0e102c0572ac578d060a \
+    https://github.com/projectdiscovery/nuclei-templates/archive/79fb682760ab3d5b0e22afbb44709353cbebf023.tar.gz \
     /tmp/nuclei-templates-source.tar.gz
 
 RUN --mount=type=cache,id=ai-security-scanner-nuclei-go-mod,target=/go/pkg/mod,sharing=locked \
@@ -41,7 +41,7 @@ RUN --mount=type=cache,id=ai-security-scanner-nuclei-go-mod,target=/go/pkg/mod,s
         -mod=readonly -buildvcs=false -trimpath -ldflags='-s -w -buildid=' \
         -o /out/nuclei ./cmd/nuclei \
     && go version -m /out/nuclei | grep -Fq 'github.com/projectdiscovery/nuclei/v3' \
-    && printf '%s\n' 'f938a3dd530c283e9387b518b97911152ff5846c' > /src/nuclei-templates/AI_SECURITY_SCANNER_REVISION \
+    && printf '%s\n' '79fb682760ab3d5b0e22afbb44709353cbebf023' > /src/nuclei-templates/AI_SECURITY_SCANNER_REVISION \
     && mkdir -p /rootfs/run/ai-security-scanner /rootfs/output /rootfs/workspace /rootfs/tmp \
     && chmod 1777 /rootfs/tmp \
     && : > /rootfs/run/ai-security-scanner/.keep \
@@ -55,11 +55,11 @@ LABEL org.opencontainers.image.title="ai-security-scanner Nuclei engine" \
       org.opencontainers.image.description="Pinned upstream automatic read-only HTTP template execution for ai-security-scanner" \
       org.opencontainers.image.source="https://github.com/projectdiscovery/nuclei" \
       org.opencontainers.image.revision="a8c88feb4a1c8e961b7902534ce3af97e9d524a4" \
-      org.opencontainers.image.version="3.11.1-8" \
+      org.opencontainers.image.version="3.11.1-9" \
       org.opencontainers.image.licenses="Apache-2.0 AND MIT" \
       io.ai-security-scanner.source-archive-sha256="233fd559f0f2287310709ed0f19613a9e298dbff03ee7f9e0905a0709e8537e4" \
-      io.ai-security-scanner.templates-revision="f938a3dd530c283e9387b518b97911152ff5846c" \
-      io.ai-security-scanner.templates-archive-sha256="0e4475cb9d05f4cc28c248680e9883f0d4e26eb58c47bd07d7c4b107f0ddcbd7"
+      io.ai-security-scanner.templates-revision="79fb682760ab3d5b0e22afbb44709353cbebf023" \
+      io.ai-security-scanner.templates-archive-sha256="c5c158cb79368158a8fc85aad4ee504c7d6483b0891d0e102c0572ac578d060a"
 
 ENV HOME="/tmp" \
     SSL_CERT_FILE="/etc/ssl/certs/ca-certificates.crt" \

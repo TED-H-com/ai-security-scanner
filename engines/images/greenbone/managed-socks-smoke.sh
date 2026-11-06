@@ -169,7 +169,7 @@ jq -n \
           activity: "active_external",
           rate_policy: {requests_per_second: 10, concurrency: 1, timeout_seconds: 5},
           template_policy: {
-            revision: "greenbone-community-feed@816c24126e0375d32c667b78d20342ce7c58ec58",
+            revision: "greenbone-community-feed@a2e53c2e30f1fa5408369cb5cf99653a3e08e9df",
             allowed_template_ids: [$oid],
             allow_headless: false,
             allow_out_of_band: false,

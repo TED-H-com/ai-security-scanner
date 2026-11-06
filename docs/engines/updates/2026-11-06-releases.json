@@ -14,7 +14,8 @@
       "installed_engine_version_before": "4.0.16",
       "decision": "local_candidate",
       "candidate_tag": "4.0.19-1",
-      "catalog_activated": false
+      "catalog_activated": false,
+      "selected_source_revision": "9780473d81b3b3e036408d6323b162a197beee07"
     },
     {
       "id": "agentic-radar",
@@ -53,7 +54,8 @@
       "installed_engine_version_before": "3.99.2",
       "decision": "local_candidate",
       "candidate_tag": "3.99.8-1",
-      "catalog_activated": false
+      "catalog_activated": false,
+      "selected_source_revision": "ea68ca03c865c5f324e86e849ced20ed3cf9dbbb"
     },
     {
       "id": "prowler",
@@ -68,7 +70,8 @@
       "installed_engine_version_before": "5.44.0",
       "decision": "local_candidate",
       "candidate_tag": "5.47.0-1",
-      "catalog_activated": false
+      "catalog_activated": false,
+      "selected_source_revision": "555a4cc469907e26ef007eb79af2b6cb4bddd6c6"
     },
     {
       "id": "steampipe",
@@ -83,7 +86,8 @@
       "installed_engine_version_before": "2.4.7",
       "decision": "local_candidate",
       "candidate_tag": "2.4.9-1",
-      "catalog_activated": false
+      "catalog_activated": false,
+      "selected_source_revision": "4269e1dc4865647605da6af8f1828e77278106a0"
     },
     {
       "id": "mcp-armor",
@@ -110,7 +114,8 @@
       "installed_engine_version_before": "1.181.0",
       "decision": "local_candidate",
       "candidate_tag": "1.184.0-1",
-      "catalog_activated": false
+      "catalog_activated": false,
+      "selected_source_revision": "ac37d1f6e47b17648b8f854d6e2f2d72fade2567"
     },
     {
       "id": "kics",
@@ -144,7 +149,8 @@
       "installed_engine_version_before": "1.54.1",
       "decision": "local_candidate",
       "candidate_tag": "1.57.0-1",
-      "catalog_activated": false
+      "catalog_activated": false,
+      "selected_source_revision": "30f4bce762f31136e055f2965185f12eb95fbe47"
     },
     {
       "id": "kube-bench",
@@ -157,7 +163,8 @@
       "installed_engine_version_before": "0.16.0",
       "decision": "local_candidate",
       "candidate_tag": "0.16.0-6",
-      "catalog_activated": false
+      "catalog_activated": false,
+      "selected_source_revision": "9f133cb7509ce1dbedfc860e94474588000e25ac"
     },
     {
       "id": "scubagear",
@@ -170,9 +177,11 @@
       "latest_revision": "6e5a1a421b36c5a1fb3fd983b8c4bcd5b7a6c61d",
       "source_date_epoch": 1792695550,
       "installed_engine_version_before": "1.8.0",
-      "decision": "retained",
+      "decision": "local_candidate",
       "reason": "Retain 1.8.0: 2.0.0 changes the Security Suite, REST/Graph collectors and policy baseline; the selected module/test closure has not been validated against that major version.",
-      "catalog_activated": false
+      "catalog_activated": false,
+      "candidate_tag": "2.0.0-1",
+      "selected_source_revision": "6e5a1a421b36c5a1fb3fd983b8c4bcd5b7a6c61d"
     },
     {
       "id": "httpx",
@@ -183,8 +192,10 @@
       "release_url": "https://github.com/projectdiscovery/httpx/releases/tag/v1.12.0",
       "published_at": "2026-09-08T13:36:33Z",
       "installed_engine_version_before": "1.12.0",
-      "decision": "already_current",
-      "catalog_activated": false
+      "decision": "local_candidate",
+      "catalog_activated": false,
+      "candidate_tag": "1.12.0-2",
+      "selected_source_revision": "4b6a9a9d476f94a4f3a630f37051f5671ecfb1f8"
     },
     {
       "id": "grype",
@@ -199,7 +210,8 @@
       "installed_engine_version_before": "0.120.1",
       "decision": "local_candidate",
       "candidate_tag": "0.121.2-1",
-      "catalog_activated": false
+      "catalog_activated": false,
+      "selected_source_revision": "82d7a0ea911946b99343c672056867d372f9b319"
     },
     {
       "id": "cloudquery",
@@ -210,9 +222,11 @@
       "release_url": "https://github.com/cloudquery/cloudquery/releases/tag/cli-v6.50.0",
       "published_at": "2026-11-02T13:55:34Z",
       "installed_engine_version_before": "2.0.31-aws9.2.0-file1.0.4",
-      "decision": "retained",
+      "decision": "local_candidate",
       "reason": "Retain the deliberately selected fully public CLI 2.0.31 / AWS 9.2.0 / file 1.0.4 closure; the latest CLI is outside that product boundary.",
-      "catalog_activated": false
+      "catalog_activated": false,
+      "candidate_tag": "3.5.3-aws9.2.0-file1.0.4-1",
+      "selected_source_revision": "086baf7f70ee3c1069513d41f321720a5e7d2bb9"
     },
     {
       "id": "trivy",
@@ -227,7 +241,8 @@
       "installed_engine_version_before": "0.76.1",
       "decision": "local_candidate",
       "candidate_tag": "0.76.2-1",
-      "catalog_activated": false
+      "catalog_activated": false,
+      "selected_source_revision": "3f6334d223b52188324af3b9923b4249cd206652"
     },
     {
       "id": "checkov",
@@ -242,7 +257,8 @@
       "installed_engine_version_before": "3.3.29",
       "decision": "local_candidate",
       "candidate_tag": "3.4.3-1",
-      "catalog_activated": false
+      "catalog_activated": false,
+      "selected_source_revision": "5038a50e21a2253cb5aed2e739d2c22ee28d2e17"
     },
     {
       "id": "garak",
@@ -255,9 +271,11 @@
       "latest_revision": "7aa740fe7412cc9bc33cdc39ca211843223cd3e1",
       "source_date_epoch": 1792180550,
       "installed_engine_version_before": "0.17.0",
-      "decision": "retained",
+      "decision": "local_candidate",
       "reason": "Retain 0.17.0: the selected probe/detector files are unchanged, but source identity is bound across host grants, launcher and native receipt validation. The candidate requires coordinated compatibility and six-case native TLS validation; neither was changed in this batch.",
-      "catalog_activated": false
+      "catalog_activated": false,
+      "candidate_tag": "0.17.1-1",
+      "selected_source_revision": "7aa740fe7412cc9bc33cdc39ca211843223cd3e1"
     },
     {
       "id": "naabu",
@@ -272,7 +290,8 @@
       "installed_engine_version_before": "2.6.1",
       "decision": "local_candidate",
       "candidate_tag": "2.7.0-1",
-      "catalog_activated": false
+      "catalog_activated": false,
+      "selected_source_revision": "041b70fd396e95b5ed2c19f879c18247078243bc"
     },
     {
       "id": "nuclei",
@@ -283,8 +302,10 @@
       "release_url": "https://github.com/projectdiscovery/nuclei/releases/tag/v3.11.1",
       "published_at": "2026-08-08T12:21:32Z",
       "installed_engine_version_before": "3.11.1",
-      "decision": "already_current",
-      "catalog_activated": false
+      "decision": "local_candidate",
+      "catalog_activated": false,
+      "candidate_tag": "3.11.1-9",
+      "selected_source_revision": "a8c88feb4a1c8e961b7902534ce3af97e9d524a4"
     },
     {
       "id": "greenbone",
@@ -297,9 +318,11 @@
       "latest_revision": "cbd9081531ea6602bea7356aa371200979c1e961",
       "source_date_epoch": 1793881759,
       "installed_engine_version_before": "23.50.24",
-      "decision": "retained",
+      "decision": "local_candidate",
       "reason": "Retain 23.50.24: the HTTP compatibility and service-port patches fail against the axum-based upstream API; native protocol migration is unresolved.",
-      "catalog_activated": false
+      "catalog_activated": false,
+      "candidate_tag": "23.52.9-feed202611060607-1",
+      "selected_source_revision": "cbd9081531ea6602bea7356aa371200979c1e961"
     },
     {
       "id": "cloudsplaining",
@@ -348,9 +371,11 @@
       "latest_revision": "7413c42d3fcc724dfea94d2726e690ddd364d914",
       "source_date_epoch": 1791284189,
       "installed_engine_version_before": "2.0.0",
-      "decision": "retained",
+      "decision": "local_candidate",
       "reason": "Retain 2.0.0: the 2.3.0 release source module manifest still declares 2.0.0; distributed-module/source association and Graph-only closure are unresolved.",
-      "catalog_activated": false
+      "catalog_activated": false,
+      "candidate_tag": "2.3.0-1",
+      "selected_source_revision": "7413c42d3fcc724dfea94d2726e690ddd364d914"
     }
   ]
 }

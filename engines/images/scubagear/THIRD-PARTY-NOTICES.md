@@ -2,7 +2,7 @@
 
 This image contains the following immutable, checksum-verified components:
 
-- CISA ScubaGear 1.8.0 at `4d34e9a48e38ce5c2e14c0fdfbaee53e57594ae2` (CC0-1.0).
+- CISA ScubaGear 2.0.0 at `6e5a1a421b36c5a1fb3fd983b8c4bcd5b7a6c61d` (CC0-1.0).
 - Microsoft.Graph.Authentication 2.25.0 at `eedb5e8e801bb4263630d2bef3194907655e2838`
   (MIT). Its package manifest and upstream license are installed beside this notice.
 - powershell-yaml 0.4.12 at `ff33210a3edebda27cedcbab40d4524a11d5e199`

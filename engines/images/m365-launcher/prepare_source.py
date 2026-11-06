@@ -17,10 +17,10 @@ import zipfile
 
 CONTRACTS = {
     "scubagear": {
-        "source_revision": "4d34e9a48e38ce5c2e14c0fdfbaee53e57594ae2",
-        "source_sha256": "8b1f109d65bf145d7d36370e1ca6db841e82208776a04d79855d33b960d3c444",
-        "source_root": "ScubaGear-4d34e9a48e38ce5c2e14c0fdfbaee53e57594ae2",
-        "source_date_epoch": 1787252378,
+        "source_revision": "6e5a1a421b36c5a1fb3fd983b8c4bcd5b7a6c61d",
+        "source_sha256": "b274d46d1a40f5869f4e4d3c94ffd192a212d2c414c1bd6c42b950c4e4fa4569",
+        "source_root": "ScubaGear-6e5a1a421b36c5a1fb3fd983b8c4bcd5b7a6c61d",
+        "source_date_epoch": 1792695550,
         "selections": {
             "PowerShell/ScubaGear": "engine/ScubaGear",
             "LICENSE": "licenses/ScubaGear-LICENSE",
@@ -36,15 +36,17 @@ CONTRACTS = {
             },
         },
         "manifest": "engine/ScubaGear/ScubaGear.psd1",
-        "module_version": "1.8.0",
+        "module_version": "2.0.0",
     },
     "maester": {
-        "source_revision": "6bf1d98f094fc7a68e449d2f40f73ef820b72ee3",
-        "source_sha256": "e634e9bc5521e27adf2fd766ddf34f993a492e5ab8a5c49499c76d7bac69e43f",
-        "source_root": "maester-6bf1d98f094fc7a68e449d2f40f73ef820b72ee3",
-        "source_date_epoch": 1787030409,
+        "source_revision": "7413c42d3fcc724dfea94d2726e690ddd364d914",
+        "source_sha256": "5abab2a96dc40ed6088734d1b60665b3c982be7f8f1fe5f8653474b494ef4e41",
+        "source_root": "maester-7413c42d3fcc724dfea94d2726e690ddd364d914",
+        "source_date_epoch": 1791284189,
         "selections": {
             "powershell": "engine/Maester",
+            "build/Build-MaesterModule.ps1": "build/Build-MaesterModule.ps1",
+            "build/Update-MaesterConfigVersion.ps1": "build/Update-MaesterConfigVersion.ps1",
             "tests/Maester/Entra": "tests/Maester/Entra",
             "tests/maester-config.json": "tests/maester-config.json",
             "LICENSE": "licenses/Maester-LICENSE",

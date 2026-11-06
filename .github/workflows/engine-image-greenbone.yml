@@ -17,16 +17,16 @@ permissions:
   attestations: write
 
 concurrency:
-  group: engine-image-greenbone-23.50.24-feed202610010558-1
+  group: engine-image-greenbone-23.52.9-feed202611060607-1
   cancel-in-progress: false
 
 env:
   IMAGE: ghcr.io/ted-h-com/ai-security-scanner-engine-greenbone
-  IMAGE_TAG: 23.50.24-feed202610010558-1
-  SOURCE_DATE_EPOCH: "1787573675"
-  SCANNER_REVISION: 26465a11ff0e6a98d60a253265fab5974fc757b6
-  FEED_REVISION: 816c24126e0375d32c667b78d20342ce7c58ec58
-  NOTUS_REVISION: 202610010540
+  IMAGE_TAG: 23.52.9-feed202611060607-1
+  SOURCE_DATE_EPOCH: "1793881759"
+  SCANNER_REVISION: cbd9081531ea6602bea7356aa371200979c1e961
+  FEED_REVISION: a2e53c2e30f1fa5408369cb5cf99653a3e08e9df
+  NOTUS_REVISION: 202611060538
 
 jobs:
   guard:
@@ -370,7 +370,7 @@ jobs:
             --arg notus_revision "${NOTUS_REVISION}" \
             --arg xml_sha256 "sha256:${xml_sha256}" \
             --argjson native_identity_matches "${SHOULD_BUILD}" \
-            '{schemaVersion: 1, engine: "greenbone", image: $image, tag: $tag, digest: $index_digest, indexDigest: $index_digest, platformDigests: {"linux/amd64": $amd64_digest, "linux/arm64": $arm64_digest}, sourceRevision: $source_revision, sourceDateEpoch: $source_date_epoch, public: true, anonymousPullVerified: true, managedSmokeEvidenceSha256: $xml_sha256, nativeImageIdentityMatchesFinal: $native_identity_matches, reusedSignedIndex: ($native_identity_matches | not), upstream: {scannerRevision: $scanner_revision, scannerSourceSha256: "af8b1e0175dfc57f38bdecc08607dbac294459e684e2f3e7d69c85101fa13517", feedRevision: $feed_revision, feedVersion: "202610010558-community", notusRevision: $notus_revision}, managedProxy: {kind: "socks5h", directEgressDenied: true, unauthorizedPortDenied: true}, realScan: {selectedOid: "1.3.6.1.4.1.25623.1.0.108252", authorizedTarget: "172.29.251.10:8080/tcp", xmlResults: 5, actionableAlarms: 1, adapterFindings: 1, adapterWarnings: 0, xmlSha256: $xml_sha256}}' \
+            '{schemaVersion: 1, engine: "greenbone", image: $image, tag: $tag, digest: $index_digest, indexDigest: $index_digest, platformDigests: {"linux/amd64": $amd64_digest, "linux/arm64": $arm64_digest}, sourceRevision: $source_revision, sourceDateEpoch: $source_date_epoch, public: true, anonymousPullVerified: true, managedSmokeEvidenceSha256: $xml_sha256, nativeImageIdentityMatchesFinal: $native_identity_matches, reusedSignedIndex: ($native_identity_matches | not), upstream: {scannerRevision: $scanner_revision, scannerSourceSha256: "ea798d3dcf2ca43b93be9bee9b644c699632226e5fa7659dbe40f6f4bd128f63", feedRevision: $feed_revision, feedVersion: "202611060607-community", notusRevision: $notus_revision}, managedProxy: {kind: "socks5h", directEgressDenied: true, unauthorizedPortDenied: true}, realScan: {selectedOid: "1.3.6.1.4.1.25623.1.0.108252", authorizedTarget: "172.29.251.10:8080/tcp", xmlResults: 5, actionableAlarms: 1, adapterFindings: 1, adapterWarnings: 0, xmlSha256: $xml_sha256}}' \
             > package-evidence/greenbone-image-manifest.json
           printf 'amd64_digest=%s\n' "${final_amd64_digest}" >> "${GITHUB_OUTPUT}"
           printf 'arm64_digest=%s\n' "${final_arm64_digest}" >> "${GITHUB_OUTPUT}"

@@ -1759,15 +1759,15 @@ async function main() {
     "desktop opener capability must expose only the fixed provider-login HTTPS hosts",
   );
   assert(
-    packageJson.dependencies?.["@tauri-apps/plugin-updater"] === "2.10.1" &&
-      packageJson.dependencies?.["@tauri-apps/plugin-process"] === "2.3.1" &&
-      packageJson.dependencies?.["@tauri-apps/plugin-opener"] === "2.5.4",
+    packageJson.dependencies?.["@tauri-apps/plugin-updater"] === "2.14.1" &&
+      packageJson.dependencies?.["@tauri-apps/plugin-process"] === "2.4.0" &&
+      packageJson.dependencies?.["@tauri-apps/plugin-opener"] === "2.7.2",
     "frontend desktop plugin dependencies must be exactly pinned",
   );
   assert(
-    cargoToml.includes('tauri-plugin-updater = { version = "=2.10.1"') &&
-      cargoToml.includes('tauri-plugin-process = { version = "=2.3.1"') &&
-      cargoToml.includes('tauri-plugin-opener = { version = "=2.5.4"'),
+    cargoToml.includes('tauri-plugin-updater = { version = "=2.14.1"') &&
+      cargoToml.includes('tauri-plugin-process = { version = "=2.4.0"') &&
+      cargoToml.includes('tauri-plugin-opener = { version = "=2.7.2"'),
     "Rust desktop plugin dependencies must be exactly pinned",
   );
 

@@ -1,11 +1,11 @@
-diff --git a/rust/src/nasl/builtin/regex/mod.rs b/rust/src/nasl/builtin/regex/mod.rs
-index 6c47241..aea6424 100644
 --- a/rust/src/nasl/builtin/regex/mod.rs
 +++ b/rust/src/nasl/builtin/regex/mod.rs
-@@ -37,6 +37,28 @@ fn make_regex(pattern: &str, icase: bool, multiline: bool) -> Result<Regex, Rege
+@@ -35,6 +35,28 @@
+         Ok(re) => Ok(re),
+         Err(e) => Err(RegexError::BuildingError(e)),
      }
- }
- 
++}
++
 +const MAX_SUBMATCHES: usize = 16;
 +
 +fn capture_values(
@@ -26,12 +26,10 @@ index 6c47241..aea6424 100644
 +        }
 +    }
 +    values
-+}
-+
+ }
+ 
  /// Matches a string against a regular expression.
- /// - string  String to search the pattern in
- /// - pattern the pattern that should be matched
-@@ -150,15 +172,14 @@ fn eregmatch(
+@@ -150,15 +172,14 @@
      let string = parse_search_string(&string, rnul, true);
      let re = make_regex(&pattern.to_string(), icase, true)?;
  
@@ -55,11 +53,9 @@ index 6c47241..aea6424 100644
      };
  
      Ok(NaslValue::Array(matches))
-diff --git a/rust/src/nasl/builtin/regex/tests.rs b/rust/src/nasl/builtin/regex/tests.rs
-index dea196b..7bbfbc6 100644
 --- a/rust/src/nasl/builtin/regex/tests.rs
 +++ b/rust/src/nasl/builtin/regex/tests.rs
-@@ -146,3 +146,34 @@ fn eregmatch_first() {
+@@ -146,3 +146,34 @@
          vec!["Bar".to_string()],
      );
  }

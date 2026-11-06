@@ -1,8 +1,6 @@
-diff --git a/rust/src/nasl/builtin/network/socket.rs b/rust/src/nasl/builtin/network/socket.rs
-index 736ed9f..0844f13 100644
 --- a/rust/src/nasl/builtin/network/socket.rs
 +++ b/rust/src/nasl/builtin/network/socket.rs
-@@ -444,6 +444,14 @@ async fn send(
+@@ -444,6 +444,14 @@
      send_shared(sockets, socket, data, option, len)
  }
  
@@ -17,7 +15,7 @@ index 736ed9f..0844f13 100644
  fn recv_shared(
      sockets: &mut NaslSockets,
      socket: usize,
-@@ -464,8 +472,10 @@ fn recv_shared(
+@@ -464,8 +472,10 @@
          let timeout = Duration::from_secs(1);
          while pos < min {
              match conn.read_with_timeout(&mut data[pos..], timeout) {
@@ -29,7 +27,7 @@ index 736ed9f..0844f13 100644
                  Err(e) => return Err(SocketError::from(e)),
              }
          }
-@@ -1112,7 +1122,10 @@ fn check_ftp_response(
+@@ -1136,7 +1146,10 @@
      let expected = format!("{} ", &line[0..3]);
      while line.len() < 5 || line[0..4] != expected {
          line.clear();
@@ -41,7 +39,7 @@ index 736ed9f..0844f13 100644
      }
  
      line = String::from(line.trim());
-@@ -1450,3 +1463,73 @@ impl DefineGlobalVars for SocketFns {
+@@ -1474,3 +1487,73 @@
          ]
      }
  }

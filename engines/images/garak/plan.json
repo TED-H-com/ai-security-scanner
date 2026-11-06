@@ -2,28 +2,28 @@
   "schema_version": "1.0.0",
   "engine_id": "garak",
   "plan_kind": "managed_build",
-  "knowledge_date": "2026-09-12",
+  "knowledge_date": "2026-10-16",
   "support_until": "2026-12-11",
   "maintenance_owner": "teddashh/ai-security-scanner maintainers",
   "update_procedure": "docs/engine-maintenance.md",
-  "publish_state": "published_managed_artifact",
+  "publish_state": "publication_in_progress",
   "source": {
     "repository": "https://github.com/NVIDIA/garak",
-    "revision": "93aa9cdec309ec4170559676f1826ea2a679920c",
-    "acquisition_source": "https://github.com/NVIDIA/garak/commit/93aa9cdec309ec4170559676f1826ea2a679920c",
+    "revision": "7aa740fe7412cc9bc33cdc39ca211843223cd3e1",
+    "acquisition_source": "https://github.com/NVIDIA/garak/commit/7aa740fe7412cc9bc33cdc39ca211843223cd3e1",
     "local_research_checkout": ".upstreams/NVIDIA/garak"
   },
   "verified_upstream_artifact": null,
   "final_artifact": {
-    "repository": "ghcr.io/teddashh/ai-security-scanner-engine-garak",
-    "tag": "0.17.0-1",
-    "digest": "sha256:8a39b5812a4fd5aa2caecfef089ff85c39709f1bc00afa3328714346baab222f"
+    "repository": "ghcr.io/ted-h-com/ai-security-scanner-engine-garak",
+    "tag": "0.17.1-1",
+    "digest": null
   },
   "build_recipe": {
-    "source_revision": "93aa9cdec309ec4170559676f1826ea2a679920c",
+    "source_revision": "7aa740fe7412cc9bc33cdc39ca211843223cd3e1",
     "source_archive": {
-      "url": "https://github.com/NVIDIA/garak/archive/93aa9cdec309ec4170559676f1826ea2a679920c.tar.gz",
-      "sha256": "sha256:34a7e31c9ca7efb00d00509f3397e8f25e87b88239c2c78d21fc9c54740b5fce"
+      "url": "https://github.com/NVIDIA/garak/archive/7aa740fe7412cc9bc33cdc39ca211843223cd3e1.tar.gz",
+      "sha256": "sha256:22c1d011d86ea6375ddaf765a7ceae32cf3b889296336aaee233c196d204c378"
     },
     "source_patch": null,
     "dependency_lock": {
@@ -59,7 +59,7 @@
         "reason": "PyPI has no Python3 wheel. Build unchanged pure-Python wheel from the exact native source using separately hash-locked build tools."
       }
     ],
-    "source_date_epoch": 1788977945,
+    "source_date_epoch": 1792180550,
     "target_platforms": [
       "linux/amd64",
       "linux/arm64"
@@ -88,7 +88,7 @@
     "local_inputs": [
       {
         "path": "engines/images/garak/launcher/main.py",
-        "sha256": "sha256:a5b7db01d2b5365af8002bba30eb2c447da52cbb38a47b4301ba27a3ab9c8f4a",
+        "sha256": "sha256:ae38898e4623727b2e5864355dea72abdc26efcbbe88e4187a02d4f530bd97ff",
         "reason": "Dedicated launcher boundary and native transport or build-only boundary tests; no upstream detector patch."
       },
       {
@@ -98,7 +98,7 @@
       },
       {
         "path": "engines/images/garak/launcher/runner.py",
-        "sha256": "sha256:8a16a3d51f3da66cebb0d39cb17c9cb19b1c60589616eed4887119491dca1700",
+        "sha256": "sha256:1024e362154ebdfe175c1837a1fbff66a31f1cbcf3b6493a4f03254079651456",
         "reason": "Dedicated launcher boundary and native transport or build-only boundary tests; no upstream detector patch."
       }
     ],
@@ -115,15 +115,15 @@
   "dockerfile": {
     "emitted": true,
     "path": "engines/images/garak/Dockerfile",
-    "sha256": "sha256:a7fe29ba7e850cbeed3af897960b8c3c263c442aa4279660ce0e38c842cf3d97",
+    "sha256": "sha256:2f048ae13c5845d7864864387c045584c0913e9e547e88fcc8de8209a6633045",
     "reason": null
   },
   "wrapper": {
     "required": true,
     "strategy": "Run the fixed native REST profile through a bounded transport for one exact HTTPS endpoint and model; accept one transient local key and preserve native JSONL only.",
     "entrypoint": "/usr/local/bin/python3",
-    "launcher_sha256": "sha256:a5b7db01d2b5365af8002bba30eb2c447da52cbb38a47b4301ba27a3ab9c8f4a",
-    "transport_sha256": "sha256:8a16a3d51f3da66cebb0d39cb17c9cb19b1c60589616eed4887119491dca1700"
+    "launcher_sha256": "sha256:ae38898e4623727b2e5864355dea72abdc26efcbbe88e4187a02d4f530bd97ff",
+    "transport_sha256": "sha256:1024e362154ebdfe175c1837a1fbff66a31f1cbcf3b6493a4f03254079651456"
   },
   "command": [
     "--engine",
@@ -145,21 +145,7 @@
     "source_offer_path": null
   },
   "blockers": [],
-  "publication": {
-    "workflow_run": "https://github.com/teddashh/ai-security-scanner/actions/runs/37185013509",
-    "source_revision": "c9945b672853585be832a0ff978b16a7166b92b6",
-    "platforms": [
-      "linux/amd64",
-      "linux/arm64"
-    ],
-    "platform_digests": {
-      "linux/amd64": "sha256:21f2e097684de81183fb1a5815e93b78dd013bf076cc1ad5804845179acb805d",
-      "linux/arm64": "sha256:732d0e8038ef6a3e1bce66fbe956e034a662e4125c8f819b91609e718d003bb6"
-    },
-    "anonymous_pull_verified": true,
-    "evidence_artifact": "garak-image-evidence-37185013509-1",
-    "managed_smoke_evidence_sha256": "sha256:c6c6a42f0d377195e7b2078f31401318cb32b3748d9990af60f9e993625dd53a"
-  },
+  "publication": null,
   "managed_runtime": {
     "non_root_user": "65532:65532",
     "read_only_rootfs": true,
@@ -173,7 +159,7 @@
     "credentials": "one opaque REST_API_KEY from the local_model_endpoint mount; fresh child environment only",
     "profile": {
       "id": "garak_https_v1",
-      "revision": "93aa9cdec309ec4170559676f1826ea2a679920c",
+      "revision": "7aa740fe7412cc9bc33cdc39ca211843223cd3e1",
       "probes": [
         "dan.Dan_11_0",
         "dan.Dan_10_0",
@@ -194,8 +180,64 @@
   },
   "local_build_evidence": {
     "platform": "linux/amd64",
-    "local_image_id": "sha256:6445ec1e31d704bd3a6742fc0642816392deb1081abb18c16af81538d56cdda7",
+    "local_image_id": "sha256:49b92a92a73c44c016a293affaf39a855e21eadc89ffdeff7610bcb11eca0f0e",
     "smoke_runner": "engines/images/garak/testdata/native_smoke.py",
-    "result": "Final local native 0.17.0 build passed positive and clean runs (54 prompts/four native detector pairs), redirect refusal, TLS refusal, six-second deadline, and graceful cancellation with private partial native JSONL retained and no requests after stop. The repeatable helper cleaned its own isolated fixture. No public artifact or arm64 native execution is claimed."
+    "result": "Final local native 0.17.1 build passed positive and clean runs (54 prompts/four native detector pairs), redirect refusal, TLS refusal, six-second deadline, and graceful cancellation with private partial native JSONL retained and no requests after stop. The repeatable helper cleaned its own isolated fixture. No public artifact or arm64 native execution is claimed."
+  },
+  "previous_artifact": {
+    "repository": "ghcr.io/teddashh/ai-security-scanner-engine-garak",
+    "tag": "0.17.0-1",
+    "digest": "sha256:8a39b5812a4fd5aa2caecfef089ff85c39709f1bc00afa3328714346baab222f"
+  },
+  "previous_publication": {
+    "workflow_run": "https://github.com/teddashh/ai-security-scanner/actions/runs/37185013509",
+    "source_revision": "c9945b672853585be832a0ff978b16a7166b92b6",
+    "platforms": [
+      "linux/amd64",
+      "linux/arm64"
+    ],
+    "platform_digests": {
+      "linux/amd64": "sha256:21f2e097684de81183fb1a5815e93b78dd013bf076cc1ad5804845179acb805d",
+      "linux/arm64": "sha256:732d0e8038ef6a3e1bce66fbe956e034a662e4125c8f819b91609e718d003bb6"
+    },
+    "anonymous_pull_verified": true,
+    "evidence_artifact": "garak-image-evidence-37185013509-1",
+    "managed_smoke_evidence_sha256": "sha256:c6c6a42f0d377195e7b2078f31401318cb32b3748d9990af60f9e993625dd53a"
+  },
+  "upstream_update": {
+    "engine_version": "0.17.1",
+    "source_revision": "7aa740fe7412cc9bc33cdc39ca211843223cd3e1",
+    "rule_version": null,
+    "reported_version": null,
+    "knowledge_date": "2026-10-16",
+    "support_until": "2026-12-11",
+    "engine_provenance": {
+      "version": "0.17.1",
+      "source_repository": "https://github.com/NVIDIA/garak",
+      "source_revision": "7aa740fe7412cc9bc33cdc39ca211843223cd3e1",
+      "source_ref": "v0.17.1",
+      "acquisition_source": "https://github.com/NVIDIA/garak/commit/7aa740fe7412cc9bc33cdc39ca211843223cd3e1",
+      "artifact_source_revision": null,
+      "source_association": "source_build_required"
+    },
+    "rules_provenance": {
+      "mode": "embedded",
+      "identifier": "garak packaged probes and detectors",
+      "revision": null,
+      "acquisition_source": "https://github.com/NVIDIA/garak/tree/7aa740fe7412cc9bc33cdc39ca211843223cd3e1/garak/probes"
+    },
+    "data_provenance": {
+      "mode": "runtime_bound",
+      "identifier": "the AI model endpoint named by the case scope grant",
+      "revision": null,
+      "acquisition_source": "assessment_case"
+    },
+    "knowledge_input": {
+      "kind": "runtime_bound",
+      "identifier": "the AI model endpoint named by the case scope grant",
+      "version": null,
+      "acquisition_source": "assessment_case",
+      "pin_state": "runtime_bound"
+    }
   }
 }

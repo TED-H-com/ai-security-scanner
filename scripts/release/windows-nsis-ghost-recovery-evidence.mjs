@@ -412,7 +412,7 @@ async function candidateIdentity(
     runtime.management_contract_revision === "2026-08-29.1",
     "candidate runtime management contract revision is unsupported",
   );
-  assert(runtime.bundle_id === "podman-machine" && runtime.runtime_version === "5.8.2", "candidate runtime identity changed");
+  assert(runtime.bundle_id === "podman-machine" && runtime.runtime_version === "5.8.9", "candidate runtime identity changed");
   const targets = runtime.targets?.filter(
     (target) => target.operating_system === "windows" && target.architecture === "x86_64" && target.provider === "wsl",
   ) ?? [];

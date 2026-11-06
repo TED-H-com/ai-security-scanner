@@ -1,8 +1,6 @@
-diff --git a/rust/src/nasl/interpreter/nasl_value.rs b/rust/src/nasl/interpreter/nasl_value.rs
-index 1ac0c26..7f9cc1f 100644
 --- a/rust/src/nasl/interpreter/nasl_value.rs
 +++ b/rust/src/nasl/interpreter/nasl_value.rs
-@@ -221,13 +221,12 @@ impl NaslValue {
+@@ -221,13 +221,12 @@
              // array indices as keys, so the non-number key does not
              // exist).
              if let Ok(index) = index.as_number() {
@@ -19,11 +17,9 @@ index 1ac0c26..7f9cc1f 100644
              } else {
                  Ok(NaslValue::Null)
              }
-diff --git a/rust/src/nasl/interpreter/tests/mod.rs b/rust/src/nasl/interpreter/tests/mod.rs
-index 88f4afb..14ad2c6 100644
 --- a/rust/src/nasl/interpreter/tests/mod.rs
 +++ b/rust/src/nasl/interpreter/tests/mod.rs
-@@ -293,5 +293,10 @@ interpreter_test_err!(undefined_fn, "foo();");
+@@ -346,5 +346,10 @@
  interpreter_test_err!(expected_str, "a =~ 5;");
  interpreter_test_err!(expected_array, "a = 5; a[3];");
  

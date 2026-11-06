@@ -112,7 +112,7 @@
       "engine": "naabu",
       "candidate_tag": "2.7.0-1",
       "local_image": "ai-scanner-upstream-naabu:local",
-      "image_id": "sha256:2bd72f6dd62708469472ae7431f26da5217d9cf4645bde6796b10376b1d6d9f5",
+      "image_id": "sha256:d96dd5d7ee2f2f48662e2c5c11f92be0854edbfca7ae3681aa778bac8eb21085",
       "platform": "linux/amd64",
       "source_revision": "041b70fd396e95b5ed2c19f879c18247078243bc",
       "dockerfile": {
@@ -122,13 +122,13 @@
       },
       "plan": {
         "path": "engines/images/naabu/plan.json",
-        "sha256": "sha256:1a65c4e58aedcbbe671bcf8a141d111879beb274999086f4391033efebee4861",
-        "bytes": 5369
+        "sha256": "sha256:7a2409b30064422d0b6c4ad80a259dcaf2d39a64a387cca5f89ba7ea0d12a28e",
+        "bytes": 5370
       },
       "build_log": {
-        "path": ".engine-cache/updates/2026-11-06/naabu-build.log",
-        "sha256": "sha256:93ff867824e8e9f72936bbce284aec1946d8c364ef362387ac5d326eb833a365",
-        "bytes": 14532
+        "path": ".engine-cache/updates/2026-11-06/naabu/build.log",
+        "sha256": "sha256:ba4c6d16b3389430fd62842cda261fcb02497d6fa04cfd4abffc03c0ab0ef2b9",
+        "bytes": 11315
       },
       "published": false
     },
@@ -275,6 +275,174 @@
         "bytes": 23746
       },
       "published": false
+    },
+    {
+      "engine": "scubagear",
+      "candidate_tag": "2.0.0-1",
+      "local_image": "ai-scanner-upstream-scubagear:local",
+      "image_id": "sha256:312e810a23749cd909d9a8b95ca48ccde60e10873e4649472e21ef504ca11f31",
+      "platform": "linux/amd64",
+      "source_revision": "6e5a1a421b36c5a1fb3fd983b8c4bcd5b7a6c61d",
+      "dockerfile": {
+        "path": "engines/images/scubagear/Dockerfile",
+        "sha256": "sha256:0b5a8d27da6a53f592226d754924ef031e39947b75e189099ed84459ba6931bf",
+        "bytes": 9136
+      },
+      "plan": {
+        "path": "engines/images/scubagear/plan.json",
+        "sha256": "sha256:7e6fe6fda93733757ec2e085ada095b2782befbd6856e4b62bbf6c6faaee52d4",
+        "bytes": 7397
+      },
+      "published": false,
+      "build_log": {
+        "path": ".engine-cache/updates/2026-11-06/scubagear/build.log",
+        "sha256": "sha256:dbf8e488533afc35ef1c354f54496e007593f9bb74e8b423d7d2cac045dfac6c",
+        "bytes": 16303
+      }
+    },
+    {
+      "engine": "httpx",
+      "candidate_tag": "1.12.0-2",
+      "local_image": "ai-scanner-upstream-httpx:local",
+      "image_id": "sha256:065c4e3476bef1cd5a2320df3b12223e0c463dfa3a836e202e35e249ff1cbe2c",
+      "platform": "linux/amd64",
+      "source_revision": "4b6a9a9d476f94a4f3a630f37051f5671ecfb1f8",
+      "dockerfile": {
+        "path": "engines/images/httpx/Dockerfile",
+        "sha256": "sha256:bca2774fcba454ecc0b41648666c65c2de0ec74e88226c1757a2fec30fd61bd8",
+        "bytes": 4077
+      },
+      "plan": {
+        "path": "engines/images/httpx/plan.json",
+        "sha256": "sha256:8018370f7f4b6c5b63df315f414b52b30b03a06bbc3a8f803b14f4824f94d8b6",
+        "bytes": 7789
+      },
+      "published": false,
+      "build_log": {
+        "path": ".engine-cache/updates/2026-11-06/httpx/build.log",
+        "sha256": "sha256:6765a01cb3b7eb5bb86fea76e1ef05848db0d9fdb50e0f31c95f0e3fd9f2dde3",
+        "bytes": 17265
+      }
+    },
+    {
+      "engine": "cloudquery",
+      "candidate_tag": "3.5.3-aws9.2.0-file1.0.4-1",
+      "local_image": "ai-scanner-upstream-cloudquery:local",
+      "image_id": "sha256:01b27e50d65c528f202f3a4e99c04faae0f634dabbc339ab77e5effa0e7765b1",
+      "platform": "linux/amd64",
+      "source_revision": "086baf7f70ee3c1069513d41f321720a5e7d2bb9",
+      "dockerfile": {
+        "path": "engines/images/cloudquery/Dockerfile",
+        "sha256": "sha256:5b08f2ba419f9e40b276c7cf3da00f4582ff130cc86b44baa8b4e5df45f9fa5e",
+        "bytes": 8467
+      },
+      "plan": {
+        "path": "engines/images/cloudquery/plan.json",
+        "sha256": "sha256:25348436c1c786d72c193689ebb9cf2fc9011ad7dc36f75d29d4f34bb79c52d9",
+        "bytes": 7660
+      },
+      "published": false,
+      "build_log": {
+        "path": ".engine-cache/updates/2026-11-06/cloudquery/build353.log",
+        "sha256": "sha256:1baf9a0ee6ec352c44dd456f0c7d325b1fb027aef4cf5a65d31256263b1c8b83",
+        "bytes": 14952
+      }
+    },
+    {
+      "engine": "garak",
+      "candidate_tag": "0.17.1-1",
+      "local_image": "ai-scanner-upstream-garak:local",
+      "image_id": "sha256:49b92a92a73c44c016a293affaf39a855e21eadc89ffdeff7610bcb11eca0f0e",
+      "platform": "linux/amd64",
+      "source_revision": "7aa740fe7412cc9bc33cdc39ca211843223cd3e1",
+      "dockerfile": {
+        "path": "engines/images/garak/Dockerfile",
+        "sha256": "sha256:2f048ae13c5845d7864864387c045584c0913e9e547e88fcc8de8209a6633045",
+        "bytes": 3919
+      },
+      "plan": {
+        "path": "engines/images/garak/plan.json",
+        "sha256": "sha256:0e7f9267d35f4c41ff6078d412dad878b4fcfc9896c4480242676307c0e4c831",
+        "bytes": 9583
+      },
+      "published": false,
+      "build_log": {
+        "path": ".engine-cache/updates/2026-11-06/garak/build.log",
+        "sha256": "sha256:c63c7fe60badce50fcd63cf40a3e6a0b48fe01b2b1b5f8284b60e9233eb9126b",
+        "bytes": 20030
+      }
+    },
+    {
+      "engine": "nuclei",
+      "candidate_tag": "3.11.1-9",
+      "local_image": "ai-scanner-upstream-nuclei:local",
+      "image_id": "sha256:f56029d9601e93eba3370feaaa73c3627400751e72eacffe1116c88bdea830c1",
+      "platform": "linux/amd64",
+      "source_revision": "a8c88feb4a1c8e961b7902534ce3af97e9d524a4",
+      "dockerfile": {
+        "path": "engines/images/nuclei/Dockerfile",
+        "sha256": "sha256:4a9c83704a41c12cce58c10b56b3cfbc29166c80ff0ace13dce62edf7dd9f0c2",
+        "bytes": 4453
+      },
+      "plan": {
+        "path": "engines/images/nuclei/plan.json",
+        "sha256": "sha256:0d85eff4cc24ff89dc55adc83ffd00bf7ef1d56c8a44b7dbbc953aa5645a8581",
+        "bytes": 6475
+      },
+      "published": false,
+      "build_log": {
+        "path": ".engine-cache/updates/2026-11-06/nuclei/build.log",
+        "sha256": "sha256:4d697a5496aaa2b493e3b9fa3105ed9050f7276c627dcb3ddf24ca0ad418e49c",
+        "bytes": 32795
+      }
+    },
+    {
+      "engine": "greenbone",
+      "candidate_tag": "23.52.9-feed202611060607-1",
+      "local_image": "ai-scanner-upstream-greenbone:local",
+      "image_id": "sha256:84d60ea21a68822f537c1c5d771d95aa55bba938c2a7df6c111777701defb4da",
+      "platform": "linux/amd64",
+      "source_revision": "cbd9081531ea6602bea7356aa371200979c1e961",
+      "dockerfile": {
+        "path": "engines/images/greenbone/Dockerfile",
+        "sha256": "sha256:aeae895995e0c3e35838a43d4cce4148bfbb64860574127b2536cc4b93d3ffde",
+        "bytes": 15524
+      },
+      "plan": {
+        "path": "engines/images/greenbone/plan.json",
+        "sha256": "sha256:dbc166f76ff6b924c7b4f337da4397079190ffb191b8942dd0fd9dbc9fab331b",
+        "bytes": 23344
+      },
+      "published": false,
+      "build_log": {
+        "path": ".engine-cache/updates/2026-11-06/greenbone/build-storage.log",
+        "sha256": "sha256:16031d231c536d114271f04e20949f9afc1ca78bff030063fe687a766fe8c7a8",
+        "bytes": 18208
+      }
+    },
+    {
+      "engine": "maester",
+      "candidate_tag": "2.3.0-1",
+      "local_image": "ai-scanner-upstream-maester:local",
+      "image_id": "sha256:db5800f4af06eae481beb063260187109134ac91848d5776226235523e6a613e",
+      "platform": "linux/amd64",
+      "source_revision": "7413c42d3fcc724dfea94d2726e690ddd364d914",
+      "dockerfile": {
+        "path": "engines/images/maester/Dockerfile",
+        "sha256": "sha256:d5c410a854a80f13202734e6abd630bd3b9762d368629a9a3121980c936ec667",
+        "bytes": 10157
+      },
+      "plan": {
+        "path": "engines/images/maester/plan.json",
+        "sha256": "sha256:6fe2ba2a8a102c6f7a8ccc34618c5fa3ede6753884619a133d5e364b4ae73b8f",
+        "bytes": 7558
+      },
+      "published": false,
+      "build_log": {
+        "path": ".engine-cache/updates/2026-11-06/maester/build.log",
+        "sha256": "sha256:289c2badfaeb041d5002288b53253feb13900f13060ae5b4558289603695ab81",
+        "bytes": 42120
+      }
     }
   ],
   "normalized_runs": [
@@ -617,5 +785,146 @@
       "bytes": 62404
     }
   ],
-  "evidence_note": "Log/raw paths refer to local ignored review artifacts. Their hashes identify observed evidence; these records do not establish publication or arm64 execution."
+  "evidence_note": "Log/raw paths refer to local ignored review artifacts. Their hashes identify observed evidence; these records do not establish publication or arm64 execution.",
+  "additional_verification": {
+    "greenbone": {
+      "results": 5,
+      "alarms": 1,
+      "normalized_findings": 1,
+      "warnings": 0,
+      "feed_vts": 95107,
+      "profile_vts": 28807,
+      "profile_dependency_closure": 28830,
+      "evidence": [
+        {
+          "path": ".engine-cache/updates/2026-11-06/greenbone/native-smoke.log",
+          "sha256": "sha256:a9bc85238688082835f93613a96dfaa4a5f0e82f19371e2c663d60d0e476822d",
+          "bytes": 31973
+        },
+        {
+          "path": ".engine-cache/updates/2026-11-06/greenbone/adapter-smoke.log",
+          "sha256": "sha256:db0f5c551b6663f8acf9ae14140f7a72a64dafbe517ff3ad56e565232120b10f",
+          "bytes": 479
+        },
+        {
+          "path": ".engine-cache/updates/2026-11-06/greenbone/profile-review.log",
+          "sha256": "sha256:7630affd86baf634d8bca161f9db4e8e3ea6510415d103ec7ceb13c99edd5f58",
+          "bytes": 219
+        }
+      ]
+    },
+    "garak": {
+      "native_cases": 6,
+      "adapter_version_tests": 2,
+      "evidence": [
+        {
+          "path": ".engine-cache/updates/2026-11-06/garak/native-smoke.log",
+          "sha256": "sha256:c5c21469180e03db097f638d65b08e48184ac03c0a001c0e9ad647d53714bc42",
+          "bytes": 614
+        },
+        {
+          "path": ".engine-cache/updates/2026-11-06/garak/native-smoke/native-qa.json",
+          "sha256": "sha256:49bd90fbed299a7108bf16425d217b7d13118824ca0ee087f23e969f0adf7c3f",
+          "bytes": 6011
+        },
+        {
+          "path": ".engine-cache/updates/2026-11-06/garak/adapter-tests.log",
+          "sha256": "sha256:2cc22714b8cfa7f16fd2b6f740bad7baf33ac39d66e2acaa55df23c9b6488237",
+          "bytes": 551
+        }
+      ]
+    },
+    "maester": {
+      "upstream_tests_passed": 149,
+      "wrapper_tests_passed": 52,
+      "compiled_module_sha256": "40b69e2b3c33058b979580e2c2ceca7cecacd753776bde573be31cc1635d2312",
+      "official_release_module_identical": true,
+      "evidence": [
+        {
+          "path": ".engine-cache/updates/2026-11-06/maester/native-tests.log",
+          "sha256": "sha256:22d48af5c00093e10e196dabfc726bcb6ce29b7a525a7e0c035880996a9a4763",
+          "bytes": 20924
+        }
+      ]
+    },
+    "scubagear": {
+      "upstream_tests_passed": 352,
+      "selected_api_records": 32,
+      "uncovered_permissions": 0,
+      "evidence": [
+        {
+          "path": ".engine-cache/updates/2026-11-06/scubagear/native-tests.log",
+          "sha256": "sha256:3ee177a262151883e4566ba8fb4eab75e9e6bc3b51047f7b9cd17dde178df809",
+          "bytes": 47319
+        },
+        {
+          "path": ".engine-cache/updates/2026-11-06/scubagear/aad-permission-review.json",
+          "sha256": "sha256:ed1ce9ef95585a91d1f9786d5e843595af6440cb3ab60a83d7ddd927a340132f",
+          "bytes": 37271
+        }
+      ]
+    },
+    "nuclei": {
+      "http_templates": 11718,
+      "admitted_templates": 4777,
+      "exposure_detected": true,
+      "all_connections_authorized": true,
+      "evidence": [
+        {
+          "path": ".engine-cache/updates/2026-11-06/nuclei/managed-smoke/summary.json",
+          "sha256": "sha256:e734ed93601effe172a2dd57fdb1c1b7a1c4ee31b15f6ec56f970add7c156d8f",
+          "bytes": 269
+        },
+        {
+          "path": ".engine-cache/updates/2026-11-06/nuclei-templates/profile.json",
+          "sha256": "sha256:f9d719db6a4b3eaf41158a544089ee1b2e9ccc97f3a5203cedbb86ce1b4a3d0e",
+          "bytes": 121747
+        }
+      ]
+    },
+    "cloudquery": {
+      "cli": "3.5.3",
+      "aws_plugin": "9.2.0",
+      "file_plugin": "1.0.4",
+      "schema_and_destination_migration": "passed",
+      "credentialed_cloud_scan": false,
+      "evidence": [
+        {
+          "path": ".engine-cache/updates/2026-11-06/cloudquery/sync353-protocol.log",
+          "sha256": "sha256:55e707b81426f203e0a9d7fd2397feea32cfc7dd60dbfa238464a18c9ec9c7cd",
+          "bytes": 5559
+        }
+      ]
+    },
+    "managed_runtime": {
+      "podman": "5.8.9",
+      "machine_os": "5.8.9-1",
+      "qemu": "11.1.3",
+      "gvproxy": "0.9.0",
+      "vfkit": "0.6.4",
+      "windows_independent_rebuild_identical": true,
+      "evidence": [
+        {
+          "path": ".engine-cache/updates/2026-11-06/runtime/stage-linux.log",
+          "sha256": "sha256:17856ea5c461cefb3ad4f9a3b8349d1daf7db911fa40704c7f608d14c117dca9",
+          "bytes": 202
+        },
+        {
+          "path": ".engine-cache/updates/2026-11-06/runtime/stage-windows.log",
+          "sha256": "sha256:a217530d01cc32d75dd8aa7772dc43c55d2147a272539a6cad6ffa4e0c17d2c8",
+          "bytes": 200
+        },
+        {
+          "path": ".engine-cache/updates/2026-11-06/runtime/linux/managed-runtime/manifest.json",
+          "sha256": "sha256:a768e8b92319eac1407b1ab73fadcf4b6582ebbd0bd4755ca3af1a41f1d8964e",
+          "bytes": 52946
+        },
+        {
+          "path": ".engine-cache/updates/2026-11-06/runtime/windows/managed-runtime/manifest.json",
+          "sha256": "sha256:b530cf8f62196dd54e6b31b815202f565b3abb32593ee79c1ec834ded662edd0",
+          "bytes": 5056
+        }
+      ]
+    }
+  }
 }

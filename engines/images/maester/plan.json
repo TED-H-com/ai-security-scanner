@@ -2,52 +2,39 @@
   "schema_version": "1.0.0",
   "engine_id": "maester",
   "plan_kind": "managed_build",
-  "knowledge_date": "2026-08-24",
+  "knowledge_date": "2026-10-06",
   "support_until": "2026-11-22",
   "maintenance_owner": "teddashh/ai-security-scanner maintainers",
   "update_procedure": "docs/engine-maintenance.md",
-  "publish_state": "published_managed_artifact",
+  "publish_state": "publication_in_progress",
   "source": {
     "repository": "https://github.com/maester365/maester",
-    "revision": "6bf1d98f094fc7a68e449d2f40f73ef820b72ee3",
-    "acquisition_source": "https://github.com/maester365/maester/commit/6bf1d98f094fc7a68e449d2f40f73ef820b72ee3",
+    "revision": "7413c42d3fcc724dfea94d2726e690ddd364d914",
+    "acquisition_source": "https://github.com/maester365/maester/commit/7413c42d3fcc724dfea94d2726e690ddd364d914",
     "local_research_checkout": ".upstreams/maester365/maester"
   },
   "verified_upstream_artifact": null,
   "final_artifact": {
-    "repository": "ghcr.io/teddashh/ai-security-scanner-engine-maester",
-    "tag": "2.0.0-9",
-    "digest": "sha256:a41df2693dcb5923a85fb4e75f10d80dca130c6269c5621d82cd4809f176cf81"
+    "repository": "ghcr.io/ted-h-com/ai-security-scanner-engine-maester",
+    "tag": "2.3.0-1",
+    "digest": null
   },
-  "publication": {
-    "workflow_run": "https://github.com/teddashh/ai-security-scanner/actions/runs/37063438651",
-    "source_revision": "31ae95d43840ff5ca67f80d476d91a4cb384a216",
-    "platforms": [
-      "linux/amd64",
-      "linux/arm64"
-    ],
-    "platform_digests": {
-      "linux/amd64": "sha256:86102f2372d648aa3ebe407c6b1ec301234d833aaf025f8f3c9009f52cf79eba",
-      "linux/arm64": "sha256:370f9b912da930964a892ba5cad70aba944a83a48cb2631142957df07f0c57d2"
-    },
-    "anonymous_pull_verified": true,
-    "evidence_artifact": "maester-image-evidence-37063438651-1"
-  },
+  "publication": null,
   "build_recipe": {
-    "source_revision": "6bf1d98f094fc7a68e449d2f40f73ef820b72ee3",
+    "source_revision": "7413c42d3fcc724dfea94d2726e690ddd364d914",
     "source_archive": {
-      "url": "https://github.com/maester365/maester/archive/6bf1d98f094fc7a68e449d2f40f73ef820b72ee3.tar.gz",
-      "sha256": "sha256:e634e9bc5521e27adf2fd766ddf34f993a492e5ab8a5c49499c76d7bac69e43f"
+      "url": "https://github.com/maester365/maester/archive/7413c42d3fcc724dfea94d2726e690ddd364d914.tar.gz",
+      "sha256": "sha256:5abab2a96dc40ed6088734d1b60665b3c982be7f8f1fe5f8653474b494ef4e41"
     },
     "dependency_lock": {
       "path": "engines/images/maester/dependencies.lock.json",
-      "sha256": "sha256:9e473a8b22eb627ec4a8d5c8165d4f329bb177a5b848c47121f607358360653a",
+      "sha256": "sha256:af7003dcd0ca402e5076a2855ca36c2d7fa5d97bc7d93404f31c583085880e0a",
       "powershell_modules": 2,
-      "native_dependencies": 0
+      "native_dependencies": 1
     },
     "source_preparer": {
       "path": "engines/images/m365-launcher/prepare_source.py",
-      "sha256": "sha256:8786bdbdb40142e3b25ce463eb1e65aaef95efef40b5f33edf7bb80c03be8415"
+      "sha256": "sha256:9628100f22e8902da16e6999ad1a25e98d23eb0588c02d98db7cd8d1241f63c1"
     },
     "dockerfile_frontend": {
       "repository": "docker/dockerfile",
@@ -57,13 +44,13 @@
     "base_images": [
       {
         "repository": "golang",
-        "tag": "1.25.0-alpine3.22",
-        "digest": "sha256:f18a072054848d87a8077455f0ac8a25886f2397f88bfdd222d6fafbb5bba440"
+        "tag": "1.26.10-alpine",
+        "digest": "sha256:87c65a688975c0b1d4585d204874c45ca78354670e3a5f11368c5a492303d696"
       },
       {
         "repository": "python",
-        "tag": "3.11.13-slim-bookworm",
-        "digest": "sha256:86adf8dbadc3d6e82ee5dd2c74bec2e1c2467cdad47886280501df722372d2e1"
+        "tag": "3.11.16-slim",
+        "digest": "sha256:9c900dea9e8fb7e16277c179b555cc72d29a352dbc33cff48ad5a0412fd5bfc7"
       },
       {
         "repository": "mcr.microsoft.com/powershell",
@@ -76,7 +63,7 @@
         "digest": "sha256:60d31793816646c4dd80b719b350ca68c8a53c000cbb2740655ddafe5e127903"
       }
     ],
-    "source_date_epoch": 1787030409,
+    "source_date_epoch": 1791284189,
     "target_platforms": [
       "linux/amd64",
       "linux/arm64"
@@ -108,7 +95,7 @@
   "dockerfile": {
     "emitted": true,
     "path": "engines/images/maester/Dockerfile",
-    "sha256": "sha256:cdec6126cb579796af4adc4b77b98123e3c66f91e9069ade8f9448393fee4fda",
+    "sha256": "sha256:d5c410a854a80f13202734e6abd630bd3b9762d368629a9a3121980c936ec667",
     "reason": null
   },
   "wrapper": {
@@ -118,7 +105,7 @@
     "launcher_sha256": "sha256:6e57234c2c9d7f97a68722b18c3fd5b1862736be4a2c4bfc266014c6e852f592",
     "script": {
       "path": "engines/images/maester/run-maester.ps1",
-      "sha256": "sha256:6eafb9ff00353d24641e1a08222c7898d2da2712f8709b4b3f29c5e2db64f331"
+      "sha256": "sha256:289e7be906793ce12481a75791f292ecb10e02ebbdd9a9d55575e6aec882c214"
     }
   },
   "managed_runtime": {
@@ -155,5 +142,60 @@
     "rationale": "MIT engine and Graph authentication source plus Apache-2.0 Pester notices are embedded in the managed image.",
     "source_offer_path": null
   },
-  "blockers": []
+  "blockers": [],
+  "previous_artifact": {
+    "repository": "ghcr.io/teddashh/ai-security-scanner-engine-maester",
+    "tag": "2.0.0-9",
+    "digest": "sha256:a41df2693dcb5923a85fb4e75f10d80dca130c6269c5621d82cd4809f176cf81"
+  },
+  "previous_publication": {
+    "workflow_run": "https://github.com/teddashh/ai-security-scanner/actions/runs/37063438651",
+    "source_revision": "31ae95d43840ff5ca67f80d476d91a4cb384a216",
+    "platforms": [
+      "linux/amd64",
+      "linux/arm64"
+    ],
+    "platform_digests": {
+      "linux/amd64": "sha256:86102f2372d648aa3ebe407c6b1ec301234d833aaf025f8f3c9009f52cf79eba",
+      "linux/arm64": "sha256:370f9b912da930964a892ba5cad70aba944a83a48cb2631142957df07f0c57d2"
+    },
+    "anonymous_pull_verified": true,
+    "evidence_artifact": "maester-image-evidence-37063438651-1"
+  },
+  "upstream_update": {
+    "engine_version": "2.3.0",
+    "source_revision": "7413c42d3fcc724dfea94d2726e690ddd364d914",
+    "rule_version": "7413c42d3fcc724dfea94d2726e690ddd364d914",
+    "reported_version": null,
+    "knowledge_date": "2026-10-06",
+    "support_until": "2026-11-22",
+    "engine_provenance": {
+      "version": "2.3.0",
+      "source_repository": "https://github.com/maester365/maester",
+      "source_revision": "7413c42d3fcc724dfea94d2726e690ddd364d914",
+      "source_ref": "2.3.0",
+      "acquisition_source": "https://github.com/maester365/maester/commit/7413c42d3fcc724dfea94d2726e690ddd364d914",
+      "artifact_source_revision": null,
+      "source_association": "source_build_required"
+    },
+    "rules_provenance": {
+      "mode": "embedded",
+      "identifier": "Maester Graph-only Entra test profile",
+      "revision": "7413c42d3fcc724dfea94d2726e690ddd364d914",
+      "acquisition_source": "https://github.com/maester365/maester/commit/7413c42d3fcc724dfea94d2726e690ddd364d914"
+    },
+    "data_provenance": {
+      "mode": "runtime_live",
+      "identifier": "Microsoft Entra ID configuration",
+      "revision": null,
+      "acquisition_source": "Microsoft Graph authorized by the case-scoped read-only tenant grant"
+    },
+    "knowledge_input": {
+      "kind": "runtime_live",
+      "identifier": "Microsoft Entra ID configuration",
+      "version": null,
+      "acquisition_source": "Microsoft Graph authorized by the case-scoped read-only tenant grant",
+      "pin_state": "runtime_live"
+    }
+  }
 }

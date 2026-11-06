@@ -30,7 +30,7 @@ concurrency:
 
 env:
   CLOUD_ENGINE_MATRIX: >-
-    [{"engine":"cloudquery","tag":"2.0.31-aws9.2.0-6","dockerfile":"engines/images/cloudquery/Dockerfile"},{"engine":"prowler","tag":"5.47.0-1","dockerfile":"engines/images/prowler/Dockerfile"},{"engine":"cloudsplaining","tag":"0.9.1-6","dockerfile":"engines/images/cloudsplaining/Dockerfile"},{"engine":"scoutsuite","tag":"5.14.0-6","dockerfile":"engines/images/scoutsuite/Dockerfile"},{"engine":"steampipe","tag":"2.4.9-1","dockerfile":"engines/images/steampipe/Dockerfile"}]
+    [{"engine":"cloudquery","tag":"3.5.3-aws9.2.0-file1.0.4-1","dockerfile":"engines/images/cloudquery/Dockerfile"},{"engine":"prowler","tag":"5.47.0-1","dockerfile":"engines/images/prowler/Dockerfile"},{"engine":"cloudsplaining","tag":"0.9.1-6","dockerfile":"engines/images/cloudsplaining/Dockerfile"},{"engine":"scoutsuite","tag":"5.14.0-6","dockerfile":"engines/images/scoutsuite/Dockerfile"},{"engine":"steampipe","tag":"2.4.9-1","dockerfile":"engines/images/steampipe/Dockerfile"}]
 
 jobs:
   changes:
@@ -160,7 +160,7 @@ jobs:
           test "$(docker image inspect "${reference}" --format '{{json .Config.Entrypoint}}')" = '["/usr/local/bin/ai-security-scanner-cloud-launcher"]'
           test "$(docker image inspect "${reference}" --format '{{index .Config.Labels "io.ai-security-scanner.profile"}}')" = "aws-iam-us-east-1"
           docker run --rm --platform linux/amd64 --network none --read-only --cap-drop ALL \
-            --entrypoint /app/cloudquery "${reference}" --version | grep -F 'cloudquery version 2.0.31'
+            --entrypoint /app/cloudquery "${reference}" --version | grep -F 'cloudquery version 3.5.3'
           docker run --rm --platform linux/amd64 --network none --read-only --cap-drop ALL \
             --entrypoint /usr/local/libexec/cloudquery-source-aws "${reference}" --help >/dev/null
           docker run --rm --platform linux/amd64 --network none --read-only --cap-drop ALL \
@@ -175,7 +175,7 @@ jobs:
           trap 'docker rm -f "${container}" >/dev/null 2>&1 || true; rm -rf "${evidence}"' EXIT
           docker cp "${container}:/usr/share/source/cloudquery/." "${evidence}/"
           printf '%s  %s\n' \
-            21e18c3d1348243273231e72a39febd9d7429ac4f1ec36c5bf18c32d509e5996 "${evidence}/cli-e27e4ab.tar.gz" \
+            ae47bd08e22aac0263784c1915c60d00111ef13145550c6d177af9fb24c7eeaf "${evidence}/cli-086baf7.tar.gz" \
             a4788989f99ab02144605539ab552e86c076405ac7516fb673e73ba6bda40c6b "${evidence}/aws-804be3a.tar.gz" \
             700e2008b33a31a6e396d1e348464d2e832c856fdd9b4e45362f90b84bf92a5f "${evidence}/file-600ffdd.tar.gz" \
             | sha256sum --check --strict

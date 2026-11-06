@@ -137,8 +137,8 @@ function ConvertTo-ManagedMaesterDocument {
         Product = 'Microsoft Entra ID'
         asset_id = $AssetId
         Provenance = [ordered]@{
-            engine_version = '2.0.0'
-            source_revision = '6bf1d98f094fc7a68e449d2f40f73ef820b72ee3'
+            engine_version = '2.3.0'
+            source_revision = '7413c42d3fcc724dfea94d2726e690ddd364d914'
             profile = 'entra-graph-token'
             test_path = '/opt/ai-security-scanner/maester-tests/Maester/Entra'
             excluded_tags = @('MT.1025', 'MT.1026', 'MT.1027', 'MT.1028', 'MT.1030', 'MT.1031', 'MT.1182')

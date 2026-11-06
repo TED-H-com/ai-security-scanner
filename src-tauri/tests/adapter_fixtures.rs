@@ -7655,7 +7655,19 @@ fn garak_reports_probe_failure_rates_and_keeps_clean_probes_out_of_the_findings(
 
 #[test]
 fn native_garak_017_preserves_all_four_detector_counts_and_withholds_partial_completion() {
-    let raw = include_bytes!("fixtures/adapters/garak-0.17.0-native.jsonl");
+    verify_native_garak_017(include_bytes!(
+        "fixtures/adapters/garak-0.17.0-native.jsonl"
+    ));
+}
+
+#[test]
+fn native_garak_0171_preserves_counts_and_rejects_partial_coverage() {
+    let raw =
+        include_str!("fixtures/adapters/garak-0.17.0-native.jsonl").replace("0.17.0", "0.17.1");
+    verify_native_garak_017(raw.as_bytes());
+}
+
+fn verify_native_garak_017(raw: &[u8]) {
     let output = normalize_bytes(
         "garak",
         raw,

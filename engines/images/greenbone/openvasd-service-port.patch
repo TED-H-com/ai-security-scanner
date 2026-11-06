@@ -1,9 +1,43 @@
---- a/rust/src/scanner/vt_runner.rs
-+++ b/rust/src/scanner/vt_runner.rs
-@@ -39,6 +39,39 @@
-     notus: &'a Option<NotusCtx>,
+--- a/rust/src/nasl/builtin/find_service/mod.rs
++++ b/rust/src/nasl/builtin/find_service/mod.rs
+@@ -285,6 +285,10 @@
+     }
  }
  
++fn service_port_kb_value(port: u16) -> KbItem {
++    KbItem::Number(i64::from(port))
++}
++
+ async fn add_kb_entries(
+     script_ctx: &ScriptCtx<'_>,
+     service: &Service,
+@@ -303,7 +307,7 @@
+     script_ctx
+         .set_kb_item(
+             KbKey::Service(kb::Service::Custom(service.key())),
+-            KbItem::String(format!("{port}/tcp")),
++            service_port_kb_value(port),
+         )
+         .await?;
+ 
+@@ -511,4 +515,9 @@
+         let detector = ServiceDetector::new();
+         detector.unwrap();
+     }
+-}
++
++    #[test]
++    fn service_port_uses_legacy_integer_kb_semantics() {
++        assert_eq!(service_port_kb_value(8080), KbItem::Number(8080));
++    }
++}
+--- a/rust/src/scanner/vt_runner.rs
++++ b/rust/src/scanner/vt_runner.rs
+@@ -30,6 +30,37 @@
+ 
+     scan_ctx: &'a ScanCtx,
+ }
++
 +fn required_port_key(protocol: Protocol, port: &str) -> KbKey {
 +    if port.starts_with("Services/") {
 +        return KbKey::Custom(port.to_string());
@@ -14,15 +48,12 @@
 +    }
 +}
 +
-+async fn any_required_port_available<S>(
-+    storage: &S,
++async fn any_required_port_available(
++    storage: &dyn crate::nasl::utils::ctx::ContextStorage,
 +    key: &KbContext,
 +    protocol: Protocol,
 +    ports: &[String],
-+) -> bool
-+where
-+    S: ContextStorage,
-+{
++) -> bool {
 +    if ports.is_empty() {
 +        return true;
 +    }
@@ -37,10 +68,10 @@
 +    false
 +}
 +
- impl<'a, S> VTRunner<'a, S>
- where
-     S: ContextStorage,
-@@ -151,30 +184,13 @@
+ 
+ impl<'a> VTRunner<'a> {
+     #[allow(clippy::too_many_arguments)]
+@@ -127,30 +158,13 @@
              .await?
          }
  
@@ -72,13 +103,13 @@
 +            (Protocol::TCP, &vt.required_ports),
 +            (Protocol::UDP, &vt.required_udp_ports),
 +        ] {
-+            if !any_required_port_available(self.storage, &key, protocol, ports).await {
++            if !any_required_port_available(self.scan_ctx.storage(), &key, protocol, ports).await {
 +                return Err(ScriptResultKind::MissingPort(protocol, ports.join(", ")));
 +            }
          }
  
          Ok(())
-@@ -249,3 +265,44 @@
+@@ -253,3 +267,44 @@
          })
      }
  }
@@ -121,252 +152,5 @@
 +
 +        let ports = vec!["Services/www".to_string(), "80".to_string()];
 +        assert!(any_required_port_available(&storage, &context, Protocol::TCP, &ports).await);
-+    }
-+}
---- a/rust/src/nasl/builtin/find_service/mod.rs
-+++ b/rust/src/nasl/builtin/find_service/mod.rs
-@@ -285,6 +285,10 @@ impl ServiceDetector {
-     }
- }
- 
-+fn service_port_kb_value(port: u16) -> KbItem {
-+    KbItem::Number(i64::from(port))
-+}
-+
- async fn add_kb_entries(
-     ctx: &ScanCtx<'_>,
-     service: &Service,
-@@ -301,7 +305,7 @@ async fn add_kb_entries(
- 
-     ctx.set_kb_item(
-         KbKey::Service(kb::Service::Custom(service.key())),
--        KbItem::String(format!("{port}/tcp")),
-+        service_port_kb_value(port),
-     )
-     .await?;
- 
-@@ -469,4 +473,9 @@ mod tests {
-         let detector = ServiceDetector::new();
-         detector.unwrap();
-     }
-+
-+    #[test]
-+    fn service_port_uses_legacy_integer_kb_semantics() {
-+        assert_eq!(service_port_kb_value(8080), KbItem::Number(8080));
-+    }
- }
---- a/rust/src/nasl/interpreter/register.rs
-+++ b/rust/src/nasl/interpreter/register.rs
-@@ -167,7 +167,7 @@
-     }
- 
-     /// Gets a reference to a RuntimeValue in the innermost scope by name
--    fn named_local<'a>(&'a self, name: &'a str) -> Option<&'a RuntimeValue> {
-+    pub(super) fn named_local<'a>(&'a self, name: &'a str) -> Option<&'a RuntimeValue> {
-         let scope_index = &self.scopes.len() - 1;
-         let scope = &self.scopes[scope_index];
-         let var = if scope.variables.contains_key(name) {
---- a/rust/src/nasl/interpreter/declare.rs
-+++ b/rust/src/nasl/interpreter/declare.rs
-@@ -32,7 +32,9 @@
-             let value = RuntimeValue::Value(NaslValue::Null);
-             match scope_decl.scope {
-                 VarScope::Local => {
--                    self.register.add_local(ident.to_str(), value);
-+                    if self.register.named_local(ident.to_str()).is_none() {
-+                        self.register.add_local(ident.to_str(), value);
-+                    }
-                 }
-                 VarScope::Global => {
-                     self.register.add_global(ident.to_str(), value);
-@@ -80,4 +82,17 @@
-         );
-         t.ok("test(a: 1, b: 2);", 3);
-     }
-+
-+    #[test]
-+    fn redeclaring_function_argument_as_local_preserves_its_value() {
-+        let mut t = TestBuilder::default();
-+        t.ok(
-+            "function test(default) {
-+                local_var default;
-+                return default;
-+            }",
-+            NaslValue::Null,
-+        );
-+        t.ok("test(default: 80);", 80);
-+    }
- }
---- a/rust/src/nasl/interpreter/nasl_value.rs
-+++ b/rust/src/nasl/interpreter/nasl_value.rs
-@@ -233,9 +233,8 @@
-             }
-         } else if let Some(dict) = self.as_dict() {
-             let index = index.as_string().map_err(ExprError::rhs)?;
--            dict.get(&index)
--                .ok_or_else(|| ExprError::lhs(ErrorKind::DictKeyDoesNotExist(index)))
--                .cloned()
-+            // NASL associative arrays return NULL for an unset key.
-+            Ok(dict.get(&index).cloned().unwrap_or(NaslValue::Null))
-         } else {
-             Err(ExprError::lhs(ErrorKind::ArrayOrDictExpected))
-         }
---- a/rust/src/nasl/interpreter/tests/mod.rs
-+++ b/rust/src/nasl/interpreter/tests/mod.rs
-@@ -280,6 +280,13 @@
-     NaslValue::Null,
- );
- 
-+interpreter_test_ok!(
-+    missing_dict_key,
-+    "a['present'] = 1; a['missing'];",
-+    1,
-+    NaslValue::Null,
-+);
-+
- interpreter_test_ok!(increment_assign, "j++; j;", NaslValue::Null, 1,);
- interpreter_test_ok!(nonexistent_variable, "a += 12;", 12);
- 
---- a/rust/src/nasl/builtin/string/mod.rs
-+++ b/rust/src/nasl/builtin/string/mod.rs
-@@ -117,7 +117,7 @@
-             }
-             Ok(())
-         }
--        NaslValue::String(x) => write!(s, "{x}"),
-+        NaslValue::String(x) => write!(s, "{}", decode_nasl_string(x)),
-         NaslValue::Number(x) => write!(s, "{x}"),
-         NaslValue::Boolean(x) => write!(s, "{}", *x as i32),
-         NaslValue::AttackCategory(x) => write!(s, "{}", *x as i32),
-@@ -130,6 +130,48 @@
-     .map_err(|e| e.into())
- }
- 
-+// Double-quoted NASL strings preserve escape sequences in the parser. The
-+// string()/strcat() builtins apply the legacy conversion when concatenating
-+// them, matching nasl_string() in the C interpreter.
-+fn decode_nasl_string(value: &str) -> String {
-+    let mut decoded = String::with_capacity(value.len());
-+    let mut chars = value.chars();
-+    while let Some(current) = chars.next() {
-+        if current != '\\' {
-+            decoded.push(current);
-+            continue;
-+        }
-+
-+        match chars.next() {
-+            Some('n') => decoded.push('\n'),
-+            Some('t') => decoded.push('\t'),
-+            Some('r') => decoded.push('\r'),
-+            Some('\\') => decoded.push('\\'),
-+            Some('x') => {
-+                let high = chars.next();
-+                let low = chars.next();
-+                match (
-+                    high.and_then(|c| c.to_digit(16)),
-+                    low.and_then(|c| c.to_digit(16)),
-+                ) {
-+                    (Some(high), Some(low)) => decoded.push(char::from((high * 16 + low) as u8)),
-+                    _ => {
-+                        if let Some(high) = high {
-+                            decoded.push(high);
-+                        }
-+                        if let Some(low) = low {
-+                            decoded.push(low);
-+                        }
-+                    }
-+                }
-+            }
-+            Some(_) => {}
-+            None => decoded.push('\\'),
-+        }
-+    }
-+    decoded
-+}
-+
- /// NASL function to return uppercase equivalent of a given string
- ///
- /// If this function retrieves anything but a string it returns NULL
-@@ -480,7 +522,7 @@
-         hexstr,
-         hex,
-         (raw_string, "raw_string"),
--        (raw_string, "strcat"),
-+        (string, "strcat"),
-         tolower,
-         toupper,
-         strlen,
---- a/rust/src/nasl/builtin/string/tests.rs
-+++ b/rust/src/nasl/builtin/string/tests.rs
-@@ -57,6 +57,18 @@
-     check_code_result("string(0x7B, 1);", "1231");
-     check_code_result("string(0x7B, 1, 'Hallo');", "1231Hallo");
-     check_code_result("string(0x7B, 1, NULL, 'Hallo');", "1231Hallo");
-+
-+    // strcat has the same conversion semantics as string: in particular,
-+    // numbers are decimal text rather than single raw bytes.
-+    check_code_result(
-+        "strcat('www/', 'example', '/', 8080, '/keepalive');",
-+        "www/example/8080/keepalive",
-+    );
-+    check_code_result(
-+        r#"string("GET / HTTP/1.1\r\nConnection: close\r\n\r\n");"#,
-+        "GET / HTTP/1.1\r\nConnection: close\r\n\r\n",
-+    );
-+    check_code_result(r#"string("A\x42\tC\\D");"#, "AB\tC\\D");
- }
- 
- #[test]
---- a/rust/src/nasl/utils/function/from_nasl_value.rs
-+++ b/rust/src/nasl/utils/function/from_nasl_value.rs
-@@ -60,6 +60,7 @@
-     fn from_nasl_value(value: &'a NaslValue) -> Result<Self, FnError> {
-         match value {
-             NaslValue::Data(bytes) => Ok(bytes),
-+            NaslValue::String(string) => Ok(string.as_bytes()),
-             _ => Err(ArgumentError::WrongArgument("Expected byte data.".to_string()).into()),
-         }
-     }
-@@ -119,6 +120,12 @@
-                     NaslValue::Number(num) => Ok(<$ty>::try_from(*num).map_err(|_| {
-                         ArgumentError::WrongArgument("Expected positive number.".into())
-                     })?),
-+                    NaslValue::String(num) => num.parse::<$ty>().map_err(|_| {
-+                        ArgumentError::WrongArgument(format!(
-+                            "Expected a number, found '{num}'."
-+                        ))
-+                        .into()
-+                    }),
-                     e => Err(ArgumentError::WrongArgument(format!(
-                         "Expected a number, found '{}'.",
-                         e
-@@ -138,3 +145,29 @@
- impl_from_nasl_value_for_numeric_type!(u64);
- impl_from_nasl_value_for_numeric_type!(isize);
- impl_from_nasl_value_for_numeric_type!(usize);
-+
-+#[cfg(test)]
-+mod tests {
-+    use super::*;
-+
-+    #[test]
-+    fn byte_slice_accepts_data_and_string_values() {
-+        let data = NaslValue::Data(vec![0, 1, 2]);
-+        assert_eq!(
-+            <&[u8] as FromNaslValue>::from_nasl_value(&data).unwrap(),
-+            &[0, 1, 2]
-+        );
-+
-+        let string = NaslValue::String("GET / HTTP/1.0\\r\\n\\r\\n".to_string());
-+        assert_eq!(
-+            <&[u8] as FromNaslValue>::from_nasl_value(&string).unwrap(),
-+            b"GET / HTTP/1.0\\r\\n\\r\\n"
-+        );
-+
-+        let number = NaslValue::String("10".to_string());
-+        assert_eq!(
-+            <i32 as FromNaslValue>::from_nasl_value(&number).unwrap(),
-+            10
-+        );
 +    }
 +}

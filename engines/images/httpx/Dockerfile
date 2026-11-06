@@ -59,7 +59,7 @@ LABEL org.opencontainers.image.title="ai-security-scanner httpx engine" \
       org.opencontainers.image.description="Grant-and-port-local HTTP metadata collection for ai-security-scanner" \
       org.opencontainers.image.source="https://github.com/projectdiscovery/httpx" \
       org.opencontainers.image.revision="4b6a9a9d476f94a4f3a630f37051f5671ecfb1f8" \
-      org.opencontainers.image.version="1.12.0-1" \
+      org.opencontainers.image.version="1.12.0-2" \
       org.opencontainers.image.licenses="Apache-2.0 AND MIT" \
       io.ai-security-scanner.source-archive-sha256="f018fc96c4194aa008f1e305fcdc2bb8ecd5f08d7722ab012077cd3a9ec6a84d"
 

@@ -6,14 +6,14 @@ the exact corresponding-source material shipped in the image.
 
 | Component | Distributed revision | Corresponding source in the image |
 | --- | --- | --- |
-| Greenbone OpenVAS Scanner / `openvasd` | `26465a11ff0e6a98d60a253265fab5974fc757b6` (`23.50.24`) | `/usr/share/source/openvas-scanner/openvas-scanner-23.50.24.tar.gz` |
-| Greenbone Community Feed | `816c24126e0375d32c667b78d20342ce7c58ec58` (`202610010558-community`) | The executable NASL source, metadata, checksums, signature, and licenses are installed directly at `/opt/greenbone/feed` |
-| Greenbone Notus data | `202610010540` | The source-form advisory/product data and licenses are installed at `/opt/greenbone/notus` |
+| Greenbone OpenVAS Scanner / `openvasd` | `cbd9081531ea6602bea7356aa371200979c1e961` (`23.52.9`) | `/usr/share/source/openvas-scanner/openvas-scanner-23.52.9.tar.gz` |
+| Greenbone Community Feed | `a2e53c2e30f1fa5408369cb5cf99653a3e08e9df` (`202611060607-community`) | The executable NASL source, metadata, checksums, signature, and licenses are installed directly at `/opt/greenbone/feed` |
+| Greenbone Notus data | `202611060538` | The source-form advisory/product data and licenses are installed at `/opt/greenbone/notus` |
 | ai-security-scanner Greenbone launcher and build recipe | image source revision | `/usr/share/source/ai-security-scanner-greenbone/` |
 
 The upstream source archives are checksum-locked in the included Dockerfile.
 The scanner archive SHA-256 is
-`af8b1e0175dfc57f38bdecc08607dbac294459e684e2f3e7d69c85101fa13517`.
+`ea798d3dcf2ca43b93be9bee9b644c699632226e5fa7659dbe40f6f4bd128f63`.
 The Greenbone launcher contains the bounded SOCKS5 relay implementation used
 by the image, so no opaque or preloaded network shim is part of the runtime.
 

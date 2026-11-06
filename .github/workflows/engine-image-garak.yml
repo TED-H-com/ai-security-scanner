@@ -18,13 +18,13 @@ permissions:
   attestations: write
 
 concurrency:
-  group: managed-garak-engine-image-0.17.0-1
+  group: managed-garak-engine-image-0.17.1-1
   cancel-in-progress: false
 
 env:
   ENGINE: garak
   IMAGE: ghcr.io/ted-h-com/ai-security-scanner-engine-garak
-  IMAGE_TAG: 0.17.0-1
+  IMAGE_TAG: 0.17.1-1
 
 jobs:
   publish:
@@ -117,7 +117,7 @@ jobs:
             -e XDG_DATA_HOME=/tmp/aiss-import/data -e XDG_CACHE_HOME=/tmp/aiss-import/cache \
             --entrypoint /usr/local/bin/python3 \
             "${IMAGE}@${DIGEST}" \
-            -I -B -c 'import importlib.util,garak,garak.cli,garak.generators.rest,garak.probes.dan,garak.probes.ansiescape,garak.detectors.dan,garak.detectors.ansiescape; assert garak.__version__ == "0.17.0"; assert all(importlib.util.find_spec(name) is None for name in ("torch","transformers","openai","pytest","flit_core"))'
+            -I -B -c 'import importlib.util,garak,garak.cli,garak.generators.rest,garak.probes.dan,garak.probes.ansiescape,garak.detectors.dan,garak.detectors.ansiescape; assert garak.__version__ == "0.17.1"; assert all(importlib.util.find_spec(name) is None for name in ("torch","transformers","openai","pytest","flit_core"))'
           smoke_evidence="package-evidence/garak-managed-smoke"
           python3 engines/images/garak/testdata/native_smoke.py \
             --image "${IMAGE}@${DIGEST}" --output-dir "${smoke_evidence}"

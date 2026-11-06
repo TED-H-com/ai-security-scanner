@@ -31,13 +31,13 @@ jobs:
       matrix:
         include:
           - engine: scubagear
-            tag: 1.8.0-8
+            tag: 2.0.0-1
             dockerfile: engines/images/scubagear/Dockerfile
-            expected_version: 1.8.0
-          - engine: maester
-            tag: 2.0.0-9
-            dockerfile: engines/images/maester/Dockerfile
             expected_version: 2.0.0
+          - engine: maester
+            tag: 2.3.0-1
+            dockerfile: engines/images/maester/Dockerfile
+            expected_version: 2.3.0
     env:
       IMAGE: ghcr.io/ted-h-com/ai-security-scanner-engine-${{ matrix.engine }}
       IMAGE_TAG: ${{ matrix.tag }}

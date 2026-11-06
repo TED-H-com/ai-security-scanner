@@ -1,0 +1,53 @@
+--- a/rust/src/nasl/utils/function/from_nasl_value.rs
++++ b/rust/src/nasl/utils/function/from_nasl_value.rs
+@@ -60,6 +60,7 @@
+     fn from_nasl_value(value: &'a NaslValue) -> Result<Self, FnError> {
+         match value {
+             NaslValue::Data(bytes) => Ok(bytes),
++            NaslValue::String(string) => Ok(string.as_bytes()),
+             _ => Err(ArgumentError::WrongArgument("Expected byte data.".to_string()).into()),
+         }
+     }
+@@ -119,6 +120,12 @@
+                     NaslValue::Number(num) => Ok(<$ty>::try_from(*num).map_err(|_| {
+                         ArgumentError::WrongArgument("Expected positive number.".into())
+                     })?),
++                    NaslValue::String(num) => num.parse::<$ty>().map_err(|_| {
++                        ArgumentError::WrongArgument(format!(
++                            "Expected a number, found '{num}'."
++                        ))
++                        .into()
++                    }),
+                     e => Err(ArgumentError::WrongArgument(format!(
+                         "Expected a number, found '{}'.",
+                         e
+@@ -138,3 +145,29 @@
+ impl_from_nasl_value_for_numeric_type!(u64);
+ impl_from_nasl_value_for_numeric_type!(isize);
+ impl_from_nasl_value_for_numeric_type!(usize);
++
++#[cfg(test)]
++mod tests {
++    use super::*;
++
++    #[test]
++    fn byte_slice_accepts_data_and_string_values() {
++        let data = NaslValue::Data(vec![0, 1, 2]);
++        assert_eq!(
++            <&[u8] as FromNaslValue>::from_nasl_value(&data).unwrap(),
++            &[0, 1, 2]
++        );
++
++        let string = NaslValue::String("GET / HTTP/1.0\\r\\n\\r\\n".to_string());
++        assert_eq!(
++            <&[u8] as FromNaslValue>::from_nasl_value(&string).unwrap(),
++            b"GET / HTTP/1.0\\r\\n\\r\\n"
++        );
++
++        let number = NaslValue::String("10".to_string());
++        assert_eq!(
++            <i32 as FromNaslValue>::from_nasl_value(&number).unwrap(),
++            10
++        );
++    }
++}

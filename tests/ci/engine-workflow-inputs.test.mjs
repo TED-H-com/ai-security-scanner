@@ -26,6 +26,12 @@ test("engine workflow coordinates follow the source recipe instead of reusing a 
     for (const entry of entries) {
       const plan = await readJson(`engines/images/${entry.engine}/plan.json`);
       assert.equal(entry.tag, plan.final_artifact.tag, `${file}: ${entry.engine} would build under a stale tag`);
+      if (entry.expected_version !== undefined) {
+        const catalog = await readJson("engines/catalog.json");
+        const selected = plan.upstream_update ?? catalog.find((engine) => engine.id === entry.engine);
+        assert.equal(entry.expected_version, selected.reported_version ?? selected.engine_version,
+          `${file}: ${entry.engine} smoke check would require a stale native version`);
+      }
       if (entry.epoch !== undefined) {
         assert.equal(Number(entry.epoch), plan.build_recipe.source_date_epoch,
           `${file}: SOURCE_DATE_EPOCH would override the reviewed source date`);

@@ -6,37 +6,24 @@
   "support_until": "2023-04-10",
   "maintenance_owner": "teddashh/ai-security-scanner maintainers",
   "update_procedure": "docs/engine-maintenance.md",
-  "publish_state": "published_managed_artifact",
+  "publish_state": "publication_in_progress",
   "source": {
     "repository": "https://github.com/cloudquery/cloudquery",
-    "revision": "e27e4ab61ad85479a5d53dae9b08440bc63e72b3",
-    "acquisition_source": "https://github.com/cloudquery/cloudquery/commit/e27e4ab61ad85479a5d53dae9b08440bc63e72b3",
+    "revision": "086baf7f70ee3c1069513d41f321720a5e7d2bb9",
+    "acquisition_source": "https://github.com/cloudquery/cloudquery/commit/086baf7f70ee3c1069513d41f321720a5e7d2bb9",
     "local_research_checkout": ".upstreams/cloudquery/cloudquery"
   },
   "final_artifact": {
-    "repository": "ghcr.io/teddashh/ai-security-scanner-engine-cloudquery",
-    "tag": "2.0.31-aws9.2.0-6",
-    "digest": "sha256:e80bc6914b9a007b2a1e8978a222ff7b0ead657d004ca22f410270d086c3be82"
+    "repository": "ghcr.io/ted-h-com/ai-security-scanner-engine-cloudquery",
+    "tag": "3.5.3-aws9.2.0-file1.0.4-1",
+    "digest": null
   },
-  "publication": {
-    "workflow_run": "https://github.com/teddashh/ai-security-scanner/actions/runs/37044614517",
-    "source_revision": "dfe8af1721cd165a629a4d438318661e940c13d8",
-    "platforms": [
-      "linux/amd64",
-      "linux/arm64"
-    ],
-    "platform_digests": {
-      "linux/amd64": "sha256:4f614b7566278180822d959b9b2cc66652ce88beafc9124688934f19d64ecba6",
-      "linux/arm64": "sha256:fa2c195713c2238e509dde5f4afaef484a3d5860bb7386e632d7fd08f0b0faba"
-    },
-    "anonymous_pull_verified": true,
-    "evidence_artifact": "cloudquery-image-evidence-37044614517-1"
-  },
+  "publication": null,
   "build_recipe": {
-    "source_revision": "e27e4ab61ad85479a5d53dae9b08440bc63e72b3",
+    "source_revision": "086baf7f70ee3c1069513d41f321720a5e7d2bb9",
     "source_archive": {
-      "url": "https://github.com/cloudquery/cloudquery/archive/e27e4ab61ad85479a5d53dae9b08440bc63e72b3.tar.gz",
-      "sha256": "sha256:21e18c3d1348243273231e72a39febd9d7429ac4f1ec36c5bf18c32d509e5996"
+      "url": "https://github.com/cloudquery/cloudquery/archive/086baf7f70ee3c1069513d41f321720a5e7d2bb9.tar.gz",
+      "sha256": "sha256:ae47bd08e22aac0263784c1915c60d00111ef13145550c6d177af9fb24c7eeaf"
     },
     "component_source_archives": [
       {
@@ -54,9 +41,9 @@
     ],
     "dependency_lock": {
       "path": "engines/images/cloudquery/dependencies.lock.json",
-      "sha256": "sha256:33316c9547ea884f0e8b6f750bf1afee1e4148b9cb314cd75ef76daba0a22c97"
+      "sha256": "sha256:b0c5c5538c24a5ace0e8a7e8fd3f7d290da51a52fdeaffb08655d1c3e02bb87b"
     },
-    "source_date_epoch": 1672928198,
+    "source_date_epoch": 1686818396,
     "target_platforms": [
       "linux/amd64",
       "linux/arm64"
@@ -64,8 +51,8 @@
     "base_images": [
       {
         "repository": "golang",
-        "tag": "1.25.0-alpine3.22",
-        "digest": "sha256:f18a072054848d87a8077455f0ac8a25886f2397f88bfdd222d6fafbb5bba440"
+        "tag": "1.26.10-alpine",
+        "digest": "sha256:87c65a688975c0b1d4585d204874c45ca78354670e3a5f11368c5a492303d696"
       },
       {
         "repository": "alpine",
@@ -94,7 +81,7 @@
   ],
   "provider_lock": {
     "path": "engines/images/cloudquery/dependencies.lock.json",
-    "sha256": "sha256:33316c9547ea884f0e8b6f750bf1afee1e4148b9cb314cd75ef76daba0a22c97",
+    "sha256": "sha256:b0c5c5538c24a5ace0e8a7e8fd3f7d290da51a52fdeaffb08655d1c3e02bb87b",
     "install_result": "anonymous_public_release_artifacts",
     "source_closure": "complete",
     "registry": "local"
@@ -106,7 +93,7 @@
   "dockerfile": {
     "emitted": true,
     "path": "engines/images/cloudquery/Dockerfile",
-    "sha256": "sha256:cd9cafa5c5d8595a280dafa3e04b6c813f0a15af65299af6196eb5b2f68b950f"
+    "sha256": "sha256:5b08f2ba419f9e40b276c7cf3da00f4582ff130cc86b44baa8b4e5df45f9fa5e"
   },
   "wrapper": {
     "required": true,
@@ -147,5 +134,60 @@
     "rationale": "The image embeds the exact MPL-2.0 CLI, AWS and file source archives, dependency locks, local-plugin configuration, build recipe, launcher source, and license notice.",
     "source_offer_path": "engines/images/cloudquery/SOURCE-OFFER.md"
   },
-  "blockers": []
+  "blockers": [],
+  "previous_artifact": {
+    "repository": "ghcr.io/teddashh/ai-security-scanner-engine-cloudquery",
+    "tag": "2.0.31-aws9.2.0-6",
+    "digest": "sha256:e80bc6914b9a007b2a1e8978a222ff7b0ead657d004ca22f410270d086c3be82"
+  },
+  "previous_publication": {
+    "workflow_run": "https://github.com/teddashh/ai-security-scanner/actions/runs/37044614517",
+    "source_revision": "dfe8af1721cd165a629a4d438318661e940c13d8",
+    "platforms": [
+      "linux/amd64",
+      "linux/arm64"
+    ],
+    "platform_digests": {
+      "linux/amd64": "sha256:4f614b7566278180822d959b9b2cc66652ce88beafc9124688934f19d64ecba6",
+      "linux/arm64": "sha256:fa2c195713c2238e509dde5f4afaef484a3d5860bb7386e632d7fd08f0b0faba"
+    },
+    "anonymous_pull_verified": true,
+    "evidence_artifact": "cloudquery-image-evidence-37044614517-1"
+  },
+  "upstream_update": {
+    "engine_version": "3.5.3-aws9.2.0-file1.0.4",
+    "source_revision": "086baf7f70ee3c1069513d41f321720a5e7d2bb9",
+    "rule_version": "804be3a90d6f15d3e6c662c0eb7afa88a9596180",
+    "reported_version": null,
+    "knowledge_date": "2023-01-10",
+    "support_until": "2023-04-10",
+    "engine_provenance": {
+      "version": "3.5.3-aws9.2.0-file1.0.4",
+      "source_repository": "https://github.com/cloudquery/cloudquery",
+      "source_revision": "086baf7f70ee3c1069513d41f321720a5e7d2bb9",
+      "source_ref": "cli-v3.5.3",
+      "acquisition_source": "https://github.com/cloudquery/cloudquery/commit/086baf7f70ee3c1069513d41f321720a5e7d2bb9",
+      "artifact_source_revision": null,
+      "source_association": "source_build_required"
+    },
+    "rules_provenance": {
+      "mode": "embedded",
+      "identifier": "CloudQuery AWS source plugin v9.2.0 and fixed seven-table IAM profile",
+      "revision": "804be3a90d6f15d3e6c662c0eb7afa88a9596180",
+      "acquisition_source": "https://github.com/cloudquery/cloudquery/commit/804be3a90d6f15d3e6c662c0eb7afa88a9596180"
+    },
+    "data_provenance": {
+      "mode": "runtime_live",
+      "identifier": "AWS IAM inventory",
+      "revision": null,
+      "acquisition_source": "AWS IAM and STS APIs authorized by the case-scoped read-only role"
+    },
+    "knowledge_input": {
+      "kind": "runtime_live",
+      "identifier": "AWS IAM inventory",
+      "version": "AWS source plugin v9.2.0 (2023-01-10)",
+      "acquisition_source": "AWS IAM and STS APIs authorized by the case-scoped read-only role",
+      "pin_state": "runtime_live"
+    }
+  }
 }
