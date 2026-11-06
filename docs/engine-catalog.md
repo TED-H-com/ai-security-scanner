@@ -71,7 +71,7 @@ The source and license below identify the pinned engine family. Exact release, s
 |---|---|---|---|
 | AWS inventory | [CloudQuery](https://github.com/cloudquery/cloudquery) | MPL-2.0 | Managed OCI image using the public CLI, AWS source plugin, file destination, and a fixed seven-table IAM inventory. |
 | AWS IAM user inventory | [Steampipe](https://github.com/turbot/steampipe) | AGPL-3.0-only | Managed OCI image with independently pinned AWS plugin/FDW components that queries `aws_iam_user`. Returned rows are normalized as inventory; policy-shaped status, control, severity, and MFA columns are ignored rather than presented as vulnerability or configuration findings. |
-| Cloud configuration | [Prowler](https://github.com/prowler-cloud/prowler) | Apache-2.0 | Managed OCI image with narrow, exact-asset IAM profiles for AWS, Azure, and GCP. The Azure static-token and GCP exact-project paths currently depend on six hash-bound downstream runtime patches and are an explicit upstream-first exception, not native Prowler 5.44.0 behavior. |
+| Cloud configuration | [Prowler](https://github.com/prowler-cloud/prowler) | Apache-2.0 | Managed OCI image with narrow, exact-asset IAM profiles for AWS, Azure, and GCP. The Azure static-token and GCP exact-project paths currently depend on six hash-bound downstream runtime patches and are an explicit upstream-first exception, not native Prowler 5.47.0 behavior. |
 | AWS configuration | [ScoutSuite](https://github.com/nccgroup/ScoutSuite) | GPL-2.0-only | Managed OCI image built from pinned source; the current profile is a reduced AWS IAM assessment, not full ScoutSuite coverage. |
 | AWS IAM | [Cloudsplaining](https://github.com/salesforce/cloudsplaining) | BSD-3-Clause | Managed OCI image over bounded IAM evidence for excessive-permission analysis. |
 | Microsoft 365 configuration | [ScubaGear](https://github.com/cisagov/ScubaGear) | CC0-1.0 | Managed PowerShell/OCI image; the current profile is fixed and leaves upstream unknown values unknown. Immutable image revision `2.0.0-1`. |
@@ -97,7 +97,7 @@ The source and license below identify the pinned engine family. Exact release, s
 
 ### Grype repository support
 
-The current catalog pins `ghcr.io/ted-h-com/ai-security-scanner-engine-grype:0.120.1-1` to `sha256:9f030366bc950d408762adb2d641d70220fd6cee0175cbc5202e9418dbb05870`, with the October 14 schema v6.1.10 database. The [verified publication record](engines/updates/2026-10-14.md#verified-publication-and-catalog-activation) binds source provenance and both platform digests. The bounded native OCI fixture emits six Java vulnerability matches with original advisory IDs preserved.
+The current catalog pins `ghcr.io/ted-h-com/ai-security-scanner-engine-grype:0.121.2-1` to `sha256:80b8f128551226a9f4924b68fae76331424eaa53d7c1f189445661cb08ebd9db`, with the November 5 schema v6.1.10 database. The [verified publication record](engines/updates/2026-11-06-publications.json) binds source provenance and both platform digests. The bounded native OCI fixture emits six vulnerability matches with original advisory IDs preserved.
 
 The earlier source catalog at [commit 3990168](https://github.com/TED-H-com/ai-security-scanner/commit/3990168be5154804c8a70c97f8c8f6e827221cbc) pinned
 `ghcr.io/teddashh/ai-security-scanner-engine-grype:0.117.0-4` to

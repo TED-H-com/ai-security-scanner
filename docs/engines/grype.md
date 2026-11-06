@@ -4,8 +4,8 @@ Runs Grype's offline vulnerability matcher over a `repository` snapshot (`dir:`)
 
 | Item | Value |
 | --- | --- |
-| Upstream | [anchore/grype](https://github.com/anchore/grype), version `0.120.1`, source ref `v0.120.1`, revision `6f8d854af29d3a3086b11a84afa51554a2a245fe`. Offline database schema v6.1.10, built 2026-10-14T06:30:34Z. Its exact 2,460,639,232-byte file bound and digests are recorded in the recipe and database notice. |
-| Image | `ghcr.io/ted-h-com/ai-security-scanner-engine-grype:0.120.1-1` (`plan_kind: managed_build`), published for linux/amd64 and linux/arm64 by [this run](https://github.com/TED-H-com/ai-security-scanner/actions/runs/38696246466) from `c989e75e1c3be7e7abad3395dcf5539cf2a96832`. Exact index/platform digests and verified evidence are in `engines/catalog.json` and `plan.json`. |
+| Upstream | [anchore/grype](https://github.com/anchore/grype), version `0.121.2`, revision `82d7a0ea911946b99343c672056867d372f9b319`. Rules/data identities are pinned in `engines/catalog.json`. |
+| Image | `ghcr.io/ted-h-com/ai-security-scanner-engine-grype:0.121.2-1`, published for linux/amd64 and linux/arm64 by [run 42186918847](https://github.com/TED-H-com/ai-security-scanner/actions/runs/42186918847) from `5ba7d2e20f6eb8913aeb3097bed43860451ee522`. Exact digests and verified attestations are in [the publication record](updates/2026-11-06-publications.json). |
 | Build inputs | `engines/images/grype/`: `Dockerfile`, `import.json`, `DATABASE-NOTICE.md`, `plan.json`, and `testdata/package-lock.json`, which nothing uses. `node scripts/prepare-offline-engine-data.mjs grype` fetches the database archive into `.engine-cache/offline/grype/db.tar.zst` and checks its digest and size. The build pins the source with `ADD --checksum`, checks `go.sum`, runs `go mod verify`, and builds `cmd/grype` with `-mod=readonly`. The runtime is `FROM scratch`. |
 | Launcher | [Local launcher](local-launcher.md): the `grype` branch of `planInvocation` and the database check in `verifyEngineInputs` |
 | Adapter | `extract_grype` and `grype_weakness` in `src-tauri/src/adapters/mod.rs` |
@@ -71,7 +71,7 @@ Follow [section 4](../engine-maintenance.md#4-updating-an-engine), then:
   - In `src-tauri/tests/adapter_fixtures.rs` (fixture `grype.json`): `grype_preserves_valid_matches_but_withholds_completion_for_malformed_match_shapes`, `one_vulnerability_seen_by_trivy_and_grype_is_offered_as_a_single_row`, `missing_primary_result_shapes_are_incomplete_but_known_empty_shapes_are_complete` and `repo_adapters_accept_their_explicit_empty_result_shapes_without_warnings`.
   - Launcher tests: `TestGrypeRepositoryUsesTheUpstreamDirectoryCataloger`, `TestTypedContainerPlansUseOCIImageLayout` and `TestEngineProfilesRejectCrossTypeExecution`.
   - The workflow smoke scans only the OCI layout fixture: `.source.type` `image`, the fixture's `imageID`, and a `spring-core` 2.5.6.SEC03 `java-archive` match. Nothing tests repository input, so scan a real repository and compare with Trivy on the same tree, as 3990168 did.
-- **Hard-coded values.** Keep managed tag `0.120.1-1`, reported version `0.120.1`, full source revision, workflow selector, Dockerfile labels, catalog/plan identity and publication verifier aligned. Search current source with `rg` when updating; preserve dated records and captured fixtures. `support_until` is 2027-01-12.
+- **Hard-coded values.** Keep managed tag `0.121.2-1`, engine version `0.121.2`, source and rule revisions, workflow checks, Dockerfile labels, catalog/plan identity and publication verifier aligned. Preserve dated records and captured fixtures. `support_until` is 2027-01-12.
 - **Compare with raw output.**
   - Count with `jq '.matches | length' grype.json`.
   - List with `jq -r '.matches[] | [.vulnerability.id, .artifact.name, .artifact.version, (.artifact.locations[0].path // .artifact.name)] | @tsv' grype.json | sort | uniq -c`.

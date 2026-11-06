@@ -4,7 +4,7 @@
 
 _Updated 2026-11-06._
 
-The [November 6 upstream review](engines/updates/2026-11-06.md) checks all 25 engines and prepares eighteen managed image replacements, new rules/data, application dependencies and the Podman runtime. Thirteen replacements are independently verified and catalog-pinned; KICS uses its verified official image. CI document and contract tests: 105 tests cover the current source boundaries. The published desktop remains v0.5.3; see [the incident release record](release/v0.5.3.md) for its scope and publication observations.
+The [November 6 upstream review](engines/updates/2026-11-06.md) checks all 25 engines and completes eighteen managed image replacements, new rules/data, application dependencies and the Podman runtime. All eighteen replacements are independently verified and catalog-pinned; KICS uses its verified official image. CI document and contract tests: 105 tests cover the current source boundaries. The published desktop remains v0.5.3; see [the incident release record](release/v0.5.3.md) for its scope and publication observations.
 
 This page summarizes current engineering status for contributors. It is not a product specification
 or release declaration. [The product specification](product-spec.md) remains the source of truth for
@@ -17,7 +17,7 @@ product behavior, and the [current product review](product-audit.md) tracks the 
 - [v0.5.2 upstream engine updates](release/v0.5.2.md) is the preceding stable release for Windows, macOS and Linux. It updates ten engines and offline data and repairs bounded Windows runtime execution on recent WSL. Public bytes, updater signatures, source provenance, exact-source CI and CodeQL passed; installer observations and limitations are in the release record.
 
 - The earlier stable release, [v0.4.1](release/v0.4.1.md), retains its original installer and updater observations.
-- The released desktop includes Prowler failure headlines, approved AWS report grouping, reconnect-and-rescan, blocked-scan continuations, Semgrep `1.174.0-4`, and explicit kube-bench/KICS incomplete-coverage handling.
+- The released desktop includes Prowler failure headlines, approved AWS report grouping, reconnect-and-rescan, blocked-scan continuations, Semgrep `1.184.0-1`, and explicit kube-bench/KICS incomplete-coverage handling.
 - A fresh owner-signed-in Microsoft 365 live rerun remains unobserved. Garak model checks and Agentic Radar offline inventory are optionally dispatchable in v0.4.0.
 - The paired repository [Agent Skills](getting-started.md#use-with-an-agent-skill) install the
   desktop release, check that a computer can scan, guide a scan in the app, and save its report;

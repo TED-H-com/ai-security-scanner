@@ -286,13 +286,13 @@
     "distribution_mode": "pull_pinned_image",
     "image": {
       "repository": "ghcr.io/ted-h-com/ai-security-scanner-engine-prowler",
-      "tag": "5.44.0-1",
-      "digest": "sha256:7efff0a702e5f3bfe97948e1f3d8c052ff73c4423c03b805ce43c14588d29698",
+      "tag": "5.47.0-1",
+      "digest": "sha256:ff486d56486dec9e0555bad1532a5f431ffcfc3c1889712188f7a2f211110529",
       "signature_identity": "https://github.com/TED-H-com/ai-security-scanner/.github/workflows/engine-images-cloud.yml@refs/heads/main"
     },
-    "source_revision": "499fd637f3393b485833b08cdaf4172917c5698e",
-    "engine_version": "5.44.0",
-    "rule_version": "499fd637f3393b485833b08cdaf4172917c5698e",
+    "source_revision": "555a4cc469907e26ef007eb79af2b6cb4bddd6c6",
+    "engine_version": "5.47.0",
+    "rule_version": "555a4cc469907e26ef007eb79af2b6cb4bddd6c6",
     "adapter_version": "0.2.6",
     "supported_asset_kinds": [
       "cloud_account",
@@ -359,7 +359,7 @@
     "notices": [
       "Apache-2.0 permits redistribution with required notices.",
       "Each run is restricted to exactly one scoped provider asset: AWS IAM service, Azure IAM service over ARM only, or four allowlisted GCP IAM checks.",
-      "Azure static-token and GCP exact-project behavior comes from six ai-security-scanner downstream patches, bound to the applier and runtime-source pre/post SHA-256 values in the packaging plan; it is not native Prowler 5.44.0 behavior."
+      "Azure static-token and GCP exact-project behavior comes from six ai-security-scanner downstream patches, bound to the applier and runtime-source pre/post SHA-256 values in the packaging plan; it is not native Prowler 5.47.0 behavior."
     ],
     "license": {
       "disposition": "allow",
@@ -368,19 +368,19 @@
     },
     "provenance": {
       "engine": {
-        "version": "5.44.0",
+        "version": "5.47.0",
         "source_repository": "https://github.com/prowler-cloud/prowler",
-        "source_revision": "499fd637f3393b485833b08cdaf4172917c5698e",
-        "source_ref": "5.44.0",
-        "acquisition_source": "https://github.com/prowler-cloud/prowler/commit/499fd637f3393b485833b08cdaf4172917c5698e",
-        "artifact_source_revision": "14fe1359a84d00a9d397e0b721e79d95929da919",
+        "source_revision": "555a4cc469907e26ef007eb79af2b6cb4bddd6c6",
+        "source_ref": "5.47.0",
+        "acquisition_source": "https://github.com/prowler-cloud/prowler/commit/555a4cc469907e26ef007eb79af2b6cb4bddd6c6",
+        "artifact_source_revision": "5d452d50bfeb5d84619c01d42404111e03b9951f",
         "source_association": "attested_match"
       },
       "rules": {
         "mode": "embedded",
         "identifier": "Prowler checks",
-        "revision": "499fd637f3393b485833b08cdaf4172917c5698e",
-        "acquisition_source": "https://github.com/prowler-cloud/prowler/commit/499fd637f3393b485833b08cdaf4172917c5698e"
+        "revision": "555a4cc469907e26ef007eb79af2b6cb4bddd6c6",
+        "acquisition_source": "https://github.com/prowler-cloud/prowler/commit/555a4cc469907e26ef007eb79af2b6cb4bddd6c6"
       },
       "data": {
         "mode": "runtime_live",
@@ -397,7 +397,7 @@
       }
     },
     "compatibility": {
-      "knowledge_date": "2026-09-29",
+      "knowledge_date": "2026-10-29",
       "support_until": "2026-12-28",
       "maintenance_owner": "teddashh/ai-security-scanner maintainers",
       "update_procedure": "docs/engine-maintenance.md",
@@ -1993,14 +1993,14 @@
     "distribution_mode": "pull_pinned_image",
     "image": {
       "repository": "ghcr.io/ted-h-com/ai-security-scanner-engine-trufflehog",
-      "tag": "3.99.2-1",
-      "digest": "sha256:691259f07fbc289dba87d9b365c2e001bc1a9a21fb7353089a95739f5d968212",
+      "tag": "3.99.8-1",
+      "digest": "sha256:5cc911e30166109827f1bb8b677c8cd6d8f5009fb1ee2465672bac04c956f932",
       "signature_identity": "https://github.com/TED-H-com/ai-security-scanner/.github/workflows/engine-images-local-k8s.yml@refs/heads/main"
     },
-    "source_revision": "e76dff8a7e57d6df0c60ad8cbf5d5cba505a8fc9",
-    "engine_version": "source@e76dff8a7e57d6df0c60ad8cbf5d5cba505a8fc9",
-    "reported_version": "3.99.2",
-    "rule_version": "e76dff8a7e57d6df0c60ad8cbf5d5cba505a8fc9",
+    "source_revision": "ea68ca03c865c5f324e86e849ced20ed3cf9dbbb",
+    "engine_version": "source@ea68ca03c865c5f324e86e849ced20ed3cf9dbbb",
+    "reported_version": "3.99.8",
+    "rule_version": "ea68ca03c865c5f324e86e849ced20ed3cf9dbbb",
     "adapter_version": "0.2.6",
     "supported_asset_kinds": [
       "repository"
@@ -2042,19 +2042,19 @@
     },
     "provenance": {
       "engine": {
-        "version": "source@e76dff8a7e57d6df0c60ad8cbf5d5cba505a8fc9",
+        "version": "source@ea68ca03c865c5f324e86e849ced20ed3cf9dbbb",
         "source_repository": "https://github.com/trufflesecurity/trufflehog",
-        "source_revision": "e76dff8a7e57d6df0c60ad8cbf5d5cba505a8fc9",
-        "source_ref": "v3.99.2",
-        "acquisition_source": "https://github.com/trufflesecurity/trufflehog/commit/e76dff8a7e57d6df0c60ad8cbf5d5cba505a8fc9",
-        "artifact_source_revision": "c989e75e1c3be7e7abad3395dcf5539cf2a96832",
+        "source_revision": "ea68ca03c865c5f324e86e849ced20ed3cf9dbbb",
+        "source_ref": "v3.99.8",
+        "acquisition_source": "https://github.com/trufflesecurity/trufflehog/commit/ea68ca03c865c5f324e86e849ced20ed3cf9dbbb",
+        "artifact_source_revision": "5ba7d2e20f6eb8913aeb3097bed43860451ee522",
         "source_association": "attested_match"
       },
       "rules": {
         "mode": "embedded",
         "identifier": "TruffleHog detectors",
-        "revision": "e76dff8a7e57d6df0c60ad8cbf5d5cba505a8fc9",
-        "acquisition_source": "https://github.com/trufflesecurity/trufflehog/commit/e76dff8a7e57d6df0c60ad8cbf5d5cba505a8fc9"
+        "revision": "ea68ca03c865c5f324e86e849ced20ed3cf9dbbb",
+        "acquisition_source": "https://github.com/trufflesecurity/trufflehog/commit/ea68ca03c865c5f324e86e849ced20ed3cf9dbbb"
       },
       "data": {
         "mode": "runtime_bound",
@@ -2071,7 +2071,7 @@
       }
     },
     "compatibility": {
-      "knowledge_date": "2026-10-08",
+      "knowledge_date": "2026-11-02",
       "support_until": "2027-01-06",
       "maintenance_owner": "teddashh/ai-security-scanner maintainers",
       "update_procedure": "docs/engine-maintenance.md",
@@ -2415,13 +2415,13 @@
     "distribution_mode": "pull_pinned_image",
     "image": {
       "repository": "ghcr.io/ted-h-com/ai-security-scanner-engine-trivy",
-      "tag": "0.76.1-1",
-      "digest": "sha256:c195548f47cf8fe2305c6a92fb9cac0c7306bf31fc1c5142f241281c97cf0694",
+      "tag": "0.76.2-1",
+      "digest": "sha256:96eaebf61eb45e5ea083ca1abf337a8ee99b35f34638f8dd309e750e4a762364",
       "signature_identity": "https://github.com/TED-H-com/ai-security-scanner/.github/workflows/engine-images-local-k8s.yml@refs/heads/main"
     },
-    "source_revision": "e713f67f7d54decdcd9b3132c9751833dcced698",
-    "engine_version": "0.76.1",
-    "rule_version": "e713f67f7d54decdcd9b3132c9751833dcced698",
+    "source_revision": "3f6334d223b52188324af3b9923b4249cd206652",
+    "engine_version": "0.76.2",
+    "rule_version": "3f6334d223b52188324af3b9923b4249cd206652",
     "adapter_version": "0.2.6",
     "supported_asset_kinds": [
       "repository",
@@ -2477,24 +2477,24 @@
     },
     "provenance": {
       "engine": {
-        "version": "0.76.1",
+        "version": "0.76.2",
         "source_repository": "https://github.com/aquasecurity/trivy",
-        "source_revision": "e713f67f7d54decdcd9b3132c9751833dcced698",
-        "source_ref": "v0.76.1",
-        "acquisition_source": "https://github.com/aquasecurity/trivy/commit/e713f67f7d54decdcd9b3132c9751833dcced698",
-        "artifact_source_revision": "46b7d1900fc25ef8ae4e4b568b638c915f28d130",
+        "source_revision": "3f6334d223b52188324af3b9923b4249cd206652",
+        "source_ref": "v0.76.2",
+        "acquisition_source": "https://github.com/aquasecurity/trivy/commit/3f6334d223b52188324af3b9923b4249cd206652",
+        "artifact_source_revision": "5ba7d2e20f6eb8913aeb3097bed43860451ee522",
         "source_association": "attested_match"
       },
       "rules": {
         "mode": "embedded",
         "identifier": "Trivy OS and library package analyzers",
-        "revision": "e713f67f7d54decdcd9b3132c9751833dcced698",
-        "acquisition_source": "https://github.com/aquasecurity/trivy/commit/e713f67f7d54decdcd9b3132c9751833dcced698"
+        "revision": "3f6334d223b52188324af3b9923b4249cd206652",
+        "acquisition_source": "https://github.com/aquasecurity/trivy/commit/3f6334d223b52188324af3b9923b4249cd206652"
       },
       "data": {
         "mode": "embedded",
         "identifier": "Trivy vulnerability database snapshot",
-        "revision": "sha256:4bf3ae89527fbbb3596748b1c9d294a8b240c49edc9f87e65947e42291bb0bf6",
+        "revision": "sha256:fb417a88061be7d8c246c61cd56e73c91040574fb8cb7b74c48f7a2ea5c2f92f",
         "acquisition_source": "oci://ghcr.io/aquasecurity/trivy-db"
       },
       "adapter": {
@@ -2506,7 +2506,7 @@
       }
     },
     "compatibility": {
-      "knowledge_date": "2026-10-22",
+      "knowledge_date": "2026-11-06",
       "support_until": "2027-01-20",
       "maintenance_owner": "teddashh/ai-security-scanner maintainers",
       "update_procedure": "docs/engine-maintenance.md",
@@ -2516,7 +2516,7 @@
       "knowledge_input": {
         "kind": "embedded",
         "identifier": "Trivy vulnerability database snapshot",
-        "version": "sha256:4bf3ae89527fbbb3596748b1c9d294a8b240c49edc9f87e65947e42291bb0bf6",
+        "version": "sha256:fb417a88061be7d8c246c61cd56e73c91040574fb8cb7b74c48f7a2ea5c2f92f",
         "acquisition_source": "oci://ghcr.io/aquasecurity/trivy-db",
         "pin_state": "pinned_or_not_applicable"
       },
@@ -2561,13 +2561,13 @@
     "distribution_mode": "pull_pinned_image",
     "image": {
       "repository": "ghcr.io/ted-h-com/ai-security-scanner-engine-grype",
-      "tag": "0.120.1-1",
-      "digest": "sha256:9f030366bc950d408762adb2d641d70220fd6cee0175cbc5202e9418dbb05870",
+      "tag": "0.121.2-1",
+      "digest": "sha256:80b8f128551226a9f4924b68fae76331424eaa53d7c1f189445661cb08ebd9db",
       "signature_identity": "https://github.com/TED-H-com/ai-security-scanner/.github/workflows/engine-images-local-k8s.yml@refs/heads/main"
     },
-    "source_revision": "6f8d854af29d3a3086b11a84afa51554a2a245fe",
-    "engine_version": "0.120.1",
-    "rule_version": "6f8d854af29d3a3086b11a84afa51554a2a245fe",
+    "source_revision": "82d7a0ea911946b99343c672056867d372f9b319",
+    "engine_version": "0.121.2",
+    "rule_version": "82d7a0ea911946b99343c672056867d372f9b319",
     "adapter_version": "0.2.6",
     "supported_asset_kinds": [
       "repository",
@@ -2616,25 +2616,25 @@
     },
     "provenance": {
       "engine": {
-        "version": "0.120.1",
+        "version": "0.121.2",
         "source_repository": "https://github.com/anchore/grype",
-        "source_revision": "6f8d854af29d3a3086b11a84afa51554a2a245fe",
-        "source_ref": "v0.120.1",
-        "acquisition_source": "https://github.com/anchore/grype/commit/6f8d854af29d3a3086b11a84afa51554a2a245fe",
-        "artifact_source_revision": "c989e75e1c3be7e7abad3395dcf5539cf2a96832",
+        "source_revision": "82d7a0ea911946b99343c672056867d372f9b319",
+        "source_ref": "v0.121.2",
+        "acquisition_source": "https://github.com/anchore/grype/commit/82d7a0ea911946b99343c672056867d372f9b319",
+        "artifact_source_revision": "5ba7d2e20f6eb8913aeb3097bed43860451ee522",
         "source_association": "attested_match"
       },
       "rules": {
         "mode": "embedded",
         "identifier": "Grype matchers",
-        "revision": "6f8d854af29d3a3086b11a84afa51554a2a245fe",
-        "acquisition_source": "https://github.com/anchore/grype/commit/6f8d854af29d3a3086b11a84afa51554a2a245fe"
+        "revision": "82d7a0ea911946b99343c672056867d372f9b319",
+        "acquisition_source": "https://github.com/anchore/grype/commit/82d7a0ea911946b99343c672056867d372f9b319"
       },
       "data": {
         "mode": "embedded",
         "identifier": "Grype vulnerability database snapshot",
-        "revision": "sha256:8be8779b1b6fd721e6127c092bd25d5875e25cd511def5d9e7d026fb45189058",
-        "acquisition_source": "https://grype.anchore.io/databases/v6/vulnerability-db_v6.1.10_2026-10-14T00:28:57Z_1791959434.tar.zst"
+        "revision": "sha256:420d0ac2f976acb4bf46e19bd1779f3043a868a77ca8e9debf18c3d196728344",
+        "acquisition_source": "https://grype.anchore.io/databases/v6/vulnerability-db_v6.1.10_2026-11-05T00:20:34Z_1793859666.tar.zst"
       },
       "adapter": {
         "id": "ai-security-scanner:grype",
@@ -2645,7 +2645,7 @@
       }
     },
     "compatibility": {
-      "knowledge_date": "2026-10-14",
+      "knowledge_date": "2026-11-05",
       "support_until": "2027-01-12",
       "maintenance_owner": "teddashh/ai-security-scanner maintainers",
       "update_procedure": "docs/engine-maintenance.md",
@@ -2655,8 +2655,8 @@
       "knowledge_input": {
         "kind": "embedded",
         "identifier": "Grype vulnerability database snapshot",
-        "version": "sha256:8be8779b1b6fd721e6127c092bd25d5875e25cd511def5d9e7d026fb45189058",
-        "acquisition_source": "https://grype.anchore.io/databases/v6/vulnerability-db_v6.1.10_2026-10-14T00:28:57Z_1791959434.tar.zst",
+        "version": "sha256:420d0ac2f976acb4bf46e19bd1779f3043a868a77ca8e9debf18c3d196728344",
+        "acquisition_source": "https://grype.anchore.io/databases/v6/vulnerability-db_v6.1.10_2026-11-05T00:20:34Z_1793859666.tar.zst",
         "pin_state": "pinned_or_not_applicable"
       },
       "wrapper": {
@@ -2842,13 +2842,13 @@
     "distribution_mode": "pull_pinned_image",
     "image": {
       "repository": "ghcr.io/ted-h-com/ai-security-scanner-engine-kubescape",
-      "tag": "4.0.16-1",
-      "digest": "sha256:bb7a8ee72d0bb7b6056b9715da102ae4d8160b0953643390ba5870f2c0bbca20",
+      "tag": "4.0.19-1",
+      "digest": "sha256:d5f6cc5ea7b751a9714d089d181a1d312fa03e52d909be187ec7656fa295d970",
       "signature_identity": "https://github.com/TED-H-com/ai-security-scanner/.github/workflows/engine-images-local-k8s.yml@refs/heads/main"
     },
-    "source_revision": "d0ea07bcd9d7ab1640dcd6527d0e68a34f10da0e",
-    "engine_version": "4.0.16",
-    "rule_version": "f01135a697e6f710c1797bd7cd0d2ea42ec98f9f",
+    "source_revision": "9780473d81b3b3e036408d6323b162a197beee07",
+    "engine_version": "4.0.19",
+    "rule_version": "3065a55568bcf3b5c3d0b19e3f3fec5b404abb4c",
     "adapter_version": "0.2.6",
     "supported_asset_kinds": [
       "kubernetes_cluster"
@@ -2890,19 +2890,19 @@
     },
     "provenance": {
       "engine": {
-        "version": "4.0.16",
+        "version": "4.0.19",
         "source_repository": "https://github.com/kubescape/kubescape",
-        "source_revision": "d0ea07bcd9d7ab1640dcd6527d0e68a34f10da0e",
-        "source_ref": "v4.0.16",
-        "acquisition_source": "https://github.com/kubescape/kubescape/commit/d0ea07bcd9d7ab1640dcd6527d0e68a34f10da0e",
-        "artifact_source_revision": "c989e75e1c3be7e7abad3395dcf5539cf2a96832",
+        "source_revision": "9780473d81b3b3e036408d6323b162a197beee07",
+        "source_ref": "v4.0.19",
+        "acquisition_source": "https://github.com/kubescape/kubescape/commit/9780473d81b3b3e036408d6323b162a197beee07",
+        "artifact_source_revision": "5ba7d2e20f6eb8913aeb3097bed43860451ee522",
         "source_association": "attested_match"
       },
       "rules": {
         "mode": "embedded",
         "identifier": "Kubescape NSA framework and control artifacts",
-        "revision": "f01135a697e6f710c1797bd7cd0d2ea42ec98f9f",
-        "acquisition_source": "https://github.com/kubescape/regolibrary/tree/f01135a697e6f710c1797bd7cd0d2ea42ec98f9f"
+        "revision": "3065a55568bcf3b5c3d0b19e3f3fec5b404abb4c",
+        "acquisition_source": "https://github.com/kubescape/regolibrary/tree/3065a55568bcf3b5c3d0b19e3f3fec5b404abb4c"
       },
       "data": {
         "mode": "runtime_bound",
@@ -2919,7 +2919,7 @@
       }
     },
     "compatibility": {
-      "knowledge_date": "2026-10-14",
+      "knowledge_date": "2026-11-05",
       "support_until": "2027-01-12",
       "maintenance_owner": "teddashh/ai-security-scanner maintainers",
       "update_procedure": "docs/engine-maintenance.md",

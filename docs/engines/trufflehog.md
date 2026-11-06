@@ -4,8 +4,8 @@ Runs TruffleHog's secret detectors over the files of a `repository` snapshot wit
 
 | Item | Value |
 | --- | --- |
-| Upstream | [trufflesecurity/trufflehog](https://github.com/trufflesecurity/trufflehog), version `3.99.2`, source ref `v3.99.2`, revision `e76dff8a7e57d6df0c60ad8cbf5d5cba505a8fc9`. |
-| Image | `ghcr.io/ted-h-com/ai-security-scanner-engine-trufflehog:3.99.2-1` (`plan_kind: managed_build`), published for linux/amd64 and linux/arm64 by [this run](https://github.com/TED-H-com/ai-security-scanner/actions/runs/38696246466) from `c989e75e1c3be7e7abad3395dcf5539cf2a96832`. Exact index/platform digests and verified evidence are in `engines/catalog.json` and `plan.json`. |
+| Upstream | [trufflesecurity/trufflehog](https://github.com/trufflesecurity/trufflehog), version `source@ea68ca03c865c5f324e86e849ced20ed3cf9dbbb`, revision `ea68ca03c865c5f324e86e849ced20ed3cf9dbbb`. Rules/data identities are pinned in `engines/catalog.json`. |
+| Image | `ghcr.io/ted-h-com/ai-security-scanner-engine-trufflehog:3.99.8-1`, published for linux/amd64 and linux/arm64 by [run 42186918847](https://github.com/TED-H-com/ai-security-scanner/actions/runs/42186918847) from `5ba7d2e20f6eb8913aeb3097bed43860451ee522`. Exact digests and verified attestations are in [the publication record](updates/2026-11-06-publications.json). |
 | Build inputs | `engines/images/trufflehog/`: `Dockerfile`, `SOURCE-OFFER.md`, `plan.json`, `testdata/README.md` (the smoke workspace). The source archive is `ADD --checksum`-pinned, `go.sum` is SHA-256-checked, then `go mod verify` and `go build -mod=readonly`. The runtime is `FROM scratch`. |
 | Launcher | [Local launcher](local-launcher.md): the `trufflehog` branch of `planInvocation` |
 | Adapter | `extract_trufflehog` in `src-tauri/src/adapters/mod.rs` |
@@ -73,7 +73,7 @@ Follow [section 4](../engine-maintenance.md#4-updating-an-engine), then:
   - The fixture `src-tauri/tests/fixtures/adapters/trufflehog.jsonl` must keep at least two records.
   - `secret_fields_are_never_selected_by_helpers` in `src-tauri/src/adapters/mod.rs`, and the launcher test `TestTruffleHogIsFilesystemOnlyAndCannotVerify`.
   - The workflow smoke scans `testdata/`, which holds only a README, and checks that each line parses. It proves the image runs, not that a detector fires.
-- **Hard-coded values.** `3.99.2-1` appears in:
+- **Hard-coded values.** Keep managed tag `3.99.8-1`, engine version `source@ea68ca03c865c5f324e86e849ced20ed3cf9dbbb`, source and rule revisions, workflow checks, Dockerfile labels, catalog/plan identity and publication verifier aligned. Preserve dated records and captured fixtures. `support_until` is 2027-01-06.
   - the workflow matrix, catalog `image.tag` and plan `final_artifact.tag`;
   - the Dockerfile version label;
   - `scripts/validate-engine-catalog.mjs`, `scripts/release/verify-publication-artifact.mjs` and `tests/release/verifyPublicationArtifact.test.mjs`.
