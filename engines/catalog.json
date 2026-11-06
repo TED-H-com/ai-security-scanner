@@ -2270,13 +2270,13 @@
     "distribution_mode": "pull_pinned_image",
     "image": {
       "repository": "checkmarx/kics",
-      "tag": "v2.1.20",
-      "digest": "sha256:3e5a268eb8adda2e5a483c9359ddfc4cd520ab856a7076dc0b1d8784a37e2602",
+      "tag": "v2.2.0",
+      "digest": "sha256:ef29dbac14b046b1ef65f3280646112e927a61781c5f01bca1aeb723e0b96003",
       "signature_identity": null
     },
-    "source_revision": "e1f23cad9640f55b963f22a116b04906b8c16ac6",
-    "engine_version": "2.1.20",
-    "rule_version": "e1f23cad9640f55b963f22a116b04906b8c16ac6",
+    "source_revision": "453066aa9c66014ad7aee7dd0149ba1944c78050",
+    "engine_version": "2.2.0",
+    "rule_version": "453066aa9c66014ad7aee7dd0149ba1944c78050",
     "adapter_version": "0.2.6",
     "supported_asset_kinds": [
       "repository",
@@ -2331,19 +2331,19 @@
     },
     "provenance": {
       "engine": {
-        "version": "2.1.20",
+        "version": "2.2.0",
         "source_repository": "https://github.com/Checkmarx/kics",
-        "source_revision": "e1f23cad9640f55b963f22a116b04906b8c16ac6",
-        "source_ref": "v2.1.20",
-        "acquisition_source": "https://github.com/Checkmarx/kics/commit/e1f23cad9640f55b963f22a116b04906b8c16ac6",
-        "artifact_source_revision": "e1f23cad9640f55b963f22a116b04906b8c16ac6",
+        "source_revision": "453066aa9c66014ad7aee7dd0149ba1944c78050",
+        "source_ref": "v2.2.0",
+        "acquisition_source": "https://github.com/Checkmarx/kics/commit/453066aa9c66014ad7aee7dd0149ba1944c78050",
+        "artifact_source_revision": "453066aa9c66014ad7aee7dd0149ba1944c78050",
         "source_association": "attested_match"
       },
       "rules": {
         "mode": "embedded",
         "identifier": "KICS queries",
-        "revision": "e1f23cad9640f55b963f22a116b04906b8c16ac6",
-        "acquisition_source": "https://github.com/Checkmarx/kics/commit/e1f23cad9640f55b963f22a116b04906b8c16ac6"
+        "revision": "453066aa9c66014ad7aee7dd0149ba1944c78050",
+        "acquisition_source": "https://github.com/Checkmarx/kics/commit/453066aa9c66014ad7aee7dd0149ba1944c78050"
       },
       "data": {
         "mode": "runtime_bound",
@@ -2360,7 +2360,7 @@
       }
     },
     "compatibility": {
-      "knowledge_date": "2026-08-24",
+      "knowledge_date": "2026-09-17",
       "support_until": "2026-11-22",
       "maintenance_owner": "teddashh/ai-security-scanner maintainers",
       "update_procedure": "docs/engine-maintenance.md",

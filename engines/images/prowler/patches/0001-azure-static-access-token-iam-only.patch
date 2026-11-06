@@ -351,7 +351,7 @@ index 87bea948aaa6c34d947cac411a1db1e7476961e8..bbfb6d5e54ba193401e24b0e879209de
 +        )
 +    return (True, "")
 diff --git a/prowler/providers/common/provider.py b/prowler/providers/common/provider.py
-index 2e81bad12100ca73fdd3c936bb6ee4e895c490b1..c023408269ba6e1866b39acb1b8ab128c3979a42 100644
+index 7e23b8de7f584c3978467b92cecd8dd15ebe8e96..b1f64d66903b9b7476105bf397626d1871829c78 100644
 --- a/prowler/providers/common/provider.py
 +++ b/prowler/providers/common/provider.py
 @@ -406,9 +406,12 @@ class Provider(ABC):
@@ -704,4 +704,3 @@ index 0000000000000000000000000000000000000000..1bdecf4b2d798098fce41b2ce07b5efd
 +        ]
 +        assert identity.subscriptions == {first_id: "First", second_id: "Second"}
 +        assert identity.identity_type == "Static Access Token"
-

@@ -1,6 +1,6 @@
 # syntax=docker/dockerfile:1.7@sha256:a57df69d0ea827fb7266491f2813635de6f17269be881f696fbfdf2d83dda33e
 
-FROM --platform=$BUILDPLATFORM golang:1.26.3-alpine@sha256:91eda9776261207ea25fd06b5b7fed8d397dd2c0a283e77f2ab6e91bfa71079d AS launcher
+FROM --platform=$BUILDPLATFORM golang:1.26.10-alpine@sha256:87c65a688975c0b1d4585d204874c45ca78354670e3a5f11368c5a492303d696 AS launcher
 
 ARG TARGETOS
 ARG TARGETARCH
@@ -13,7 +13,7 @@ RUN go test ./... && GOOS=${TARGETOS} GOARCH=${TARGETARCH} go build \
     -buildvcs=false -trimpath -ldflags='-s -w -buildid=' \
     -o /out/ai-security-scanner-engine-entrypoint .
 
-FROM --platform=$BUILDPLATFORM golang:1.26.3-alpine@sha256:91eda9776261207ea25fd06b5b7fed8d397dd2c0a283e77f2ab6e91bfa71079d AS build
+FROM --platform=$BUILDPLATFORM golang:1.26.10-alpine@sha256:87c65a688975c0b1d4585d204874c45ca78354670e3a5f11368c5a492303d696 AS build
 
 ARG TARGETOS
 ARG TARGETARCH
@@ -40,7 +40,7 @@ LABEL org.opencontainers.image.title="ai-security-scanner kube-bench engine" \
       org.opencontainers.image.description="Pinned-source kube-bench CIS 1.11 node profile over explicit immutable node-facts snapshots" \
       org.opencontainers.image.source="https://github.com/aquasecurity/kube-bench" \
       org.opencontainers.image.revision="9f133cb7509ce1dbedfc860e94474588000e25ac" \
-      org.opencontainers.image.version="0.16.0-5" \
+      org.opencontainers.image.version="0.16.0-6" \
       org.opencontainers.image.licenses="Apache-2.0"
 
 RUN addgroup -g 65532 scanner \

@@ -1,13 +1,13 @@
 # syntax=docker/dockerfile:1.7@sha256:a57df69d0ea827fb7266491f2813635de6f17269be881f696fbfdf2d83dda33e
 
-FROM ghcr.io/astral-sh/uv:0.10.9@sha256:10902f58a1606787602f303954cea099626a4adb02acbac4c69920fe9d278f82 AS uv
+FROM ghcr.io/astral-sh/uv:0.13.7@sha256:96f40d3904aad8d0bd010539001d36c8e2188b981e1334471a90c4a1d93bb490 AS uv
 
-FROM --platform=$BUILDPLATFORM golang:1.25.10-alpine@sha256:8d22e29d960bc50cd025d93d5b7c7d220b1ee9aa7a239b3c8f55a57e987e8d45 AS launcher
+FROM --platform=$BUILDPLATFORM golang:1.26.10-alpine@sha256:87c65a688975c0b1d4585d204874c45ca78354670e3a5f11368c5a492303d696 AS launcher
 
 ARG TARGETOS
 ARG TARGETARCH
 
-ENV GOMAXPROCS=4 CGO_ENABLED=0 GOTOOLCHAIN=local SOURCE_DATE_EPOCH=1792004586
+ENV GOMAXPROCS=4 CGO_ENABLED=0 GOTOOLCHAIN=local SOURCE_DATE_EPOCH=1793904067
 WORKDIR /src/launcher
 COPY engines/images/local-launcher/go.mod engines/images/local-launcher/main.go engines/images/local-launcher/main_test.go ./
 RUN go test ./... && GOOS=${TARGETOS} GOARCH=${TARGETARCH} go build \
@@ -21,7 +21,7 @@ ENV OPAMYES=1 \
     OPAMROOT=/root/.opam \
     PIP_DISABLE_PIP_VERSION_CHECK=1 \
     PYTHONDONTWRITEBYTECODE=1 \
-    SOURCE_DATE_EPOCH=1792004586 \
+    SOURCE_DATE_EPOCH=1793904067 \
     UV_LINK_MODE=copy
 
 RUN apk add --no-cache \
@@ -30,7 +30,7 @@ RUN apk add --no-cache \
     bzip2-dev=1.0.8-r6 \
     bzip2-static=1.0.8-r6 \
     check-jsonschema=0.28.4-r0 \
-    curl-dev=8.22.0-r0 \
+    curl-dev=8.23.0-r0 \
     elfutils-dev=0.194-r0 \
     git=2.52.0-r0 \
     gmp-dev=6.3.0-r4 \
@@ -43,16 +43,15 @@ RUN apk add --no-cache \
     opam=2.5.2-r0 \
     pcre2-dev=10.49-r0 \
     pcre2-static=10.49-r0 \
-    python3=3.12.15-r0 \
+    python3=3.12.16-r0 \
     rsync=3.5.0-r0 \
     xz-static=5.8.4-r0 \
     zstd-dev=1.5.7-r2 \
     zstd-static=1.5.7-r2
 
-COPY --from=uv /uv /usr/local/bin/uv
 FROM toolchain AS compiler-source
-ADD --checksum=sha256:be58ce9c2b00934cb5907f09483c6848b3777006154c30f62b1d0db624ce4f3e \
-    https://github.com/semgrep/semgrep/archive/72d3525fe7e02f486428386078f192f8c4756804.tar.gz \
+ADD --checksum=sha256:4763f4d36c743866868aefb806877cbf724eda7989c6475fa8827df5c6feb73f \
+    https://github.com/semgrep/semgrep/archive/ac37d1f6e47b17648b8f854d6e2f2d72fade2567.tar.gz \
     /tmp/semgrep-source.tar.gz
 
 RUN mkdir -p /src/semgrep \
@@ -85,11 +84,13 @@ RUN test "${TARGETARCH}" = "amd64" -o "${TARGETARCH}" = "arm64" \
     && make opam-init OPAM_INIT_FLAGS=--disable-sandboxing
 RUN make switch
 RUN make install-deps
-RUN DUNE_JOBS=4 SEMGREP_GIT_COMMIT=72d3525fe7e02f486428386078f192f8c4756804 opam exec -- make core \
-    && install -D -m 0555 _build/default/src/main/Main.exe cli/src/semgrep/bin/semgrep-core \
-    && cd cli \
+RUN DUNE_JOBS=4 SEMGREP_GIT_COMMIT=ac37d1f6e47b17648b8f854d6e2f2d72fade2567 opam exec -- make core \
+    && install -D -m 0555 _build/default/src/main/Main.exe cli/src/semgrep/bin/semgrep-core
+# Python's build tool is independent of the native compiler/parser build.
+COPY --from=uv /uv /usr/local/bin/uv
+RUN cd cli \
     && UV_PROJECT_ENVIRONMENT=/opt/semgrep uv sync --frozen --no-dev --no-editable --python /usr/bin/python3 \
-    && /opt/semgrep/bin/semgrep --version | grep -Fx '1.181.0'
+    && /opt/semgrep/bin/semgrep --version | grep -Fx '1.184.0'
 
 FROM build AS smoke
 COPY --from=rule-pack /tmp/semgrep-rule-pack /tmp/semgrep-rule-pack
@@ -108,8 +109,8 @@ FROM alpine:3.23@sha256:fd791d74b68913cbb027c6546007b3f0d3bc45125f797758156952bc
 LABEL org.opencontainers.image.title="ai-security-scanner Semgrep engine" \
       org.opencontainers.image.description="Semgrep CE with pinned legacy upstream and product offline rules" \
       org.opencontainers.image.source="https://github.com/semgrep/semgrep" \
-      org.opencontainers.image.revision="72d3525fe7e02f486428386078f192f8c4756804" \
-      org.opencontainers.image.version="1.181.0-1" \
+      org.opencontainers.image.revision="ac37d1f6e47b17648b8f854d6e2f2d72fade2567" \
+      org.opencontainers.image.version="1.184.0-1" \
       org.opencontainers.image.licenses="LGPL-2.1-or-later AND LicenseRef-Commons-Clause-1.0 AND Apache-2.0" \
       io.ai-security-scanner.rules-revision="0f5a85ceab1b82b193d0eaa418784c932d237d68" \
       io.ai-security-scanner.rules-count="1497" \
@@ -120,7 +121,7 @@ RUN apk add --no-cache \
     libgcc=15.2.0-r2 \
     libstdc++=15.2.0-r2 \
     py3-setuptools=80.9.0-r2 \
-    python3=3.12.15-r0 \
+    python3=3.12.16-r0 \
     && addgroup -g 65532 scanner \
     && adduser -D -H -u 65532 -G scanner scanner \
     && mkdir -p /workspace /output /opt/ai-security-scanner/semgrep /usr/share/source \
@@ -148,7 +149,7 @@ RUN ln -s /opt/semgrep/bin/semgrep /usr/local/bin/semgrep \
     && find /opt/ai-security-scanner/semgrep/rules -type d -exec chmod 0555 {} + \
     && find /opt/ai-security-scanner/semgrep/rules -type f -exec chmod 0444 {} + \
     && chmod 0444 /opt/ai-security-scanner/semgrep/RULES.sha256 \
-    && /usr/local/bin/semgrep --version | grep -Fx '1.181.0'
+    && /usr/local/bin/semgrep --version | grep -Fx '1.184.0'
 
 ENV HOME="/tmp/ai-security-scanner-home" \
     SEMGREP_ENABLE_VERSION_CHECK="0" \

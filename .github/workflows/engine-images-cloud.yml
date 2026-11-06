@@ -30,7 +30,7 @@ concurrency:
 
 env:
   CLOUD_ENGINE_MATRIX: >-
-    [{"engine":"cloudquery","tag":"2.0.31-aws9.2.0-6","dockerfile":"engines/images/cloudquery/Dockerfile"},{"engine":"prowler","tag":"5.44.0-1","dockerfile":"engines/images/prowler/Dockerfile"},{"engine":"cloudsplaining","tag":"0.9.1-6","dockerfile":"engines/images/cloudsplaining/Dockerfile"},{"engine":"scoutsuite","tag":"5.14.0-6","dockerfile":"engines/images/scoutsuite/Dockerfile"},{"engine":"steampipe","tag":"2.4.7-1","dockerfile":"engines/images/steampipe/Dockerfile"}]
+    [{"engine":"cloudquery","tag":"2.0.31-aws9.2.0-6","dockerfile":"engines/images/cloudquery/Dockerfile"},{"engine":"prowler","tag":"5.47.0-1","dockerfile":"engines/images/prowler/Dockerfile"},{"engine":"cloudsplaining","tag":"0.9.1-6","dockerfile":"engines/images/cloudsplaining/Dockerfile"},{"engine":"scoutsuite","tag":"5.14.0-6","dockerfile":"engines/images/scoutsuite/Dockerfile"},{"engine":"steampipe","tag":"2.4.9-1","dockerfile":"engines/images/steampipe/Dockerfile"}]
 
 jobs:
   changes:
@@ -198,12 +198,12 @@ jobs:
           import hashlib
           from pathlib import Path
           expected = {
-              "prowler/lib/outputs/finding.py": "71d5665f11c27a3dc69660ac61b747264066c6791ba65014c50ba80105902749",
-              "prowler/providers/azure/azure_provider.py": "51cef0e3e7ed819144959f62389d3eb169b97aa37baf37aab66d4c290d21bf14",
-              "prowler/providers/azure/lib/arguments/arguments.py": "afb7c9b47f1b9b2354774579121db4f1c26d6b03112a3d0407fb4f14ad8625af",
-              "prowler/providers/common/provider.py": "bd65d893c106cf47389cd17071f96002e7302706b07ebb17cdca6c10f95f3f27",
-              "prowler/providers/gcp/gcp_provider.py": "c30756aaaa1ce3739c6bf2a023b4ab633656c767f1e6fa1e84ba4ff9fff1c34f",
-              "prowler/providers/gcp/services/cloudresourcemanager/cloudresourcemanager_service.py": "379876877311fe2f4aa17bb9d5b132c85baaf2081210aebf6da59472cc11c9fe",
+              "prowler/lib/outputs/finding.py": "756c9c456cd511d16edc1b6b0180f7aa4e34b66419d1ea3caf73bfe8e5d92a9b",
+              "prowler/providers/azure/azure_provider.py": "8e54390485d31feeb5e114db2c24933f3c73a4f22f2532b5c18583f9520c9cbb",
+              "prowler/providers/azure/lib/arguments/arguments.py": "fc48fdd229d5760f5675f06032e05df8e54ee8777dd04a60aecc093615474068",
+              "prowler/providers/common/provider.py": "1080b11456deb6426307167067a3066ec79c87c7af07bb85dd3c507d6c76a1da",
+              "prowler/providers/gcp/gcp_provider.py": "9ae2691559660ca902ab3b282fb1a5611bb47ca11f3118d34500dac847770c77",
+              "prowler/providers/gcp/services/cloudresourcemanager/cloudresourcemanager_service.py": "029725c008bf0ed0d6c8cdb8ba1a378d40e584dc49ee40e021c4955e4e5688f3",
           }
           root = Path("/home/prowler")
           assert all(hashlib.sha256((root / path).read_bytes()).hexdigest() == digest for path, digest in expected.items())

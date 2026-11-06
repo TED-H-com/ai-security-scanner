@@ -23,8 +23,8 @@
       "id": "Checkmarx/kics",
       "path": ".upstreams/Checkmarx/kics",
       "remote": "https://github.com/Checkmarx/kics",
-      "branch": "master",
-      "revision": "1f05308bc1f1068c41cdc3cb5a3c2d99732c56fd",
+      "branch": "",
+      "revision": "453066aa9c66014ad7aee7dd0149ba1944c78050",
       "shallow": true
     },
     {
@@ -128,7 +128,7 @@
       "path": ".upstreams/bridgecrewio/checkov",
       "remote": "https://github.com/bridgecrewio/checkov",
       "branch": "",
-      "revision": "e40023ab262c7c8b7b0a8f0975072b42d1b601f9",
+      "revision": "5038a50e21a2253cb5aed2e739d2c22ee28d2e17",
       "shallow": true
     },
     {
@@ -288,7 +288,7 @@
       "path": ".upstreams/kubescape/kubescape",
       "remote": "https://github.com/kubescape/kubescape",
       "branch": "",
-      "revision": "d0ea07bcd9d7ab1640dcd6527d0e68a34f10da0e",
+      "revision": "9780473d81b3b3e036408d6323b162a197beee07",
       "shallow": true
     },
     {
@@ -359,8 +359,8 @@
       "id": "projectdiscovery/naabu",
       "path": ".upstreams/projectdiscovery/naabu",
       "remote": "https://github.com/projectdiscovery/naabu",
-      "branch": "dev",
-      "revision": "506cf6a8291feff6f29a8d7eb10ee40155651b44",
+      "branch": "",
+      "revision": "041b70fd396e95b5ed2c19f879c18247078243bc",
       "shallow": true
     },
     {
@@ -392,7 +392,7 @@
       "path": ".upstreams/prowler-cloud/prowler",
       "remote": "https://github.com/prowler-cloud/prowler",
       "branch": "",
-      "revision": "499fd637f3393b485833b08cdaf4172917c5698e",
+      "revision": "555a4cc469907e26ef007eb79af2b6cb4bddd6c6",
       "shallow": true
     },
     {
@@ -464,7 +464,7 @@
       "path": ".upstreams/trufflesecurity/trufflehog",
       "remote": "https://github.com/trufflesecurity/trufflehog",
       "branch": "",
-      "revision": "e76dff8a7e57d6df0c60ad8cbf5d5cba505a8fc9",
+      "revision": "ea68ca03c865c5f324e86e849ced20ed3cf9dbbb",
       "shallow": true
     },
     {
@@ -488,7 +488,7 @@
       "path": ".upstreams/turbot/steampipe",
       "remote": "https://github.com/turbot/steampipe",
       "branch": "",
-      "revision": "5c62651887b3e1d127049722e7216b915d4b075d",
+      "revision": "4269e1dc4865647605da6af8f1828e77278106a0",
       "shallow": true
     },
     {
@@ -496,7 +496,7 @@
       "path": ".upstreams/turbot/steampipe-plugin-aws",
       "remote": "https://github.com/turbot/steampipe-plugin-aws",
       "branch": "",
-      "revision": "6e79b2dece502bc198310b39bd54bc95d2842c99",
+      "revision": "bb6992d4748caab938e2c691be977d6610fc1fab",
       "shallow": true
     },
     {
@@ -504,7 +504,7 @@
       "path": ".upstreams/turbot/steampipe-postgres-fdw",
       "remote": "https://github.com/turbot/steampipe-postgres-fdw",
       "branch": "",
-      "revision": "6d1d957d1330582b7af34064eaa9f8fa196d2918",
+      "revision": "cb70e9a38242064750a98dda75a07a539ab0aee8",
       "shallow": true
     },
     {

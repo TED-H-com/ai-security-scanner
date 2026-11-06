@@ -15,26 +15,26 @@ if (!new Set(["all", "semgrep", "trivy", "grype"]).has(requested) || process.arg
 
 const trivyDatabase = {
   repository: "aquasecurity/trivy-db",
-  manifest: "sha256:4bf3ae89527fbbb3596748b1c9d294a8b240c49edc9f87e65947e42291bb0bf6",
-  layer: "sha256:c6b2db527f049abfef0b2ea48e8ee38d7c5475c94612072b5eeca54c18fcb90b",
-  size: 135417365,
+  manifest: "sha256:fb417a88061be7d8c246c61cd56e73c91040574fb8cb7b74c48f7a2ea5c2f92f",
+  layer: "sha256:c367ecccf6a0367b915ef00b90c43e5958f9ecd9ee6118d2876af6deeca8523c",
+  size: 138781380,
   mediaType: "application/vnd.aquasec.trivy.db.layer.v1.tar+gzip",
   title: "db.tar.gz",
   output: resolve(root, ".engine-cache/offline/trivy/db.tar.gz"),
 };
 const trivyJavaDatabase = {
   repository: "aquasecurity/trivy-java-db",
-  manifest: "sha256:a805d22ec39082e3d0910a6c37ae4e85c666248293add991d2d2bf82237323a5",
-  layer: "sha256:35c8f473bb7485db657c022eee43404fda3684fc3c0341aef3598db6016c28ca",
-  size: 987054496,
+  manifest: "sha256:a48270d8181f59baed801e34d73e0857558570c51c9a582eaa3999e897c210e4",
+  layer: "sha256:c6a199cdfd2022f0e4792f9de59b63228d63b904df5858afb1873214427d2a44",
+  size: 995358342,
   mediaType: "application/vnd.aquasec.trivy.javadb.layer.v1.tar+gzip",
   title: "javadb.tar.gz",
   output: resolve(root, ".engine-cache/offline/trivy/java-db.tar.gz"),
 };
 const grype = {
-  url: "https://grype.anchore.io/databases/v6/vulnerability-db_v6.1.10_2026-10-14T00:28:57Z_1791959434.tar.zst",
-  digest: "sha256:30d8bcd3c09e03c9f734c522e104c1387e285e3f6e33da2ee7b55f521daadb3f",
-  size: 189997199,
+  url: "https://grype.anchore.io/databases/v6/vulnerability-db_v6.1.10_2026-11-05T00:20:34Z_1793859666.tar.zst",
+  digest: "sha256:9fbc8d8f2428cd715ffc9591cce16c4179955a7f45c76c12fbcb9cea8dc93813",
+  size: 198222678,
   output: resolve(root, ".engine-cache/offline/grype/db.tar.zst"),
 };
 

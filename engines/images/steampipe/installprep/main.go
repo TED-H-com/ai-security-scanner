@@ -18,9 +18,11 @@ import (
 const (
 	databaseVersion = "14.19.0"
 	databaseDigest  = "sha256:84264ef41853178707bccb091f5450c22e835f8a98f9961592c75690321093d9"
-	fdwVersion      = "2.2.7"
-	fdwDigest       = "sha256:28756ddfef21169f73e94129cabd51ef15ef81a266eaee8b302f5ec7cc1d8f4b"
-	maxTreeBytes    = int64(512 * 1024 * 1024)
+	fdwVersion      = "2.2.9"
+	fdwDigest       = "sha256:161e9b5e0696e66d77e94e2f9a0ee90d6e2a597b2069d1e488846e78a0b295f8"
+	// Bound the bundled PostgreSQL, FDW and AWS plugin tree independently of
+	// scan output. The updated AWS plugin no longer fits the former 512 MiB cap.
+	maxTreeBytes = int64(768 * 1024 * 1024)
 )
 
 type installedVersion struct {
@@ -101,9 +103,9 @@ func run(arguments []string) error {
 	}
 	metadata := provenance{
 		SchemaVersion:     "1.0.0",
-		SteampipeRevision: "5c62651887b3e1d127049722e7216b915d4b075d",
-		AWSPluginRevision: "d9a877878061013a49799c17b932616ee0ea415b",
-		FDWRevision:       "290169e3e104eca604e9013159423027f6477d21",
+		SteampipeRevision: "4269e1dc4865647605da6af8f1828e77278106a0",
+		AWSPluginRevision: "bb6992d4748caab938e2c691be977d6610fc1fab",
+		FDWRevision:       "cb70e9a38242064750a98dda75a07a539ab0aee8",
 		DatabaseDigest:    databaseDigest,
 		FDWDigest:         fdwDigest,
 		AWSPluginSHA256:   pluginDigest,
@@ -140,7 +142,7 @@ func verifyDownloadedVersions(root string) error {
 		versions.EmbeddedDB.InstalledFrom != "ghcr.io/turbot/steampipe/db:14.19.0" ||
 		versions.FdwExtension.Version != fdwVersion ||
 		versions.FdwExtension.ImageDigest != fdwDigest ||
-		versions.FdwExtension.InstalledFrom != "ghcr.io/turbot/steampipe/fdw:2.2.7" {
+		versions.FdwExtension.InstalledFrom != "ghcr.io/turbot/steampipe/fdw:2.2.9" {
 		return errors.New("downloaded database or FDW provenance is not the exact release closure")
 	}
 	return nil
@@ -227,7 +229,7 @@ func writeStableVersions(root string, epoch time.Time) error {
 	versions := databaseVersions{
 		FdwExtension: installedVersion{
 			Name: "fdwExtension", Version: fdwVersion, ImageDigest: fdwDigest,
-			InstalledFrom:   "ghcr.io/turbot/steampipe/fdw:2.2.7",
+			InstalledFrom:   "ghcr.io/turbot/steampipe/fdw:2.2.9",
 			LastCheckedDate: timestamp, InstallDate: timestamp,
 		},
 		EmbeddedDB: installedVersion{
@@ -261,7 +263,7 @@ func validateTree(root string) error {
 		if info.Mode().IsRegular() {
 			total += info.Size()
 			if info.Size() > maxTreeBytes || total > maxTreeBytes {
-				return errors.New("template exceeds its 512 MiB build bound")
+				return errors.New("template exceeds its 768 MiB build bound")
 			}
 		}
 		return nil

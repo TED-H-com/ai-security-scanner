@@ -138,7 +138,7 @@ const managedLocalK8sContracts = new Map([
     ],
   }],
   ["semgrep", {
-    tag: "1.181.0-1",
+    tag: "1.184.0-1",
     planKind: "managed_build",
     license: { disposition: "source_offer", sourceOfferPath: "engines/images/semgrep/SOURCE-OFFER.md" },
     immutableDockerfileInputs: [
@@ -253,7 +253,7 @@ const managedLocalK8sContracts = new Map([
     ],
   }],
   ["trufflehog", {
-    tag: "3.99.2-1",
+    tag: "3.99.8-1",
     planKind: "managed_build",
     license: { disposition: "source_offer", sourceOfferPath: "engines/images/trufflehog/SOURCE-OFFER.md" },
     immutableDockerfileInputs: [
@@ -263,31 +263,31 @@ const managedLocalK8sContracts = new Map([
     ],
   }],
   ["trivy", {
-    tag: "0.76.1-1",
+    tag: "0.76.2-1",
     planKind: "managed_build",
     license: { disposition: "allow", sourceOfferPath: null },
     immutableLauncherInputs: [
       'outputPath:  "/output/trivy-individual-packages.json"',
       '"rootfs", "--cache-dir", "/opt/ai-security-scanner/trivy-cache"',
       'verifyFile("/opt/ai-security-scanner/trivy-cache/java-db/trivy-java.db", trivyJavaDBSHA256, maxImmutableBytes)',
-      'trivyJavaDBSHA256           = "24d6c783ce89260282c46886b2dab64a69b7fcc31dae4447ed67194b38f77770"',
-      'trivyJavaMetadataSHA256     = "1b91db7182eda1c8b74db15a4b515238617c5e179d9d1623b82ff0af4a8b4ee2"',
+      'trivyJavaDBSHA256           = "7124b5d89aa910c1c79b7cbdd35903ab940762f6ebb27729e558fb197f9ae1db"',
+      'trivyJavaMetadataSHA256     = "c10e4a4075e50263d6cf0e97465de3b6aa1b998051348a4cf1d70ffe51e9e441"',
     ],
     immutableDockerfileInputs: [
       "go mod verify",
       "go build -mod=readonly",
       "COPY .engine-cache/offline/trivy/db.tar.gz /tmp/trivy-db.tar.gz",
       "COPY .engine-cache/offline/trivy/java-db.tar.gz /tmp/trivy-java-db.tar.gz",
-      "35c8f473bb7485db657c022eee43404fda3684fc3c0341aef3598db6016c28ca  /tmp/trivy-java-db.tar.gz",
-      "24d6c783ce89260282c46886b2dab64a69b7fcc31dae4447ed67194b38f77770  /rootfs/opt/ai-security-scanner/trivy-cache/java-db/trivy-java.db",
-      "1b91db7182eda1c8b74db15a4b515238617c5e179d9d1623b82ff0af4a8b4ee2  /rootfs/opt/ai-security-scanner/trivy-cache/java-db/metadata.json",
+      "c6a199cdfd2022f0e4792f9de59b63228d63b904df5858afb1873214427d2a44  /tmp/trivy-java-db.tar.gz",
+      "7124b5d89aa910c1c79b7cbdd35903ab940762f6ebb27729e558fb197f9ae1db  /rootfs/opt/ai-security-scanner/trivy-cache/java-db/trivy-java.db",
+      "c10e4a4075e50263d6cf0e97465de3b6aa1b998051348a4cf1d70ffe51e9e441  /rootfs/opt/ai-security-scanner/trivy-cache/java-db/metadata.json",
       "COPY engines/images/trivy/DATABASE-NOTICE.md /usr/share/licenses/trivy/DATABASE-NOTICE.md",
-      'io.ai-security-scanner.java-database-manifest="sha256:a805d22ec39082e3d0910a6c37ae4e85c666248293add991d2d2bf82237323a5"',
+      'io.ai-security-scanner.java-database-manifest="sha256:a48270d8181f59baed801e34d73e0857558570c51c9a582eaa3999e897c210e4"',
       'TRIVY_CACHE_DIR="/opt/ai-security-scanner/trivy-cache"',
     ],
   }],
   ["grype", {
-    tag: "0.120.1-1",
+    tag: "0.121.2-1",
     planKind: "managed_build",
     license: { disposition: "allow", sourceOfferPath: null },
     immutableDockerfileInputs: [
@@ -300,7 +300,7 @@ const managedLocalK8sContracts = new Map([
     ],
   }],
   ["kubescape", {
-    tag: "4.0.16-1",
+    tag: "4.0.19-1",
     planKind: "managed_build",
     license: { disposition: "allow", sourceOfferPath: null },
     immutableDockerfileInputs: [

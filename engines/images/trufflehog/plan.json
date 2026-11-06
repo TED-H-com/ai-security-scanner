@@ -2,30 +2,30 @@
   "schema_version": "1.0.0",
   "engine_id": "trufflehog",
   "plan_kind": "managed_build",
-  "knowledge_date": "2026-10-08",
+  "knowledge_date": "2026-11-02",
   "support_until": "2027-01-06",
   "maintenance_owner": "teddashh/ai-security-scanner maintainers",
   "update_procedure": "docs/engine-maintenance.md",
-  "publish_state": "published_managed_artifact",
+  "publish_state": "publication_in_progress",
   "source": {
     "repository": "https://github.com/trufflesecurity/trufflehog",
-    "revision": "e76dff8a7e57d6df0c60ad8cbf5d5cba505a8fc9",
-    "acquisition_source": "https://github.com/trufflesecurity/trufflehog/commit/e76dff8a7e57d6df0c60ad8cbf5d5cba505a8fc9",
+    "revision": "ea68ca03c865c5f324e86e849ced20ed3cf9dbbb",
+    "acquisition_source": "https://github.com/trufflesecurity/trufflehog/commit/ea68ca03c865c5f324e86e849ced20ed3cf9dbbb",
     "local_research_checkout": ".upstreams/trufflesecurity/trufflehog"
   },
   "verified_upstream_artifact": null,
   "final_artifact": {
     "repository": "ghcr.io/ted-h-com/ai-security-scanner-engine-trufflehog",
-    "tag": "3.99.2-1",
-    "digest": "sha256:691259f07fbc289dba87d9b365c2e001bc1a9a21fb7353089a95739f5d968212"
+    "tag": "3.99.8-1",
+    "digest": null
   },
   "build_recipe": {
-    "source_revision": "e76dff8a7e57d6df0c60ad8cbf5d5cba505a8fc9",
+    "source_revision": "ea68ca03c865c5f324e86e849ced20ed3cf9dbbb",
     "source_archive": {
-      "url": "https://github.com/trufflesecurity/trufflehog/archive/e76dff8a7e57d6df0c60ad8cbf5d5cba505a8fc9.tar.gz",
-      "sha256": "sha256:f288dd98b57cc8ae2dcce2b4c20c8242e6439767ae769714b00d0cafa21fc80f"
+      "url": "https://github.com/trufflesecurity/trufflehog/archive/ea68ca03c865c5f324e86e849ced20ed3cf9dbbb.tar.gz",
+      "sha256": "sha256:218facf110829b3e01d33f1b642edc9c6bfde692041f0cebefd4daaf5326ff1c"
     },
-    "source_date_epoch": 1791467529,
+    "source_date_epoch": 1793644548,
     "target_platforms": [
       "linux/amd64",
       "linux/arm64"
@@ -38,8 +38,8 @@
     "base_images": [
       {
         "repository": "golang",
-        "tag": "1.25.10-alpine",
-        "digest": "sha256:8d22e29d960bc50cd025d93d5b7c7d220b1ee9aa7a239b3c8f55a57e987e8d45"
+        "tag": "1.26.10-alpine",
+        "digest": "sha256:87c65a688975c0b1d4585d204874c45ca78354670e3a5f11368c5a492303d696"
       }
     ],
     "static_steps": [
@@ -51,19 +51,23 @@
         "/out/trufflehog",
         "."
       ]
-    ]
+    ],
+    "dependency_lock": {
+      "path": "go.sum",
+      "sha256": "sha256:6651871edd06ebcd45bfe4dfacd5d2f26ec24666d5368cbd74e7a5a0d0e67eae"
+    }
   },
   "dockerfile": {
     "emitted": true,
     "path": "engines/images/trufflehog/Dockerfile",
-    "sha256": "sha256:5528667369d231723bf115a44d15b8961eba541959b5c6aeeecd2414754b40e6",
+    "sha256": "sha256:000fc6f3cb00331e8b3267ea0870d2f278f89d0e1a90ce40455ce7ad7d676713",
     "reason": null
   },
   "wrapper": {
     "required": true,
     "strategy": "Accept only a fixed filesystem scan contract through the project-owned launcher; credential verification and network access remain disabled.",
     "entrypoint": "/usr/local/bin/ai-security-scanner-engine-entrypoint",
-    "launcher_sha256": "sha256:cbb21bd585184a6d43ebdee25b6864d0528510299facccfdceb53db187bb4d7a"
+    "launcher_sha256": "sha256:3d9b91f1c9f75edc3e46b3c311d34c04018ba4a10adb52c43c8d325784938394"
   },
   "command": [
     "--engine",
@@ -97,7 +101,13 @@
     "updates": false,
     "telemetry": false
   },
-  "publication": {
+  "publication": null,
+  "previous_artifact": {
+    "repository": "ghcr.io/ted-h-com/ai-security-scanner-engine-trufflehog",
+    "tag": "3.99.2-1",
+    "digest": "sha256:691259f07fbc289dba87d9b365c2e001bc1a9a21fb7353089a95739f5d968212"
+  },
+  "previous_publication": {
     "workflow_run": "https://github.com/TED-H-com/ai-security-scanner/actions/runs/38696246466",
     "source_revision": "c989e75e1c3be7e7abad3395dcf5539cf2a96832",
     "platforms": [
@@ -111,5 +121,41 @@
     "anonymous_pull_verified": true,
     "evidence_artifact": "trufflehog-image-evidence-38696246466-2",
     "managed_smoke_evidence_sha256": "sha256:c2a051c1bb2945ab64bd1431338e5773925298a42d23f93848b0095bc19025ea"
+  },
+  "upstream_update": {
+    "engine_version": "source@ea68ca03c865c5f324e86e849ced20ed3cf9dbbb",
+    "reported_version": "3.99.8",
+    "source_revision": "ea68ca03c865c5f324e86e849ced20ed3cf9dbbb",
+    "rule_version": "ea68ca03c865c5f324e86e849ced20ed3cf9dbbb",
+    "knowledge_date": "2026-11-02",
+    "support_until": "2027-01-06",
+    "engine_provenance": {
+      "version": "source@ea68ca03c865c5f324e86e849ced20ed3cf9dbbb",
+      "source_repository": "https://github.com/trufflesecurity/trufflehog",
+      "source_revision": "ea68ca03c865c5f324e86e849ced20ed3cf9dbbb",
+      "source_ref": "v3.99.8",
+      "acquisition_source": "https://github.com/trufflesecurity/trufflehog/commit/ea68ca03c865c5f324e86e849ced20ed3cf9dbbb",
+      "artifact_source_revision": null,
+      "source_association": "source_build_required"
+    },
+    "rules_provenance": {
+      "mode": "embedded",
+      "identifier": "TruffleHog detectors",
+      "revision": "ea68ca03c865c5f324e86e849ced20ed3cf9dbbb",
+      "acquisition_source": "https://github.com/trufflesecurity/trufflehog/commit/ea68ca03c865c5f324e86e849ced20ed3cf9dbbb"
+    },
+    "data_provenance": {
+      "mode": "runtime_bound",
+      "identifier": "repository or filesystem snapshot",
+      "revision": "case_artifact_sha256",
+      "acquisition_source": "assessment_case"
+    },
+    "knowledge_input": {
+      "kind": "runtime_bound",
+      "identifier": "repository or filesystem snapshot",
+      "version": "case_artifact_sha256",
+      "acquisition_source": "assessment_case",
+      "pin_state": "runtime_bound"
+    }
   }
 }

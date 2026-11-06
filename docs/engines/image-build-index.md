@@ -1,10 +1,10 @@
 # Engine image build and update notebook
 
-Recipe and patch records reviewed on 2026-10-03, with the [October 14 upstream source refresh](updates/2026-10-14.md) incorporated below. The earlier maintenance baseline is `38f912f`. This index describes the recipes that exist; it does not certify that every current recipe builds or matches its published image. The per-engine pages contain the detailed invocation, adapter fields, fixtures, downstream changes and incident history.
+Latest source-maintenance review: [November 6 upstream refresh](updates/2026-11-06.md), including all 25 release checks, updated recipes/data, native results and retained versions. The [October 14 refresh](updates/2026-10-14.md) records the earlier published batch; the original maintenance baseline is `38f912f`. This index describes the recipes that exist; it does not certify that every current recipe builds or matches its published image. The per-engine pages contain the detailed invocation, adapter fields, fixtures, downstream changes and incident history.
 
 There are **25 catalog engines with 25 distinct primary upstream repositories**, **23 scanner Dockerfiles**, and **one additional egress gateway Dockerfile**. KICS and ZAP use upstream images. Garak has a published and independently verified dedicated HTTPS model-probe image. Agentic Radar has a published and independently verified dedicated offline image. Plugins, rule repositories, Semgrep submodules, PowerShell modules, feeds, vulnerability databases and toolchains add more upstream inputs; 25 is not the count of the complete dependency closure.
 
-The checked-in Semgrep lock now declares **one additional repository URL**, the reviewed legacy rules archive, disjoint from those 25 primary URLs: **26 declared repositories** before counting the other engines' secondary sources or package dependencies. Semgrep 1.181.0 vendors the 35 compiler/parser source trees previously acquired separately. This count describes source acquisition; the vendored components and their notices remain part of the dependency closure.
+The checked-in Semgrep lock now declares **one additional repository URL**, the reviewed legacy rules archive, disjoint from those 25 primary URLs: **26 declared repositories** before counting the other engines' secondary sources or package dependencies. Semgrep 1.184.0 vendors the 35 compiler/parser source trees previously acquired separately. This count describes source acquisition; the vendored components and their notices remain part of the dependency closure.
 
 ## Start an update here
 

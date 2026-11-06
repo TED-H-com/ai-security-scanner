@@ -13,10 +13,10 @@ import sys
 import tarfile
 
 
-SOURCE_REVISION = "e40023ab262c7c8b7b0a8f0975072b42d1b601f9"
-SOURCE_ARCHIVE_SHA256 = "5f6f20199994878d8af30c85e992339f3d4014fcae831b4537e64ecf209e5b96"
+SOURCE_REVISION = "5038a50e21a2253cb5aed2e739d2c22ee28d2e17"
+SOURCE_ARCHIVE_SHA256 = "a6009e78327b8be1bc160783974b64e69c3c1347e22ad0b60ef82bdd90c56211"
 PIPFILE_LOCK_SHA256 = "f51eb3c9693670743a8be18191e44bcacf80f21e68cdfdb86dc00b0017df7995"
-SOURCE_DATE_EPOCH = 1_791_891_584
+SOURCE_DATE_EPOCH = 1_793_640_074
 EXPECTED_DEPENDENCIES = 99
 NAME_PATTERN = re.compile(r"^[a-z0-9][a-z0-9._-]*$")
 VERSION_PATTERN = re.compile(r"^==[^\s;]+$")
@@ -93,7 +93,7 @@ def render_requirements(source: Path, destination: Path) -> None:
         "hashes": ["sha256:772353c949a131b7b5efd2b20473e0128af9c25ea27cdb15a3a6a6727ca73c4e"],
     }
     lines = [
-        "# Generated from Checkov 3.3.29 Pipfile.lock.",
+        "# Generated from Checkov 3.4.3 Pipfile.lock.",
         "# Corrected bc-detect-secrets to 1.5.52 as required by the pinned setup.py/Pipfile.",
         f"# source-revision: {SOURCE_REVISION}",
         f"# pipfile-lock-sha256: {PIPFILE_LOCK_SHA256}",

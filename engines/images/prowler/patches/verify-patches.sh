@@ -3,7 +3,7 @@ set -euo pipefail
 
 export LC_ALL=C
 
-readonly PIN="499fd637f3393b485833b08cdaf4172917c5698e"
+readonly PIN="555a4cc469907e26ef007eb79af2b6cb4bddd6c6"
 readonly PATCH_DIR="$(CDPATH= cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 readonly PYTHON="${PYTHON:-python3}"
 readonly EXPECTED_SERIES=$'0001-azure-static-access-token-iam-only.patch\n0002-gcp-exact-project-lookups.patch\n0003-gcp-disable-ambient-organization-search.patch\n0004-gcp-disable-provider-organization-lookup.patch\n0005-azure-disable-tenant-enumeration.patch\n0006-azure-require-enabled-subscription.patch'
@@ -26,7 +26,7 @@ fi
 expected_patch_digest() {
   case "$1" in
     0001-azure-static-access-token-iam-only.patch)
-      printf '%s\n' '053ef441588b6bff99aef8a568f2617d8933a46449d2f9c2804b796c7a39566a'
+      printf '%s\n' '4298dc64c7cbde55b11b3058dbecadba85e017f51d52aff9fa5abc60535cc29d'
       ;;
     0002-gcp-exact-project-lookups.patch)
       printf '%s\n' '7a22e58b3c700813e3b7e814dd04254dd90ddbdbdfbccd917c3b477e487c2fcb'
@@ -38,7 +38,7 @@ expected_patch_digest() {
       printf '%s\n' 'ffef7b02808bbb85f1f7d28ab3c453237b33cde45729daa51feb37633e1fd79a'
       ;;
     0005-azure-disable-tenant-enumeration.patch)
-      printf '%s\n' '00f40971d80137612b5327a8b7e31de6b05b08dd8239f1bd635339ae6325f80b'
+      printf '%s\n' 'f6420c4ef32cf9ae0d6871eb76cb2d550584b18567d485a0da5f4d86b7a19bb8'
       ;;
     0006-azure-require-enabled-subscription.patch)
       printf '%s\n' '47b4202cdfe545b699fbe0b0dfc3e5d249d94e9d00cf7d61388405071e5aaeba'

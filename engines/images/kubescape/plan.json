@@ -2,30 +2,30 @@
   "schema_version": "1.0.0",
   "engine_id": "kubescape",
   "plan_kind": "managed_build",
-  "knowledge_date": "2026-10-14",
+  "knowledge_date": "2026-11-05",
   "support_until": "2027-01-12",
   "maintenance_owner": "teddashh/ai-security-scanner maintainers",
   "update_procedure": "docs/engine-maintenance.md",
-  "publish_state": "published_managed_artifact",
+  "publish_state": "publication_in_progress",
   "source": {
     "repository": "https://github.com/kubescape/kubescape",
-    "revision": "d0ea07bcd9d7ab1640dcd6527d0e68a34f10da0e",
-    "acquisition_source": "https://github.com/kubescape/kubescape/commit/d0ea07bcd9d7ab1640dcd6527d0e68a34f10da0e",
+    "revision": "9780473d81b3b3e036408d6323b162a197beee07",
+    "acquisition_source": "https://github.com/kubescape/kubescape/commit/9780473d81b3b3e036408d6323b162a197beee07",
     "local_research_checkout": ".upstreams/kubescape/kubescape"
   },
   "verified_upstream_artifact": null,
   "final_artifact": {
     "repository": "ghcr.io/ted-h-com/ai-security-scanner-engine-kubescape",
-    "tag": "4.0.16-1",
-    "digest": "sha256:bb7a8ee72d0bb7b6056b9715da102ae4d8160b0953643390ba5870f2c0bbca20"
+    "tag": "4.0.19-1",
+    "digest": null
   },
   "build_recipe": {
-    "source_revision": "d0ea07bcd9d7ab1640dcd6527d0e68a34f10da0e",
+    "source_revision": "9780473d81b3b3e036408d6323b162a197beee07",
     "source_archive": {
-      "url": "https://github.com/kubescape/kubescape/archive/d0ea07bcd9d7ab1640dcd6527d0e68a34f10da0e.tar.gz",
-      "sha256": "sha256:139f676aa5047582ad528adf4eff9cad5cc0e05a36c53c66e7842b85f60f2b06"
+      "url": "https://github.com/kubescape/kubescape/archive/9780473d81b3b3e036408d6323b162a197beee07.tar.gz",
+      "sha256": "sha256:3135fb7adadcd63ac6483efb8ce9b742cfe7567b6dbac7b8f92d8e4174835ae3"
     },
-    "source_date_epoch": 1791974598,
+    "source_date_epoch": 1793880748,
     "target_platforms": [
       "linux/amd64",
       "linux/arm64"
@@ -38,8 +38,8 @@
     "base_images": [
       {
         "repository": "golang",
-        "tag": "1.26.8-alpine",
-        "digest": "sha256:8ac98ca534ac3f51e1f420a1dd2c15e74c75cfa0f23f3ad27eb5d7236c349a0c"
+        "tag": "1.27.3-alpine",
+        "digest": "sha256:fa3d596898d9f126af7c01d14ee7597bab3f39cccf392ef36b69fe77cd681f18"
       }
     ],
     "static_steps": [
@@ -49,19 +49,23 @@
         "-mod=readonly",
         "-trimpath"
       ]
-    ]
+    ],
+    "dependency_lock": {
+      "path": "go.sum",
+      "sha256": "sha256:50ca6dbe42fbd7f888d2f0291eec1d474fbd3c837973f2c3145a667afd1759f6"
+    }
   },
   "dockerfile": {
     "emitted": true,
     "path": "engines/images/kubescape/Dockerfile",
-    "sha256": "sha256:a869119573a3134a7a65b11b9e0a5307cdb691f71eaa76eb6884e72880439117",
+    "sha256": "sha256:1f16ecfefac60b326249ee657432dae6c640ce2b303123772b37205bddacd20f",
     "reason": null
   },
   "wrapper": {
     "required": true,
     "strategy": "Invoke the pinned source build through the project-owned launcher against explicit local manifests and embedded framework artifacts.",
     "entrypoint": "/usr/local/bin/ai-security-scanner-engine-entrypoint",
-    "launcher_sha256": "sha256:cbb21bd585184a6d43ebdee25b6864d0528510299facccfdceb53db187bb4d7a"
+    "launcher_sha256": "sha256:3d9b91f1c9f75edc3e46b3c311d34c04018ba4a10adb52c43c8d325784938394"
   },
   "command": [
     "--engine",
@@ -95,7 +99,13 @@
     "updates": false,
     "telemetry": false
   },
-  "publication": {
+  "publication": null,
+  "previous_artifact": {
+    "repository": "ghcr.io/ted-h-com/ai-security-scanner-engine-kubescape",
+    "tag": "4.0.16-1",
+    "digest": "sha256:bb7a8ee72d0bb7b6056b9715da102ae4d8160b0953643390ba5870f2c0bbca20"
+  },
+  "previous_publication": {
     "workflow_run": "https://github.com/TED-H-com/ai-security-scanner/actions/runs/38696246466",
     "source_revision": "c989e75e1c3be7e7abad3395dcf5539cf2a96832",
     "platforms": [
@@ -109,5 +119,41 @@
     "anonymous_pull_verified": true,
     "evidence_artifact": "kubescape-image-evidence-38696246466-2",
     "managed_smoke_evidence_sha256": "sha256:ee56ef886797654532cc7b1f1b33e065bf8b1fd93fb8f26220e10fa6be154177"
+  },
+  "upstream_update": {
+    "engine_version": "4.0.19",
+    "reported_version": null,
+    "source_revision": "9780473d81b3b3e036408d6323b162a197beee07",
+    "rule_version": "3065a55568bcf3b5c3d0b19e3f3fec5b404abb4c",
+    "knowledge_date": "2026-11-05",
+    "support_until": "2027-01-12",
+    "engine_provenance": {
+      "version": "4.0.19",
+      "source_repository": "https://github.com/kubescape/kubescape",
+      "source_revision": "9780473d81b3b3e036408d6323b162a197beee07",
+      "source_ref": "v4.0.19",
+      "acquisition_source": "https://github.com/kubescape/kubescape/commit/9780473d81b3b3e036408d6323b162a197beee07",
+      "artifact_source_revision": null,
+      "source_association": "source_build_required"
+    },
+    "rules_provenance": {
+      "mode": "embedded",
+      "identifier": "Kubescape NSA framework and control artifacts",
+      "revision": "3065a55568bcf3b5c3d0b19e3f3fec5b404abb4c",
+      "acquisition_source": "https://github.com/kubescape/regolibrary/tree/3065a55568bcf3b5c3d0b19e3f3fec5b404abb4c"
+    },
+    "data_provenance": {
+      "mode": "runtime_bound",
+      "identifier": "Kubernetes manifest snapshot",
+      "revision": "case_artifact_sha256",
+      "acquisition_source": "assessment_case"
+    },
+    "knowledge_input": {
+      "kind": "runtime_bound",
+      "identifier": "Kubernetes manifest snapshot",
+      "version": "case_artifact_sha256",
+      "acquisition_source": "assessment_case",
+      "pin_state": "runtime_bound"
+    }
   }
 }

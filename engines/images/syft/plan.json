@@ -2,30 +2,30 @@
   "schema_version": "1.0.0",
   "engine_id": "syft",
   "plan_kind": "managed_rebase",
-  "knowledge_date": "2026-10-06",
+  "knowledge_date": "2026-11-05",
   "support_until": "2027-01-04",
   "maintenance_owner": "teddashh/ai-security-scanner maintainers",
   "update_procedure": "docs/engine-maintenance.md",
-  "publish_state": "published_managed_artifact",
+  "publish_state": "publication_in_progress",
   "source": {
     "repository": "https://github.com/anchore/syft",
-    "revision": "b254e6d92f28c3868a755f62fb3ca8f26e9fee76",
-    "acquisition_source": "https://github.com/anchore/syft/commit/b254e6d92f28c3868a755f62fb3ca8f26e9fee76",
+    "revision": "30f4bce762f31136e055f2965185f12eb95fbe47",
+    "acquisition_source": "https://github.com/anchore/syft/commit/30f4bce762f31136e055f2965185f12eb95fbe47",
     "local_research_checkout": ".upstreams/anchore/syft"
   },
   "verified_upstream_artifact": {
     "repository": "anchore/syft",
-    "tag": "v1.54.1",
-    "digest": "sha256:3eb5379ba7b409c3f4069b686110527af0c47df993fa5c10d13e7cf34f49b1aa",
+    "tag": "v1.57.0",
+    "digest": "sha256:3c70e6d5979364cefdc22b51617a78fd264574d3bd6b4f84a351204147025e2a",
     "signature_identity": null,
     "entrypoint": [
       "/syft"
     ],
     "verification": {
       "method": "official_oci_index_and_platform_config_labels",
-      "verified_at": "2026-10-14",
+      "verified_at": "2026-11-06",
       "source_association": "oci_revision_label_match",
-      "artifact_source_revision": "b254e6d92f28c3868a755f62fb3ca8f26e9fee76",
+      "artifact_source_revision": "30f4bce762f31136e055f2965185f12eb95fbe47",
       "platforms": [
         "linux/amd64",
         "linux/arm64"
@@ -35,14 +35,14 @@
   },
   "final_artifact": {
     "repository": "ghcr.io/ted-h-com/ai-security-scanner-engine-syft",
-    "tag": "1.54.1-1",
-    "digest": "sha256:24d4201ec61b2d977fda9d3a32d641199679382bd8eefaeb9edb52b019808f8e"
+    "tag": "1.57.0-1",
+    "digest": null
   },
   "build_recipe": null,
   "dockerfile": {
     "emitted": true,
     "path": "engines/images/syft/Dockerfile",
-    "sha256": "sha256:9d13b920b2f3752a984d84988d3644abc715a03cac65074a50e544c991bec1d5",
+    "sha256": "sha256:e0c09485703e9024687bc9e1796f953566488471365aefc11572805462566f60",
     "reason": null
   },
   "wrapper": {
@@ -82,7 +82,13 @@
     "source_offer_path": null
   },
   "blockers": [],
-  "publication": {
+  "publication": null,
+  "previous_artifact": {
+    "repository": "ghcr.io/ted-h-com/ai-security-scanner-engine-syft",
+    "tag": "1.54.1-1",
+    "digest": "sha256:24d4201ec61b2d977fda9d3a32d641199679382bd8eefaeb9edb52b019808f8e"
+  },
+  "previous_publication": {
     "workflow_run": "https://github.com/TED-H-com/ai-security-scanner/actions/runs/38704467877",
     "source_revision": "c989e75e1c3be7e7abad3395dcf5539cf2a96832",
     "platforms": [
@@ -95,5 +101,41 @@
     },
     "anonymous_pull_verified": true,
     "evidence_artifact": "syft-image-evidence-38704467877-1"
+  },
+  "upstream_update": {
+    "engine_version": "1.57.0",
+    "reported_version": null,
+    "source_revision": "30f4bce762f31136e055f2965185f12eb95fbe47",
+    "rule_version": "30f4bce762f31136e055f2965185f12eb95fbe47",
+    "knowledge_date": "2026-11-05",
+    "support_until": "2027-01-04",
+    "engine_provenance": {
+      "version": "1.57.0",
+      "source_repository": "https://github.com/anchore/syft",
+      "source_revision": "30f4bce762f31136e055f2965185f12eb95fbe47",
+      "source_ref": "v1.57.0",
+      "acquisition_source": "https://github.com/anchore/syft/commit/30f4bce762f31136e055f2965185f12eb95fbe47",
+      "artifact_source_revision": null,
+      "source_association": "source_build_required"
+    },
+    "rules_provenance": {
+      "mode": "embedded",
+      "identifier": "Syft catalogers",
+      "revision": "30f4bce762f31136e055f2965185f12eb95fbe47",
+      "acquisition_source": "https://github.com/anchore/syft/commit/30f4bce762f31136e055f2965185f12eb95fbe47"
+    },
+    "data_provenance": {
+      "mode": "runtime_bound",
+      "identifier": "repository working-tree snapshot",
+      "revision": "case_artifact_sha256",
+      "acquisition_source": "assessment_case"
+    },
+    "knowledge_input": {
+      "kind": "runtime_bound",
+      "identifier": "repository working-tree snapshot",
+      "version": "case_artifact_sha256",
+      "acquisition_source": "assessment_case",
+      "pin_state": "runtime_bound"
+    }
   }
 }

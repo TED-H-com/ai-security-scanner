@@ -45,9 +45,8 @@ const describeFailure = (error: unknown): string | undefined => {
   return boundedText(message, 600);
 };
 
-// The updater rejects a release manifest that lists no installer for this
-// computer before it compares versions. The service answered; its latest
-// published release offers nothing this computer can install.
+// After comparing versions, the updater rejects a newer release that lists no
+// installer for this computer. The service answered, but offers no usable update.
 const isUnofferedPlatformFailure = (message: string | undefined): boolean =>
   /found in the response `platforms` object/u.test(message ?? "");
 
@@ -68,7 +67,8 @@ export const checkForAppUpdate = async (): Promise<AppUpdateState> => {
   await closePendingUpdate();
   const currentVersion = await getVersion();
   try {
-    const update = await check({ timeout: 15_000, allowDowngrades: false });
+    // The upstream Rust updater's default comparator only accepts newer versions.
+    const update = await check({ timeout: 15_000 });
     if (!update) {
       return { phase: "current", currentVersion };
     }
@@ -108,7 +108,7 @@ export const installAppUpdate = async (
   let update = pendingUpdate;
   if (!update || update.version !== expectedVersion) {
     await closePendingUpdate();
-    update = await check({ timeout: 15_000, allowDowngrades: false });
+    update = await check({ timeout: 15_000 });
   }
   if (!update || update.version !== expectedVersion) {
     if (update) await update.close().catch(() => undefined);

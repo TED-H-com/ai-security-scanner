@@ -33,14 +33,14 @@ jobs:
           docker run --rm \
             -v "${PWD}/engines/images/external-launcher:/src:ro" \
             -w /src \
-            golang:1.26.0-alpine@sha256:d4c4845f5d60c6a974c6000ce58ae079328d03ab7f721a0734277e69905473e5 \
+            golang:1.26.10-alpine@sha256:87c65a688975c0b1d4585d204874c45ca78354670e3a5f11368c5a492303d696 \
             sh -ceu 'gofmt -d main.go main_test.go | tee /tmp/gofmt.diff; test ! -s /tmp/gofmt.diff'
       - name: Run unit tests in the pinned toolchain
         run: |
           docker run --rm \
             -v "${PWD}/engines/images/external-launcher:/src:ro" \
             -w /src \
-            golang:1.26.0-alpine@sha256:d4c4845f5d60c6a974c6000ce58ae079328d03ab7f721a0734277e69905473e5 \
+            golang:1.26.10-alpine@sha256:87c65a688975c0b1d4585d204874c45ca78354670e3a5f11368c5a492303d696 \
             go test -v ./...
 
   publish:
@@ -57,8 +57,8 @@ jobs:
       matrix:
         include:
           - engine: naabu
-            tag: 2.6.1-7
-            version: 2.6.1
+            tag: 2.7.0-1
+            version: 2.7.0
             dockerfile: engines/images/naabu/Dockerfile
           - engine: httpx
             tag: 1.12.0-1

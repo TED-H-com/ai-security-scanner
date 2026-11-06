@@ -116,7 +116,9 @@ For an upstream version change, `upstream_update` holds only the closed candidat
 catalog identity. The validator checks the new recipe through that identity while
 keeping the old image, runtime permissions and knowledge dates in the installed
 catalog. Remove this metadata only when the verified replacement is activated.
-The [October 14 update record](engines/updates/2026-10-14.md) documents this flow.
+The [November 6 update record](engines/updates/2026-11-06.md) documents the current
+source candidates and retained catalog; the [October 14 record](engines/updates/2026-10-14.md)
+includes an earlier completed activation.
 
 `knowledge_date` describes the newest knowledge in the exact engine/rule/template/feed/database closure. `support_until` is the last date maintainers claim support for that closure and is normally no more than 90 days later. Historical cases retain their original engine identity and dates.
 

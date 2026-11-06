@@ -2,45 +2,32 @@
   "schema_version": "1.0.0",
   "engine_id": "naabu",
   "plan_kind": "managed_source_image",
-  "knowledge_date": "2026-08-24",
+  "knowledge_date": "2026-10-28",
   "support_until": "2026-11-22",
   "maintenance_owner": "teddashh/ai-security-scanner maintainers",
   "update_procedure": "docs/engine-maintenance.md",
-  "publish_state": "published_managed_artifact",
+  "publish_state": "publication_in_progress",
   "source": {
     "repository": "https://github.com/projectdiscovery/naabu",
-    "revision": "5a0ca8bde91b5bb16213e9e8b5c6871eac954bd8",
-    "acquisition_source": "https://github.com/projectdiscovery/naabu/commit/5a0ca8bde91b5bb16213e9e8b5c6871eac954bd8",
+    "revision": "041b70fd396e95b5ed2c19f879c18247078243bc",
+    "acquisition_source": "https://github.com/projectdiscovery/naabu/commit/041b70fd396e95b5ed2c19f879c18247078243bc",
     "local_research_checkout": ".upstreams/projectdiscovery/naabu"
   },
   "final_artifact": {
     "repository": "ghcr.io/teddashh/ai-security-scanner-engine-naabu",
-    "tag": "2.6.1-7",
-    "digest": "sha256:e94240f4f067f39b7db9501a48c60411e6b29a215a11dda63406b9e62c061ab6"
+    "tag": "2.7.0-1",
+    "digest": null
   },
-  "publication": {
-    "workflow_run": "https://github.com/teddashh/ai-security-scanner/actions/runs/36783633415",
-    "source_revision": "51b8abfd7abe5accaf0be59b9d50567bd206dfe8",
-    "platforms": [
-      "linux/amd64",
-      "linux/arm64"
-    ],
-    "platform_digests": {
-      "linux/amd64": "sha256:4774273c362d4392d2456767715710d801d41195603f331f2ab0a274045d181b",
-      "linux/arm64": "sha256:04898ca7f1cf6b7a41a588236b46c5b52c3d985b672be94b7b7a6b81281c1adf"
-    },
-    "anonymous_pull_verified": true,
-    "evidence_artifact": "naabu-image-evidence-36783633415-1"
-  },
+  "publication": null,
   "build_recipe": {
-    "source_revision": "5a0ca8bde91b5bb16213e9e8b5c6871eac954bd8",
+    "source_revision": "041b70fd396e95b5ed2c19f879c18247078243bc",
     "source_archive": {
-      "url": "https://github.com/projectdiscovery/naabu/archive/5a0ca8bde91b5bb16213e9e8b5c6871eac954bd8.tar.gz",
-      "sha256": "sha256:0f2dd95b86692513d0c9a077f8332b33d52e6aba2e5955257aa0b2c74aae1e8b"
+      "url": "https://github.com/projectdiscovery/naabu/archive/041b70fd396e95b5ed2c19f879c18247078243bc.tar.gz",
+      "sha256": "sha256:d31032cbd2ddb35ed547469ed9d8382203180aa1854fdeb94d022fb1f2d332bf"
     },
     "dependency_lock": {
       "path": "go.sum",
-      "sha256": "sha256:7b7604e76aa7692564fb95b76368de214189facb7e8bdd51f3f210531afd46a6"
+      "sha256": "sha256:859119b672267d1274fc4de8b8752bdcf68becc1b714f83be622279b77ff638c"
     },
     "dockerfile_frontend": {
       "repository": "docker/dockerfile",
@@ -50,11 +37,11 @@
     "base_images": [
       {
         "repository": "golang",
-        "tag": "1.26.0-alpine",
-        "digest": "sha256:d4c4845f5d60c6a974c6000ce58ae079328d03ab7f721a0734277e69905473e5"
+        "tag": "1.26.10-alpine",
+        "digest": "sha256:87c65a688975c0b1d4585d204874c45ca78354670e3a5f11368c5a492303d696"
       }
     ],
-    "source_date_epoch": 1777994963,
+    "source_date_epoch": 1793171438,
     "target_platforms": [
       "linux/amd64",
       "linux/arm64"
@@ -63,7 +50,7 @@
   "dockerfile": {
     "emitted": true,
     "path": "engines/images/naabu/Dockerfile",
-    "sha256": "sha256:936c5e7b82213ed8238d34c1af214a9e2bd33fd9ca9bc584db28910080995d11"
+    "sha256": "sha256:0c87410ad53a12d697d296fdd90a91b83be7695f168ea3bc22b29bf6aa3b0ace"
   },
   "wrapper": {
     "required": true,
@@ -104,5 +91,60 @@
     "rationale": "MIT upstream code and the Apache-2.0 project launcher permit redistribution with notices.",
     "source_offer_path": null
   },
-  "blockers": []
+  "blockers": [],
+  "previous_artifact": {
+    "repository": "ghcr.io/teddashh/ai-security-scanner-engine-naabu",
+    "tag": "2.6.1-7",
+    "digest": "sha256:e94240f4f067f39b7db9501a48c60411e6b29a215a11dda63406b9e62c061ab6"
+  },
+  "previous_publication": {
+    "workflow_run": "https://github.com/teddashh/ai-security-scanner/actions/runs/36783633415",
+    "source_revision": "51b8abfd7abe5accaf0be59b9d50567bd206dfe8",
+    "platforms": [
+      "linux/amd64",
+      "linux/arm64"
+    ],
+    "platform_digests": {
+      "linux/amd64": "sha256:4774273c362d4392d2456767715710d801d41195603f331f2ab0a274045d181b",
+      "linux/arm64": "sha256:04898ca7f1cf6b7a41a588236b46c5b52c3d985b672be94b7b7a6b81281c1adf"
+    },
+    "anonymous_pull_verified": true,
+    "evidence_artifact": "naabu-image-evidence-36783633415-1"
+  },
+  "upstream_update": {
+    "engine_version": "2.7.0",
+    "reported_version": null,
+    "source_revision": "041b70fd396e95b5ed2c19f879c18247078243bc",
+    "rule_version": null,
+    "knowledge_date": "2026-10-28",
+    "support_until": "2026-11-22",
+    "engine_provenance": {
+      "version": "2.7.0",
+      "source_repository": "https://github.com/projectdiscovery/naabu",
+      "source_revision": "041b70fd396e95b5ed2c19f879c18247078243bc",
+      "source_ref": "v2.7.0",
+      "acquisition_source": "https://github.com/projectdiscovery/naabu/commit/041b70fd396e95b5ed2c19f879c18247078243bc",
+      "artifact_source_revision": null,
+      "source_association": "source_build_required"
+    },
+    "rules_provenance": {
+      "mode": "not_applicable",
+      "identifier": "TCP port discovery has no external rule pack",
+      "revision": null,
+      "acquisition_source": null
+    },
+    "data_provenance": {
+      "mode": "runtime_live",
+      "identifier": "authorized target reachability",
+      "revision": null,
+      "acquisition_source": "only addresses in the case scope grant"
+    },
+    "knowledge_input": {
+      "kind": "runtime_live",
+      "identifier": "authorized target reachability",
+      "version": null,
+      "acquisition_source": "only addresses in the case scope grant",
+      "pin_state": "runtime_live"
+    }
+  }
 }

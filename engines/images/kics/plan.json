@@ -2,36 +2,41 @@
   "schema_version": "1.0.0",
   "engine_id": "kics",
   "plan_kind": "upstream_image",
-  "knowledge_date": "2026-08-24",
+  "knowledge_date": "2026-09-17",
   "support_until": "2026-11-22",
   "maintenance_owner": "teddashh/ai-security-scanner maintainers",
   "update_procedure": "docs/engine-maintenance.md",
   "publish_state": "verified_upstream_artifact",
   "source": {
     "repository": "https://github.com/Checkmarx/kics",
-    "revision": "e1f23cad9640f55b963f22a116b04906b8c16ac6",
-    "acquisition_source": "https://github.com/Checkmarx/kics/commit/e1f23cad9640f55b963f22a116b04906b8c16ac6",
+    "revision": "453066aa9c66014ad7aee7dd0149ba1944c78050",
+    "acquisition_source": "https://github.com/Checkmarx/kics/commit/453066aa9c66014ad7aee7dd0149ba1944c78050",
     "local_research_checkout": ".upstreams/Checkmarx/kics"
   },
   "verified_upstream_artifact": {
     "repository": "checkmarx/kics",
-    "tag": "v2.1.20",
-    "digest": "sha256:3e5a268eb8adda2e5a483c9359ddfc4cd520ab856a7076dc0b1d8784a37e2602",
+    "tag": "v2.2.0",
+    "digest": "sha256:ef29dbac14b046b1ef65f3280646112e927a61781c5f01bca1aeb723e0b96003",
     "signature_identity": null,
     "entrypoint": [
       "/app/bin/kics"
     ],
     "verification": {
-      "method": "docker_buildx_imagetools_inspect_and_oci_labels",
-      "verified_at": "2026-08-24",
+      "method": "official_oci_index_and_platform_config_labels",
+      "verified_at": "2026-11-06",
       "source_association": "attested_match",
-      "artifact_source_revision": "e1f23cad9640f55b963f22a116b04906b8c16ac6"
+      "artifact_source_revision": "453066aa9c66014ad7aee7dd0149ba1944c78050",
+      "signature_verified": false,
+      "platforms": [
+        "linux/amd64",
+        "linux/arm64"
+      ]
     }
   },
   "final_artifact": {
     "repository": "checkmarx/kics",
-    "tag": "v2.1.20",
-    "digest": "sha256:3e5a268eb8adda2e5a483c9359ddfc4cd520ab856a7076dc0b1d8784a37e2602"
+    "tag": "v2.2.0",
+    "digest": "sha256:ef29dbac14b046b1ef65f3280646112e927a61781c5f01bca1aeb723e0b96003"
   },
   "build_recipe": null,
   "dockerfile": {

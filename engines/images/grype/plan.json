@@ -2,30 +2,30 @@
   "schema_version": "1.0.0",
   "engine_id": "grype",
   "plan_kind": "managed_build",
-  "knowledge_date": "2026-10-14",
+  "knowledge_date": "2026-11-05",
   "support_until": "2027-01-12",
   "maintenance_owner": "teddashh/ai-security-scanner maintainers",
   "update_procedure": "docs/engine-maintenance.md",
-  "publish_state": "published_managed_artifact",
+  "publish_state": "publication_in_progress",
   "source": {
     "repository": "https://github.com/anchore/grype",
-    "revision": "6f8d854af29d3a3086b11a84afa51554a2a245fe",
-    "acquisition_source": "https://github.com/anchore/grype/commit/6f8d854af29d3a3086b11a84afa51554a2a245fe",
+    "revision": "82d7a0ea911946b99343c672056867d372f9b319",
+    "acquisition_source": "https://github.com/anchore/grype/commit/82d7a0ea911946b99343c672056867d372f9b319",
     "local_research_checkout": ".upstreams/anchore/grype"
   },
   "verified_upstream_artifact": null,
   "final_artifact": {
     "repository": "ghcr.io/ted-h-com/ai-security-scanner-engine-grype",
-    "tag": "0.120.1-1",
-    "digest": "sha256:9f030366bc950d408762adb2d641d70220fd6cee0175cbc5202e9418dbb05870"
+    "tag": "0.121.2-1",
+    "digest": null
   },
   "build_recipe": {
-    "source_revision": "6f8d854af29d3a3086b11a84afa51554a2a245fe",
+    "source_revision": "82d7a0ea911946b99343c672056867d372f9b319",
     "source_archive": {
-      "url": "https://github.com/anchore/grype/archive/6f8d854af29d3a3086b11a84afa51554a2a245fe.tar.gz",
-      "sha256": "sha256:238f5623555bed2190d8db85c3f48c8d50b13d230644ada3a9756acc702eec37"
+      "url": "https://github.com/anchore/grype/archive/82d7a0ea911946b99343c672056867d372f9b319.tar.gz",
+      "sha256": "sha256:8437ff52818e5afe968a9b2cdba6d02e606e5087070d5f72afc27ec1537f97d5"
     },
-    "source_date_epoch": 1791304928,
+    "source_date_epoch": 1793912568,
     "target_platforms": [
       "linux/amd64",
       "linux/arm64"
@@ -38,8 +38,8 @@
     "base_images": [
       {
         "repository": "golang",
-        "tag": "1.26.8-alpine",
-        "digest": "sha256:8ac98ca534ac3f51e1f420a1dd2c15e74c75cfa0f23f3ad27eb5d7236c349a0c"
+        "tag": "1.26.10-alpine",
+        "digest": "sha256:87c65a688975c0b1d4585d204874c45ca78354670e3a5f11368c5a492303d696"
       }
     ],
     "static_steps": [
@@ -54,21 +54,25 @@
       {
         "path": "engines/images/grype/import.json",
         "reason": "Controls import of the pinned offline Grype database into the image but has no digest in the plan.",
-        "sha256": "sha256:34f988049676aadd83f95bfe9b42f82a2a4a75cfc7c17004e079234d8aad126c"
+        "sha256": "sha256:f60e1959e09bfba496ab6d18d4b17ef28dd88a9a6c8e82ace3c30a2b7f6673ea"
       }
-    ]
+    ],
+    "dependency_lock": {
+      "path": "go.sum",
+      "sha256": "sha256:d823897c07892e63750aa8b8c19d9987de3c4a699c1e3b28dc79a138c658c78b"
+    }
   },
   "dockerfile": {
     "emitted": true,
     "path": "engines/images/grype/Dockerfile",
-    "sha256": "sha256:7f3d405ab25fcdd507f15c64136636965f321b7840d070478cef0a5921c39949",
+    "sha256": "sha256:081fb007fe7e8d0ffc95a8b89a30ff2f95fea62cddf718a2621bdc7f58cdf573",
     "reason": null
   },
   "wrapper": {
     "required": true,
     "strategy": "Invoke the pinned source build against a typed read-only repository or OCI workspace and its embedded checksum-verified vulnerability database; Grype receives dir:/workspace or oci-dir:/workspace without product-owned package filtering.",
     "entrypoint": "/usr/local/bin/ai-security-scanner-engine-entrypoint",
-    "launcher_sha256": "sha256:cbb21bd585184a6d43ebdee25b6864d0528510299facccfdceb53db187bb4d7a"
+    "launcher_sha256": "sha256:3d9b91f1c9f75edc3e46b3c311d34c04018ba4a10adb52c43c8d325784938394"
   },
   "command": [
     "--engine",
@@ -102,7 +106,13 @@
     "updates": false,
     "telemetry": false
   },
-  "publication": {
+  "publication": null,
+  "previous_artifact": {
+    "repository": "ghcr.io/ted-h-com/ai-security-scanner-engine-grype",
+    "tag": "0.120.1-1",
+    "digest": "sha256:9f030366bc950d408762adb2d641d70220fd6cee0175cbc5202e9418dbb05870"
+  },
+  "previous_publication": {
     "workflow_run": "https://github.com/TED-H-com/ai-security-scanner/actions/runs/38696246466",
     "source_revision": "c989e75e1c3be7e7abad3395dcf5539cf2a96832",
     "platforms": [
@@ -116,5 +126,41 @@
     "anonymous_pull_verified": true,
     "evidence_artifact": "grype-image-evidence-38696246466-2",
     "managed_smoke_evidence_sha256": "sha256:d8524755b73dba68b224c2f8d623ef530fcb8f1e7f1a51c6ad1711935845d4c9"
+  },
+  "upstream_update": {
+    "engine_version": "0.121.2",
+    "reported_version": null,
+    "source_revision": "82d7a0ea911946b99343c672056867d372f9b319",
+    "rule_version": "82d7a0ea911946b99343c672056867d372f9b319",
+    "knowledge_date": "2026-11-05",
+    "support_until": "2027-01-12",
+    "engine_provenance": {
+      "version": "0.121.2",
+      "source_repository": "https://github.com/anchore/grype",
+      "source_revision": "82d7a0ea911946b99343c672056867d372f9b319",
+      "source_ref": "v0.121.2",
+      "acquisition_source": "https://github.com/anchore/grype/commit/82d7a0ea911946b99343c672056867d372f9b319",
+      "artifact_source_revision": null,
+      "source_association": "source_build_required"
+    },
+    "rules_provenance": {
+      "mode": "embedded",
+      "identifier": "Grype matchers",
+      "revision": "82d7a0ea911946b99343c672056867d372f9b319",
+      "acquisition_source": "https://github.com/anchore/grype/commit/82d7a0ea911946b99343c672056867d372f9b319"
+    },
+    "data_provenance": {
+      "mode": "embedded",
+      "identifier": "Grype vulnerability database snapshot",
+      "revision": "sha256:420d0ac2f976acb4bf46e19bd1779f3043a868a77ca8e9debf18c3d196728344",
+      "acquisition_source": "https://grype.anchore.io/databases/v6/vulnerability-db_v6.1.10_2026-11-05T00:20:34Z_1793859666.tar.zst"
+    },
+    "knowledge_input": {
+      "kind": "embedded",
+      "identifier": "Grype vulnerability database snapshot",
+      "version": "sha256:420d0ac2f976acb4bf46e19bd1779f3043a868a77ca8e9debf18c3d196728344",
+      "acquisition_source": "https://grype.anchore.io/databases/v6/vulnerability-db_v6.1.10_2026-11-05T00:20:34Z_1793859666.tar.zst",
+      "pin_state": "pinned_or_not_applicable"
+    }
   }
 }

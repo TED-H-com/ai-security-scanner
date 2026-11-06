@@ -1,0 +1,621 @@
+{
+  "schema_version": 1,
+  "checked_at": "2026-11-06",
+  "source_base": "ffd8c6a3c845dc32d47ebdc4b5e5cbeb74851255",
+  "native_platforms": [
+    "linux/amd64"
+  ],
+  "managed_images_published": false,
+  "official_kics_artifact": {
+    "repository": "checkmarx/kics",
+    "tag": "v2.2.0",
+    "digest": "sha256:ef29dbac14b046b1ef65f3280646112e927a61781c5f01bca1aeb723e0b96003"
+  },
+  "local_images": [
+    {
+      "engine": "checkov",
+      "candidate_tag": "3.4.3-1",
+      "local_image": "ai-scanner-upstream-checkov:local",
+      "image_id": "sha256:ff65fe7a992d655d29a2896dc56b699fed50451aec3689d745d79bb3e584c8e7",
+      "platform": "linux/amd64",
+      "source_revision": "5038a50e21a2253cb5aed2e739d2c22ee28d2e17",
+      "dockerfile": {
+        "path": "engines/images/checkov/Dockerfile",
+        "sha256": "sha256:614a707453da67019d80581123cd5bfdfe3ce929e6346794d0347ed45f62a592",
+        "bytes": 3674
+      },
+      "plan": {
+        "path": "engines/images/checkov/plan.json",
+        "sha256": "sha256:c9cab3bf982197b72c9b9b20bffffd4975f1b29894bf5cd9f6d3333078317d90",
+        "bytes": 7838
+      },
+      "build_log": {
+        "path": ".engine-cache/updates/2026-11-06/checkov-build.log",
+        "sha256": "sha256:c068cf4e20a9e0b89dc1b5d06f2d85ad50129f1a9b3f1e71dbdbbe491a0adc63",
+        "bytes": 35695
+      },
+      "published": false
+    },
+    {
+      "engine": "grype",
+      "candidate_tag": "0.121.2-1",
+      "local_image": "ai-scanner-upstream-grype:local",
+      "image_id": "sha256:b4eb904fd558509929254d46253c86f7e7604eed28182cc168920f1290b64335",
+      "platform": "linux/amd64",
+      "source_revision": "82d7a0ea911946b99343c672056867d372f9b319",
+      "dockerfile": {
+        "path": "engines/images/grype/Dockerfile",
+        "sha256": "sha256:081fb007fe7e8d0ffc95a8b89a30ff2f95fea62cddf718a2621bdc7f58cdf573",
+        "bytes": 4056
+      },
+      "plan": {
+        "path": "engines/images/grype/plan.json",
+        "sha256": "sha256:f89330f41f5a0a60764aa75f9ec611de9c2db573f21bf1d522aed35c854b7c49",
+        "bytes": 6379
+      },
+      "build_log": {
+        "path": ".engine-cache/updates/2026-11-06/grype-build.log",
+        "sha256": "sha256:d19331844e690063f3ca178d768ec458d99e92185b5c148c17051d20a9e13e41",
+        "bytes": 26868
+      },
+      "published": false
+    },
+    {
+      "engine": "kube-bench",
+      "candidate_tag": "0.16.0-6",
+      "local_image": "ai-scanner-upstream-kube-bench:local",
+      "image_id": "sha256:eb270657b6114d62bb8dfdf7cc8220688864c93799ff53cf3d91686ec624d061",
+      "platform": "linux/amd64",
+      "source_revision": "9f133cb7509ce1dbedfc860e94474588000e25ac",
+      "dockerfile": {
+        "path": "engines/images/kube-bench/Dockerfile",
+        "sha256": "sha256:3a7aa1280d049c713e6cf6959c1ab36dd59739170715f802863c80f7a20f3a77",
+        "bytes": 4048
+      },
+      "plan": {
+        "path": "engines/images/kube-bench/plan.json",
+        "sha256": "sha256:14d0ccfdc44bd3b0ca925444d665e62c78ab853a75d3a32d09b4682e5fcef94a",
+        "bytes": 6190
+      },
+      "build_log": {
+        "path": ".engine-cache/updates/2026-11-06/kube-bench-build.log",
+        "sha256": "sha256:6f5cd97777cefaf2700900977fefe364b92f6c9f564b8f1b83ac613ad2a21af9",
+        "bytes": 12421
+      },
+      "published": false
+    },
+    {
+      "engine": "kubescape",
+      "candidate_tag": "4.0.19-1",
+      "local_image": "ai-scanner-upstream-kubescape:local",
+      "image_id": "sha256:10aa9cdc14cce41a4e435c6b89c5e3243ada2c2d249b730ae83ca6096f58c3af",
+      "platform": "linux/amd64",
+      "source_revision": "9780473d81b3b3e036408d6323b162a197beee07",
+      "dockerfile": {
+        "path": "engines/images/kubescape/Dockerfile",
+        "sha256": "sha256:1f16ecfefac60b326249ee657432dae6c640ce2b303123772b37205bddacd20f",
+        "bytes": 3872
+      },
+      "plan": {
+        "path": "engines/images/kubescape/plan.json",
+        "sha256": "sha256:99e141fc74fed1ec6db4f28b919d97836d6422dd642c31730081ba097faf132d",
+        "bytes": 5748
+      },
+      "build_log": {
+        "path": ".engine-cache/updates/2026-11-06/kubescape-build.log",
+        "sha256": "sha256:6836c5b49b58d8922d1d92682235521692734b6a1e144aae508954a60bb1685f",
+        "bytes": 50504
+      },
+      "published": false
+    },
+    {
+      "engine": "naabu",
+      "candidate_tag": "2.7.0-1",
+      "local_image": "ai-scanner-upstream-naabu:local",
+      "image_id": "sha256:2bd72f6dd62708469472ae7431f26da5217d9cf4645bde6796b10376b1d6d9f5",
+      "platform": "linux/amd64",
+      "source_revision": "041b70fd396e95b5ed2c19f879c18247078243bc",
+      "dockerfile": {
+        "path": "engines/images/naabu/Dockerfile",
+        "sha256": "sha256:0c87410ad53a12d697d296fdd90a91b83be7695f168ea3bc22b29bf6aa3b0ace",
+        "bytes": 3191
+      },
+      "plan": {
+        "path": "engines/images/naabu/plan.json",
+        "sha256": "sha256:1a65c4e58aedcbbe671bcf8a141d111879beb274999086f4391033efebee4861",
+        "bytes": 5369
+      },
+      "build_log": {
+        "path": ".engine-cache/updates/2026-11-06/naabu-build.log",
+        "sha256": "sha256:93ff867824e8e9f72936bbce284aec1946d8c364ef362387ac5d326eb833a365",
+        "bytes": 14532
+      },
+      "published": false
+    },
+    {
+      "engine": "prowler",
+      "candidate_tag": "5.47.0-1",
+      "local_image": "ai-scanner-upstream-prowler:local",
+      "image_id": "sha256:de5efd2b2b47dc8a4203a076b05ec57fb9859fdad09d9ec15c5f6c1999749430",
+      "platform": "linux/amd64",
+      "source_revision": "555a4cc469907e26ef007eb79af2b6cb4bddd6c6",
+      "dockerfile": {
+        "path": "engines/images/prowler/Dockerfile",
+        "sha256": "sha256:3c42fbf6e9a4f3b2c1b66348d0c7238df4e9b692d7bd5c9dddc0d6b114ea641a",
+        "bytes": 2323
+      },
+      "plan": {
+        "path": "engines/images/prowler/plan.json",
+        "sha256": "sha256:43fb7cb0d5c2e5c49e92bcf8d345bfa85e6791592d37dcd7dc927f7f27c4c88a",
+        "bytes": 23942
+      },
+      "build_log": {
+        "path": ".engine-cache/updates/2026-11-06/prowler-build.log",
+        "sha256": "sha256:5dc818d0c8b36813386f374a48daf462a0f4d9fae2a9f5973fff089ed15ef05e",
+        "bytes": 3250
+      },
+      "published": false
+    },
+    {
+      "engine": "semgrep",
+      "candidate_tag": "1.184.0-1",
+      "local_image": "ai-scanner-upstream-semgrep:local",
+      "image_id": "sha256:8e8f109424f2217d2f881e53fc0ba0d43b288e1faddc0d70e50756efe9f5a974",
+      "platform": "linux/amd64",
+      "source_revision": "ac37d1f6e47b17648b8f854d6e2f2d72fade2567",
+      "dockerfile": {
+        "path": "engines/images/semgrep/Dockerfile",
+        "sha256": "sha256:addd1347b5a6d027b2494d90f6a21bc94ab7ba33c469b69fa98f8fce60f61cdf",
+        "bytes": 8977
+      },
+      "plan": {
+        "path": "engines/images/semgrep/plan.json",
+        "sha256": "sha256:12272599acdadea92b64e1341d6c94f32ffbdfe3d0b1617fcaf158592ba39ddb",
+        "bytes": 10023
+      },
+      "build_log": {
+        "path": ".engine-cache/updates/2026-11-06/semgrep-build.log",
+        "sha256": "sha256:653c8bcbefdedd81d866e206c2b9801b63a19df7489d0a9c3fe8c7ee81b548ec",
+        "bytes": 357301
+      },
+      "published": false
+    },
+    {
+      "engine": "steampipe",
+      "candidate_tag": "2.4.9-1",
+      "local_image": "ai-scanner-upstream-steampipe:local",
+      "image_id": "sha256:31fab4d92f75b125494b9b6c6f7c9ade7490e9295fb0d6df77f9d00ba2d133b2",
+      "platform": "linux/amd64",
+      "source_revision": "4269e1dc4865647605da6af8f1828e77278106a0",
+      "dockerfile": {
+        "path": "engines/images/steampipe/Dockerfile",
+        "sha256": "sha256:4fbf4371fe1328fb797926a745a94c92750e643aa25abd40357a1d96137e2d25",
+        "bytes": 9007
+      },
+      "plan": {
+        "path": "engines/images/steampipe/plan.json",
+        "sha256": "sha256:530090508bf06cf6a641a7144ccf87cb159ec1b316159a63d204a2cf49820941",
+        "bytes": 7902
+      },
+      "build_log": {
+        "path": ".engine-cache/updates/2026-11-06/steampipe-build.log",
+        "sha256": "sha256:b8979ec19b1e52f9a41ac1b28cbbf60fdda7ad6bf117f37594b1e17190c8c4aa",
+        "bytes": 10778
+      },
+      "published": false
+    },
+    {
+      "engine": "syft",
+      "candidate_tag": "1.57.0-1",
+      "local_image": "ai-scanner-upstream-syft:local",
+      "image_id": "sha256:911f877a3ea1e7a2874c570c9763805d5f2ab493323863938505bd23130c0d54",
+      "platform": "linux/amd64",
+      "source_revision": "30f4bce762f31136e055f2965185f12eb95fbe47",
+      "dockerfile": {
+        "path": "engines/images/syft/Dockerfile",
+        "sha256": "sha256:e0c09485703e9024687bc9e1796f953566488471365aefc11572805462566f60",
+        "bytes": 1011
+      },
+      "plan": {
+        "path": "engines/images/syft/plan.json",
+        "sha256": "sha256:d0d8d10f776148341ed7872da744101e4fd4dabb0b489c6603407593a7631d6e",
+        "bytes": 4960
+      },
+      "build_log": {
+        "path": ".engine-cache/updates/2026-11-06/syft-build.log",
+        "sha256": "sha256:5c1ea628eeddfb88a9ab386192b410615889124cc4662634e8ea09f6fae69444",
+        "bytes": 1777
+      },
+      "published": false
+    },
+    {
+      "engine": "trivy",
+      "candidate_tag": "0.76.2-1",
+      "local_image": "ai-scanner-upstream-trivy:local",
+      "image_id": "sha256:4a5f4b9775320333993f947917a5dc3183a1ef8fee465d4db0cd004eb7566fa7",
+      "platform": "linux/amd64",
+      "source_revision": "3f6334d223b52188324af3b9923b4249cd206652",
+      "dockerfile": {
+        "path": "engines/images/trivy/Dockerfile",
+        "sha256": "sha256:a43197c1b503b873f7a6d1f70d2344c758982a6be1e6cf7bbae241e34a8fd100",
+        "bytes": 4965
+      },
+      "plan": {
+        "path": "engines/images/trivy/plan.json",
+        "sha256": "sha256:265aa7b23ebc836c70e62bd6e45b835990a2fcef0654c2460ab7d1ebcc7a458e",
+        "bytes": 8516
+      },
+      "build_log": {
+        "path": ".engine-cache/updates/2026-11-06/trivy-build.log",
+        "sha256": "sha256:d64c9093564399b684cba0ca8ef9f4d7b6865aa35bf89cb48650dd7dfdd423cd",
+        "bytes": 37083
+      },
+      "published": false
+    },
+    {
+      "engine": "trufflehog",
+      "candidate_tag": "3.99.8-1",
+      "local_image": "ai-scanner-upstream-trufflehog:local",
+      "image_id": "sha256:7e1697d2b4105cac05bf10f9fec03f85a1b94cb248e34eeb0c4cc995aee63fc2",
+      "platform": "linux/amd64",
+      "source_revision": "ea68ca03c865c5f324e86e849ced20ed3cf9dbbb",
+      "dockerfile": {
+        "path": "engines/images/trufflehog/Dockerfile",
+        "sha256": "sha256:000fc6f3cb00331e8b3267ea0870d2f278f89d0e1a90ce40455ce7ad7d676713",
+        "bytes": 2958
+      },
+      "plan": {
+        "path": "engines/images/trufflehog/plan.json",
+        "sha256": "sha256:eb19bf5451510557cb1398583889fd77a3de4cf4e2ba8b17d79be174df05ff99",
+        "bytes": 5996
+      },
+      "build_log": {
+        "path": ".engine-cache/updates/2026-11-06/trufflehog-build.log",
+        "sha256": "sha256:f4f2c29f40192ad916683a456306aafd8ac5fcbef80c266cae2fcb3e343c7622",
+        "bytes": 23746
+      },
+      "published": false
+    }
+  ],
+  "normalized_runs": [
+    {
+      "engine": "kics",
+      "findings": 30,
+      "observations": 0,
+      "warnings": []
+    },
+    {
+      "engine": "syft",
+      "findings": 0,
+      "observations": 0,
+      "warnings": [
+        "syft output is inventory evidence; no security issue was invented from inventory rows"
+      ]
+    },
+    {
+      "engine": "checkov",
+      "findings": 31,
+      "observations": 0,
+      "warnings": []
+    },
+    {
+      "engine": "kubescape",
+      "findings": 9,
+      "observations": 0,
+      "warnings": []
+    },
+    {
+      "engine": "kube-bench",
+      "findings": 6,
+      "observations": 0,
+      "warnings": [
+        "kube-bench did not evaluate every control in scope (5 left without an automated verdict); those controls are absent from findings and this run does not establish their state"
+      ]
+    },
+    {
+      "engine": "trufflehog",
+      "findings": 0,
+      "observations": 0,
+      "warnings": []
+    },
+    {
+      "engine": "grype",
+      "findings": 6,
+      "observations": 0,
+      "warnings": []
+    },
+    {
+      "engine": "trivy",
+      "findings": 0,
+      "observations": 0,
+      "warnings": [],
+      "profile": "oci",
+      "native_findings": 0
+    },
+    {
+      "engine": "trivy",
+      "findings": 4,
+      "observations": 0,
+      "warnings": [],
+      "profile": "libraries",
+      "native_findings": 4
+    },
+    {
+      "engine": "trivy",
+      "findings": 1,
+      "observations": 0,
+      "warnings": [],
+      "profile": "java",
+      "native_findings": 1
+    },
+    {
+      "engine": "trivy",
+      "findings": 2,
+      "observations": 0,
+      "warnings": [],
+      "profile": "php-vulnerable",
+      "native_findings": 2
+    },
+    {
+      "engine": "trivy",
+      "findings": 0,
+      "observations": 0,
+      "warnings": [],
+      "profile": "php-fixed",
+      "native_findings": 0
+    },
+    {
+      "engine": "semgrep",
+      "findings": 22,
+      "observations": 0,
+      "warnings": []
+    }
+  ],
+  "semgrep": {
+    "native_matches": {
+      "combined": 22,
+      "managed": 22,
+      "product": 10,
+      "upstream": 12
+    },
+    "exact_full_result_union": true,
+    "rejections_before_output": {
+      "changed-provenance": 126,
+      "changed-rule": 126,
+      "extra-rule": 126,
+      "writable-workspace": 126
+    },
+    "managed_artifact_sha256": "8d1daf0dae936193be1a65201fb1d270261ebe5ab833358c2bf2f863ba9dbe3f",
+    "source_attachment": {
+      "bytes": 35421330,
+      "excluded_rule_absent": true,
+      "rebuild_inputs_match": true,
+      "selected_original_files": 1477,
+      "sha256": "f4d551171a13d79efab411b69c06543a9485aff568cee9aa2b68c55d7079fb94",
+      "unfiltered_rules_archive_absent": true
+    }
+  },
+  "application_dependencies": {
+    "scanner": "trivy",
+    "standard_database_date": "2026-11-06",
+    "inputs": [
+      "Cargo.lock",
+      "package-lock.json"
+    ],
+    "known_vulnerabilities": 0
+  },
+  "checks": [
+    {
+      "check": "component",
+      "passed": 583,
+      "skipped": 0,
+      "log": {
+        "path": ".engine-cache/updates/2026-11-06/component.log",
+        "sha256": "sha256:0b127e26835a2af8541774dbe65e0eeb6ef5621d702bd696e9b1ed0bd50fe1d3",
+        "bytes": 321
+      }
+    },
+    {
+      "check": "frontend",
+      "passed": 942,
+      "skipped": 33,
+      "log": {
+        "path": ".engine-cache/updates/2026-11-06/frontend.log",
+        "sha256": "sha256:fce4c2e836acc0c34ac120104e4924a76a13e9dce8bfc6b13f8363d6bfffa8a2",
+        "bytes": 91248
+      }
+    },
+    {
+      "check": "rust-cli-and-integration",
+      "passed": 2232,
+      "skipped": 1,
+      "log": {
+        "path": ".engine-cache/updates/2026-11-06/rust-tests-final.log",
+        "sha256": "sha256:f0a3b5c086d0a2f26d0921bfcacf29ef0e28f4583f3b9eec0665ad7f4958df93",
+        "bytes": 218637
+      }
+    },
+    {
+      "check": "rust-format-clippy-gateway",
+      "passed": 20,
+      "skipped": 0,
+      "log": {
+        "path": ".engine-cache/updates/2026-11-06/rust-final-checks.log",
+        "sha256": "sha256:20c93f3fbf82f80ec7a165b560ec6d6eac3e83270cbfaa466308746ff9433803",
+        "bytes": 5091
+      }
+    },
+    {
+      "check": "ci-and-engine-contracts",
+      "passed": 115,
+      "skipped": 0,
+      "log": {
+        "path": ".engine-cache/updates/2026-11-06/contracts-final.log",
+        "sha256": "sha256:b5b68178360c08953fa2318e4204e77de2d60fe2e117ec40bad13b05e682cec6",
+        "bytes": 10484
+      }
+    },
+    {
+      "check": "semgrep-pack-source",
+      "passed": 14,
+      "skipped": 0,
+      "log": {
+        "path": ".engine-cache/updates/2026-11-06/semgrep-tests.log",
+        "sha256": "sha256:45859d0eb948c7defd7580d23d2c2ff9399d25c003ab410677fea9da4c46ad6a",
+        "bytes": 114
+      }
+    },
+    {
+      "check": "prowler-native-mocked",
+      "passed": 68,
+      "skipped": 0,
+      "log": {
+        "path": ".engine-cache/updates/2026-11-06/prowler-native-tests.log",
+        "sha256": "sha256:a3e213ecb700f9c2b9ca388944c0a4e36128fe93858ad76d671ccf01c996b440",
+        "bytes": 99
+      }
+    },
+    {
+      "check": "frontend-production-build",
+      "status": "passed",
+      "log": {
+        "path": ".engine-cache/updates/2026-11-06/frontend-build.log",
+        "sha256": "sha256:89ba956a68bd0dd4b4715e14a64965ffc90cddce8281e756c45d43937afc2877",
+        "bytes": 777
+      }
+    },
+    {
+      "check": "native-linux-desktop-compile",
+      "status": "passed",
+      "log": {
+        "path": ".engine-cache/updates/2026-11-06/desktop-check.log",
+        "sha256": "sha256:c9fc1110da5dfe01a397001aee80c28ea4a392170f68bdb46d752d9425aba82a",
+        "bytes": 34108
+      }
+    },
+    {
+      "check": "engine-inputs",
+      "status": "passed",
+      "log": {
+        "path": ".engine-cache/updates/2026-11-06/validate-engines-final.log",
+        "sha256": "sha256:83e4c6ea3261c256350613a45dbaf98d6011884e57fbb59184570dc3a246088b",
+        "bytes": 27079
+      }
+    },
+    {
+      "check": "local-launcher-go",
+      "status": "passed",
+      "log": {
+        "path": ".engine-cache/updates/2026-11-06/local-launcher-tests.log",
+        "sha256": "sha256:9d11869ba57f54b75a09fe4bc023e0c0b79d1acab41547b595f15b1eb6e74dd8",
+        "bytes": 75
+      }
+    },
+    {
+      "check": "steampipe-helper-go",
+      "status": "passed",
+      "log": {
+        "path": ".engine-cache/updates/2026-11-06/steampipe-helper-tests.log",
+        "sha256": "sha256:09bfa47e29ffefd2cf6af4ee8cda0938fe19201b851ab8bb0bcbed2a15923b4e",
+        "bytes": 82
+      }
+    },
+    {
+      "check": "vendored-glib",
+      "status": "passed",
+      "log": {
+        "path": ".engine-cache/updates/2026-11-06/glib-check.log",
+        "sha256": "sha256:cced319513712fde90c32f7a9fd137e5f5b61d76a35a3ae6b970fe9600f77a1f",
+        "bytes": 77
+      }
+    }
+  ],
+  "local_raw_artifacts": [
+    {
+      "path": ".engine-cache/updates/2026-11-06/checkov-smoke/checkov.json",
+      "sha256": "sha256:44c174e0bab7fa0185c392d19d013967c94baa336b64b073b5164996c116dd21",
+      "bytes": 35793
+    },
+    {
+      "path": ".engine-cache/updates/2026-11-06/grype-smoke/grype.json",
+      "sha256": "sha256:4f4352c2dd23d973bdc67bc6643e333238d05ab88139749478c5dfd984545e25",
+      "bytes": 57150
+    },
+    {
+      "path": ".engine-cache/updates/2026-11-06/kics-smoke/output/kics.json",
+      "sha256": "sha256:3bab55b7934d89f219b18b3a7b1183ecb619eb985ad1024ce5ae517187d4b558",
+      "bytes": 36457
+    },
+    {
+      "path": ".engine-cache/updates/2026-11-06/kubescape-smoke/kubescape.json",
+      "sha256": "sha256:5ac2fb4e5b512296ba45a72d932f0d868b2119b1f6ea4c5bb69239ce4e318ed8",
+      "bytes": 25015
+    },
+    {
+      "path": ".engine-cache/updates/2026-11-06/syft-smoke/syft.json",
+      "sha256": "sha256:d2dcdd79d60bc21ffb8df985319f7fa9b7ad101c3b5d2b2d0019b3bc9ed6b5dc",
+      "bytes": 5633
+    },
+    {
+      "path": ".engine-cache/updates/2026-11-06/trufflehog-smoke/trufflehog.jsonl",
+      "sha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": ".engine-cache/updates/2026-11-06/kube-bench-smoke-final/kube-bench.json",
+      "sha256": "sha256:0c813a0a87b017a15ef92ccb5382480581601f191619dec054c676d193cfef84",
+      "bytes": 35370
+    },
+    {
+      "path": ".engine-cache/updates/2026-11-06/trivy-native-java/trivy-individual-packages.json",
+      "sha256": "sha256:4751c63c1dd1c35e4714a15f452ceeda8b5f6caf5619640bef6167b06afd4bf0",
+      "bytes": 6035
+    },
+    {
+      "path": ".engine-cache/updates/2026-11-06/trivy-native-java/trivy.json",
+      "sha256": "sha256:dfc007472e87870cf83f003a06942efe853eecad426d0d146c77dcb854938151",
+      "bytes": 234
+    },
+    {
+      "path": ".engine-cache/updates/2026-11-06/trivy-native-libraries/trivy-individual-packages.json",
+      "sha256": "sha256:a9d8d89565c5ef4a29e48e6b0c6f8d2c3791a88cc8c892661a661201f5973e12",
+      "bytes": 718
+    },
+    {
+      "path": ".engine-cache/updates/2026-11-06/trivy-native-libraries/trivy.json",
+      "sha256": "sha256:ab2b5a334ebd59294ba56f9acb4a5e6063045a2a06801733afa91647d3260683",
+      "bytes": 27335
+    },
+    {
+      "path": ".engine-cache/updates/2026-11-06/trivy-native-oci/trivy.json",
+      "sha256": "sha256:5f1290f452190e1e138e98edc0b945eb3f31cd139a8bbff47612db0b46a57b89",
+      "bytes": 1117
+    },
+    {
+      "path": ".engine-cache/updates/2026-11-06/trivy-native-php-fixed/trivy.json",
+      "sha256": "sha256:fac7de8b236c1fbd5cbc9294545281375b6a59f1accd6a600594c1e11c7c638a",
+      "bytes": 2241
+    },
+    {
+      "path": ".engine-cache/updates/2026-11-06/trivy-native-php-vulnerable/trivy.json",
+      "sha256": "sha256:cffdffc130f104123fcfe1bdb6674adbcff1d23564afaa8f0116d4f782c13e6e",
+      "bytes": 12479
+    },
+    {
+      "path": ".engine-cache/updates/2026-11-06/semgrep-native/managed/semgrep.json",
+      "sha256": "sha256:8d1daf0dae936193be1a65201fb1d270261ebe5ab833358c2bf2f863ba9dbe3f",
+      "bytes": 22746
+    },
+    {
+      "path": ".engine-cache/updates/2026-11-06/application-dependency-scan/trivy-individual-packages.json",
+      "sha256": "sha256:298aab6c7c09b997ce1f5fc0ac120c88e807ec8ce9f3ba045a038d94e74a7daf",
+      "bytes": 1101
+    },
+    {
+      "path": ".engine-cache/updates/2026-11-06/application-dependency-scan/trivy.json",
+      "sha256": "sha256:e60b78a4f22805aba40b257e75437d346c893ef5bccff96c000bd89bd02d5833",
+      "bytes": 62404
+    }
+  ],
+  "evidence_note": "Log/raw paths refer to local ignored review artifacts. Their hashes identify observed evidence; these records do not establish publication or arm64 execution."
+}

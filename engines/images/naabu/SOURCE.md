@@ -1,12 +1,12 @@
 # Naabu source record
 
 This image is built from the upstream Naabu source at commit
-`5a0ca8bde91b5bb16213e9e8b5c6871eac954bd8` (release `v2.6.1`).
+`041b70fd396e95b5ed2c19f879c18247078243bc` (release `v2.7.0`).
 
 - Repository: <https://github.com/projectdiscovery/naabu>
-- Source archive: <https://github.com/projectdiscovery/naabu/archive/5a0ca8bde91b5bb16213e9e8b5c6871eac954bd8.tar.gz>
-- Source archive SHA-256: `0f2dd95b86692513d0c9a077f8332b33d52e6aba2e5955257aa0b2c74aae1e8b`
-- `go.sum` SHA-256: `7b7604e76aa7692564fb95b76368de214189facb7e8bdd51f3f210531afd46a6`
+- Source archive: <https://github.com/projectdiscovery/naabu/archive/041b70fd396e95b5ed2c19f879c18247078243bc.tar.gz>
+- Source archive SHA-256: `d31032cbd2ddb35ed547469ed9d8382203180aa1854fdeb94d022fb1f2d332bf`
+- `go.sum` SHA-256: `859119b672267d1274fc4de8b8752bdcf68becc1b714f83be622279b77ff638c`
 - Licenses: upstream Naabu is MIT and the project launcher is Apache-2.0; the
   image carries both license texts below `/usr/share/licenses`.
 

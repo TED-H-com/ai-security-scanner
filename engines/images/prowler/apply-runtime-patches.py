@@ -27,11 +27,11 @@ SERIES = (
     "0006-azure-require-enabled-subscription.patch",
 )
 PATCH_SHA256 = {
-    SERIES[0]: "053ef441588b6bff99aef8a568f2617d8933a46449d2f9c2804b796c7a39566a",
+    SERIES[0]: "4298dc64c7cbde55b11b3058dbecadba85e017f51d52aff9fa5abc60535cc29d",
     SERIES[1]: "7a22e58b3c700813e3b7e814dd04254dd90ddbdbdfbccd917c3b477e487c2fcb",
     SERIES[2]: "136335c3b7defd5a167aa6d07633bcb8f5c99c6f98b398eff01fc15d11a417d1",
     SERIES[3]: "ffef7b02808bbb85f1f7d28ab3c453237b33cde45729daa51feb37633e1fd79a",
-    SERIES[4]: "00f40971d80137612b5327a8b7e31de6b05b08dd8239f1bd635339ae6325f80b",
+    SERIES[4]: "f6420c4ef32cf9ae0d6871eb76cb2d550584b18567d485a0da5f4d86b7a19bb8",
     SERIES[5]: "47b4202cdfe545b699fbe0b0dfc3e5d249d94e9d00cf7d61388405071e5aaeba",
 }
 EXPECTED_DIFF_FILES = {
@@ -77,8 +77,8 @@ RUNTIME_FILES = {
         "bd65d893c106cf47389cd17071f96002e7302706b07ebb17cdca6c10f95f3f27",
     ),
     "prowler/lib/outputs/finding.py": (
-        "00ed79bee5e32239d3cce4943c70df33dbfe3f85056deb750ad11f2073613cce",
-        "71d5665f11c27a3dc69660ac61b747264066c6791ba65014c50ba80105902749",
+        "756c9c456cd511d16edc1b6b0180f7aa4e34b66419d1ea3caf73bfe8e5d92a9b",
+        "17cdb7c2d851ada5e61269bd50a22636dec119dc1e3c71c233785f9d84fcabff",
     ),
     "prowler/providers/gcp/gcp_provider.py": (
         "9ae2691559660ca902ab3b282fb1a5611bb47ca11f3118d34500dac847770c77",

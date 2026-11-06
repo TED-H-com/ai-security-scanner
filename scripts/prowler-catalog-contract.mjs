@@ -80,12 +80,12 @@ export const PROWLER_DATA_ACQUISITION = {
 
 export const PROWLER_DOWNSTREAM_RUNTIME_PATCHES = {
   origin: "ai_security_scanner_downstream",
-  base_revision: "499fd637f3393b485833b08cdaf4172917c5698e",
+  base_revision: "555a4cc469907e26ef007eb79af2b6cb4bddd6c6",
   application_phase: "image_build",
   test_hunks_installed: false,
   applier: {
     path: "engines/images/prowler/apply-runtime-patches.py",
-    sha256: "sha256:8f698134a7d8bc2b6cab79f2b322f8fe68ecc1b6b8034caf648638503d794383",
+    sha256: "sha256:cadffc958d8be0712ea8910f27a7ab8d5a6714e9272667067d085e25b4dfd822",
   },
   series: {
     path: "engines/images/prowler/patches/series",
@@ -94,7 +94,7 @@ export const PROWLER_DOWNSTREAM_RUNTIME_PATCHES = {
   patches: [
     {
       path: "engines/images/prowler/patches/0001-azure-static-access-token-iam-only.patch",
-      sha256: "sha256:053ef441588b6bff99aef8a568f2617d8933a46449d2f9c2804b796c7a39566a",
+      sha256: "sha256:4298dc64c7cbde55b11b3058dbecadba85e017f51d52aff9fa5abc60535cc29d",
       runtime_files: [
         "prowler/providers/azure/azure_provider.py",
         "prowler/providers/azure/lib/arguments/arguments.py",
@@ -122,7 +122,7 @@ export const PROWLER_DOWNSTREAM_RUNTIME_PATCHES = {
     },
     {
       path: "engines/images/prowler/patches/0005-azure-disable-tenant-enumeration.patch",
-      sha256: "sha256:00f40971d80137612b5327a8b7e31de6b05b08dd8239f1bd635339ae6325f80b",
+      sha256: "sha256:f6420c4ef32cf9ae0d6871eb76cb2d550584b18567d485a0da5f4d86b7a19bb8",
       runtime_files: [
         "prowler/lib/outputs/finding.py",
         "prowler/providers/azure/azure_provider.py",
@@ -139,8 +139,8 @@ export const PROWLER_DOWNSTREAM_RUNTIME_PATCHES = {
   runtime_files: [
     {
       path: "prowler/lib/outputs/finding.py",
-      pre_sha256: "sha256:00ed79bee5e32239d3cce4943c70df33dbfe3f85056deb750ad11f2073613cce",
-      post_sha256: "sha256:71d5665f11c27a3dc69660ac61b747264066c6791ba65014c50ba80105902749",
+      pre_sha256: "sha256:756c9c456cd511d16edc1b6b0180f7aa4e34b66419d1ea3caf73bfe8e5d92a9b",
+      post_sha256: "sha256:17cdb7c2d851ada5e61269bd50a22636dec119dc1e3c71c233785f9d84fcabff",
     },
     {
       path: "prowler/providers/azure/azure_provider.py",
