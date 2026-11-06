@@ -13,15 +13,15 @@ const PROVENANCE_PATH = path.join(
 const PINNED_UPSTREAM = Object.freeze({
   schemaVersion: 1,
   upstreamRepository: "https://github.com/tauri-apps/tauri",
-  upstreamTag: "tauri-cli-v2.11.4",
-  upstreamCommit: "8909f221d1515955fc843808032bdc5d62209c96",
+  upstreamTag: "tauri-cli-v2.12.4",
+  upstreamCommit: "993038c49185307dfc895ab7657d77ca0d5ed7c7",
   upstreamPath: "crates/tauri-bundler/src/bundle/windows/nsis/installer.nsi",
   upstreamUrl:
-    "https://raw.githubusercontent.com/tauri-apps/tauri/tauri-cli-v2.11.4/crates/tauri-bundler/src/bundle/windows/nsis/installer.nsi",
-  upstreamSha256: "20f4ecc730defb71f1342eaeaec4021df13be3d843abba0effe88ea5835fa079",
+    "https://raw.githubusercontent.com/tauri-apps/tauri/tauri-cli-v2.12.4/crates/tauri-bundler/src/bundle/windows/nsis/installer.nsi",
+  upstreamSha256: "d00089d3b1a2c4a30d7b6e098079100cb8f25e980f84d4515aca4597b95e967d",
   patchContract:
     "ai-security-scanner.windows-runtime-cache-prerequisite-version-neutral-repair-and-bounded-uninstall/v8",
-  vendoredSha256: "cbafe3897bd535fe77978bf4f4b8c6feb96278f5ac0f727b507926a460011bae",
+  vendoredSha256: "11ec7d38d1588c6f654c62f7fc87c5a5d82d24d2b26fffbe0715a292b42d255a",
 });
 
 function assert(condition, message) {
@@ -110,10 +110,10 @@ function reconstructPinnedUpstream(vendored) {
       label: "vendored provenance header",
       patched: block([
         "; Vendored from Tauri CLI's NSIS template for reproducible Windows packaging.",
-        "; Upstream tag: tauri-cli-v2.11.4",
-        "; Upstream commit: 8909f221d1515955fc843808032bdc5d62209c96",
-        "; Upstream URL: https://raw.githubusercontent.com/tauri-apps/tauri/tauri-cli-v2.11.4/crates/tauri-bundler/src/bundle/windows/nsis/installer.nsi",
-        "; Upstream SHA-256: 20f4ecc730defb71f1342eaeaec4021df13be3d843abba0effe88ea5835fa079",
+        "; Upstream tag: tauri-cli-v2.12.4",
+        "; Upstream commit: 993038c49185307dfc895ab7657d77ca0d5ed7c7",
+        "; Upstream URL: https://raw.githubusercontent.com/tauri-apps/tauri/tauri-cli-v2.12.4/crates/tauri-bundler/src/bundle/windows/nsis/installer.nsi",
+        "; Upstream SHA-256: d00089d3b1a2c4a30d7b6e098079100cb8f25e980f84d4515aca4597b95e967d",
         "; Upstream license: Apache-2.0 OR MIT",
         "; Local patch: version-neutral stale-registration and same-version repair,",
         "; data-preserving upgrade overlays, synchronous copied-uninstaller execution,",
@@ -1196,7 +1196,7 @@ function validateProductUninstallPatch(vendored) {
   assertOrdered(
     section,
     [
-      '!insertmacro CheckIfAppIsRunning "${MAINBINARYNAME}.exe" "${PRODUCTNAME}"',
+      '!insertmacro CheckIfAppIsRunning "$INSTDIR\\${MAINBINARYNAME}.exe" "${PRODUCTNAME}"',
       "Call un.RunProductUninstallCoordinator",
       '${If} $UninstallCoordinatorResult == "contact-not-stopped"',
       "SetErrorLevel 20",
@@ -1405,7 +1405,7 @@ function validateProductRepairPatch(vendored) {
       "${If} $RegistrationOverlayMode <> 0",
       "Abort",
       "${EndIf}",
-      'EnumRegKey $1 HKLM "SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Uninstall" $0',
+      "Call FindWixInstall",
     ],
     "maintenance-page repair bypass",
   );
@@ -1841,13 +1841,13 @@ export async function validateWindowsNsisTemplate() {
     "the fixed NSIS installer coordinator CLI is not packaged as an installed Windows sidecar",
   );
   assert(
-    packageLock.packages?.["node_modules/@tauri-apps/cli"]?.version === "2.11.4",
-    "reviewed NSIS template is not paired with the pinned Tauri CLI 2.11.4",
+    packageLock.packages?.["node_modules/@tauri-apps/cli"]?.version === "2.12.4",
+    "reviewed NSIS template is not paired with the pinned Tauri CLI 2.12.4",
   );
   assert(sha256(vendored) === provenance.vendoredSha256, "vendored NSIS template digest changed");
   for (const noticeMarker of [
     "VENDORED PACKAGING SOURCE",
-    "Tauri CLI NSIS installer template | tauri-cli-v2.11.4 | Apache-2.0 OR MIT",
+    "Tauri CLI NSIS installer template | tauri-cli-v2.12.4 | Apache-2.0 OR MIT",
     provenance.upstreamCommit,
     provenance.upstreamSha256,
   ]) {

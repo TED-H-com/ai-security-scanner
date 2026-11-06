@@ -1,11 +1,11 @@
 {
   "schemaVersion": 1,
   "upstreamRepository": "https://github.com/tauri-apps/tauri",
-  "upstreamTag": "tauri-cli-v2.11.4",
-  "upstreamCommit": "8909f221d1515955fc843808032bdc5d62209c96",
+  "upstreamTag": "tauri-cli-v2.12.4",
+  "upstreamCommit": "993038c49185307dfc895ab7657d77ca0d5ed7c7",
   "upstreamPath": "crates/tauri-bundler/src/bundle/windows/nsis/installer.nsi",
-  "upstreamUrl": "https://raw.githubusercontent.com/tauri-apps/tauri/tauri-cli-v2.11.4/crates/tauri-bundler/src/bundle/windows/nsis/installer.nsi",
-  "upstreamSha256": "20f4ecc730defb71f1342eaeaec4021df13be3d843abba0effe88ea5835fa079",
+  "upstreamUrl": "https://raw.githubusercontent.com/tauri-apps/tauri/tauri-cli-v2.12.4/crates/tauri-bundler/src/bundle/windows/nsis/installer.nsi",
+  "upstreamSha256": "d00089d3b1a2c4a30d7b6e098079100cb8f25e980f84d4515aca4597b95e967d",
   "patchContract": "ai-security-scanner.windows-runtime-cache-prerequisite-version-neutral-repair-and-bounded-uninstall/v8",
-  "vendoredSha256": "cbafe3897bd535fe77978bf4f4b8c6feb96278f5ac0f727b507926a460011bae"
+  "vendoredSha256": "11ec7d38d1588c6f654c62f7fc87c5a5d82d24d2b26fffbe0715a292b42d255a"
 }
