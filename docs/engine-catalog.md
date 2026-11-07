@@ -2,7 +2,7 @@
 
 Status: current source catalog companion
 
-Last updated: 2026-11-06
+Last updated: 2026-11-07
 
 Exact artifact facts: [`engines/catalog.json`](../engines/catalog.json)
 
@@ -51,7 +51,7 @@ The product and reports use these terms narrowly:
 |---|:---:|:---:|:---:|:---:|:---:|:---:|---|
 | Local service connection test | Yes | Limited | - | - | - | - | One TCP connection attempt to `127.0.0.1:<port>`; accepted, refused, timeout, or failure. It does not inspect a protocol or test a vulnerability. |
 | Website, guided `low_impact_external` | Yes | Yes | - | - | - | Limited | Naabu checks the declared TCP port and httpx records bounded HTTP reachability/status metadata. It does not crawl or establish that the site is secure or vulnerable. |
-| Website, authorized `active_external` | Yes | Yes | Yes | Limited | - | Limited | Nuclei derives 4,674 bounded read-only candidates from the pinned upstream snapshot, detects technology, and runs matching templates against the exact origin. Completion does not imply every candidate executed. |
+| Website, authorized `active_external` | Yes | Yes | Yes | Limited | - | Limited | Nuclei derives 4,777 bounded read-only candidates from the pinned upstream snapshot, detects technology, and runs matching templates against the exact origin. Completion does not imply every candidate executed. |
 | Public host or internal CIDR, guided | Yes | Yes | - | - | - | Limited | Naabu reports reachable selected TCP ports. An open port is an exposure fact, not by itself a vulnerability. |
 | Exact internal host, remote-safe profile | Yes | Yes | Limited | Limited | - | Limited | Greenbone receives the exact approved host and ports, derives current non-deprecated remote `gather_info` VTs from the pinned feed, and applies upstream prerequisites. A completed scan does not prove that every scheduled VT executed. |
 | Source repository / AI-project repository | - | - | Yes | Yes | Yes | Limited | Gitleaks and TruffleHog inspect secrets; Semgrep checks a pinned offline pack of 1,493 legacy upstream rules and four product rules; Trivy and Grype inspect recognized dependencies; Checkov and KICS inspect applicable configuration. The AI label does not add live model or jailbreak testing. |
@@ -99,13 +99,13 @@ The source and license below identify the pinned engine family. Exact release, s
 
 The current catalog pins `ghcr.io/ted-h-com/ai-security-scanner-engine-grype:0.121.2-1` to `sha256:80b8f128551226a9f4924b68fae76331424eaa53d7c1f189445661cb08ebd9db`, with the November 5 schema v6.1.10 database. The [verified publication record](engines/updates/2026-11-06-publications.json) binds source provenance and both platform digests. The bounded native OCI fixture emits six vulnerability matches with original advisory IDs preserved.
 
-The earlier source catalog at [commit 3990168](https://github.com/TED-H-com/ai-security-scanner/commit/3990168be5154804c8a70c97f8c8f6e827221cbc) pinned
+The earlier source catalog on 2026-09-20 at [commit 3990168](https://github.com/TED-H-com/ai-security-scanner/commit/3990168be5154804c8a70c97f8c8f6e827221cbc) pinned
 `ghcr.io/teddashh/ai-security-scanner-engine-grype:0.117.0-4` to
 `sha256:56b0d675e3b8d539890e853699c114493a72a54cca0bbe254eceee7ec2b4c517`.
 The launcher accepts repository working-tree snapshots, allowing upstream Grype to report known
 package vulnerabilities from recognized dependencies as well as single-image OCI inputs.
 
-A controlled Linux repository scan after rebuilding that source recorded 81 Grype findings
+A controlled Linux repository scan on 2026-09-20 after rebuilding that source recorded 81 Grype findings
 (10 critical, 32 high, 33 medium, 6 low), status `completed`, exit code 0, and the pinned digest.
 Its final HTML report preserved those results. Counts depend on the selected repository and pinned
 database; this fixture result is not a coverage guarantee for another project.

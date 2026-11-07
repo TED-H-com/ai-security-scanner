@@ -131,7 +131,9 @@ The app brings together 25 open-source tools. Each keeps its own detection rules
 
 **[Syft](https://github.com/anchore/syft)** — Syft, from Anchore, is a widely used open-source tool that builds a software bill of materials, or SBOM: a list of the software components inside a project or container image, such as libraries and operating-system packages. It records the name, version, and type of each component it recognizes. We include it in this app because it helps you quickly see which software the selected project or image contains, so you know what the vulnerability checks are looking at. The list shows what is there; it is not a vulnerability report. Here it reads a read-only copy with no network connection and does not download images from a registry. Known vulnerabilities are left to Trivy and Grype.
 
-The released catalog pins the Grype image to **`0.117.0-4`**, digest `sha256:56b0d675…`. It can scan local repository dependencies for known vulnerabilities; a controlled repository scan recorded **81 Grype findings**. That is a fixture result, not an expected count for every project. See the [exact pin and recorded result](docs/engine-catalog.md#grype-repository-support).
+The current catalog pins the Grype image to **`0.121.2-1`**, digest `sha256:80b8f128…`. It can scan local repository dependencies for known vulnerabilities. See the [exact current pin and historical scan record](docs/engine-catalog.md#grype-repository-support).
+
+A controlled repository scan on **2026-09-20** using the earlier image **`0.117.0-4`** recorded **81 Grype findings**. That historical fixture result does not measure the current image or predict the count for another project.
 
 ### Websites and internal systems
 
