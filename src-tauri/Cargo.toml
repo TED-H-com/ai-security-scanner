@@ -87,7 +87,7 @@ ipnet = { version = "2.12.0", features = ["serde"] }
 libc = "0.2.183"
 minisign-verify = { version = "0.2.5", optional = true }
 quick-xml = { version = "0.42.0", default-features = false }
-rusqlite = { version = "0.40.2", features = ["bundled"] }
+rusqlite = { version = "0.41.1", features = ["bundled"] }
 reqwest = { version = "0.13.4", default-features = false, features = ["blocking", "rustls"] }
 serde = { version = "1.0.229", features = ["derive"] }
 serde_json = "1.0.151"
