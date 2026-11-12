@@ -3044,17 +3044,12 @@ fn set_private_file(path: &Path) -> AppResult<()> {
 #[cfg(windows)]
 fn make_file_deletable(path: &Path) -> AppResult<()> {
     let _single_link_guard = crate::case_archive_io::single_link_regular_file(path)?;
-    use std::os::windows::ffi::OsStrExt;
     use windows_sys::Win32::Storage::FileSystem::{
         FILE_ATTRIBUTE_NORMAL, FILE_ATTRIBUTE_READONLY, GetFileAttributesW,
         INVALID_FILE_ATTRIBUTES, SetFileAttributesW,
     };
 
-    let encoded = path
-        .as_os_str()
-        .encode_wide()
-        .chain(std::iter::once(0))
-        .collect::<Vec<_>>();
+    let encoded = crate::internal_paths::win32_path(path)?;
     // SAFETY: `encoded` is NUL-terminated and lives for the duration of each
     // Windows API call.
     let attributes = unsafe { GetFileAttributesW(encoded.as_ptr()) };

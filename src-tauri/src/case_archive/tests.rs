@@ -92,6 +92,16 @@ impl Fixture {
         let database = fs::read(self.destination.join("casework.db")).unwrap();
         assert!(!database.is_empty());
         assert_eq!(receipt.files.get("casework.db"), Some(&digest(&database)));
+        // The receipt hashes the closed database, never transient SQLite side files.
+        assert!(!self.destination.join("casework.db-wal").exists());
+        assert!(!self.destination.join("casework.db-shm").exists());
+        let expected = receipt
+            .files
+            .keys()
+            .cloned()
+            .chain([RECEIPT_FILE.into(), "restore-intent.json".into()])
+            .collect::<BTreeSet<_>>();
+        assert_eq!(retained_files(&self.destination).unwrap(), expected);
         assert!(self.destination.join("restore-intent.json").is_file());
         self.assert_no_staging_leftovers(true);
     }

@@ -869,8 +869,12 @@ fn add_sources(
                 "legacy source has no retained content digest; source completeness cannot be verified",
             ));
         }
+        let connector_root = crate::connectors::prepare_artifact_root(
+            root.join(&case.id).join("connector-snapshots"),
+        )
+        .map_err(|error| invalid(&error.to_string()))?;
         let bytes = crate::connectors::inspect_snapshot_reference(
-            &root.join(&case.id).join("connector-snapshots"),
+            &connector_root,
             &reference,
             &[reference.profile.as_str()],
         )
@@ -1245,11 +1249,14 @@ fn verify_sources(loaded: &LoadedArchive, root: &Path) -> AppResult<()> {
             "artifacts/{}/connector-snapshots/{}",
             loaded.portable.case.id, reference.canonical_relative_path
         ));
-        crate::connectors::inspect_snapshot_reference(
-            &root
-                .join("artifacts")
+        let connector_root = crate::connectors::prepare_artifact_root(
+            root.join("artifacts")
                 .join(&loaded.portable.case.id)
                 .join("connector-snapshots"),
+        )
+        .map_err(|error| invalid(&error.to_string()))?;
+        crate::connectors::inspect_snapshot_reference(
+            &connector_root,
             &reference,
             &[reference.profile.as_str()],
         )
@@ -1459,8 +1466,12 @@ fn restore_impl(
         &loaded.package.manifest.archive_id,
         provider.as_ref(),
     )?;
+    // Consumes storage and closes SQLite (removing WAL/SHM) before hashing or moving.
     storage.checkpoint_for_archive_restore()?;
-    fs::File::open(stage.path().join("casework.db"))?.sync_all()?;
+    fs::OpenOptions::new()
+        .write(true)
+        .open(stage.path().join("casework.db"))?
+        .sync_all()?;
     retained.insert(
         "casework.db".into(),
         hash_file(&stage.path().join("casework.db"))?,

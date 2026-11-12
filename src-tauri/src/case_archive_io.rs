@@ -263,7 +263,9 @@ pub(crate) fn private_tempdir_in(
             }
             // This creates an absent final component atomically with an
             // explicit TokenUser owner and protected current-user-only ACL.
-            let created = crate::managed_runtime::ensure_private_product_data_directory(&path)?;
+            let created = crate::managed_runtime::ensure_private_product_data_directory(
+                &fs::canonicalize(parent_guard.path())?.join(path.file_name().unwrap()),
+            )?;
             if !created.was_created() {
                 // A competing creator owns this candidate: do not adopt it,
                 // change its ACL, or later delete it.
@@ -318,7 +320,10 @@ pub(crate) fn guard_archive_parent(path: &Path) -> AppResult<ArchiveParentGuard>
             return Err(invalid("archive parent changed to an unsafe directory"));
         }
         let path = crate::internal_paths::canonicalize(path)?;
-        let namespace = crate::managed_runtime::ensure_private_product_data_directory(&path)?;
+        // Only the released Win32 verifier receives std's extended canonical form.
+        let namespace = crate::managed_runtime::ensure_private_product_data_directory(
+            &fs::canonicalize(&path)?,
+        )?;
         if namespace.was_created() {
             return Err(invalid("archive parent must already exist"));
         }
@@ -1595,23 +1600,9 @@ pub(crate) fn rename_entry_no_replace(stage: &Path, destination: &Path) -> AppRe
     }
     #[cfg(windows)]
     {
-        use std::os::windows::ffi::OsStrExt;
         use windows_sys::Win32::Storage::FileSystem::{MOVEFILE_WRITE_THROUGH, MoveFileExW};
-        if stage.as_os_str().encode_wide().any(|unit| unit == 0)
-            || destination.as_os_str().encode_wide().any(|unit| unit == 0)
-        {
-            return Err(invalid("publish paths must not contain NUL"));
-        }
-        let source = stage
-            .as_os_str()
-            .encode_wide()
-            .chain(Some(0))
-            .collect::<Vec<_>>();
-        let target = destination
-            .as_os_str()
-            .encode_wide()
-            .chain(Some(0))
-            .collect::<Vec<_>>();
+        let source = crate::internal_paths::win32_path(stage)?;
+        let target = crate::internal_paths::win32_path(destination)?;
         // SAFETY: paths are nul terminated; neither REPLACE_EXISTING nor COPY_ALLOWED is set.
         if unsafe { MoveFileExW(source.as_ptr(), target.as_ptr(), MOVEFILE_WRITE_THROUGH) } == 0 {
             return Err(io::Error::last_os_error().into());

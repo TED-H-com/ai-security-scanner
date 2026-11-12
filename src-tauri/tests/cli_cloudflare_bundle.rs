@@ -69,6 +69,7 @@ fn retained(fixture: &Fixture, destination: &Path, expected: &str) -> Output {
         .unwrap()
 }
 
+#[track_caller]
 fn save(fixture: &Fixture) -> (PathBuf, Value) {
     let preview = fixture.validate(true);
     let directory = fixture.bundle.with_file_name("saved");
@@ -513,6 +514,7 @@ impl Fixture {
     fn run(&self) -> Output {
         self.command().output().unwrap()
     }
+    #[track_caller]
     fn validate(&self, valid: bool) -> Value {
         let output = self.run();
         assert_eq!(

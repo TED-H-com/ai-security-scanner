@@ -24,6 +24,7 @@ pub(super) struct Fixture {
     pub(super) reference: WorkspaceSnapshotReference,
 }
 impl Fixture {
+    #[track_caller]
     pub(super) fn new(files: &[(&str, &[u8])], approve: bool) -> Self {
         let builder = tempfile::Builder::new();
         #[cfg(unix)]
@@ -141,10 +142,12 @@ impl Fixture {
         ]);
         c
     }
+    #[track_caller]
     pub(super) fn prepare(&self, request: &str, scope: &str) -> Value {
         terminal(self.prepare_command(request, scope).output().unwrap(), 0)
     }
 }
+#[track_caller]
 pub(super) fn terminal(output: Output, code: i32) -> Value {
     assert_eq!(
         output.status.code(),
@@ -177,6 +180,7 @@ pub(super) fn writable(path: &Path) {
 }
 
 impl Fixture {
+    #[track_caller]
     pub(super) fn setup(approve: bool) -> (Self, Value) {
         let f = Self::new(&[("src/a.rs", b"fn main() {}\n")], approve);
         let view = f.prepare("view-request", ".");
@@ -199,9 +203,11 @@ impl Fixture {
             .arg(path);
         c
     }
+    #[track_caller]
     pub(super) fn audit(&self, request: &Value, code: i32) -> Value {
         terminal(self.audit_command(request).output().unwrap(), code)
     }
+    #[track_caller]
     pub(super) fn audit_status(&self, id: &str, by_session: bool, code: i32) -> Value {
         terminal(
             self.command()
@@ -273,6 +279,7 @@ impl Fixture {
             .arg(path);
         c
     }
+    #[track_caller]
     pub(super) fn checkpoint(&self, request: &Value, code: i32) -> Value {
         terminal(self.checkpoint_command(request).output().unwrap(), code)
     }
@@ -304,12 +311,15 @@ pub(super) struct RunFixture {
     serial: usize,
 }
 impl RunFixture {
+    #[track_caller]
     pub fn new(profile: &str) -> Self {
         Self::without(profile, &[])
     }
+    #[track_caller]
     pub fn without(profile: &str, omitted: &[&str]) -> Self {
         Self::with_records(profile, omitted, |_, _, _| {})
     }
+    #[track_caller]
     pub fn with_records(
         profile: &str,
         omitted: &[&str],
@@ -423,6 +433,7 @@ impl RunFixture {
         );
         run
     }
+    #[track_caller]
     pub fn action(&mut self, action: Value) -> Value {
         self.serial += 1;
         let mut request = self.f.checkpoint_request(&self.prepared, action);
@@ -439,9 +450,11 @@ impl RunFixture {
         self.head = value["result"]["record_head"]["entry_sha256"].clone();
         value
     }
+    #[track_caller]
     pub fn issue(&mut self, spec: Value) -> Value {
         self.action(json!({"type":"issue","assignments":[spec]}))["result"]["entry"]["content"]["assignments"][0].clone()
     }
+    #[track_caller]
     pub fn submit(&mut self, a: &Value, bytes: &[u8]) {
         let path = format!(
             "agents/{}/artifacts/output.json",
@@ -452,6 +465,7 @@ impl RunFixture {
         fs::write(file, bytes).unwrap();
         self.action(json!({"type":"submit_output","assignment_id":a["assignment_id"],"output":{"path":path}}));
     }
+    #[track_caller]
     pub fn documents(&mut self, names: &[&str]) {
         for name in names {
             let bytes = match *name {
@@ -486,6 +500,7 @@ impl RunFixture {
             .arg(path);
         command
     }
+    #[track_caller]
     pub fn validate(&self, code: i32) -> Value {
         terminal(self.validate_command().output().unwrap(), code)
     }

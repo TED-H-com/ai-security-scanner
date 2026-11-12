@@ -20,10 +20,18 @@ fn command(run: &RunFixture) -> Command {
 fn inspect(run: &RunFixture, code: i32) -> Value {
     terminal(command(run).output().unwrap(), code)
 }
+const LEASE_FILE: &str = ".exclusive-process.lock";
 fn tree(root: &Path) -> BTreeMap<String, String> {
     fn visit(base: &Path, at: &Path, entries: &mut BTreeMap<String, String>) {
         let metadata = fs::symlink_metadata(at).unwrap();
-        let key = at.strip_prefix(base).unwrap().to_str().unwrap().to_owned();
+        // Package member names are portable: `/` on every host.
+        let key = at
+            .strip_prefix(base)
+            .unwrap()
+            .components()
+            .map(|part| part.as_os_str().to_str().unwrap())
+            .collect::<Vec<_>>()
+            .join("/");
         if metadata.file_type().is_symlink() {
             entries.insert(
                 key,
@@ -35,7 +43,20 @@ fn tree(root: &Path) -> BTreeMap<String, String> {
                 visit(base, &entry.unwrap().path(), entries);
             }
         } else {
-            entries.insert(key, hex::encode(Sha256::digest(fs::read(at).unwrap())));
+            let state = match fs::read(at) {
+                Ok(bytes) => hex::encode(Sha256::digest(bytes)),
+                // Windows locks are mandatory: a held lease file cannot be read by
+                // anyone, so both sides of a comparison record it as locked.
+                Err(error)
+                    if cfg!(windows)
+                        && error.raw_os_error() == Some(33)
+                        && at.file_name().is_some_and(|name| name == LEASE_FILE) =>
+                {
+                    "locked".into()
+                }
+                Err(error) => panic!("{}: {error}", at.display()),
+            };
+            entries.insert(key, state);
         }
     }
     let mut entries = BTreeMap::new();

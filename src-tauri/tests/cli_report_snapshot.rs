@@ -104,6 +104,7 @@ fn saved_document(
         .unwrap()
 }
 
+#[track_caller]
 fn success(output: Output) -> Value {
     assert!(
         output.status.success(),
@@ -114,6 +115,7 @@ fn success(output: Output) -> Value {
     serde_json::from_slice(&output.stdout).expect("one JSON result")
 }
 
+#[track_caller]
 fn failure(output: Output) -> String {
     assert!(!output.status.success(), "unexpected CLI success");
     assert!(
@@ -137,6 +139,7 @@ fn original(snapshot: &Value, format: &str) -> Vec<u8> {
         .unwrap()
 }
 
+#[track_caller]
 fn assert_receipt(receipt: &Value, operation: &str, path: &Path, expected: &[u8]) {
     assert_eq!(
         receipt["schema_version"],

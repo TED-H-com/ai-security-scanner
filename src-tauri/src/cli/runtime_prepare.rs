@@ -158,7 +158,10 @@ fn owned_prepare(
     let data_dir = ai_security_scanner_lib::internal_paths::canonicalize(data_dir)?;
     let _lease = DataDirectoryExclusiveLease::acquire(&data_dir)?;
     let receipt_dir = data_dir.join("runtime-preparations");
-    let _receipt_guard = ensure_private_product_data_directory(&receipt_dir)?;
+    // The released namespace verifier uses direct Win32 calls on existing roots.
+    let _receipt_guard = ensure_private_product_data_directory(
+        &fs::canonicalize(&data_dir)?.join("runtime-preparations"),
+    )?;
     let started_at = chrono::Utc::now();
     let prepared = if cancelled.load(Ordering::Acquire) {
         plan.report_for_failure(request.args.offline, "Preparation was cancelled.", true)

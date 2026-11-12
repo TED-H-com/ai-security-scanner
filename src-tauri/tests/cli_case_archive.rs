@@ -285,6 +285,7 @@ fn restore(data_dir: &Path, archive: &Path, destination: &Path) -> Output {
         .unwrap()
 }
 
+#[track_caller]
 fn success(output: Output) -> Value {
     assert!(
         output.status.success(),
@@ -295,6 +296,7 @@ fn success(output: Output) -> Value {
     serde_json::from_slice(&output.stdout).expect("one JSON result")
 }
 
+#[track_caller]
 fn failure(output: Output) -> String {
     assert!(!output.status.success(), "unexpected CLI success");
     assert!(
@@ -1022,6 +1024,45 @@ fn connector_capture_history_requires_complete_references_only_when_sources_are_
                 portable["case"]["data_sources"],
                 serde_json::to_value(&case.data_sources).unwrap()
             );
+            let restored = directory.path().join("restored-connector-capture");
+            success(restore(&no_data, &complete, &restored));
+            assert_eq!(
+                fs::read(restored.join(&capture_entry)).unwrap(),
+                capture_bytes
+            );
+            success(restore(&no_data, &complete, &restored));
+
+            // Root preparation must refuse missing and unsafe roots without repair.
+            let moved = connector_root.with_extension("saved");
+            fs::rename(&connector_root, &moved).unwrap();
+            let refused = directory.path().join("missing-connector-root.tar.gz");
+            let error = failure(
+                create(&fixture, &refused)
+                    .arg("--include-source-snapshots")
+                    .output()
+                    .unwrap(),
+            );
+            assert!(
+                error.contains("connector artifact root could not be inspected"),
+                "{error}"
+            );
+            assert!(!refused.exists());
+            assert!(!connector_root.exists());
+            fs::write(&connector_root, b"not a directory").unwrap();
+            let error = failure(
+                create(&fixture, &refused)
+                    .arg("--include-source-snapshots")
+                    .output()
+                    .unwrap(),
+            );
+            assert!(
+                error.contains("connector artifact root must be a real directory"),
+                "{error}"
+            );
+            assert!(!refused.exists());
+            assert_eq!(fs::read(&connector_root).unwrap(), b"not a directory");
+            fs::remove_file(&connector_root).unwrap();
+            fs::rename(moved, &connector_root).unwrap();
         }
         let missing = "historical-connector-capture-without-reference";
         match history_location {

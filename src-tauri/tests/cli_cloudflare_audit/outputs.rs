@@ -564,6 +564,9 @@ fn final_issuance_refuses_missing_corrupt_or_linked_product_objects() {
             continue;
         }
         let (f, prep, prepared, docs) = final_ready();
+        // Only the Unix link case reads the host directory.
+        #[cfg(not(unix))]
+        let _ = &prep;
         let hash = docs["result"]["entry"]["content"]["documents"][0]["sha256"]
             .as_str()
             .unwrap();

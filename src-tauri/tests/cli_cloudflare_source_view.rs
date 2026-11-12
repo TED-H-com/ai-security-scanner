@@ -146,6 +146,7 @@ impl Fixture {
         ]);
         c
     }
+    #[track_caller]
     fn prepare(&self, request: &str, scope: &str) -> Value {
         terminal(self.prepare_command(request, scope).output().unwrap(), 0)
     }
@@ -154,6 +155,7 @@ impl Fixture {
             .join("artifacts")
             .join(result["result"]["relative_path"].as_str().unwrap())
     }
+    #[track_caller]
     fn status(&self, request: &str) -> Value {
         terminal(
             self.command()
@@ -180,6 +182,7 @@ impl Fixture {
             .join("payload")
     }
 }
+#[track_caller]
 fn terminal(output: Output, code: i32) -> Value {
     assert_eq!(
         output.status.code(),
@@ -992,6 +995,7 @@ fn directory_inventory_succeeds_under_low_descriptor_limit() {
     );
 }
 
+#[track_caller]
 fn usage_error(output: Output) {
     assert_eq!(output.status.code(), Some(2));
     assert!(
