@@ -6,17 +6,17 @@
 
 檢查你的程式碼、網站與公司系統，把需要注意的安全問題整理成一份報告。你會知道哪裡有問題、為什麼重要，以及接下來可以怎麼做。
 
-目前 v0.6.0 桌面版會依選定項目使用適合的安全工具，整理檢查結果。可以先從一個資料夾或網站開始，也可以一次檢查公司環境中的多個系統。
+目前 v0.6.1 桌面版會依選定項目使用適合的安全工具，整理檢查結果。可以先從一個資料夾或網站開始，也可以一次檢查公司環境中的多個系統。
 
-**最新發布版本仍是 Linux、macOS、Windows 的 v0.6.0 桌面版**，也是初學者的預設入口。公開的操作 skill 協助安裝應用程式、確認準備狀態、引導在視窗中掃描及保存報告。
+**最新發布版本仍是 Linux、macOS、Windows 的 v0.6.1 桌面版**，也是初學者的預設入口。公開的操作 skill 協助安裝應用程式、確認準備狀態、引導在視窗中掃描及保存報告。
 
 ## 介面語言
 
-v0.6.0 安裝版包含日文介面，可在 **設定 → 日本語** 選擇，重新啟動後仍會保留。未翻譯的說明會顯示英文；日文介面匯出的 HTML 報告目前使用英文。另有 [日文 README](README.ja.md) 與[日文網站](https://ted-h-com.github.io/ai-security-scanner/?lang=ja)。
+v0.6.1 安裝版包含日文介面，可在 **設定 → 日本語** 選擇，重新啟動後仍會保留。未翻譯的說明會顯示英文；日文介面匯出的 HTML 報告目前使用英文。另有 [日文 README](README.ja.md) 與[日文網站](https://ted-h-com.github.io/ai-security-scanner/?lang=ja)。
 
 ## 完成第一次掃描
 
-1. [下載 v0.6.0](https://github.com/TED-H-com/ai-security-scanner/releases/tag/v0.6.0)，依你的 Windows、macOS 或 Linux 電腦[完成安裝](docs/getting-started.zh-TW.md#安裝)。程式會準備掃描工具，不需要另外安裝 Docker。
+1. [下載 v0.6.1](https://github.com/TED-H-com/ai-security-scanner/releases/tag/v0.6.1)，依你的 Windows、macOS 或 Linux 電腦[完成安裝](docs/getting-started.zh-TW.md#安裝)。程式會準備掃描工具，不需要另外安裝 Docker。
 2. 開啟程式，選擇**掃描公司環境**、**檢查網站**或**檢查程式碼或 AI 專案**，加入想檢查的資料夾、網址或內部系統。
 3. 確認畫面列出的目標與檢查內容。網站及內部系統必須是你有權檢查的對象，再從應用程式視窗開始掃描。
 4. 掃描結束後，打開**掃描結果**。按**保存或分享報告**，再儲存 **HTML 報告**，就能用瀏覽器閱讀。
@@ -30,7 +30,7 @@ v0.6.0 安裝版包含日文介面，可在 **設定 → 日本語** 選擇，�
 - [Skill 主流程](docs/skill-bootstrap.md)：固定來源 bootstrap 與所選掃描引擎的準備。
 - [前景掃描與復原](docs/foreground-scans.md)：執行已核准的檢查、讀取保存狀態並復原已擷取的結果。
 - [Cloudflare 原始碼稽核](docs/cloudflare-provider.md)：由宿主執行準備、記錄派工與輸出、檢查點、驗證、定稿、案件入案及共用報告整合；不再繼續的稽核可明示終止。
-- [未完成稽核檢查](docs/results-and-exports.zh-TW.md#未開始或未完成的原始碼稽核)：準備受阻與已終止稽核，會在案件與共用報告中列為未開始或失敗的檢查。
+- [未完成稽核檢查](docs/results-and-exports.zh-TW.md#未開始或未完成的原始碼稽核)：準備受阻與已終止稽核，會在案件、桌面結果與共用報告中列為未開始或失敗的檢查。
 - [報告保存與離線重播](docs/report-snapshots.md)：保存報告、取回原始檔案，並使用完全相容的報告產生器重播。
 - [完整私密案件封存](docs/case-archives.md)：建立、驗證並將案件、證據、保存報告與已記錄稽核歷史還原至新工作區；還原的稽核維持唯讀。
 
@@ -39,9 +39,14 @@ v0.6.0 安裝版包含日文介面，可在 **設定 → 日本語** 選擇，�
 - 完整 skill 主流程的真實宿主驗收尚未完成。
 - 預設 skill 仍使用已發布桌面版，尚未切換。
 - 受管理執行環境套件的自動取得與宣稱平台驗證尚未完成；這些開發功能尚未經 macOS、Windows 原生執行驗證。
-- 桌面版顯示失敗與未開始原始碼稽核檢查列的工作仍在進行。
 
 [開發狀態](docs/development-status.zh-TW.md)
+
+## v0.6.1 更新
+
+安全性更新：修正 macOS 與 Linux 的本機專案掃描。掃描不是自己建立的儲存庫之前，請先更新。Windows 不執行受影響的 Git 檢查。
+
+詳見 [GHSA-6w49-gw8c-q7wp](https://github.com/TED-H-com/ai-security-scanner/security/advisories/GHSA-6w49-gw8c-q7wp) 與 [v0.6.1 發布紀錄](docs/release/v0.6.1.md#繁體中文)。
 
 ## v0.6.0 更新
 

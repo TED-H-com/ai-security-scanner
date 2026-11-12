@@ -2,14 +2,14 @@
 
 [繁體中文](release-model.zh-TW.md) · [Documentation](README.md)
 
-Status checked: 2026-11-10. The terminology below is a recommendation for the
+Skill publication status checked: 2026-11-10; desktop release status updated: 2026-11-12. The terminology below is a recommendation for the
 skill-first product. It does not announce a new release or choose a version.
 
 ## Available today
 
 | Delivery | Verified state | What users get |
 | --- | --- | --- |
-| Desktop | [v0.6.0 stable](https://github.com/TED-H-com/ai-security-scanner/releases/tag/v0.6.0), published November 6 | Windows, macOS and Linux installers; the existing desktop scan and report path. |
+| Desktop | [v0.6.1 stable](https://github.com/TED-H-com/ai-security-scanner/releases/tag/v0.6.1), published November 12, 2026 | Windows, macOS and Linux installers; the existing desktop scan and report path. |
 | Repository operator skill | [Instructions are public](https://github.com/TED-H-com/ai-security-scanner/blob/6e259b497b87fb8aa2ece1f3b512cc29c9ea5af7/.codex/skills/ai-security-scanner/SKILL.md), with a matching Claude Code copy | Helps install and operate the desktop, inspect results and export reports. This is a published repository skill. |
 | New skill-first core and bootstrap | Development implementation; not a published skill release at this check | Foreground scans, selected-engine preparation, saved reports, case archive/restore and Cloudflare validation/retention. Use a deliberately selected development checkout. |
 | Plugin directory listing | Not established by the repository publication | A separate distribution channel; do not describe the repository skill as a listed or reviewed plugin without a listing. |
@@ -76,9 +76,9 @@ Before calling the complete new skill path stable:
 
 These are the accepted product outcomes, not a requirement to maximize test
 counts or ship every platform before a deliberately narrower preview. The owner
-selects the release scope, version and date. Keep **Desktop v0.6.0 — stable** as
+selects the release scope, version and date. Keep **Desktop v0.6.1 — stable** as
 the current download, and **Skill-first — in development** until an actual
-preview is published. Do not relabel v0.6.0 or alter its updater to imply it
+preview is published. Do not relabel v0.6.1 or alter its updater to imply it
 contains the new work.
 
 ## Recording the next delivery

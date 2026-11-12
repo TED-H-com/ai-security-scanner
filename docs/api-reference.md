@@ -2,7 +2,7 @@
 
 This document provides a reference for the core backend APIs exposed to the frontend via Tauri, and usage examples for interacting with the backend services.
 
-The development CLI shares the core but has a separate command contract: [bootstrap](skill-bootstrap.md), [foreground execution](foreground-scans.md), [report snapshots](report-snapshots.md), [case archives](case-archives.md), and [Cloudflare validation/retention](cloudflare-provider.md). These newer commands are not in the v0.6.0 installers; see [publication status](release-model.md). They are CLI commands, not new Tauri invoke names.
+The development CLI shares the core but has a separate command contract: [bootstrap](skill-bootstrap.md), [foreground execution](foreground-scans.md), [report snapshots](report-snapshots.md), [case archives](case-archives.md), and [Cloudflare validation/retention](cloudflare-provider.md). These newer commands are not in the v0.6.1 installers; see [publication status](release-model.md). They are CLI commands, not new Tauri invoke names.
 
 ## Core Modules
 

@@ -4,7 +4,7 @@
 
 更新：2026-11-12。
 
-**最新發布版本仍是 Linux、macOS、Windows 的 v0.6.0 桌面版**，也是初學者的預設入口。公開的操作 skill 協助安裝應用程式、確認準備狀態、引導在視窗中掃描及保存報告。
+**最新發布版本仍是 Linux、macOS、Windows 的 v0.6.1 桌面版**，也是初學者的預設入口。公開的操作 skill 協助安裝應用程式、確認準備狀態、引導在視窗中掃描及保存報告。
 
 ## 開發中的新功能
 
@@ -464,9 +464,11 @@ Linux 通過 2,153 項 Rust 測試：1,611 項核心單元、74 項 CLI 單元�
 
 ## 現況
 
-- [v0.6.0 上游與執行環境更新](release/v0.6.0.md#繁體中文)為目前 stable／latest，提供 Windows、macOS 與 Linux 安裝版。全部 25 個引擎已核對，十八個自建映像、KICS、離線資料、專用執行環境及應用依賴已更新；精確交付與平台限制見發布紀錄。
+- [v0.6.1 安全性更新](release/v0.6.1.md#繁體中文)為目前 stable／latest，提供 Windows、macOS 與 Linux 安裝版。掃描不是自己建立的儲存庫之前，請先更新；變更、公告與實際驗證狀態見發布紀錄。
 
-- [v0.5.3 10/21 事件掃描包](release/v0.5.3.md#繁體中文)為前一個正式版，提供 Windows、macOS 與 Linux 安裝版。一般掃描與事件專項共用 HTML／JSON 報告，附 ISO／NIST 對照；本版也更新 Trivy 資料庫、Nuclei 範本與 Vite 開發工具。公開檔案與平台觀察保存在發布紀錄。
+- [v0.6.0 上游與執行環境更新](release/v0.6.0.md#繁體中文)為前一個正式版，提供 Windows、macOS 與 Linux 安裝版。全部 25 個引擎已核對，十八個自建映像、KICS、離線資料、專用執行環境及應用依賴已更新；精確交付與平台限制見發布紀錄。
+
+- [v0.5.3 10/21 事件掃描包](release/v0.5.3.md#繁體中文)為較早的正式版，提供 Windows、macOS 與 Linux 安裝版。一般掃描與事件專項共用 HTML／JSON 報告，附 ISO／NIST 對照；本版也更新 Trivy 資料庫、Nuclei 範本與 Vite 開發工具。公開檔案與平台觀察保存在發布紀錄。
 
 - 較早的 [v0.5.2 上游引擎更新](release/v0.5.2.zh-TW.md)保留原始發布與平台觀察紀錄。更新十個引擎與離線資料，並修正新版 WSL 的 Windows 受限執行環境；公開檔案、更新簽章、來源證明、精確來源 CI 及 CodeQL 均驗證通過，平台觀察與限制見發布紀錄。
 
@@ -497,7 +499,7 @@ Linux 通過 2,153 項 Rust 測試：1,611 項核心單元、74 項 CLI 單元�
 ## 維護入口
 
 - [引擎參考](engines/README.zh-TW.md)與[全部映像檔建置更新筆記](engines/image-build-index.md)
-- [發布流程](releasing.zh-TW.md)與[本版發布紀錄](release/v0.6.0.md#繁體中文)
+- [發布流程](releasing.zh-TW.md)與[本版發布紀錄](release/v0.6.1.md#繁體中文)
 - [現行產品檢視](product-audit.md)與[掃描範圍](scanning-scope.zh-TW.md)
 
 掃描只使用明確授權範圍；憑證不透過聊天或指令參數傳遞。版本、發布、簽章與包裝由產品負責人決定。

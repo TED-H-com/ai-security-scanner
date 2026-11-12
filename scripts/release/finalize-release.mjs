@@ -493,6 +493,24 @@ const RELEASE_COPY = new Map([
     },
   ],
   [
+    "0.6.1",
+    {
+      updaterNotes: "Security update for local project scans on macOS and Linux. 安全性更新：修正 macOS 與 Linux 的本機專案掃描。",
+      releaseNotes: [
+        "Security update for the Windows, macOS and Linux desktop app.",
+        "",
+        "- On macOS and Linux, the Git check that lists a scanned project's tracked files now runs with every Git transport disabled and without on-demand object fetching. Settings inside a scanned repository can no longer make that check start another program or connect to a network. Windows does not run this check.",
+        "- Update before scanning a repository you did not create. Details: [GHSA-6w49-gw8c-q7wp](https://github.com/TED-H-com/ai-security-scanner/security/advisories/GHSA-6w49-gw8c-q7wp).",
+        "- The Linux runtime builder uses the available Alpine glib 2.86.5 and zlib 1.4 packages; the previous versions were removed from the package index.",
+        "- Nothing else changes: scanning tools, existing cases, reports and settings stay as in v0.6.0.",
+        "",
+        "### 繁體中文",
+        "",
+        "安全性更新。在 macOS 與 Linux 上，列出受掃描專案追蹤檔案的 Git 檢查，現在會停用所有 Git 傳輸方式，也不再依需求下載缺少的物件；受掃描儲存庫裡的設定不能再讓這項檢查啟動其他程式或連線網路。Windows 不執行這項檢查。掃描不是自己建立的儲存庫之前，請先更新。Linux runtime 建置改用 Alpine 目前提供的 glib 2.86.5 與 zlib 1.4 套件，舊版本已從套件索引移除。其他內容與 v0.6.0 相同，掃描工具、既有案件、報告與設定都不變。",
+      ],
+    },
+  ],
+  [
     "1.0.0",
     {
       updaterNotes:

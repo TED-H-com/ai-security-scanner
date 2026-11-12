@@ -4,7 +4,7 @@
 
 _Updated 2026-11-12._
 
-**The latest release is desktop v0.6.0 for Linux, macOS and Windows.** It remains the default for beginners. Its public operator skill helps install the app, check readiness, guide scans in the app window and save reports.
+**The latest release is desktop v0.6.1 for Linux, macOS and Windows.** It remains the default for beginners. Its public operator skill helps install the app, check readiness, guide scans in the app window and save reports.
 
 ## New in development
 
@@ -1020,9 +1020,11 @@ cargo test --locked -p ai-security-scanner --no-default-features --features cli 
 
 ## At a glance
 
-- [v0.6.0 upstream and runtime refresh](release/v0.6.0.md) is the current stable/latest release for Windows, macOS and Linux. All 25 engines were reviewed; eighteen managed images, KICS, offline data, the private runtime and application dependencies are updated. Exact delivery and platform limits are recorded with the release.
+- [v0.6.1 security update](release/v0.6.1.md) is the current stable/latest release for Windows, macOS and Linux. Update before scanning a repository you did not create; the release record links the advisory and records the changes and observed verification.
 
-- [v0.5.3 October 21 incident scan pack](release/v0.5.3.md) is the preceding stable release for Windows, macOS and Linux. Standard and focused incident checks share the actionable HTML / JSON report with ISO and NIST references. Trivy databases, Nuclei templates and Vite development tooling are updated; public artifacts and platform observations are recorded with the release.
+- [v0.6.0 upstream and runtime refresh](release/v0.6.0.md) is the preceding stable release for Windows, macOS and Linux. All 25 engines were reviewed; eighteen managed images, KICS, offline data, the private runtime and application dependencies are updated. Exact delivery and platform limits are recorded with the release.
+
+- [v0.5.3 October 21 incident scan pack](release/v0.5.3.md) is an earlier stable release for Windows, macOS and Linux. Standard and focused incident checks share the actionable HTML / JSON report with ISO and NIST references. Trivy databases, Nuclei templates and Vite development tooling are updated; public artifacts and platform observations are recorded with the release.
 
 - [v0.5.2 upstream engine updates](release/v0.5.2.md) is an earlier stable release for Windows, macOS and Linux. It updates ten engines and offline data and repairs bounded Windows runtime execution on recent WSL. Public bytes, updater signatures, source provenance, exact-source CI and CodeQL passed; installer observations and limitations are in the release record.
 

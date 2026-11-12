@@ -2,13 +2,13 @@
 
 [English](release-model.md) · [文件](README.zh-TW.md)
 
-查核日期：2026-11-10。以下是 skill 主入口產品的發布建議，尚未宣告新版或選定版本號。
+Skill 發布狀態查核日期：2026-11-10；桌面發布狀態更新：2026-11-12。以下是 skill 主入口產品的發布建議，尚未宣告新版或選定版本號。
 
 ## 目前可取得的內容
 
 | 交付項目 | 已查證狀態 | 使用者得到什麼 |
 | --- | --- | --- |
-| 桌面版 | [v0.6.0 正式版](https://github.com/TED-H-com/ai-security-scanner/releases/tag/v0.6.0)，11 月 6 日發布 | Windows、macOS、Linux 安裝檔，以及既有桌面掃描與報告流程。 |
+| 桌面版 | [v0.6.1 正式版](https://github.com/TED-H-com/ai-security-scanner/releases/tag/v0.6.1)，2026 年 11 月 12 日發布 | Windows、macOS、Linux 安裝檔，以及既有桌面掃描與報告流程。 |
 | 儲存庫操作 skill | [指引已公開](https://github.com/TED-H-com/ai-security-scanner/blob/6e259b497b87fb8aa2ece1f3b512cc29c9ea5af7/.codex/skills/ai-security-scanner/SKILL.md)，另有相同的 Claude Code 版本 | 協助安裝及操作桌面版、解讀結果、匯出報告。可以稱為「已公開的儲存庫 skill」。 |
 | 新的 skill 主流程與 bootstrap | 已有開發實作；查核時尚未發布 skill 新版 | 前景掃描、所選引擎準備、報告保存、案件封存還原，以及 Cloudflare 資料驗證與保存。須明確選擇開發 checkout。 |
 | Plugin 目錄上架 | 儲存庫公開並不能證明已上架 | 屬於另一個分發管道；沒有實際 listing，就不能宣稱已上架或通過平台審核。 |
@@ -43,7 +43,7 @@ OpenAI 官方文件將本機／儲存庫 skill 與透過 plugin 的廣泛分發�
 3. 跑通宣稱支援的混合資產掃描、部分失敗、共用報告、離線取回與新 workspace 還原，並保留桌面資料相容性。
 4. 公開實測的來源身分、入口、支援範圍及變更說明；同步 canonical skill、兩份宿主 skill、文件與網站後，再切換預設入口。
 
-這些是既定產品成果，不是追求測試數量，也不要求較窄範圍的預覽先具備所有平台。版本範圍、號碼與日期由產品負責人決定。目前下載維持 **桌面 v0.6.0：正式版**；新路徑維持 **Skill 主入口：開發中**，直到真正發布預覽。不能重標 v0.6.0 或更動它的 updater，讓使用者誤以為已包含新功能。
+這些是既定產品成果，不是追求測試數量，也不要求較窄範圍的預覽先具備所有平台。版本範圍、號碼與日期由產品負責人決定。目前下載維持 **桌面 v0.6.1：正式版**；新路徑維持 **Skill 主入口：開發中**，直到真正發布預覽。不能重標 v0.6.1 或更動它的 updater，讓使用者誤以為已包含新功能。
 
 ## 下次交付記錄什麼
 

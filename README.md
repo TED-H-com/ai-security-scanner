@@ -6,13 +6,13 @@
 
 Find security problems in your code, websites and company systems. Get one report that explains what needs attention, why it matters and what to do next.
 
-The current v0.6.0 desktop app selects suitable security tools and brings their results together. You can start with one folder or website, or check several parts of your IT environment at once.
+The current v0.6.1 desktop app selects suitable security tools and brings their results together. You can start with one folder or website, or check several parts of your IT environment at once.
 
-**The latest release is desktop v0.6.0 for Linux, macOS and Windows.** It remains the default for beginners. Its public operator skill helps install the app, check readiness, guide scans in the app window and save reports.
+**The latest release is desktop v0.6.1 for Linux, macOS and Windows.** It remains the default for beginners. Its public operator skill helps install the app, check readiness, guide scans in the app window and save reports.
 
 ## Run your first scan
 
-1. [Download v0.6.0](https://github.com/TED-H-com/ai-security-scanner/releases/tag/v0.6.0) for Windows, macOS or Linux and [follow the install steps](docs/getting-started.md#install). The app prepares its scanning tools; you do not need to install Docker.
+1. [Download v0.6.1](https://github.com/TED-H-com/ai-security-scanner/releases/tag/v0.6.1) for Windows, macOS or Linux and [follow the install steps](docs/getting-started.md#install). The app prepares its scanning tools; you do not need to install Docker.
 2. Open the app and choose **Scan my environment**, **Check a website**, or **Check code or an AI project**. Add the folders, URLs or internal systems you want to check.
 3. Review the listed targets and checks. Confirm that you may scan any network targets, then start the scan in the app window.
 4. When the scan ends, open **Results**. Choose **Save or share report**, then **Save HTML report** to save a report you can open in a browser.
@@ -21,7 +21,7 @@ The first scan may take longer while tools download. Later scans can use those t
 
 ## Languages
 
-Japanese UI support is included in v0.6.0. Choose **Settings → 日本語**; the choice is saved across restarts. Untranslated explanations fall back to English; HTML exports from the Japanese UI are in English. See the [Japanese README](README.ja.md) and [Japanese website](https://ted-h-com.github.io/ai-security-scanner/?lang=ja).
+Japanese UI support is included in v0.6.1. Choose **Settings → 日本語**; the choice is saved across restarts. Untranslated explanations fall back to English; HTML exports from the Japanese UI are in English. See the [Japanese README](README.ja.md) and [Japanese website](https://ted-h-com.github.io/ai-security-scanner/?lang=ja).
 
 ## New in development
 
@@ -30,7 +30,7 @@ These features are implemented in source on this branch and are not in any relea
 - [Skill-first execution](docs/skill-bootstrap.md): pinned source bootstrap and preparation of selected scanner engines.
 - [Foreground scans and recovery](docs/foreground-scans.md): run approved checks, read saved status and recover captured results.
 - [Cloudflare source audits](docs/cloudflare-provider.md): host-led preparation, recorded assignments and outputs, checkpoints, validation, sealing, case admission and shared reporting, with explicit termination when an audit will not continue.
-- [Unfinished audit checks](docs/results-and-exports.md#source-audits-that-did-not-finish): blocked preparation and terminated audits appear as not-started or failed check rows in the case and shared report.
+- [Unfinished audit checks](docs/results-and-exports.md#source-audits-that-did-not-finish): blocked preparation and terminated audits appear as not-started or failed check rows in the case, desktop Results and shared report.
 - [Saved reports and offline replay](docs/report-snapshots.md): preserve reports, retrieve their original files and replay them with an exactly compatible renderer.
 - [Complete private case archives](docs/case-archives.md): create, verify and restore cases, evidence, saved reports and recorded audit history into a new workspace; restored audits remain read-only.
 
@@ -39,9 +39,14 @@ These features are implemented in source on this branch and are not in any relea
 - Real-host acceptance of the complete skill-first path remains incomplete.
 - The default skill has not switched from the released desktop.
 - Automatic managed-bundle acquisition and verification across the declared platforms remain unfinished; native macOS and Windows execution of these development features is unverified.
-- Desktop presentation of failed and not-started source-audit rows is in progress.
 
 [Development status](docs/development-status.md)
+
+## New in v0.6.1
+
+Security update for local project scans on macOS and Linux. Update before scanning a repository you did not create. Windows does not run the affected Git check.
+
+See [GHSA-6w49-gw8c-q7wp](https://github.com/TED-H-com/ai-security-scanner/security/advisories/GHSA-6w49-gw8c-q7wp) and the [v0.6.1 release record](docs/release/v0.6.1.md).
 
 ## New in v0.6.0
 

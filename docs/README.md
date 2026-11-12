@@ -2,16 +2,16 @@
 
 [Project website](https://ted-h-com.github.io/ai-security-scanner/) · [繁體中文](README.zh-TW.md)
 
-**The latest release is desktop v0.6.0 for Linux, macOS and Windows.** It remains the default for beginners. Its public operator skill helps install the app, check readiness, guide scans in the app window and save reports.
+**The latest release is desktop v0.6.1 for Linux, macOS and Windows.** It remains the default for beginners. Its public operator skill helps install the app, check readiness, guide scans in the app window and save reports.
 
 ## Use the product
 
 - [Publication and release definitions](release-model.md): published desktop and operator skill, unreleased development work, and the proposed skill preview/stable distinction.
-- [Getting started](getting-started.md): install the v0.6.0 desktop app for Linux, macOS, or Windows and complete the first scan.
+- [Getting started](getting-started.md): install the v0.6.1 desktop app for Linux, macOS, or Windows and complete the first scan.
 - [Agent Skills](getting-started.md#use-with-an-agent-skill): use Claude Code or Codex on the same computer to check readiness, guide a scan in the app, and save the final report.
 - [Scanning scope](scanning-scope.md): exact target boundaries, profiles, and scanner behavior.
 - [Results and exports](results-and-exports.md): interpret priorities, coverage, evidence, and saved reports.
-- [v0.6.0 release record](release/v0.6.0.md): current changes, exact delivery evidence, and remaining platform observations.
+- [v0.6.1 release record](release/v0.6.1.md): current changes, exact delivery evidence, and remaining platform observations.
 
 - [Standard report examples](samples/v0.4.0/README.md): redacted and fully disclosed, in both languages; 25 adapters, real formats, simulated data.
 - [Fix and check again](demos/check-fixes/README.md): two real scans of a small demo project, before and after a fix, in both languages.
@@ -24,7 +24,7 @@ These features are implemented in source on this branch and are not in any relea
 - [Skill-first execution](skill-bootstrap.md): pinned source bootstrap and preparation of selected scanner engines.
 - [Foreground scans and recovery](foreground-scans.md): run approved checks, read saved status and recover captured results.
 - [Cloudflare source audits](cloudflare-provider.md): host-led preparation, recorded assignments and outputs, checkpoints, validation, sealing, case admission and shared reporting, with explicit termination when an audit will not continue.
-- [Unfinished audit checks](results-and-exports.md#source-audits-that-did-not-finish): blocked preparation and terminated audits appear as not-started or failed check rows in the case and shared report.
+- [Unfinished audit checks](results-and-exports.md#source-audits-that-did-not-finish): blocked preparation and terminated audits appear as not-started or failed check rows in the case, desktop Results and shared report.
 - [Saved reports and offline replay](report-snapshots.md): preserve reports, retrieve their original files and replay them with an exactly compatible renderer.
 - [Complete private case archives](case-archives.md): create, verify and restore cases, evidence, saved reports and recorded audit history into a new workspace; restored audits remain read-only.
 
@@ -33,7 +33,6 @@ These features are implemented in source on this branch and are not in any relea
 - Real-host acceptance of the complete skill-first path remains incomplete.
 - The default skill has not switched from the released desktop.
 - Automatic managed-bundle acquisition and verification across the declared platforms remain unfinished; native macOS and Windows execution of these development features is unverified.
-- Desktop presentation of failed and not-started source-audit rows is in progress.
 
 ## Understand the product
 

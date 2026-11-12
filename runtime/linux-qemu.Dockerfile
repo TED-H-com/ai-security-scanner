@@ -8,8 +8,8 @@ ARG TARGETPLATFORM
 RUN test "$TARGETPLATFORM" = "linux/amd64" \
     && apk add --no-cache \
       build-base=0.5-r3 \
-      glib-dev=2.86.3-r0 \
-      glib-static=2.86.3-r0 \
+      glib-dev=2.86.5-r0 \
+      glib-static=2.86.5-r0 \
       libffi-dev=3.5.2-r0 \
       linux-headers=6.16.12-r0 \
       meson=1.9.1-r0 \
@@ -22,8 +22,8 @@ RUN test "$TARGETPLATFORM" = "linux/amd64" \
       py3-setuptools=80.9.0-r2 \
       py3-wheel=0.46.3-r0 \
       python3=3.12.16-r0 \
-      zlib-dev=1.3.2-r1 \
-      zlib-static=1.3.2-r1
+      zlib-dev=1.4-r0 \
+      zlib-static=1.4-r0
 
 COPY . /src/
 COPY --from=launcher /qemu-launcher.c /src/ass-qemu-launcher.c
