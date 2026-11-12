@@ -29,12 +29,14 @@ struct Fixture {
 }
 impl Fixture {
     fn new(files: &[(&str, &[u8])], approve: bool) -> Self {
-        let mut builder = tempfile::Builder::new();
+        let builder = tempfile::Builder::new();
         #[cfg(unix)]
-        {
+        let builder = {
             use std::os::unix::fs::PermissionsExt;
+            let mut builder = builder;
             builder.permissions(fs::Permissions::from_mode(0o700));
-        }
+            builder
+        };
         let temp = builder.tempdir().map(test_temp::TempDir::from).unwrap();
         let root = temp.path().canonicalize().unwrap();
         let data = root.join("data");

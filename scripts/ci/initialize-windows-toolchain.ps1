@@ -12,8 +12,27 @@ $installation = $installations[0].Trim()
 $devCommand = Join-Path $installation "Common7\Tools\VsDevCmd.bat"
 if (-not (Test-Path -LiteralPath $devCommand -PathType Leaf)) { throw "Visual Studio VsDevCmd.bat is unavailable." }
 $commandProcessor = Join-Path $env:SystemRoot "System32\cmd.exe"
-$environmentLines = @(& $commandProcessor /d /s /c "`"`"$devCommand`" -no_logo -arch=x64 -host_arch=x64 >nul && set`"")
-if ($LASTEXITCODE -ne 0) { throw "Visual Studio developer environment initialization failed." }
+if (-not $env:RUNNER_TEMP -or -not (Test-Path -LiteralPath $env:RUNNER_TEMP -PathType Container)) {
+  throw "RUNNER_TEMP must name an existing runner temporary directory."
+}
+if ($devCommand -match '[%"\r\n]') { throw "Unsupported Visual Studio command path." }
+# cmd reads the quoted batch command from a file, not PowerShell's native argv.
+# Invoke a space-free basename from RUNNER_TEMP so /c needs no nested quotes.
+$commandName = "scanner-vs-env-$([Guid]::NewGuid().ToString('N')).cmd"
+$commandFile = Join-Path $env:RUNNER_TEMP $commandName
+try {
+  $batch = "@echo off`r`nsetlocal EnableExtensions DisableDelayedExpansion`r`ncall `"$devCommand`" -no_logo -arch=x64 -host_arch=x64 >nul`r`nif errorlevel 1 exit /b 1`r`nset`r`nexit /b 0`r`n"
+  [System.IO.File]::WriteAllText($commandFile, $batch, [System.Text.UTF8Encoding]::new($false))
+  Push-Location -LiteralPath $env:RUNNER_TEMP
+  try {
+    $environmentLines = @(& $commandProcessor /d /c ".\$commandName")
+    if ($LASTEXITCODE -ne 0) { throw "Visual Studio developer environment initialization failed." }
+  } finally {
+    Pop-Location
+  }
+} finally {
+  if (Test-Path -LiteralPath $commandFile) { Remove-Item -LiteralPath $commandFile -Force }
+}
 
 $allowedNames = @(
   "PATH", "INCLUDE", "LIB", "LIBPATH", "VCINSTALLDIR", "VCToolsInstallDir",

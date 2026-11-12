@@ -15,7 +15,6 @@ pub mod case_archive;
 mod case_archive_io;
 mod case_archive_model;
 pub mod case_service;
-#[cfg(any(feature = "cli", test))]
 pub mod cloudflare_provider;
 mod combined_attachments;
 #[cfg(feature = "desktop")]
@@ -39,7 +38,6 @@ pub mod external_scanner_import;
 pub mod external_scope;
 pub mod finding_narrative;
 pub mod garak_input;
-#[cfg(any(feature = "desktop", feature = "cli", test))]
 pub mod gateway_release;
 pub mod incident_focus;
 pub mod job_manager;
@@ -63,9 +61,7 @@ pub mod report_renderer;
 pub mod report_snapshot;
 pub mod runtime;
 pub mod runtime_health_monitor;
-#[cfg(any(feature = "desktop", feature = "cli", test))]
 pub mod runtime_preparation;
-#[cfg(any(feature = "desktop", feature = "cli", test))]
 pub mod scan_coordinator;
 pub mod selected_run_report;
 pub mod source_audit_report;

@@ -47,12 +47,14 @@ struct Fixture {
 }
 
 fn test_directory() -> test_temp::TempDir {
-    let mut builder = tempfile::Builder::new();
+    let builder = tempfile::Builder::new();
     #[cfg(unix)]
-    {
+    let builder = {
         use std::os::unix::fs::PermissionsExt;
+        let mut builder = builder;
         builder.permissions(fs::Permissions::from_mode(0o700));
-    }
+        builder
+    };
     builder.tempdir().map(test_temp::TempDir::from).unwrap()
 }
 

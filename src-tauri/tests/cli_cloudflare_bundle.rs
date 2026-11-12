@@ -25,12 +25,14 @@ fn copy_tree(source: &Path, destination: &Path) {
     }
 }
 fn fixture() -> Fixture {
-    let mut builder = tempfile::Builder::new();
+    let builder = tempfile::Builder::new();
     #[cfg(unix)]
-    {
+    let builder = {
         use std::os::unix::fs::PermissionsExt;
+        let mut builder = builder;
         builder.permissions(fs::Permissions::from_mode(0o700));
-    }
+        builder
+    };
     let temporary = builder.tempdir().unwrap();
     let root = temporary.path().canonicalize().unwrap();
     let source = Path::new(env!("CARGO_MANIFEST_DIR")).join("../tests/fixtures/cloudflare");

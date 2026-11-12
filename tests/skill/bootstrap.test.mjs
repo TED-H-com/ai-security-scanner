@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { createHash } from 'node:crypto';
 import { execFileSync } from 'node:child_process';
-import { chmod, link, lstat, mkdir, mkdtemp, readFile, readdir, rm, symlink, writeFile } from 'node:fs/promises';
+import { chmod, link, lstat, mkdir, mkdtemp, readFile, readdir, realpath, rm, symlink, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import test from 'node:test';
@@ -22,7 +22,7 @@ const toolchain = {
 };
 
 async function fixture(t) {
-  const root = await mkdtemp(join(tmpdir(), 'scanner-bootstrap-test-'));
+  const root = await realpath(await mkdtemp(join(tmpdir(), 'scanner-bootstrap-test-')));
   t.after(() => rm(root, { recursive: true, force: true }));
   const source = join(root, 'source');
   await mkdir(join(source, 'scripts', 'skill'), { recursive: true });
@@ -332,7 +332,7 @@ test('runtime preparation constructs only the fixed Rust command and explicit so
 });
 
 async function runtimeChild(t, script) {
-  const root = await mkdtemp(join(tmpdir(), 'scanner-runtime-child-'));
+  const root = await realpath(await mkdtemp(join(tmpdir(), 'scanner-runtime-child-')));
   t.after(() => rm(root, { recursive: true, force: true }));
   const executable = join(root, 'fixture-core');
   await writeFile(executable, `#!${process.execPath}\n${script}\n`, { mode: 0o700 });
@@ -565,7 +565,7 @@ test('Windows ACL verification fails closed for missing paths, unknown ACEs, and
 });
 
 test('native Windows ACL verifier accepts private directories and rejects a broad writable ACE', { skip: process.platform !== 'win32' }, async t => {
-  const root = await mkdtemp(join(tmpdir(), 'scanner-native-acl-test-'));
+  const root = await realpath(await mkdtemp(join(tmpdir(), 'scanner-native-acl-test-')));
   t.after(() => rm(root, { recursive: true, force: true }));
   const powershell = join(process.env.SystemRoot || process.env.SYSTEMROOT, 'System32', 'WindowsPowerShell', 'v1.0', 'powershell.exe');
   const initialize = String.raw`

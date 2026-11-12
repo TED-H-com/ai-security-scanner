@@ -1038,7 +1038,6 @@ fn verify_unchanged(path: &Path, file: &File, before: &FileStamp) -> AppResult<(
 /// This reads an explicitly selected standalone file, not a relative bundle
 /// member. It deliberately does not apply output-directory ownership policy to
 /// an input's parent; full bundle traversal needs its own root-bound reader.
-#[cfg(any(feature = "cli", test))]
 pub(crate) fn read_bounded_regular(path: &Path, maximum: u64) -> AppResult<Vec<u8>> {
     let path = std::path::absolute(path)?;
     #[cfg(windows)]

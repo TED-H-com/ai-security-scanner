@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { spawn } from 'node:child_process';
-import { mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
+import { mkdtemp, readFile, realpath, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import test from 'node:test';
@@ -16,7 +16,7 @@ async function untilFile(path) {
 }
 
 async function ownerFixture(t) {
-  const root = await mkdtemp(join(tmpdir(), 'scanner-command-owner-'));
+  const root = await realpath(await mkdtemp(join(tmpdir(), 'scanner-command-owner-')));
   t.after(() => rm(root, { recursive: true, force: true }));
   const script = join(root, 'owner.mjs');
   const ready = join(root, 'ready');

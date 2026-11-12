@@ -21,12 +21,14 @@ impl Fixture {
         })
     }
     fn with_source(configure: impl FnOnce(&Path)) -> Self {
-        let mut builder = tempfile::Builder::new();
+        let builder = tempfile::Builder::new();
         #[cfg(unix)]
-        {
+        let builder = {
             use std::os::unix::fs::PermissionsExt;
+            let mut builder = builder;
             builder.permissions(fs::Permissions::from_mode(0o700));
-        }
+            builder
+        };
         let temp = builder.tempdir().unwrap();
         let data = temp.path().canonicalize().unwrap().join("data");
         let source = data.join("source");
