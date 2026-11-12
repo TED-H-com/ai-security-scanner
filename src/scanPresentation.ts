@@ -1,4 +1,3 @@
-import { failureDescription } from "./auditFailure.ts";
 import type { BilingualText } from "./i18n";
 import { isExplicitPreScannerInfrastructureFailure } from "./scanDiagnostics";
 import { localhostTcpBeginnerSummary } from "./localhostTcpPresentation";
@@ -275,9 +274,7 @@ export const engineOutcomeForId = (engineId: string): BilingualText =>
   engineOutcomeCopy[engineId as CatalogEngineId] ?? fallbackOutcome;
 
 export const engineOutcomeFor = (engine: EngineRun): BilingualText =>
-  ["agent_audit", "agent_audit_failure"].includes(engine.taskKind?.kind)
-    ? { en: "Cloudflare source audit", zhTW: "Cloudflare 原始碼稽核" }
-    : localhostTcpBeginnerSummary(engine)?.title ?? engineOutcomeForId(engine.engineId);
+  localhostTcpBeginnerSummary(engine)?.title ?? engineOutcomeForId(engine.engineId);
 
 export const skippedChecksNextStepFor = (reasonCodes: readonly string[]): BilingualText => {
   const hasTargetIssue = reasonCodes.some((code) => targetSetupErrorCodes.has(code));
@@ -339,8 +336,6 @@ export const engineRecordedUnevaluatedTarget = (engine: EngineRun): boolean =>
   && (engine.unevaluatedTargets?.some((target) => target.cause !== "unknown") ?? false);
 
 export const engineNextStepFor = (engine: EngineRun): BilingualText => {
-  if (engine.taskKind?.kind === "agent_audit_failure") return failureDescription(engine.taskKind.outcome).nextAction;
-  if (engine.taskKind?.kind === "agent_audit") return { en: "Read the source audit results.", zhTW: "查看原始碼稽核結果。" };
   const localhostSummary = localhostTcpBeginnerSummary(engine);
   if (localhostSummary) return localhostSummary.nextStep;
   if (engineHostDidNotRespond(engine)) return nextStepCopy.hostDidNotRespond;
@@ -431,7 +426,6 @@ const recoveryModeCopy = {
  * only where that control renders (`canResume`).
  */
 export const engineRecoveryModeFor = (engine: EngineRun): BilingualText | undefined => {
-  if (["agent_audit", "agent_audit_failure"].includes(engine.taskKind?.kind)) return undefined;
   const action = engine.recoveryAction ?? (engine.resumable ? "continue_saved_results" : "none");
   return action === "none" ? undefined : recoveryModeCopy[action];
 };

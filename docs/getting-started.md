@@ -2,8 +2,6 @@
 
 [繁體中文](getting-started.zh-TW.md) · [Documentation](README.md)
 
-Use the released **v0.6.1 desktop** for your first scan. The repository operator skill helps you use that app. The new skill-first workflow is still in development; see [availability and release definitions](release-model.md). For an explicitly selected development checkout, use the [pinned bootstrap](skill-bootstrap.md) and its documented capabilities.
-
 ## From New scan to an HTML report
 
 In the app, follow this path:
@@ -48,7 +46,7 @@ Launch **ai-security-scanner** after installation. The app prepares its own scan
 
 Scans run in the desktop app on your own computer, and **Start** is a button in the app window. An agent on the same computer can install the app, check that the computer is ready to scan, guide you through the app, explain the results, and save the HTML report through the app's CLI. It installs the release above; it does not build this repository.
 
-Open this checkout in **Claude Code** or **Codex** and use the repository's `ai-security-scanner` skill: [Claude Code instructions](../.claude/skills/ai-security-scanner/SKILL.md) · [Codex instructions](../.codex/skills/ai-security-scanner/SKILL.md). Both copies are generated from the [canonical skill](../skills/ai-security-scanner/SKILL.md). If your host does not discover the repository copy, explicitly open the linked instructions. Keep the checkout available: the skill depends on its product guides. Publishing these instructions is separate from releasing the new skill-first core or listing a plugin.
+Open this checkout in **Claude Code** or **Codex** and use the repository's `ai-security-scanner` skill: [Claude Code instructions](../.claude/skills/ai-security-scanner/SKILL.md) · [Codex instructions](../.codex/skills/ai-security-scanner/SKILL.md). Both copies are the same.
 
 Ask the agent:
 
@@ -58,7 +56,7 @@ The agent needs to run on the same computer as the app, with network access. Whe
 
 ### Build from source
 
-Use the [pinned bootstrap](skill-bootstrap.md) to try development features from source. To change or run the desktop from source, use the contributor build below. With Node.js 24 or newer, Rust 1.98, and Tauri's Linux development dependencies installed, build and open the app from this checkout:
+Building is only needed to change the product. With Node.js 24 or newer, Rust 1.98, and Tauri's Linux development dependencies installed, build and open the app from this checkout:
 
 ```sh
 npm ci

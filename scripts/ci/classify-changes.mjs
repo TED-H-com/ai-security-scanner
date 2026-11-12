@@ -4,12 +4,6 @@ import { readFileSync } from "node:fs";
 import { pathToFileURL } from "node:url";
 
 const FRONTEND_PATHS = [
-  /^tests\/support\/(?:sourceAudit|auditFailure)\.ts$/,
-  /^src-tauri\/src\/provider_report\.rs$/,
-  /^src-tauri\/src\/agent_audit_admission\.rs$/,
-  /^src-tauri\/src\/source_audit_report\.rs$/,
-  /^src-tauri\/src\/agent_audit_failure(?:\.rs|\/wording\.rs)$/,
-  /^src-tauri\/src\/cloudflare_provider\/audit\/(?:mod|record)\.rs$/,
   // Public report downloads and scanner profiles have executable frontend contracts.
   /^docs\/(?:index\.html|project-site\.(?:css|js)|showcase\.css|scanner-guide(?:[.\/]|$)|sample-reports\.html|samples\/|tool-stars\.json$)/,
   /^scripts\/(?:build-public-showcase|localize-public-site)\.mjs$/,
@@ -57,8 +51,6 @@ const FRONTEND_PATHS = [
   /^src-tauri\/src\/finding_narrative\.rs$/,
   // Results and HTML share the approved group titles and guidance.
   /^src-tauri\/src\/report_problem_groups\.rs$/,
-  // The shared HTML renderer participates in the frontend vocabulary contract.
-  /^src-tauri\/src\/report_renderer\.rs$/,
   // `runtimeSetupAssistant.test.ts` reads the Tauri command registry to assert
   // the prerequisite-repair command stays unregistered. Re-registering it in
   // lib.rs alone would otherwise never run that test.
@@ -97,21 +89,14 @@ const FRONTEND_PATHS = [
 ];
 
 const RUST_PATHS = [
-  // Includes cli_cloudflare_source_view and cli_cloudflare_audit through src-tauri/tests below.
-  /^providers\/cloudflare\/(?:validate-document\.cjs$|upstream\/(?:LICENSE$|skills\/security-audit\/(?:report-schema\.json|validate-(?:findings|coverage-ledger)\.cjs)$))/,
-  /^tests\/fixtures\/cloudflare\//,
   /^Cargo\.(?:toml|lock)$/,
   /^vendor\/glib-0\.18\.5\//,
   /^scripts\/verify-vendored-glib\.sh$/,
   /^src-tauri\/(?:Cargo\.toml|build\.rs|src\/|tests\/|examples\/)/,
   // `external_scope.rs` includes the shared target corpus in its parity test.
   /^tests\/fixtures\/external-target-corpus\.json$/,
-  // Frozen cases and exact expected outputs are read by Rust report replay tests.
-  /^tests\/fixtures\/report-fidelity\//,
   /^bootstrap\//,
   /^engines\/catalog\.json$/,
-  /^engines\/campaigns\/october-2026\.json$/,
-  /^docs\/research\/(?:augustus-single-destination-profile\.json|patches\/augustus-0\.14\.29-machine-json\.patch)$/,
   /^mappings\/control-mappings\.json$/,
   /^mappings\/control-mappings\.schema\.json$/,
   /^schemas\/master-framework-report\.schema\.json$/,
@@ -125,8 +110,6 @@ const DESKTOP_PATHS = [
   /^src-tauri\/(?:Cargo\.toml|app-icon\.svg$|binaries\/|build\.rs|capabilities\/|icons\/|src\/|tauri\.conf\.json$)/,
   /^bootstrap\//,
   /^engines\/catalog\.json$/,
-  /^engines\/campaigns\/october-2026\.json$/,
-  /^docs\/research\/(?:augustus-single-destination-profile\.json|patches\/augustus-0\.14\.29-machine-json\.patch)$/,
   /^mappings\/control-mappings\.json$/,
   /^schemas\/master-framework-report\.schema\.json$/,
   /^runtime\/managed-egress-gateway\.json$/,
@@ -180,45 +163,11 @@ const WINDOWS_RUNTIME_PATHS = [
   /^scripts\/release\/qualify-windows[^/]*\.ps1$/,
 ];
 
-// Core/runtime source changes still compile the desktop and test its trust
-// boundaries. Only installer inputs need to produce an NSIS package.
-const WINDOWS_INSTALLER_PATHS = [
-  /^src-tauri\/windows\//,
-  /^src-tauri\/(?:Cargo\.toml$|tauri\.conf\.json$|app-icon\.svg$|icons\/|binaries\/)/,
-  /^runtime\/vendor-managed-runtime\.mjs$/,
-  /^scripts\/release\/(?:build-sidecar|stage-sidecar|validate-windows-nsis-template|windows-nsis-[^/]+-evidence)\.mjs$/,
-  /^scripts\/release\/qualify-windows[^/]*\.ps1$/,
-];
-
 const DOCUMENTATION_PATHS = [
   /^docs\//,
   /^(?:README(?:\.[^/]+)?|CONTRIBUTING|CONTRIBUTORS|CODE_OF_CONDUCT|SECURITY|THIRD_PARTY)\.md$/,
+  /^\.(?:claude|codex)\/skills\/ai-security-scanner\/SKILL\.md$/,
   /^\.github\/(?:ISSUE_TEMPLATE|PULL_REQUEST_TEMPLATE)(?:\/|\.)/,
-];
-
-// Prompt/skill edits run the inexpensive contract lane. They do not rebuild
-// native core artifacts or invoke any installer job.
-const SKILL_BOOTSTRAP_PATHS = [
-  // The skill suite imports the synthetic host setup refusal contract.
-  /^tests\/acceptance\/cloudflare-host\//,
-  /^skills\//,
-  /^\.(?:claude|codex)\/skills\/ai-security-scanner\//,
-  /^scripts\/skill\//,
-  /^tests\/skill\//,
-  /^providers\//,
-  /^scripts\/ci\/skill-bootstrap-smoke\.mjs$/,
-  /^scripts\/ci\/skill-runtime-smoke\.py$/,
-  /^scripts\/ci\/initialize-windows-toolchain\.ps1$/,
-  /^docs\/skill-bootstrap\.md$/,
-];
-
-const SKILL_NATIVE_PATHS = [
-  /^providers\/cloudflare\/(?:validate-document\.cjs$|upstream\/(?:LICENSE$|skills\/security-audit\/(?:report-schema\.json|validate-(?:findings|coverage-ledger)\.cjs)$))/,
-  /^tests\/fixtures\/cloudflare\//,
-  /^scripts\/skill\/(?!sync-skill\.mjs$)/,
-  /^tests\/skill\/(?!sync-skill\.test\.mjs$)/,
-  /^scripts\/ci\/skill-bootstrap-smoke\.mjs$/,
-  /^scripts\/ci\/initialize-windows-toolchain\.ps1$/,
 ];
 
 const SHARED_NODE_FILES = new Set(["package.json", "package-lock.json"]);
@@ -231,8 +180,6 @@ const CI_RESULT_LANES = Object.freeze([
   Object.freeze({ label: "Rust core", expected: "RUST_EXPECTED", result: "RUST_RESULT" }),
   Object.freeze({ label: "Windows managed runtime", expected: "WINDOWS_EXPECTED", result: "WINDOWS_RESULT" }),
   Object.freeze({ label: "Desktop Linux", expected: "DESKTOP_EXPECTED", result: "DESKTOP_RESULT" }),
-  Object.freeze({ label: "Skill bootstrap contracts", expected: "SKILL_BOOTSTRAP_EXPECTED", result: "SKILL_BOOTSTRAP_RESULT" }),
-  Object.freeze({ label: "Skill native core", expected: "SKILL_NATIVE_EXPECTED", result: "SKILL_NATIVE_RESULT" }),
 ]);
 
 function matchesAny(path, patterns) {
@@ -253,13 +200,9 @@ export function classifyChangedPaths(inputPaths) {
   const engine = sharedNodeChanged || paths.some((path) => matchesAny(path, ENGINE_PATHS));
   const framework = sharedNodeChanged || paths.some((path) => matchesAny(path, FRAMEWORK_PATHS));
   const releaseContract = sharedNodeChanged || paths.some((path) => matchesAny(path, RELEASE_CONTRACT_PATHS));
-  const windowsInstaller = sharedNodeChanged || paths.some((path) => matchesAny(path, WINDOWS_INSTALLER_PATHS));
-  const windowsRuntime = windowsInstaller || paths.some((path) => matchesAny(path, WINDOWS_RUNTIME_PATHS));
-  const skillBootstrap = paths.some((path) => matchesAny(path, SKILL_BOOTSTRAP_PATHS));
-  const skillNative = rustCore || paths.some((path) => matchesAny(path, SKILL_NATIVE_PATHS));
+  const windowsRuntime = sharedNodeChanged || paths.some((path) => matchesAny(path, WINDOWS_RUNTIME_PATHS));
   const docsOnly = paths.length > 0 && paths.every((path) => matchesAny(path, DOCUMENTATION_PATHS)) &&
-    !frontend && !rustCore && !desktop && !engine && !framework && !releaseContract && !windowsRuntime &&
-    !skillBootstrap && !skillNative;
+    !frontend && !rustCore && !desktop && !engine && !framework && !releaseContract && !windowsRuntime;
 
   return {
     changed_path_count: paths.length,
@@ -271,9 +214,6 @@ export function classifyChangedPaths(inputPaths) {
     framework,
     release_contract: releaseContract,
     windows_runtime: windowsRuntime,
-    windows_installer: windowsInstaller,
-    skill_bootstrap: skillBootstrap,
-    skill_native: skillNative,
   };
 }
 
@@ -288,9 +228,6 @@ export function classifyAllBoundaries() {
     framework: true,
     release_contract: true,
     windows_runtime: true,
-    windows_installer: true,
-    skill_bootstrap: true,
-    skill_native: true,
   };
 }
 

@@ -108,10 +108,10 @@ test("MCP Armor published runtime remains digest-pinned, offline, and non-root",
 });
 
 test("MCP Armor production path binds one exact snapshot file before invocation", async () => {
-  const [rust, launcher, coordinator, coverage, service] = await Promise.all([
+  const [rust, launcher, commands, coverage, service] = await Promise.all([
     load("src-tauri/src/mcp_armor_input.rs"),
     load("engines/images/mcp-armor/launcher/main.go"),
-    load("src-tauri/src/scan_coordinator.rs"),
+    load("src-tauri/src/commands.rs"),
     load("src/pages/CoveragePage.tsx"),
     load("src/services/scanner.ts"),
   ]);
@@ -124,7 +124,7 @@ test("MCP Armor production path binds one exact snapshot file before invocation"
   assert.match(rust, /MAX_MCP_CONFIGURATION_BYTES: u64 = 10 \* 1024 \* 1024/u);
   assert.match(rust, /candidates\.len\(\) == 1/u);
   assert.match(rust, /selected MCP configuration differs from its verified snapshot evidence/u);
-  assert.match(coordinator, /verify_mcp_configuration_selection\(asset, &resolved\.manifest\)/u);
+  assert.match(commands, /verify_mcp_configuration_selection\(asset, &resolved\.manifest\)/u);
   assert.match(launcher, /"--config-only"/u);
   assert.match(launcher, /requireReadOnlyWorkspace/u);
   assert.match(launcher, /verifySelectedConfiguration/u);

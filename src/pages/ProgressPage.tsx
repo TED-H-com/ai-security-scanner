@@ -1,4 +1,3 @@
-import { hasSourceAudit } from "../runLifecycle";
 import { useEffect, useMemo, useRef, useState } from "react";
 
 import { Icon } from "../components/Icon";
@@ -870,7 +869,7 @@ export function ProgressPage({
     && isProviderConfigurationBlocker(readiness?.blockerCode);
   const canStart = !terminalExactLocalhostQuickScan
     && canStartPreparedScan(readiness, Boolean(readinessCheckFailed), runs)
-    && !providerSetupRequired && !hasSourceAudit(selectedRun);
+    && !providerSetupRequired;
   const blockerPresentation = readiness?.blockerCode
     ? readinessPresentation[readiness.blockerCode]
     : undefined;
@@ -1156,8 +1155,7 @@ export function ProgressPage({
     ? []
     : selectedRun.engineRuns.filter((engine) => engine.status !== "not_executed");
   const localhostCancelRequested = isLocalhostQuickScanCancelRequested(selectedRun);
-  const auditRun = hasSourceAudit(selectedRun);
-  const canPause = selectedRun.status === "running" && !exactLocalhostQuickScan && !auditRun;
+  const canPause = selectedRun.status === "running" && !exactLocalhostQuickScan;
   const recoverableEngines = selectedRun.engineRuns.filter((engine) => engine.resumable);
   const hasResumableEngine = recoverableEngines.length > 0;
   const recoveryActions = new Set(recoverableEngines.map((engine) =>
@@ -1168,11 +1166,11 @@ export function ProgressPage({
     : recoveryActions.has("restart_check")
       ? copy.recoverMixed
       : copy.resume;
-  const canResume = !startFreshScan && !providerSetupRequired && !auditRun && (
+  const canResume = !startFreshScan && !providerSetupRequired && (
     selectedRun.status === "paused"
     || ((selectedRun.status === "partial" || selectedRun.status === "failed" || selectedRun.status === "cancelled") && hasResumableEngine)
   ) && !exactLocalhostQuickScan;
-  const canCancel = !localhostCancelRequested && !auditRun && (
+  const canCancel = !localhostCancelRequested && (
     selectedRun.status === "running" || selectedRun.status === "paused" || selectedRun.status === "queued"
   );
   const savedPlanAfterRestart = neverStartedRun && !activeRunStatuses.has(selectedRun.status);

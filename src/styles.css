@@ -3639,13 +3639,3 @@ button.history-row:hover, .history-row--active { background: #f2f8f5; }
   .main-content { max-width: none; padding: 0; }
   .section-block, .metric-card { break-inside: avoid; box-shadow: none; }
 }
-
-/* Native provider text remains readable without interpreting markup or links. */
-.provider-text {
-  white-space: pre-wrap;
-  overflow-wrap: anywhere;
-  unicode-bidi: plaintext;
-}
-.source-audit { min-width: 0; }
-.source-audit dl, .source-audit dd { min-width: 0; overflow-wrap: anywhere; }
-.source-audit-candidate { color: var(--ink); }

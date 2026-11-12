@@ -51,8 +51,6 @@ pub struct MasterFrameworkReport {
     pub observation_provenance: Vec<HistoricalObservationProvenance>,
     pub frameworks: Vec<FrameworkSummary>,
     pub unrecognized_relationships: Vec<UnrecognizedRelationship>,
-    #[serde(skip_serializing_if = "Vec::is_empty")]
-    pub source_audits: Vec<crate::source_audit_report::SourceAuditReport>,
 }
 
 #[derive(Debug, Clone, Serialize, PartialEq, Eq)]
@@ -253,48 +251,6 @@ pub fn export_master_framework_report(
     case: &AssessmentCase,
     run_id: &str,
 ) -> AppResult<MasterFrameworkReport> {
-    // Audit extensions require an explicit profile or the already projected shared report.
-    report_with_audits(case, run_id, Vec::new())
-}
-
-fn source_audits_for_profile(
-    case: &AssessmentCase,
-    run_id: &str,
-    profile: crate::export::RedactionProfile,
-) -> AppResult<Vec<crate::source_audit_report::SourceAuditReport>> {
-    let run = super::terminal_run(case, run_id)?;
-    if run.engine_runs.iter().any(|t| {
-        matches!(
-            t.task_kind,
-            crate::domain::EngineTaskKind::AgentAudit { .. }
-        )
-    }) {
-        Ok(crate::export::beginner_report_for_export(case, run_id, profile)?.source_audits)
-    } else {
-        Ok(Vec::new())
-    }
-}
-
-pub(crate) fn export_for_profile(
-    case: &AssessmentCase,
-    run_id: &str,
-    profile: crate::export::RedactionProfile,
-) -> AppResult<Vec<u8>> {
-    // Build the shared projection before redaction; rebuilding masked admissions
-    // would lose the counts of provider fields withheld by this profile.
-    let audits = source_audits_for_profile(case, run_id, profile)?;
-    let document_case = crate::export::case_for_export(case, profile)?;
-    let mut bytes =
-        serde_json::to_vec_pretty(&report_with_audits(&document_case, run_id, audits)?)?;
-    bytes.push(b'\n');
-    Ok(bytes)
-}
-
-pub(crate) fn report_with_audits(
-    case: &AssessmentCase,
-    run_id: &str,
-    source_audits: Vec<crate::source_audit_report::SourceAuditReport>,
-) -> AppResult<MasterFrameworkReport> {
     let run = super::terminal_run(case, run_id)?;
 
     let mut observations = case
@@ -349,22 +305,19 @@ pub(crate) fn report_with_audits(
             fingerprint: observation.fingerprint.clone(),
             snapshot_state: "run_snapshot".into(),
             evidence_reference_state: validated_evidence.state.into(),
-            framework_mapping_state:
-                if finding.evidence.iter().any(|e| e.provider_record.is_some()) {
-                    "source_audit_not_mapped"
-                } else if validated_evidence.bindings.is_empty() {
-                    "not_exported_without_exact_evidence"
-                } else if finding.control_references.is_empty() {
-                    // The snapshot is complete and its evidence is exact. The
-                    // packaged catalog simply carries no entry for the rule that
-                    // produced this finding, and saying relationships were used
-                    // would read as "this finding relates to no control" -- a
-                    // claim about the frameworks that this product never made.
-                    "no_packaged_catalog_relationship"
-                } else {
-                    "run_snapshot_relationships_used"
-                }
-                .into(),
+            framework_mapping_state: if validated_evidence.bindings.is_empty() {
+                "not_exported_without_exact_evidence"
+            } else if finding.control_references.is_empty() {
+                // The snapshot is complete and its evidence is exact. The
+                // packaged catalog simply carries no entry for the rule that
+                // produced this finding, and saying relationships were used
+                // would read as "this finding relates to no control" -- a
+                // claim about the frameworks that this product never made.
+                "no_packaged_catalog_relationship"
+            } else {
+                "run_snapshot_relationships_used"
+            }
+            .into(),
         });
         if validated_evidence.bindings.is_empty() {
             // A coordinate without an exact selected-run evidence artifact is
@@ -486,7 +439,7 @@ pub(crate) fn report_with_audits(
     Ok(MasterFrameworkReport {
         schema_version: MASTER_FRAMEWORK_REPORT_SCHEMA_VERSION.into(),
         product_name: "ai-security-scanner".into(),
-        product_version: crate::product_version::current().into(),
+        product_version: env!("CARGO_PKG_VERSION").into(),
         export_kind: "master_framework_relationship_report".into(),
         case_id: case.id.clone(),
         selected_run_id: run.id.clone(),
@@ -499,7 +452,6 @@ pub(crate) fn report_with_audits(
         observation_provenance,
         frameworks,
         unrecognized_relationships,
-        source_audits,
     })
 }
 
@@ -783,18 +735,8 @@ fn coverage_summary(
         .iter()
         .find(|run| run.id == run_id)
         .expect("selected run was validated");
-    let scanner_runs = run
-        .engine_runs
-        .iter()
-        .filter(|t| {
-            !matches!(
-                t.task_kind,
-                crate::domain::EngineTaskKind::AgentAudit { .. }
-            )
-        })
-        .collect::<Vec<_>>();
     let mut engine_states = BTreeMap::new();
-    for engine in &scanner_runs {
+    for engine in &run.engine_runs {
         *engine_states.entry(enum_key(&engine.status)).or_insert(0) += 1;
     }
     let selected_run_bound_coverage = case
@@ -844,15 +786,17 @@ fn coverage_summary(
             .entry(enum_key(&entry.status))
             .or_insert(0) += 1;
     }
-    let completed_engine_count = scanner_runs
+    let completed_engine_count = run
+        .engine_runs
         .iter()
         .filter(|engine| engine.status == EngineRunStatus::Completed)
         .count();
-    let not_executed_engine_count = scanner_runs
+    let not_executed_engine_count = run
+        .engine_runs
         .iter()
         .filter(|engine| engine.status == EngineRunStatus::NotExecuted)
         .count();
-    let unfinished_engine_count = scanner_runs.len().saturating_sub(completed_engine_count);
+    let unfinished_engine_count = run.engine_runs.len().saturating_sub(completed_engine_count);
     let unknown_source_count = count_coverage(
         &selected_run_matched_coverage,
         CoverageStatus::SourceNotConnectedUnknown,
@@ -870,7 +814,7 @@ fn coverage_summary(
         CoverageStatus::DiscoveredNotAuthorized,
     );
     let selected_run_checks_complete =
-        run.completed_at.is_some() && !scanner_runs.is_empty() && unfinished_engine_count == 0;
+        run.completed_at.is_some() && !run.engine_runs.is_empty() && unfinished_engine_count == 0;
     let excluded_other_run_coverage_entry_count = case
         .coverage
         .iter()
@@ -898,7 +842,7 @@ fn coverage_summary(
         || discovered_not_authorized_count > 0;
 
     let mut limitations = Vec::new();
-    if scanner_runs.is_empty() {
+    if run.engine_runs.is_empty() {
         limitations.push("No scanner checks were recorded for the selected run.".into());
     }
     if selected_run_planned_assets.is_empty() {
@@ -1004,7 +948,7 @@ fn coverage_summary(
         selected_run_coverage_has_unknown_or_incomplete_entries,
         excluded_other_run_coverage_entry_count,
         excluded_unbound_coverage_entry_count,
-        planned_engine_count: scanner_runs.len(),
+        planned_engine_count: run.engine_runs.len(),
         completed_engine_count,
         unfinished_engine_count,
         not_executed_engine_count,
@@ -1499,12 +1443,6 @@ fn validate_mapping_provenance(
 }
 
 fn validate_engine_mapping_provenance(engine_run: &EngineRun) -> AppResult<&'static str> {
-    if matches!(
-        engine_run.task_kind,
-        crate::domain::EngineTaskKind::AgentAudit { .. }
-    ) {
-        return Ok("source_audit_not_mapped");
-    }
     let Some(provenance) = engine_run.mapping_provenance.as_ref() else {
         return Ok("unavailable_legacy");
     };
@@ -1868,7 +1806,6 @@ mod tests {
             priority_reasons: vec![],
             asset_ids: vec!["asset-1".into()],
             evidence: vec![Evidence {
-                provider_record: None,
                 id: "evidence-1".into(),
                 finding_id: "finding-1".into(),
                 run_id: "run-1".into(),
@@ -2508,7 +2445,6 @@ mod tests {
             contains_sensitive_data: false,
         });
         let mut evidence = Evidence {
-            provider_record: None,
             id: "evidence-1".into(),
             finding_id: "finding-1".into(),
             run_id: "run-1".into(),

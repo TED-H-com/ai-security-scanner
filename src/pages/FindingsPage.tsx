@@ -1,5 +1,3 @@
-import { AuditFailureDetails } from "../components/AuditFailureDetails";
-import { SourceAuditResults, ProviderValue } from "../components/SourceAuditResults";
 import { IncidentFocusReport } from "../components/IncidentFocusReport";
 import { type FormEvent, type ReactNode, useEffect, useMemo, useRef, useState } from "react";
 import { ScannerMarkdown } from "../components/ScannerMarkdown";
@@ -849,9 +847,6 @@ const localizedCheckName = (
   if (engine && isExactBuiltInLocalhostQuickScanEngine(engine) && engine.taskKind.kind === "built_in_localhost_tcp") {
     return `${locale !== "zh-TW" ? "Local connection check" : "本機連線檢查"} · 127.0.0.1:${engine.taskKind.port}`;
   }
-  if (engine?.taskKind.kind === "agent_audit" || engine?.taskKind.kind === "agent_audit_failure" || checkId === "Cloudflare source audit") {
-    return locale === "zh-TW" ? "Cloudflare 原始碼稽核" : "Cloudflare source audit";
-  }
   if (engine?.engineName.trim()) return engine.engineName.trim();
   return checkId;
 };
@@ -1184,7 +1179,7 @@ const partialReportActionDestination = (
 ): "progress" | "coverage" | "scope" => {
   const actionableStep = [...report.nextSteps]
     .sort((left, right) => left.priority - right.priority)
-    .find((step) => !report.actual.checks.some((check) => check.taskId === step.taskId && check.outcome) && !report.sourceAudits?.some((audit) => audit.task_id === step.taskId) && !step.findingId && assetActionDestination(step.code, "incomplete_failed"));
+    .find((step) => !step.findingId && assetActionDestination(step.code, "incomplete_failed"));
   return actionableStep
     ? assetActionDestination(actionableStep.code, "incomplete_failed") ?? "scope"
     : "scope";
@@ -1381,7 +1376,7 @@ function AssetResultBoard({
     // The row is the asset, so its step names only the coverage it closes. An
     // unattributed step already names the identifier to add.
     const recordedNextAction = actionGap
-      ? actionGap.unattributed || actionGap.dimension === "Source audit coverage"
+      ? actionGap.unattributed
         ? gapNextActionProse(actionGap, locale)
         : actionAbout(
             gapNextActionProse(actionGap, locale),
@@ -1389,12 +1384,6 @@ function AssetResultBoard({
             locale,
           )
       : undefined;
-    const auditTask = (id?: string) => report.sourceAudits?.some((audit) => audit.task_id === id) ?? false;
-    const auditFailure = checks.some((check) => check.outcome);
-    const auditIncomplete = checks.some((check) => auditTask(check.taskId) && check.status !== "tested_complete");
-    const otherIncomplete = checks.some((check) => !auditTask(check.taskId) && !check.outcome && check.status !== "tested_complete")
-      || gaps.some((gap) => !auditTask(gap.taskId) && !checks.some((check) => check.taskId === gap.taskId && check.outcome) && gap.class !== "record_note" && !["excluded", "manual_review"].includes(gap.kind));
-    const auditContinuation = coverageGapProse(locale, "Continue the source audit from the listed paths.");
     const presentation = (() => {
       switch (status) {
         case "problems_found":
@@ -1407,10 +1396,9 @@ function AssetResultBoard({
             ),
             prose: [
               text(copy.assetProblemAction),
-              auditIncomplete ? auditContinuation : undefined,
-              hasIncompleteEvidence && (!auditIncomplete || otherIncomplete) ? text(copy.assetProblemIncomplete) : undefined,
+              hasIncompleteEvidence ? text(copy.assetProblemIncomplete) : undefined,
             ].filter((value): value is string => Boolean(value)).join(" "),
-            control: hasIncompleteEvidence && (!(auditIncomplete || auditFailure) || otherIncomplete)
+            control: hasIncompleteEvidence
               ? { destination: "progress" as const }
               : undefined,
           };
@@ -1428,9 +1416,8 @@ function AssetResultBoard({
             control: { destination: "scope" as const },
           };
         case "incomplete_failed": {
-          const action = auditIncomplete ? [recordedNextAction?.includes(auditContinuation) ? recordedNextAction : auditContinuation, otherIncomplete ? text(copy.assetProblemIncomplete) : undefined].filter(Boolean).join(" ")
-            : recordedNextAction ?? text(copy.assetIncompleteAction);
-          const destination = (auditIncomplete || auditFailure) && !otherIncomplete ? undefined : assetActionDestination(actionGap?.nextActionCode, status);
+          const action = recordedNextAction ?? text(copy.assetIncompleteAction);
+          const destination = assetActionDestination(actionGap?.nextActionCode, status);
           return {
             label: text(copy.assetStatusIncomplete),
             tone: "warning",
@@ -1441,7 +1428,7 @@ function AssetResultBoard({
         }
         case "not_tested": {
           const action = recordedNextAction ?? text(copy.assetNotTestedAction);
-          const destination = (auditIncomplete || auditFailure) && !otherIncomplete ? undefined : assetActionDestination(actionGap?.nextActionCode, status);
+          const destination = assetActionDestination(actionGap?.nextActionCode, status);
           return {
             label: text(copy.assetStatusNotTested),
             tone: "neutral",
@@ -1552,7 +1539,6 @@ const projectReportFindings = (
       const retained = currentEvidenceById.get(reference.evidenceId);
       const legacyFallback = reference.detailsFrozen === true ? undefined : retained;
       return {
-        providerRecord: reference.providerRecord,
         id: reference.evidenceId,
         sourceEngine: reference.engineId,
         sourceRule: reference.detailsFrozen === true
@@ -1593,7 +1579,6 @@ const projectReportFindings = (
       locale,
     );
     return {
-      sourceAudit: frozen.sourceAudit,
       id: frozen.findingId,
       caseId: report.caseId,
       fingerprint: frozen.fingerprint,
@@ -2005,11 +1990,10 @@ function BeginnerReportOverview({ report, run }: { report: BeginnerMasterReport;
   const stepLocations = (
     findings: readonly BeginnerMasterReport["findings"][number][],
   ): string[] => [
-    ...new Set(findings.flatMap((finding) => finding.evidenceReferences.flatMap((reference) => {
-      if (finding.sourceAudit) return reference.location ? [reference.location] : [];
-      const location = reference.location?.trim();
-      return location && location !== "[redacted location]" ? [findingLocationText(locale, location)] : [];
-    }))),
+    ...new Set(findings.flatMap((finding) => finding.evidenceReferences)
+      .map((reference) => reference.location?.trim())
+      .filter((location): location is string => Boolean(location) && location !== "[redacted location]")
+      .map((location) => findingLocationText(locale, location))),
   ];
   const stepLocationLine = (locations: readonly string[]): string => {
     const first = locations[0];
@@ -2032,13 +2016,6 @@ function BeginnerReportOverview({ report, run }: { report: BeginnerMasterReport;
         <StatusPill label={text(summary.label)} tone={summary.tone} />
       </div>
 
-      {report.actual.checks.filter((check) => check.outcome).map((check) => <section
-        key={check.taskId} className="section-block source-audit-failure">
-        <h2>{localizedCheckName(check.checkId, locale, engineByTaskId.get(check.taskId))}</h2>
-        <p>{[check.outcome!.summary, check.outcome!.reason, check.outcome!.nextAction]
-          .map((sentence) => coverageGapProse(locale, sentence)).join(locale === "zh-TW" ? "" : " ")}</p>
-      </section>)}
-      <SourceAuditResults audits={report.sourceAudits ?? []} />
       {report.incidentFocus && <IncidentFocusReport report={report.incidentFocus} targets={report.requested.targets} />}
 
       <dl className="report-outcome-strip" aria-label={text(copy.masterTitle)}>
@@ -2341,7 +2318,7 @@ function BeginnerReportOverview({ report, run }: { report: BeginnerMasterReport;
               : [];
             const locationLine = locations.length > 0 ? stepLocationLine(locations) : undefined;
             return (
-              <li className={lead?.sourceAudit ? "provider-text" : undefined} key={`${step.code}-${step.findingId ?? step.taskId ?? index}`}>
+              <li key={`${step.code}-${step.findingId ?? step.taskId ?? index}`}>
                 <strong>{nextStepActionText(step)}</strong>
                 {closes.length > 0 && <span>{closes.join(inlineSeparator)}</span>}
                 {headline && (
@@ -2411,11 +2388,6 @@ function ReportEndMatter({ report, run }: { report: BeginnerMasterReport; run?: 
                     <span>{engineStatusMeta[task.status].label}</span>
                   </div>
                   <dl>
-                    {task.execution.kind === "agent_audit_failure" && <AuditFailureDetails execution={task.execution} />}
-                    {task.execution.kind === "agent_audit" && <div>
-                      <dt>{text({ en: "Source audit", zhTW: "原始碼稽核" })}</dt>
-                      <dd><ProviderValue value={{ provider: task.execution.providerId, admission_id: task.execution.admissionId }} /></dd>
-                    </div>}
                     {task.execution.kind === "external_report_import" && (
                       <div><dt>{text({ en: "Imported external report", zhTW: "已匯入的外部報告" })}</dt>
                         <dd>{text({ en: "Coverage unverified", zhTW: "涵蓋範圍未經驗證" })}<code>{task.execution.sourceFormat}</code><code>{task.execution.sourceSha256}</code></dd></div>
@@ -2491,7 +2463,6 @@ export function FindingsPage({
     [resultRecords],
   );
   const actionUnconfirmedByCoverage = (finding: Finding): boolean => {
-    if (finding.sourceAudit) return false;
     if (!report || isExposureObservation(finding)) return false;
     return findingUnconfirmedByCoverage(
       finding.evidence.map((item) => ({ engineRunId: item.engineRunId })),
@@ -2699,15 +2670,15 @@ export function FindingsPage({
   // separated by a semicolon rather than another dot.
   const locationsFor = (finding: Finding): string[] => [
     ...new Set(finding.evidence
-      .map((evidence) => finding.sourceAudit ? evidence.location : evidence.location?.trim())
+      .map((evidence) => evidence.location?.trim())
       .filter((location): location is string => Boolean(location))
-      .map((location) => finding.sourceAudit ? location : findingLocationText(locale, location))),
+      .map((location) => findingLocationText(locale, location))),
   ];
   const linesFor = (finding: Finding): string[] => [
     ...new Set(finding.evidence
-      .map((evidence) => finding.sourceAudit ? evidence.location : evidence.location?.trim())
+      .map((evidence) => evidence.location?.trim())
       .filter((location): location is string => Boolean(location))
-      .map((location) => finding.sourceAudit ? location : findingLineText(locale, location))),
+      .map((location) => findingLineText(locale, location))),
   ];
   const criticalCount = orderedProblems.filter(({finding}) => finding.severity === "critical").length;
   const highCount = orderedProblems.filter(({finding}) => finding.severity === "high").length;
@@ -3008,8 +2979,6 @@ export function FindingsPage({
   ) : null;
 
   if (findings.length === 0) {
-    const onlyAuditFailures = Boolean(report?.actual.checks.length
-      && report.actual.checks.every((check) => check.outcome));
     const incompleteRun = latestRun && latestRun.status !== "completed";
     const localhostSummary = latestRun && isExactBuiltInLocalhostQuickScanRun(latestRun)
       ? localhostTcpBeginnerSummary(latestRun.engineRuns[0]!)
@@ -3144,7 +3113,7 @@ export function FindingsPage({
             onOpenCoverage={onOpenCoverage}
           />
         )}
-        {!cleanCompletedOutcome && !partialSecurityOutcome && !onlyAuditFailures && (
+        {!cleanCompletedOutcome && !partialSecurityOutcome && (
           <EmptyState
             icon={incompleteRun
               || Boolean(requestOutcomeSummary)
@@ -3270,7 +3239,7 @@ export function FindingsPage({
               <button
                 key={finding.id}
                 type="button"
-                className={finding.sourceAudit ? "priority-card provider-text" : "priority-card"}
+                className="priority-card"
                 onClick={() => revealFinding(finding.id)}
               >
                 <span className="priority-card__number">{String(index + 1).padStart(2, "0")}</span>
@@ -3281,7 +3250,6 @@ export function FindingsPage({
                 </span>
                 <h3>{group ? problemGroupTitle(group, locale) : findingHeadline(locale, finding.title, finding.family)}</h3>
                 <p className="priority-card__impact">{problemGroupImpact(group, locale) ?? findingImpactSentence(locale, {
-                  sourceAudit: finding.sourceAudit,
                   englishFallback: finding.impact,
                   severity: finding.severity,
                   severityLabel: severityMeta[finding.severity].label,
@@ -3299,8 +3267,7 @@ export function FindingsPage({
                 <span className="priority-card__guidance">
                   <span>
                     <strong>{text(copy.nextActionNow)}</strong>
-                    <FindingText inert={finding.sourceAudit} compact text={problemGroupAction(group, locale) ?? findingActionSentence(locale, {
-                      sourceAudit: finding.sourceAudit,
+                    <ScannerMarkdown compact text={problemGroupAction(group, locale) ?? findingActionSentence(locale, {
                       englishFallback: finding.recommendation,
                       family: finding.family,
                       awsIamPolicy: finding.awsIamPolicy,
@@ -3316,7 +3283,7 @@ export function FindingsPage({
                   {scannerRemediations.map((remediation) => (
                     <span key={remediation}>
                       <strong>{text(copy.scannerRemediation)}</strong>
-                      <FindingText inert={finding.sourceAudit} text={remediation} compact />
+                      <ScannerMarkdown text={remediation} compact />
                     </span>
                   ))}
                   {scannerFixedVersions.length > 0 && (
@@ -3785,9 +3752,8 @@ export function FindingsPage({
                     <StatusPill label={text(copy.tenantDisputed)} tone="neutral" />
                   )}
                 </div>
-                <h2 className={selected.sourceAudit ? "provider-text" : undefined}>{findingHeadline(locale, selected.title, selected.family)}</h2>
-                <p className={selected.sourceAudit ? "provider-text" : undefined}>{findingSummarySentence(locale, {
-                  sourceAudit: selected.sourceAudit,
+                <h2>{findingHeadline(locale, selected.title, selected.family)}</h2>
+                <p>{findingSummarySentence(locale, {
                   englishFallback: selected.summary,
                   severity: selected.severity,
                   severityLabel: severityMeta[selected.severity].label,
@@ -3853,8 +3819,7 @@ export function FindingsPage({
 
               <section className="detail-section">
                 <h3>{text(copy.possibleImpact)}</h3>
-                <p className={selected.sourceAudit ? "provider-text" : undefined}>{findingImpactSentence(locale, {
-                  sourceAudit: selected.sourceAudit,
+                <p>{findingImpactSentence(locale, {
                   englishFallback: selected.impact,
                   severity: selected.severity,
                   severityLabel: severityMeta[selected.severity].label,
@@ -3876,8 +3841,7 @@ export function FindingsPage({
 
               <section className="detail-section detail-section--advice">
                 <h3>{text(copy.recommendation)}</h3>
-                <FindingText inert={selected.sourceAudit} text={findingActionSentence(locale, {
-                  sourceAudit: selected.sourceAudit,
+                <ScannerMarkdown text={findingActionSentence(locale, {
                   englishFallback: selected.recommendation,
                   family: selected.family,
                   awsIamPolicy: selected.awsIamPolicy,
@@ -3886,7 +3850,7 @@ export function FindingsPage({
                 {selectedScannerRemediations.map((remediation) => (
                   <div key={remediation} className="scanner-remediation-advice">
                     {adviceLabel(locale, text(copy.scannerRemediation))}
-                    <FindingText inert={selected.sourceAudit} text={remediation} />
+                    <ScannerMarkdown text={remediation} />
                   </div>
                 ))}
                 {selectedScannerFixedVersions.length > 0 && (
@@ -3935,7 +3899,7 @@ export function FindingsPage({
                       const evidenceHeaderName = (evidence.engineRunId
                         ? engineNameByEngineRunId.get(evidence.engineRunId)
                         : undefined) || evidence.sourceEngine;
-                      const evidenceSummary = !selected.sourceAudit && evidence.summary.endsWith(UNTRUSTED_EVIDENCE_CAVEAT)
+                      const evidenceSummary = evidence.summary.endsWith(UNTRUSTED_EVIDENCE_CAVEAT)
                         ? evidence.summary.slice(0, -UNTRUSTED_EVIDENCE_CAVEAT.length)
                         : evidence.summary;
                       // A summary that only glues together the engine, source rule
@@ -3944,19 +3908,19 @@ export function FindingsPage({
                       const evidenceSummaryRestatesNeighbours = Boolean(evidence.sourceRule) && Boolean(evidence.location)
                         && evidenceSummary === `${evidence.sourceEngine} reported rule ${evidence.sourceRule} at ${evidence.location}.`;
                       return (
-                      <article key={evidence.id} className={selected.sourceAudit ? "evidence-item provider-text" : "evidence-item"}>
+                      <article key={evidence.id} className="evidence-item">
                         <div className="evidence-item__header"><strong>{evidenceHeaderName}</strong><span>{formatDateTime(evidence.observedAt)}</span></div>
                         {!evidenceSummaryRestatesNeighbours && <p>{evidenceSummary}</p>}
                         {evidence.location && (
                           <div className="scanner-evidence-location">
                             <strong>{text(copy.reportedLocation)}</strong>
-                            <p>{selected.sourceAudit ? evidence.location : findingLocationText(locale, evidence.location)}</p>
+                            <p>{findingLocationText(locale, evidence.location)}</p>
                           </div>
                         )}
                         {evidence.scannerDetails?.description && (
                           <div className="scanner-evidence-description">
                             <strong>{text(copy.scannerDescription)}</strong>
-                            <FindingText inert={selected.sourceAudit} text={evidence.scannerDetails.description} />
+                            <ScannerMarkdown text={evidence.scannerDetails.description} />
                           </div>
                         )}
                         {evidence.scannerDetails?.awsIamPolicy && (
@@ -3992,13 +3956,11 @@ export function FindingsPage({
                         {evidence.scannerDetails?.remediation && (
                           <div className="scanner-evidence-remediation">
                             <strong>{text(copy.scannerRemediation)}</strong>
-                            <FindingText inert={selected.sourceAudit} text={evidence.scannerDetails.remediation} />
+                            <ScannerMarkdown text={evidence.scannerDetails.remediation} />
                           </div>
                         )}
                         <details className="page-technical-details">
                           <summary>{text(copy.technicalEvidence)}</summary>
-                          {evidence.providerRecord && <ProviderValue value={evidence.providerRecord} />}
-                          {report?.technicalDetails.tasks.filter((task) => task.taskId === evidence.engineRunId && task.execution.kind === "agent_audit").map((task) => <ProviderValue key={task.taskId} value={task.execution} />)}
                           <dl className="evidence-provenance">
                             <div><dt>{text(copy.evidenceKind)}</dt><dd>{evidence.kind?.replaceAll("_", " ") ?? text(copy.notReported)}</dd></div>
                             <div><dt>{text(copy.sourceRule)}</dt><dd><code>{evidence.sourceRule ?? text(copy.notReported)}</code></dd></div>
@@ -4061,9 +4023,9 @@ export function FindingsPage({
                   <ul className="reference-list">
                     {selected.officialReferences.map((reference) => (
                       <li key={reference}>
-                        {selected.sourceAudit ? <ProviderValue value={reference} /> : <a href={reference} target="_blank" rel="noreferrer noopener" title={reference}>
+                        <a href={reference} target="_blank" rel="noreferrer noopener" title={reference}>
                           {readableReference(reference)} <Icon name="external" size={14} />
-                        </a>}
+                        </a>
                       </li>
                     ))}
                   </ul>
@@ -4080,8 +4042,4 @@ export function FindingsPage({
       {report && <ReportEndMatter report={report} run={latestRun} />}
     </div>
   );
-}
-
-function FindingText({ inert, text, compact }: { inert?: boolean; text: string; compact?: boolean }) {
-  return inert ? <ProviderValue value={text} /> : <ScannerMarkdown text={text} compact={compact} />;
 }

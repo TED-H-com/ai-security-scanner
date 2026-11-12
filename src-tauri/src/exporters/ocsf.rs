@@ -203,7 +203,7 @@ fn to_event(
                 "product": {
                     "name": "ai-security-scanner",
                     "vendor_name": "ai-security-scanner",
-                    "version": crate::product_version::current()
+                    "version": env!("CARGO_PKG_VERSION")
                 },
                 "source": "Scanner service inventory observation"
             },
@@ -237,12 +237,7 @@ fn to_event(
         return event;
     }
 
-    let source_audit = finding
-        .evidence
-        .iter()
-        .find_map(|e| super::source_audit::identity(case, e));
-    let is_source_audit = source_audit.is_some();
-    let mut scanner_extension = json!({
+    let scanner_extension = json!({
         "record_kind": "security_finding",
         "canonical_fingerprint": observation.fingerprint,
         "canonical_confidence": confidence_name(&observation.confidence),
@@ -270,9 +265,6 @@ fn to_event(
             "workflow history"
         ]
     });
-    if let Some(identity) = source_audit {
-        scanner_extension["source_audit"] = identity;
-    }
     json!({
         "activity_id": activity_id,
         "activity_name": activity_name,
@@ -298,9 +290,9 @@ fn to_event(
             "product": {
                 "name": "ai-security-scanner",
                 "vendor_name": "ai-security-scanner",
-                "version": crate::product_version::current()
+                "version": env!("CARGO_PKG_VERSION")
             },
-            "source": if is_source_audit { "Source audit observation" } else { "Canonical scanner observation" }
+            "source": "Canonical scanner observation"
         },
         "finding_info": {
             "uid": finding.id,
@@ -310,7 +302,7 @@ fn to_event(
             "created_time": first_seen_time,
             "first_seen_time": first_seen_time,
             "last_seen_time": observation.observed_at.timestamp_millis(),
-            "types": [if is_source_audit { "Source audit observation" } else { "Preliminary scanner observation" }],
+            "types": ["Preliminary scanner observation"],
             "tags": finding.tags
         },
         "resources": resources,
@@ -669,7 +661,6 @@ mod tests {
         original.plain_language_summary = "Run one summary".into();
         original.status = FindingStatus::FalsePositive;
         original.evidence.push(Evidence {
-            provider_record: None,
             id: "evidence-1".into(),
             finding_id: original.id.clone(),
             run_id: "run-1".into(),
@@ -677,7 +668,6 @@ mod tests {
             kind: EvidenceKind::Configuration,
             engine_id: "cloudsplaining".into(),
             scanner_details: Some(ScannerFindingDetails {
-                remediation_code_changes: None,
                 description: Some("Upstream scanner explanation".into()),
                 remediation: Some("Upstream scanner remediation".into()),
                 installed_version: Some("1.2.3".into()),

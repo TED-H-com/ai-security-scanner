@@ -2,8 +2,6 @@
 
 [English](README.md) · [文件](../README.zh-TW.md)
 
-儲存庫操作 skill 已公開；新的 skill 主流程尚未發布，見[發布內容與新版定義](../release-model.zh-TW.md)。本目錄的桌面交付紀錄不代表後續開發功能已出貨。
-
 目前版本為 [v0.6.1 正式版](v0.6.1.md#繁體中文)，提供 Mac、Windows、Linux 安裝版，修正 macOS 與 Linux 本機專案掃描的安全問題。精確成品、公開查核與平台觀察保存在發布紀錄。
 
 [v0.5.0 整合正式版](v0.5.0.zh-TW.md)收納 v0.4.1 之後所有已完成更新、Linux 建置修正及兩項依賴安全更新；Windows、macOS 與 Linux 安裝包已正式發布，公開檔案與來源證明均驗證通過。

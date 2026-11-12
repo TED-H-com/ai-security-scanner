@@ -104,8 +104,6 @@ const INTERNAL_ENDPOINT_TELNET_VULNERABILITY_OIDS: [&str; 1] = ["1.3.6.1.4.1.256
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 pub struct BeginnerMasterReport {
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub source_audits: Vec<crate::source_audit_report::SourceAuditReport>,
     pub schema_version: String,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub incident_focus: Option<crate::incident_focus::IncidentCampaignReport>,
@@ -433,8 +431,6 @@ pub struct NetworkScopeCoverage {
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 pub struct ActualCheck {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub outcome: Option<crate::agent_audit_failure::wording::Description>,
     pub task_id: Id,
     pub check_id: String,
     /// Product report semantics for this completed work. Optional only so a
@@ -589,8 +585,6 @@ pub enum NextActionCode {
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 pub struct BeginnerFinding {
-    #[serde(default, skip_serializing_if = "std::ops::Not::not")]
-    pub source_audit: bool,
     pub finding_id: Id,
     pub fingerprint: String,
     pub snapshot_source: FindingSnapshotSource,
@@ -652,8 +646,6 @@ pub enum FindingSnapshotSource {
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 pub struct FindingEvidenceReference {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub provider_record: Option<crate::agent_audit_admission::ProviderRecordRef>,
     pub evidence_id: Id,
     pub engine_id: String,
     /// True only when the fields below came from the selected run's immutable
@@ -778,17 +770,6 @@ pub struct TechnicalTaskDetails {
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 #[serde(tag = "kind", rename_all = "snake_case")]
 pub enum TechnicalExecution {
-    AgentAuditFailure {
-        run_id: String,
-        receipt_sha256: String,
-        terminal_sha256: String,
-        occurred_at: DateTime<Utc>,
-        ending: crate::agent_audit_failure::Ending,
-    },
-    AgentAudit {
-        provider_id: String,
-        admission_id: String,
-    },
     CatalogEngine {
         engine_id: String,
         engine_version: Option<String>,
@@ -836,7 +817,6 @@ pub struct UnavailableTechnicalValue {
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum BeginnerReportError {
-    NotAvailable { message: String },
     RunNotFound { run_id: Id },
     RunInProgress { run_id: Id },
 }
@@ -844,7 +824,6 @@ pub enum BeginnerReportError {
 impl fmt::Display for BeginnerReportError {
     fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            Self::NotAvailable { message } => write!(formatter, "not_available: {message}"),
             Self::RunNotFound { run_id } => {
                 write!(formatter, "scan run {run_id} was not found in this project")
             }
@@ -866,11 +845,6 @@ pub fn build_beginner_master_report(
     case: &AssessmentCase,
     run_id: &str,
 ) -> Result<BeginnerMasterReport, BeginnerReportError> {
-    crate::agent_audit_admission::check_format(case).map_err(|e| {
-        BeginnerReportError::NotAvailable {
-            message: e.to_string(),
-        }
-    })?;
     let run = case
         .scan_runs
         .iter()
@@ -884,11 +858,6 @@ pub fn build_beginner_master_report(
         });
     }
 
-    let source_audits = crate::source_audit_report::project(case, run).map_err(|e| {
-        BeginnerReportError::NotAvailable {
-            message: e.to_string(),
-        }
-    })?;
     let contradictory_request_outcome =
         run.request_outcome.is_some() && !run.is_terminal_no_checks();
     let mut data_quality_warnings = Vec::new();
@@ -1047,7 +1016,6 @@ pub fn build_beginner_master_report(
     let inventory = project_inventory(case, run);
 
     Ok(BeginnerMasterReport {
-        source_audits,
         schema_version: BEGINNER_MASTER_REPORT_SCHEMA_VERSION.into(),
         incident_focus: crate::incident_focus::build_campaign_report_from_observations(
             run, selected_observations.values().copied(),
@@ -1501,29 +1469,7 @@ fn project_requested_coverage(
                 }
             }
             EngineTaskKind::BuiltInLocalhostTcp { .. }
-            | EngineTaskKind::ExternalReportImport { .. }
-            | EngineTaskKind::AgentAuditFailure { .. } => {}
-            EngineTaskKind::AgentAudit { .. } => {
-                if let Some(a) = crate::source_audit_report::admission(case, task) {
-                    limits.push(RequestedLimit {
-                        name: "issued invocations".into(),
-                        value: a.method.budget.issued.to_string(),
-                        source: RequestedLimitSource::FrozenTaskContract,
-                    });
-                    for (name, value) in [
-                        ("declared invocation limit", a.method.budget.limit),
-                        ("remaining invocations", a.method.budget.remaining),
-                    ] {
-                        if let Some(value) = value {
-                            limits.push(RequestedLimit {
-                                name: name.into(),
-                                value: value.to_string(),
-                                source: RequestedLimitSource::FrozenTaskContract,
-                            });
-                        }
-                    }
-                }
-            }
+            | EngineTaskKind::ExternalReportImport { .. } => {}
         }
     }
     for grant in &run.scope_grant_snapshots {
@@ -2127,104 +2073,6 @@ fn project_actual_coverage(case: &AssessmentCase, run: &ScanRun) -> ActualCovera
                 useful_result = status == CoverageDimensionStatus::TestedPartial;
             }
             EngineTaskKind::BuiltInLocalhostTcp { .. } => {}
-            EngineTaskKind::AgentAuditFailure { ref outcome, .. } => {
-                let kind = if matches!(
-                    outcome.ending,
-                    crate::agent_audit_failure::Ending::Blocked { .. }
-                ) {
-                    CoverageGapKind::NotTested
-                } else {
-                    CoverageGapKind::Failed
-                };
-                status = if kind == CoverageGapKind::Failed {
-                    CoverageDimensionStatus::Failed
-                } else {
-                    CoverageDimensionStatus::NotTested
-                };
-                tested_dimensions.clear();
-                useful_result = false;
-                exact_complete = false;
-                gaps.push(CoverageGap {
-                    unattributed: None,
-                    class: kind.default_class(),
-                    kind,
-                    task_id: Some(task.id.clone()),
-                    target_asset_ids: task.asset_ids.clone(),
-                    dimension: "Source audit coverage".into(),
-                    reason: outcome.gap().into(),
-                    next_action_code: NextActionCode::PreserveVisibleLimitation,
-                    next_action: outcome.description().next_action,
-                });
-                task_gap_already_projected = true;
-            }
-            EngineTaskKind::AgentAudit { .. } => {
-                if let Some(a) = crate::source_audit_report::admission(case, task) {
-                    useful_result = a.outcome.audit_performed;
-                    exact_complete = a.outcome.audit_performed
-                        && matches!(
-                            a.outcome.state,
-                            crate::cloudflare_provider::audit::sealed::TerminalState::Complete
-                        );
-                    status = if !a.outcome.audit_performed {
-                        CoverageDimensionStatus::NotTested
-                    } else if exact_complete {
-                        CoverageDimensionStatus::TestedComplete
-                    } else {
-                        CoverageDimensionStatus::TestedPartial
-                    };
-                    if let Ok(p) = serde_json::from_value::<
-                        crate::provider_report::ProviderReportProjection,
-                    >(a.retained_projection.clone())
-                    {
-                        let audit_gaps = crate::source_audit_report::gaps(&p);
-                        for remaining in [true, false] {
-                            let count = audit_gaps
-                                .iter()
-                                .filter(|g| g.remaining() == remaining)
-                                .count();
-                            if count == 0 {
-                                continue;
-                            }
-                            let kind = if remaining {
-                                CoverageGapKind::NotTested
-                            } else {
-                                CoverageGapKind::Excluded
-                            };
-                            gaps.push(CoverageGap {
-                                unattributed: None,
-                                kind,
-                                class: kind.default_class(),
-                                task_id: Some(task.id.clone()),
-                                target_asset_ids: task.asset_ids.clone(),
-                                dimension: "Source audit coverage".into(),
-                                reason: match (remaining, count) {
-                                    (true, 1) => "1 unit remains.".into(),
-                                    (true, n) => format!("{n} units remain."),
-                                    (false, 1) => "1 unit is outside the audit scope.".into(),
-                                    (false, n) => format!("{n} units are outside the audit scope."),
-                                },
-                                next_action_code: if remaining {
-                                    NextActionCode::RetryCheck
-                                } else {
-                                    NextActionCode::NoActionUnlessScopeChanges
-                                },
-                                next_action: if remaining {
-                                    "Continue the source audit from the listed paths.".into()
-                                } else {
-                                    String::new()
-                                },
-                            });
-                        }
-                    }
-                    tested_dimensions.push(TestedDimension {
-                        dimension: "Source audit coverage".into(),
-                        value: a.source.scope.join("\n"),
-                        observation: "Recorded source audit".into(),
-                        observed_at: task.finished_at,
-                    });
-                    task_gap_already_projected = true;
-                }
-            }
         }
 
         if task.error_code.as_deref() == Some("local_input_profile_unsupported") {
@@ -2274,10 +2122,6 @@ fn project_actual_coverage(case: &AssessmentCase, run: &ScanRun) -> ActualCovera
         }
         debug_assert_tested_dimensions_are_translatable(&tested_dimensions);
         checks.push(ActualCheck {
-            outcome: match &task.task_kind {
-                EngineTaskKind::AgentAuditFailure { outcome, .. } => Some(outcome.description()),
-                _ => None,
-            },
             task_id: task.id.clone(),
             check_id: check_id(task),
             result_kind: Some(task_result_kind(task)),
@@ -3140,10 +2984,7 @@ fn append_manual_review_gaps(run: &ScanRun, gaps: &mut Vec<CoverageGap>) {
 fn debug_assert_coverage_prose_is_translatable(gaps: &[CoverageGap]) {
     if cfg!(debug_assertions) {
         for gap in gaps {
-            if gap.kind == CoverageGapKind::Excluded
-                || gap.unattributed.is_some()
-                || gap.dimension == "Source audit coverage"
-            {
+            if gap.kind == CoverageGapKind::Excluded || gap.unattributed.is_some() {
                 continue;
             }
             // A request-outcome gap prints an explanation stored in the case
@@ -4346,7 +4187,6 @@ fn project_finding(
                 .iter()
                 .filter(|evidence| evidence.run_id == run.id)
                 .map(|evidence| FindingEvidenceReference {
-                    provider_record: evidence.provider_record.clone(),
                     evidence_id: evidence.id.clone(),
                     engine_id: evidence.engine_id.clone(),
                     details_frozen: evidence_details_frozen,
@@ -4428,18 +4268,14 @@ fn project_finding(
                 .and_then(|details| details.aws_iam_policy.as_ref())
         })
     });
-    let provider = details.filter(|f| f.evidence.iter().any(|e| e.provider_record.is_some()));
     BeginnerFinding {
-        source_audit: provider.is_some(),
         finding_id: observation.finding_id.clone(),
         fingerprint: observation.fingerprint.clone(),
         snapshot_source,
         title: details
             .map(|finding| finding.title.clone())
             .unwrap_or_else(|| "Finding details unavailable for this legacy run".into()),
-        plain_language_risk: if let Some(f) = provider {
-            f.plain_language_summary.clone()
-        } else if exposure_observation {
+        plain_language_risk: if exposure_observation {
             crate::finding_narrative::EXPOSURE_OBSERVATION_RISK.into()
         } else {
             details
@@ -4454,9 +4290,7 @@ fn project_finding(
                         .into()
                 })
         },
-        possible_impact: if let Some(f) = provider {
-            f.possible_impact.clone()
-        } else if exposure_observation {
+        possible_impact: if exposure_observation {
             crate::finding_narrative::EXPOSURE_OBSERVATION_IMPACT.into()
         } else {
             details
@@ -4493,9 +4327,7 @@ fn project_finding(
                 .unwrap_or_default()
         },
         target_asset_ids: observation.asset_ids.clone(),
-        next_step: if let Some(f) = provider {
-            f.recommendation.clone()
-        } else if exposure_observation {
+        next_step: if exposure_observation {
             crate::finding_narrative::EXPOSURE_OBSERVATION_NEXT_STEP.into()
         } else {
             details
@@ -4644,7 +4476,7 @@ fn apply_coverage_constrained_finding_actions(
     actual: &ActualCoverage,
 ) {
     for finding in findings {
-        if !finding.source_audit && finding_unconfirmed_by_coverage(finding, actual) {
+        if finding_unconfirmed_by_coverage(finding, actual) {
             finding.next_step = crate::finding_narrative::INCOMPLETE_CHECK_CONFIRM_ACTION.into();
         }
     }
@@ -4711,30 +4543,22 @@ fn project_next_steps(
             finding.recommended_expert_type.clone()
         };
         let unconfirmed = finding_unconfirmed_by_coverage(finding, actual);
-        let key = if finding.source_audit {
-            (
-                finding.next_step.clone(),
-                finding.next_step.clone(),
-                expert.clone(),
-            )
-        } else {
-            (
-                crate::finding_narrative::finding_next_action_english(
-                    &finding.next_step,
-                    family,
-                    policy,
-                    unconfirmed,
-                ),
-                crate::finding_narrative::finding_next_action_zh_hant(
-                    &finding.next_step,
-                    &expert,
-                    family,
-                    policy,
-                    unconfirmed,
-                ),
-                expert.clone(),
-            )
-        };
+        let key = (
+            crate::finding_narrative::finding_next_action_english(
+                &finding.next_step,
+                family,
+                policy,
+                unconfirmed,
+            ),
+            crate::finding_narrative::finding_next_action_zh_hant(
+                &finding.next_step,
+                &expert,
+                family,
+                policy,
+                unconfirmed,
+            ),
+            expert.clone(),
+        );
         if let Some(&at) = step_at.get(&key) {
             steps[at].also_resolves.push(finding.finding_id.clone());
             continue;
@@ -4903,10 +4727,6 @@ fn project_technical_details(case: &AssessmentCase, run: &ScanRun) -> TechnicalD
             evidence_sha256.sort();
             evidence_sha256.dedup();
             let execution = match task.task_kind {
-                EngineTaskKind::AgentAuditFailure { ref outcome, .. } => TechnicalExecution::AgentAuditFailure {
-                    run_id: task.scan_run_id.clone(), receipt_sha256: outcome.preparation_receipt_sha256.clone(), terminal_sha256: outcome.terminal_sha256.clone(), occurred_at: outcome.occurred_at, ending: outcome.ending.clone(),
-                },
-                EngineTaskKind::AgentAudit { ref provider_id, ref admission_id } => TechnicalExecution::AgentAudit { provider_id: provider_id.clone(), admission_id: admission_id.clone() },
                 EngineTaskKind::ExternalReportImport { ref source_format, ref source_sha256 } => TechnicalExecution::ExternalReportImport {
                     engine_id: task.engine_id.clone(), source_format: source_format.clone(), source_sha256: source_sha256.clone(),
                     contract: "Offline report import. No scanner was executed; original scan coverage remains unverified.".into(),
@@ -5006,10 +4826,6 @@ fn coverage_counts(actual: &ActualCoverage, gaps: &[CoverageGap]) -> CoverageCou
         }
     }
     for gap in gaps {
-        // The admitted audit check already accounts for its unfinished units.
-        if gap.dimension == "Source audit coverage" && gap.kind == CoverageGapKind::NotTested {
-            continue;
-        }
         match gap.class {
             CoverageGapClass::CoverageLoss => {}
             CoverageGapClass::RecordNote => continue,
@@ -5132,8 +4948,6 @@ fn exactly_completed_without_known_gap(task: &EngineRun) -> bool {
         }
         EngineTaskKind::CatalogEngine => true,
         EngineTaskKind::ExternalReportImport { .. } => false,
-        EngineTaskKind::AgentAudit { .. } => true,
-        EngineTaskKind::AgentAuditFailure { .. } => false,
     }
 }
 
@@ -5239,9 +5053,6 @@ fn not_tested_next_action(task: &EngineRun) -> (NextActionCode, &'static str) {
 
 fn check_id(task: &EngineRun) -> String {
     match task.task_kind {
-        EngineTaskKind::AgentAudit { .. } | EngineTaskKind::AgentAuditFailure { .. } => {
-            "Cloudflare source audit".into()
-        }
         EngineTaskKind::BuiltInLocalhostTcp { port, .. } => {
             format!("native localhost TCP check on 127.0.0.1:{port}")
         }
@@ -5305,9 +5116,6 @@ fn selected_run_last_durable_update(case: &AssessmentCase, run: &ScanRun) -> Dat
 
 fn task_result_kind(task: &EngineRun) -> CheckResultKind {
     match task.task_kind {
-        EngineTaskKind::AgentAudit { .. } | EngineTaskKind::AgentAuditFailure { .. } => {
-            CheckResultKind::SecurityCheck
-        }
         EngineTaskKind::BuiltInLocalhostTcp { .. } => CheckResultKind::Connectivity,
         EngineTaskKind::CatalogEngine
             if matches!(
@@ -5432,36 +5240,6 @@ fn confidence_rank(confidence: &Confidence) -> u8 {
 
 #[cfg(test)]
 pub(crate) mod tests {
-    #[test]
-    fn failure_task_never_counts_as_exactly_completed() {
-        use crate::agent_audit_failure::{Ending, Outcome, PROVIDER};
-        use crate::cloudflare_provider::audit::record::TerminationReason;
-        let mut case = localhost_case(
-            LocalhostTcpOutcome::Reachable,
-            EngineRunStatus::Completed,
-            true,
-        );
-        let task = &mut case.scan_runs[0].engine_runs[0];
-        assert!(exactly_completed_without_known_gap(task));
-        task.task_kind = EngineTaskKind::AgentAuditFailure {
-            provider_id: PROVIDER.into(),
-            outcome: Outcome {
-                preparation_request_id: "synthetic".into(),
-                preparation_receipt_sha256: "a".repeat(64),
-                asset_id: task.asset_ids[0].clone(),
-                session_id: Some("synthetic".into()),
-                terminal_sha256: "b".repeat(64),
-                occurred_at: Utc::now(),
-                ending: Ending::Terminated {
-                    reason: TerminationReason::HostInterrupted,
-                    assignment_count: 0,
-                    capture_count: 0,
-                },
-            },
-        };
-        assert!(!exactly_completed_without_known_gap(task));
-    }
-
     #[test]
     fn legacy_coverage_gap_without_class_defaults_to_conservative_coverage_loss() {
         let legacy = serde_json::json!({
@@ -8254,7 +8032,6 @@ pub(crate) mod tests {
             Some(crate::domain::ConfidenceBasisCode::DeterministicPolicyEvaluation);
         high.official_references = vec!["https://example.test/frozen-rule".into()];
         high.evidence[0].scanner_details = Some(crate::domain::ScannerFindingDetails {
-            remediation_code_changes: None,
             description: Some("Frozen scanner description".into()),
             remediation: Some("Frozen scanner remediation".into()),
             installed_version: Some("1.0.0".into()),
@@ -8305,7 +8082,6 @@ pub(crate) mod tests {
         assert_eq!(
             evidence.scanner_details,
             Some(crate::domain::ScannerFindingDetails {
-                remediation_code_changes: None,
                 description: Some("Frozen scanner description".into()),
                 remediation: Some("Frozen scanner remediation".into()),
                 installed_version: Some("1.0.0".into()),
@@ -8941,7 +8717,6 @@ pub(crate) mod tests {
             finding.recommended_expert_type = "Cloud identity specialist".into();
             finding.evidence[0].engine_id = "cloudsplaining".into();
             finding.evidence[0].scanner_details = Some(crate::domain::ScannerFindingDetails {
-                remediation_code_changes: None,
                 description: None,
                 remediation: None,
                 installed_version: None,
@@ -9795,7 +9570,6 @@ pub(crate) mod tests {
             priority_reasons: vec!["exposed".into()],
             asset_ids: vec!["localhost-asset".into()],
             evidence: vec![Evidence {
-                provider_record: None,
                 id: format!("evidence-{id}"),
                 finding_id: id.into(),
                 run_id: "run-1".into(),

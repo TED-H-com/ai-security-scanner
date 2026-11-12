@@ -9,10 +9,6 @@ COPY Cargo.toml Cargo.lock ./
 COPY vendor/glib-0.18.5 vendor/glib-0.18.5
 COPY src-tauri/Cargo.toml src-tauri/build.rs src-tauri/
 COPY src-tauri/src src-tauri/src
-COPY providers/cloudflare/validate-document.cjs providers/cloudflare/validate-document.cjs
-COPY providers/cloudflare/upstream/LICENSE providers/cloudflare/upstream/LICENSE
-COPY providers/cloudflare/upstream/skills/security-audit/report-schema.json providers/cloudflare/upstream/skills/security-audit/validate-coverage-ledger.cjs providers/cloudflare/upstream/skills/security-audit/validate-findings.cjs providers/cloudflare/upstream/skills/security-audit/
-COPY runtime/managed-egress-gateway.json runtime/managed-egress-gateway.json
 COPY mappings/control-mappings.json mappings/control-mappings.json
 COPY bootstrap/aws-readonly-cloudformation.yaml bootstrap/azure-readonly-arm.json bootstrap/gcp-readonly-bindings.json bootstrap/microsoft365-readonly-permissions.json bootstrap/
 COPY engines/catalog.json engines/catalog.json

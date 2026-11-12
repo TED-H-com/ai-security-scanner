@@ -303,20 +303,6 @@ pub struct ScopeGrant {
     pub external_scope: Option<ExternalScopeGrant>,
 }
 
-/// Shared authorization predicate; callers retain their own grant selection order.
-pub(crate) fn grant_is_effective(
-    grant: &ScopeGrant,
-    asset_id: &str,
-    permission: ScanPermission,
-    now: chrono::DateTime<chrono::Utc>,
-) -> bool {
-    grant.asset_id == asset_id
-        && grant.permission == permission
-        && !grant.confirmed_by.trim().is_empty()
-        && grant.confirmed_at <= now
-        && grant.expires_at.is_none_or(|expires| expires > now)
-}
-
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 #[serde(rename_all = "snake_case")]
 pub enum CoverageStatus {
@@ -717,14 +703,6 @@ pub enum EngineRunStatus {
 pub enum EngineTaskKind {
     #[default]
     CatalogEngine,
-    AgentAuditFailure {
-        provider_id: String,
-        outcome: crate::agent_audit_failure::Outcome,
-    },
-    AgentAudit {
-        provider_id: String,
-        admission_id: Id,
-    },
     /// Imported scanner evidence. This never represents local execution or
     /// proves coverage, and cannot authorize a scanner or target contact.
     ExternalReportImport {
@@ -1404,11 +1382,8 @@ pub struct BenchmarkReference {
 /// instructions and must never be executed automatically. Keeping them
 /// separate from [`Finding::recommendation`] preserves upstream meaning while
 /// leaving the product-owned next action safe and beginner-readable.
-#[derive(Debug, Clone, Default, Serialize, Deserialize, PartialEq, Eq)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 pub struct ScannerFindingDetails {
-    /// Native proposed code changes, retained verbatim as untrusted evidence.
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub remediation_code_changes: Option<Value>,
     /// Scanner- or rule-provided explanation, excluding raw secret values and
     /// target response bodies.
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -1476,8 +1451,6 @@ pub struct CvssScore {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Evidence {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub provider_record: Option<crate::agent_audit_admission::ProviderRecordRef>,
     pub id: Id,
     pub finding_id: Id,
     pub run_id: Id,
@@ -2064,27 +2037,6 @@ pub struct LocalInputChange {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-#[serde(deny_unknown_fields)]
-pub struct ReportSnapshotReference {
-    pub snapshot_id: String,
-    pub source_case_revision: i64,
-    /// Relative to the workspace's artifact root; portable across restore.
-    pub relative_path: String,
-    pub sha256: String,
-    pub byte_length: u64,
-}
-
-/// Immutable report captured at a terminal run boundary. A later recovered
-/// outcome may append another record without replacing the original.
-#[derive(Debug, Clone, Serialize, Deserialize)]
-#[serde(deny_unknown_fields)]
-pub struct RunReportSnapshot {
-    pub run_id: Id,
-    pub run_sha256: String,
-    pub snapshot: ReportSnapshotReference,
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct CaseExport {
     pub id: Id,
     pub case_id: Id,
@@ -2096,10 +2048,6 @@ pub struct CaseExport {
     pub format: Option<String>,
     pub path: String,
     pub sha256: String,
-    /// Private frozen HTML/JSON context retained under this case's artifact tree.
-    /// Older exports have no historical snapshot; never invent one on read.
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub report_snapshot: Option<ReportSnapshotReference>,
     /// Findings-only formats cannot carry the run coverage ledger in their
     /// native schema. New records therefore persist the mandatory companion
     /// manifest instead of disabling those exports for partial runs.
@@ -2120,55 +2068,8 @@ pub struct CaseExport {
     pub integrity_only_notice: String,
 }
 
-#[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Eq)]
-#[serde(rename_all = "snake_case")]
-pub enum SelectedRunReportFormat {
-    Html,
-    Json,
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
-#[serde(deny_unknown_fields)]
-pub struct CombinedOriginalFiles {
-    pub included_files: usize,
-    pub omitted_files: usize,
-    pub sensitive_files_excluded: usize,
-    pub omission_reason: Option<String>,
-    pub archive_file_name: Option<String>,
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-#[serde(deny_unknown_fields)]
-pub struct ReportAttachmentArchive {
-    pub path: String,
-    pub sha256: String,
-    pub byte_length: u64,
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct SelectedRunReportExport {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub original_files: Option<CombinedOriginalFiles>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub attachment_archive: Option<ReportAttachmentArchive>,
-    pub id: Id,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub report_snapshot: Option<ReportSnapshotReference>,
-    pub case_id: String,
-    pub selected_run_ids: Vec<String>,
-    pub format: SelectedRunReportFormat,
-    pub path: String,
-    pub sha256: String,
-    pub created_at: DateTime<Utc>,
-    pub redaction_profile: String,
-}
-
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct AssessmentCase {
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub agent_audit_admissions: Vec<crate::agent_audit_admission::AgentAuditAdmission>,
-    #[serde(default, skip_serializing_if = "BTreeSet::is_empty")]
-    pub format_requirements: BTreeSet<String>,
     #[serde(skip)]
     pub(crate) storage_revision: i64,
     pub id: Id,
@@ -2203,25 +2104,13 @@ pub struct AssessmentCase {
     pub inventory_observations: Vec<InventoryObservation>,
     pub raw_artifacts: Vec<RawArtifact>,
     pub exports: Vec<CaseExport>,
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub combined_exports: Vec<SelectedRunReportExport>,
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub run_report_snapshots: Vec<RunReportSnapshot>,
     pub comparisons: Vec<VerificationComparison>,
 }
 
 impl AssessmentCase {
-    /// Local optimistic storage revision, absent from portable case JSON.
-    /// Callers may report this boundary but cannot assign it as an authority.
-    pub fn storage_revision(&self) -> i64 {
-        self.storage_revision
-    }
-
     pub fn new(title: String, profile: OrganizationProfile) -> Self {
         let now = Utc::now();
         Self {
-            agent_audit_admissions: Vec::new(),
-            format_requirements: BTreeSet::new(),
             storage_revision: 0,
             id: new_id(),
             title,
@@ -2248,8 +2137,6 @@ impl AssessmentCase {
             inventory_observations: Vec::new(),
             raw_artifacts: Vec::new(),
             exports: Vec::new(),
-            combined_exports: Vec::new(),
-            run_report_snapshots: Vec::new(),
             comparisons: Vec::new(),
         }
     }

@@ -1891,7 +1891,4 @@ export const jaInline: Readonly<Record<string, string>> = {
   "Saved to {path}": "{path} に保存しました",
   "Open the desktop app to combine saved scan results.": "保存済みのスキャン結果を統合するにはデスクトップアプリを開いてください。",
   "Save combined security report": "統合セキュリティレポートを保存",
-  "Include original files and allow a private case archive if they exceed the report limit": "元ファイルを添付し、容量を超えた場合は非公開の案件アーカイブに保存する",
-  "Original files can contain sensitive data. The fallback archive includes the full case and evidence from all its scans. Keep it private when sharing the report.": "元ファイルには機密情報が含まれる場合があります。容量を超えた場合のアーカイブには案件全体とすべてのスキャンの証拠が含まれます。レポートを共有する際もアーカイブは非公開で保管してください。",
-  "Original files: {path}": "元ファイルのアーカイブ：{path}",
 };

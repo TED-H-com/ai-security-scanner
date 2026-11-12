@@ -24,5 +24,3 @@ export const resetUnavailableExportFormat = (
   format: ExportFormat,
   run: ScanRun | undefined,
 ): ExportFormat => exportFormatIsAvailable(format, run) ? format : "html";
-
-export const runSupportsReportAttachments = (run: ScanRun | undefined): boolean => Boolean(run && isTerminalResultRun(run));

@@ -1,9 +1,3 @@
-pub mod internal_paths;
-#[cfg(test)]
-mod test_temp;
-#[cfg(test)]
-mod test_temp_tests;
-
 pub mod adapter;
 pub mod adapters;
 pub mod agentic_radar_input;
@@ -12,17 +6,11 @@ pub mod augustus_preflight;
 pub mod augustus_terminal;
 pub mod beginner_report;
 pub mod bootstrap;
-pub mod case_archive;
-mod case_archive_io;
-mod case_archive_model;
 pub mod case_service;
-pub mod cloudflare_provider;
-mod combined_attachments;
 #[cfg(feature = "desktop")]
 mod commands;
 pub mod connectors;
 pub mod container_runtime;
-pub mod core_state;
 pub mod correlation;
 pub mod coverage;
 pub mod credential_vault;
@@ -39,6 +27,7 @@ pub mod external_scanner_import;
 pub mod external_scope;
 pub mod finding_narrative;
 pub mod garak_input;
+#[cfg(any(feature = "desktop", feature = "cli"))]
 pub mod gateway_release;
 pub mod incident_focus;
 pub mod job_manager;
@@ -53,20 +42,13 @@ pub mod prioritization;
 pub mod priority_guidance;
 pub mod process_lease;
 pub mod product_uninstall;
-mod product_version;
-pub mod provider_report;
 pub mod publication_origins;
 pub mod registry;
 mod report_attachments;
 mod report_problem_groups;
-pub mod report_renderer;
-pub mod report_snapshot;
 pub mod runtime;
 pub mod runtime_health_monitor;
-pub mod runtime_preparation;
-pub mod scan_coordinator;
 pub mod selected_run_report;
-pub mod source_audit_report;
 pub mod source_authorization;
 #[cfg(any(feature = "desktop", test))]
 mod startup_failure;
@@ -200,7 +182,7 @@ fn reconcile_live_startup_resources(state: &AppState) {
         ),
     }
 
-    match scan_coordinator::reconcile_interrupted_scan_resources(state, None) {
+    match commands::reconcile_interrupted_scan_resources(state, None) {
         Ok(cleanup) if cleanup.reconciled > 0 || cleanup.pending > 0 => tracing::warn!(
             reconciled = cleanup.reconciled,
             pending = cleanup.pending,
@@ -316,17 +298,15 @@ fn prepare_desktop_state(app: &mut tauri::App) -> Result<AppState, StartupFailur
         )
     })?;
     let artifact_root = artifact_store.root().to_path_buf();
-    Ok(std::sync::Arc::new(
-        core_state::CoreState::new(
-            storage,
-            engines,
-            adapters,
-            artifact_root,
-            app_data.join("integrity-signing-key"),
-        )
-        .with_process_lease(process_lease)
-        .with_packaged_managed_runtime_admission(managed_runtime_admission),
-    ))
+    Ok(AppState::new(
+        storage,
+        engines,
+        adapters,
+        artifact_root,
+        app_data.join("integrity-signing-key"),
+    )
+    .with_process_lease(process_lease)
+    .with_packaged_managed_runtime_admission(managed_runtime_admission))
 }
 
 #[cfg(feature = "desktop")]
@@ -680,15 +660,10 @@ mod desktop_nonblocking_source_invariants {
 
     #[test]
     fn cancel_preserves_terminal_truth_and_never_waits_for_no_worker_cleanup() {
-        let source = normalized_source(include_str!("scan_coordinator.rs"))
-            .lines()
-            .filter(|line| !line.starts_with("#[cfg("))
-            .collect::<Vec<_>>()
-            .join("\n")
-            .replace("pub(crate) ", "");
-        let cancel_start = source.find("fn cancel_scan_case(").expect("cancel command");
+        let source = normalized_source(include_str!("commands.rs"));
+        let cancel_start = source.find("pub fn cancel_scan(").expect("cancel command");
         let cancel_end = source[cancel_start..]
-            .find("\nfn release_provider_execution_reservation")
+            .find("\n#[tauri::command]\npub async fn start_rescan")
             .map(|offset| cancel_start + offset)
             .expect("cancel command end");
         let cancel = &source[cancel_start..cancel_end];
@@ -700,13 +675,13 @@ mod desktop_nonblocking_source_invariants {
             .find("state.jobs.reconcile_terminal_snapshot(&snapshot")
             .expect("exact retained terminal claim");
         let terminal_projection = cancel
-            .find("persist_terminal_job_state_reconciliation(state, &key, &snapshot)")
+            .find("persist_terminal_job_state_reconciliation(&state, &key, &snapshot)")
             .expect("runtime-free terminal truth projection");
         let live_cancel = cancel
-            .find("signal_live_cancel_or_preserve_terminal(&app, state, &key)")
+            .find("signal_live_cancel_or_preserve_terminal(&app, &state, &key)")
             .expect("live-worker cancel helper");
         let coordinated_cancel = cancel
-            .find("coordinate_no_worker_cancel(state, &key)")
+            .find("coordinate_no_worker_cancel(&state, &key)")
             .expect("no-worker admission decision");
         assert!(
             terminal_branch < terminal_claim
@@ -727,7 +702,7 @@ mod desktop_nonblocking_source_invariants {
             .find("fn signal_live_cancel_or_preserve_terminal(")
             .expect("live cancellation helper");
         let live_helper_end = source[live_helper_start..]
-            .find("\nfn cancel_scan_case(")
+            .find("\n#[tauri::command]\npub fn pause_scan")
             .map(|offset| live_helper_start + offset)
             .expect("live cancellation helper end");
         let live_helper = &source[live_helper_start..live_helper_end];
@@ -793,7 +768,7 @@ mod desktop_nonblocking_source_invariants {
             .map(|offset| emit_resolution_start + offset)
             .expect("truthful cancel event helper end");
         let emit_resolution = &source[emit_resolution_start..emit_resolution_end];
-        assert!(emit_resolution.contains("terminal_snapshot_ready"));
+        assert!(emit_resolution.contains("durable_run_has_final_outcome"));
         assert!(emit_resolution.contains("&& !needs_cleanup"));
 
         let ordinary_reconcile_start = source
@@ -804,7 +779,8 @@ mod desktop_nonblocking_source_invariants {
             .map(|offset| ordinary_reconcile_start + offset)
             .expect("ordinary retained-terminal reconciler end");
         let ordinary_reconcile = &source[ordinary_reconcile_start..ordinary_reconcile_end];
-        assert!(ordinary_reconcile.contains("terminal_snapshot_ready"));
+        assert!(ordinary_reconcile.contains("durable_run_has_final_outcome"));
+        assert!(ordinary_reconcile.contains("durable_run_needs_background_cleanup"));
         assert!(ordinary_reconcile.contains("RUN_PROGRESS_EVENT"));
         assert!(ordinary_reconcile.contains("RUN_FINISHED_EVENT"));
 
@@ -816,14 +792,12 @@ mod desktop_nonblocking_source_invariants {
             .find("fn schedule_exact_runtime_cleanup_reconciliation(")
             .expect("exact cleanup scheduler");
         let scheduler_end = source[scheduler_start..]
-            .find("\n#[derive(Debug, Default)]")
+            .find("\nfn load_readable_desktop_cases")
             .map(|offset| scheduler_start + offset)
             .expect("exact cleanup scheduler end");
         let scheduler = &source[scheduler_start..scheduler_end];
-        assert!(scheduler.contains("thread::Builder::new()"));
+        assert!(scheduler.contains("tauri::async_runtime::spawn_blocking"));
         assert!(scheduler.contains("reconcile_interrupted_scan_resources("));
-        assert!(scheduler.contains("retain_terminal_report_snapshot("));
-        assert!(!finish.contains("retain_terminal_report_snapshot("));
     }
 
     #[test]
@@ -833,7 +807,7 @@ mod desktop_nonblocking_source_invariants {
             .find("pub async fn start_localhost_quick_scan(")
             .expect("localhost start command");
         let end = commands[start..]
-            .find("\n#[tauri::command]\npub fn pause_scan(")
+            .find("\nfn requested_or_latest_run(")
             .map(|offset| start + offset)
             .expect("localhost start command end");
         let start = &commands[start..end];
@@ -862,6 +836,3 @@ mod desktop_nonblocking_source_invariants {
         assert!(localhost.contains("cancelled_without_observation"));
     }
 }
-
-pub mod agent_audit_admission;
-pub mod agent_audit_failure;

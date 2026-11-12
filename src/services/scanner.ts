@@ -392,8 +392,6 @@ export interface ExternalScannerImportRequest {
 }
 
 export interface SelectedRunReportExport {
-  attachment_archive?: { path: string; sha256: string; byte_length: number };
-  original_files?: { included_files: number; omitted_files: number; sensitive_files_excluded: number; omission_reason: string | null; archive_file_name: string | null };
   case_id: string;
   selected_run_ids: string[];
   format: "html" | "json";
@@ -1179,8 +1177,7 @@ export const scannerService = {
       return nativeResult(adaptNativeExportPreview(preview));
     }
     const demoInput = normalizeDemoExportInput(input);
-    const engineRuns = run.engineRuns.filter((task) => !["agent_audit", "agent_audit_failure"].includes(task.taskKind.kind));
-    const auditCount = run.engineRuns.length - engineRuns.length;
+    const engineRuns = run.engineRuns;
     const projection = projectDemoSelectedRun(workspace, run);
     const evidence = projection.findings.flatMap((finding) => finding.evidence);
     const rawArtifactCount = engineRuns.reduce((total, engine) => total + engine.rawArtifactCount, 0);
@@ -1201,8 +1198,7 @@ export const scannerService = {
       evidenceIndexCount: evidence.length,
       selectedRunEvidenceCount: evidence.length,
       scanRunCount: 1,
-      selectedEngineRunCount: engineRuns.length,
-      ...(auditCount ? { selectedSourceAuditCount: auditCount } : {}),
+      selectedEngineRunCount: run.engineRuns.length,
       externalScopeGrantCount: 0,
       incompleteEngineRunCount: engineRuns.filter((engine) =>
         ["partial", "failed", "cancelled"].includes(engine.status)).length,
@@ -1222,9 +1218,6 @@ export const scannerService = {
   },
 
   async exportSelectedRunReport(input: {
-    includeRawArtifacts?: boolean;
-    acknowledgeSensitiveRawArtifacts?: boolean;
-    acknowledgeSensitiveData?: boolean;
     caseId: string;
     runIds: string[];
     locale: "en" | "zh-Hant";

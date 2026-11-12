@@ -2642,7 +2642,7 @@ mod tests {
         let first = DataDirectoryExclusiveLease::acquire(&root).unwrap();
         assert!(matches!(
             DataDirectoryExclusiveLease::acquire(&root),
-            Err(AppError::DataDirectoryBusy(_))
+            Err(AppError::NotAvailable(_))
         ));
 
         drop(guard);
@@ -2945,7 +2945,7 @@ mod tests {
         assert!(root.join(DATA_DIRECTORY_LEASE_FILE).is_file());
         assert!(matches!(
             DataDirectoryExclusiveLease::acquire(&root),
-            Err(AppError::DataDirectoryBusy(_))
+            Err(AppError::NotAvailable(_))
         ));
 
         drop(external_guard);
@@ -2970,7 +2970,7 @@ mod tests {
         // the now-renamed directory object or its former sentinel.
         assert!(matches!(
             DataDirectoryExclusiveLease::acquire(&root),
-            Err(AppError::DataDirectoryBusy(_))
+            Err(AppError::NotAvailable(_))
         ));
 
         // The Windows namespace mutex deliberately continues to own the

@@ -511,6 +511,23 @@ const RELEASE_COPY = new Map([
     },
   ],
   [
+    "0.6.2",
+    {
+      updaterNotes: "Fix for website scans on Windows. 修正 Windows 上的網站掃描。",
+      releaseNotes: [
+        "Fix for website scans in the Windows desktop app.",
+        "",
+        "- On Windows, the app no longer refuses to start page response checks (ZAP). Since v0.4.0 it stopped this check before contacting the website and showed \"the ZAP report directory must be an absolute path\".",
+        "- The check uses the same website limits, request rate and timeouts as on macOS and Linux.",
+        "- Nothing else changes: macOS and Linux behave as in v0.6.1, and scanning tools, existing cases, reports and settings stay the same.",
+        "",
+        "### 繁體中文",
+        "",
+        "修正 Windows 桌面版的網站掃描。在 Windows 上，程式不再拒絕啟動「頁面回應檢查（ZAP）」；從 v0.4.0 起，這項檢查會在連線網站之前就停止，並顯示「the ZAP report directory must be an absolute path」。檢查使用與 macOS、Linux 相同的網站範圍、請求速率與逾時設定。其他內容與 v0.6.1 相同：macOS 與 Linux 不受影響，掃描工具、既有案件、報告與設定都不變。",
+      ],
+    },
+  ],
+  [
     "1.0.0",
     {
       updaterNotes:

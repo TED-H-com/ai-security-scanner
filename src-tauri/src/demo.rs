@@ -421,7 +421,6 @@ pub fn build_demo_case() -> AssessmentCase {
         ],
         asset_ids: vec![bucket_id.clone()],
         evidence: vec![Evidence {
-            provider_record: None,
             id: new_id(),
             finding_id: finding_id.clone(),
             run_id: run_id.clone(),
@@ -516,7 +515,6 @@ pub fn build_demo_case() -> AssessmentCase {
         ],
         asset_ids: vec![domain_id],
         evidence: vec![Evidence {
-            provider_record: None,
             id: new_id(),
             finding_id: second_finding_id.clone(),
             run_id: run_id.clone(),

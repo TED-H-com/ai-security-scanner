@@ -24,12 +24,10 @@ For app UI changes, reuse the existing tokens and components documented in [`DES
 
 ## Owner authority
 
-Do not initiate or expand version classification, release qualification, packaging, signing, publication, or compliance work unless the product owner explicitly requests it in the current task. Existing release records are historical context, not standing instructions or a backlog. See [publication status and release definitions](docs/release-model.md) when describing the public operator skill, development core or a proposed preview; those definitions do not authorize publication.
+Do not initiate or expand version classification, release qualification, packaging, signing, publication, or compliance work unless the product owner explicitly requests it in the current task. Existing release records are historical context, not standing instructions or a backlog.
 
 Security boundaries still apply: never invent authorization, widen a scan target, handle credentials through chat or command arguments, run destructive checks, or hide incomplete coverage.
 
 ## Running the scanner for someone
 
-The owner-directed next phase is [skill-first execution and Cloudflare integration](docs/plans/skill-first-cloudflare-migration.md). Implement one skill entry, a pinned source/bootstrap, the shared report, and complete archive/restore. Do not require installers or release publication to complete that work. Preserve existing scanner behavior and desktop/data compatibility.
-
-When someone asks to install, run, or try the scanner, use the `ai-security-scanner` skill and the capabilities actually implemented at that revision. The current released operator skill still installs the desktop and starts scans in its window; the development CLI has foreground run/recovery commands documented in `docs/foreground-scans.md`, and the pinned bootstrap with selected-engine runtime preparation is documented in `docs/skill-bootstrap.md`. Automatic managed-bundle acquisition and the complete default skill flow still await verification. As the migration becomes usable, operate through its verified bootstrap instead of inventing build commands. Update both host skill copies and usage documentation when switching the default, without asking the owner to approve this direction again.
+When someone asks to install, run, or try the scanner rather than change it, use the `ai-security-scanner` skill: install the desktop app from the current release and start scans in the app window. Do not build from source to run a scan.

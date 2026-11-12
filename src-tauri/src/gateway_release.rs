@@ -148,10 +148,7 @@ mod tests {
 
     #[test]
     fn strict_manifest_rejects_version_repository_tag_and_size_drift() {
-        let wrong_version = manifest("").replace(
-            env!("CARGO_PKG_VERSION"),
-            &format!("{}-wrong-version", env!("CARGO_PKG_VERSION")),
-        );
+        let wrong_version = manifest("").replace(env!("CARGO_PKG_VERSION"), "9.9.9");
         assert!(parse_managed_egress_gateway_manifest(wrong_version.as_bytes()).is_err());
         let wrong_repository =
             manifest("").replace(GATEWAY_IMAGE_REPOSITORY, "example.invalid/gateway");

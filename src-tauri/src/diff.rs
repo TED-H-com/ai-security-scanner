@@ -10,28 +10,6 @@ use serde_json::Value;
 use std::cmp::Ordering;
 use std::collections::{BTreeMap, BTreeSet};
 
-pub(crate) fn check_comparison_runs(case: &AssessmentCase, ids: &[&str]) -> AppResult<()> {
-    crate::agent_audit_admission::check_format(case)?;
-    if case
-        .scan_runs
-        .iter()
-        .filter(|r| ids.contains(&r.id.as_str()))
-        .flat_map(|r| &r.engine_runs)
-        .any(|t| {
-            matches!(
-                t.task_kind,
-                crate::domain::EngineTaskKind::AgentAudit { .. }
-                    | crate::domain::EngineTaskKind::AgentAuditFailure { .. }
-            )
-        })
-    {
-        return Err(AppError::NotAvailable(
-            "Run comparisons cannot include admitted source audits in this build.".into(),
-        ));
-    }
-    Ok(())
-}
-
 /// Compare the observations from two runs in the same case.
 ///
 /// A missing observation is only called resolved/new when the other run completed
@@ -52,7 +30,6 @@ pub fn compare_case_runs_at(
     current_run_id: &str,
     created_at: DateTime<Utc>,
 ) -> AppResult<VerificationComparison> {
-    check_comparison_runs(case, &[baseline_run_id, current_run_id])?;
     if baseline_run_id == current_run_id {
         return Err(AppError::InvalidRequest(
             "baseline and current run must be different".into(),
@@ -2110,7 +2087,6 @@ mod tests {
             priority_reasons: Vec::new(),
             asset_ids: vec![asset_id.into()],
             evidence: vec![Evidence {
-                provider_record: None,
                 id: format!("evidence-{fingerprint}"),
                 finding_id: observation.finding_id.clone(),
                 run_id: run_id.into(),

@@ -139,183 +139,12 @@
       ],
       "items": false
     },
-    "source_audits": { "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/sourceAudit" } },
     "unrecognized_relationships": {
       "type": "array",
       "items": { "$ref": "#/$defs/unrecognizedRelationship" }
     }
   },
   "$defs": {
-    "sourceAudit": {
-      "type": "object", "additionalProperties": false,
-      "description": "Profile-redacted shared source audit projection. Provider verdicts are not human triage or control conclusions. Source audit findings are intentionally not mapped to framework controls.",
-      "required": ["task_id", "asset_ids", "admission_id", "method", "outcome", "counts", "coverage_by_status", "to_validate", "coverage_gaps", "unresolved_candidates", "technical_detail"],
-      "properties": {
-        "task_id": { "type": "string" },
-        "asset_ids": { "$ref": "#/$defs/auditStrings" },
-        "admission_id": { "type": "string" },
-        "method": { "$ref": "#/$defs/sourceAuditMethod" },
-        "outcome": { "$ref": "#/$defs/sourceAuditOutcome" },
-        "counts": { "$ref": "#/$defs/countMap" },
-        "coverage_by_status": { "$ref": "#/$defs/countMap" },
-        "to_validate": { "type": "array", "items": { "$ref": "#/$defs/sourceAuditValidation" } },
-        "coverage_gaps": { "type": "array", "items": { "$ref": "#/$defs/sourceAuditGap" } },
-        "unresolved_candidates": { "$ref": "#/$defs/auditStrings" },
-        "technical_detail": { "$ref": "#/$defs/sourceAuditTechnical" },
-        "withheld_text_fields": { "$ref": "#/$defs/nonNegativeInteger" },
-        "withheld_code_fields": { "$ref": "#/$defs/nonNegativeInteger" }
-      }
-    },
-    "auditStrings": { "type": "array", "items": { "type": "string" } },
-    "sourceAuditMethod": {
-      "type": "object", "additionalProperties": false,
-      "required": ["provider", "upstream_commit", "validator_resources_sha256", "profile", "declared_invocation_limit", "issued_invocations", "remaining_invocations", "counts_by_role", "counts_by_state", "provenance", "verification_scope", "validators_reexecuted"],
-      "properties": {
-        "provider": { "type": "string" },
-        "upstream_commit": { "type": "string" },
-        "validator_resources_sha256": { "type": "string" },
-        "profile": { "enum": ["quick", "standard", "deep"] },
-        "declared_invocation_limit": { "type": ["integer", "null"], "minimum": 0 },
-        "issued_invocations": { "$ref": "#/$defs/nonNegativeInteger" },
-        "remaining_invocations": { "type": ["integer", "null"], "minimum": 0 },
-        "counts_by_role": { "$ref": "#/$defs/countMap" },
-        "counts_by_state": { "$ref": "#/$defs/countMap" },
-        "provenance": { "enum": ["reported_only", "workflow_recorded"] },
-        "verification_scope": { "type": "string" },
-        "validators_reexecuted": { "type": "boolean" }
-      }
-    },
-    "sourceAuditOutcome": {
-      "type": "object", "additionalProperties": false,
-      "required": ["state", "incomplete_reason", "audit_performed"],
-      "properties": {
-        "state": { "enum": ["complete", "incomplete"] },
-        "incomplete_reason": { "type": ["string", "null"] },
-        "audit_performed": { "type": "boolean" }
-      }
-    },
-    "sourceAuditGap": {
-      "type": "object", "additionalProperties": false,
-      "required": ["coverage_id", "status", "label", "continuation_paths", "unresolved"],
-      "properties": {
-        "coverage_id": { "type": "string" },
-        "status": { "type": "string" },
-        "label": { "type": "string" },
-        "continuation_paths": { "$ref": "#/$defs/auditStrings" },
-        "unresolved": { "$ref": "#/$defs/auditStrings" }
-      }
-    },
-    "sourceAuditLocation": {
-      "type": "object", "additionalProperties": false,
-      "required": ["path", "line", "view_file_sha256"],
-      "properties": {
-        "path": { "type": "string" },
-        "line": { "$ref": "#/$defs/nonNegativeInteger" },
-        "view_file_sha256": { "type": "string" }
-      }
-    },
-    "sourceAuditValidation": {
-      "type": "object", "additionalProperties": false,
-      "required": ["native_record", "native_record_index", "native_record_sha256", "source_locations", "coverage_ids", "reported_verifier_assignments"],
-      "properties": {
-        "native_record": { "type": "object", "$comment": "Retained upstream record; native fields remain provider-owned and profile-redacted." },
-        "native_record_index": { "$ref": "#/$defs/nonNegativeInteger" },
-        "native_record_sha256": { "type": "string" },
-        "source_locations": { "type": "array", "items": { "$ref": "#/$defs/sourceAuditLocation" } },
-        "coverage_ids": { "$ref": "#/$defs/auditStrings" },
-        "reported_verifier_assignments": { "$ref": "#/$defs/auditStrings" }
-      }
-    },
-    "sourceAuditRecord": {
-      "type": "object", "additionalProperties": false,
-      "required": ["fingerprint", "verdict", "severity", "native_record", "native_record_index", "native_record_sha256", "source_locations", "coverage_ids", "reported_verifier_assignments"],
-      "properties": {
-        "fingerprint": { "type": "string" },
-        "verdict": { "enum": ["confirmed", "needs_validation", "rejected"] },
-        "severity": { "enum": [null, "unknown", "informational", "low", "medium", "high", "critical"] },
-        "native_record": { "type": "object" },
-        "native_record_index": { "$ref": "#/$defs/nonNegativeInteger" },
-        "native_record_sha256": { "type": "string" },
-        "source_locations": { "type": "array", "items": { "$ref": "#/$defs/sourceAuditLocation" } },
-        "coverage_ids": { "$ref": "#/$defs/auditStrings" },
-        "reported_verifier_assignments": { "$ref": "#/$defs/auditStrings" }
-      }
-    },
-    "sourceAuditArtifact": {
-      "type": "object", "additionalProperties": false,
-      "required": ["member_path", "artifact_id", "sha256", "byte_length"],
-      "properties": {
-        "member_path": { "type": "string" }, "artifact_id": { "type": "string" },
-        "sha256": { "type": "string" }, "byte_length": { "$ref": "#/$defs/nonNegativeInteger" }
-      }
-    },
-    "sourceAuditTechnical": {
-      "type": "object", "additionalProperties": false,
-      "required": ["confirmed", "rejected", "coverage_ledger", "lineage", "custody_digests", "admission_sha256", "originals"],
-      "properties": {
-        "confirmed": { "type": "array", "items": { "$ref": "#/$defs/sourceAuditRecord" } },
-        "rejected": { "type": "array", "items": { "$ref": "#/$defs/sourceAuditRecord" } },
-        "coverage_ledger": { "type": "array", "items": { "type": "object" }, "$comment": "Complete native units and attempt history, profile-redacted." },
-        "lineage": {
-          "type": "object", "additionalProperties": false,
-          "required": ["source", "identities", "source_id", "source_view_request_id"],
-          "properties": {
-            "source": { "$ref": "#/$defs/sourceAuditSource" }, "identities": { "$ref": "#/$defs/sourceAuditIdentity" },
-            "source_id": { "type": "string" }, "source_view_request_id": { "type": "string" }
-          }
-        },
-        "custody_digests": { "$ref": "#/$defs/sourceAuditDigests" },
-        "admission_sha256": { "type": "string" },
-        "originals": { "type": "array", "items": { "$ref": "#/$defs/sourceAuditArtifact" } }
-      }
-    },
-    "sourceAuditSource": {
-      "type": "object", "additionalProperties": false,
-      "required": ["source_view_request_id", "source_view_receipt_sha256", "view_id", "view_sha256", "canonical_snapshot_id", "canonical_snapshot_sha256", "policy_id", "scope", "source_ref", "grant_sha256", "acknowledgement_sha256"],
-      "properties": {
-        "source_view_request_id": { "type": "string" },
-        "source_view_receipt_sha256": { "type": "string" },
-        "view_id": { "type": "string" },
-        "view_sha256": { "type": "string" },
-        "canonical_snapshot_id": { "type": "string" },
-        "canonical_snapshot_sha256": { "type": "string" },
-        "policy_id": { "type": "string" },
-        "scope": { "$ref": "#/$defs/auditStrings" },
-        "source_ref": { "type": "string" },
-        "grant_sha256": { "type": "string" },
-        "acknowledgement_sha256": { "type": "string" }
-      }
-    },
-    "sourceAuditIdentity": {
-      "type": "object", "additionalProperties": false,
-      "required": ["case_id", "asset_id", "run_id", "task_id", "session_id", "attempt_id"],
-      "properties": {
-        "case_id": { "type": "string" },
-        "asset_id": { "type": "string" },
-        "run_id": { "type": "string" },
-        "task_id": { "type": "string" },
-        "session_id": { "type": "string" },
-        "attempt_id": { "type": "string" }
-      }
-    },
-    "sourceAuditDigests": {
-      "type": "object", "additionalProperties": false,
-      "required": ["preparation_receipt_sha256", "source_view_receipt_sha256", "view_manifest_sha256", "view_sha256", "canonical_manifest_sha256", "sealed_entry_sha256", "bundle_sha256", "manifest_sha256", "retention_sha256", "workflow_sha256", "projection_sha256", "retained_projection_sha256"],
-      "properties": {
-        "preparation_receipt_sha256": { "type": "string" },
-        "source_view_receipt_sha256": { "type": "string" },
-        "view_manifest_sha256": { "type": "string" },
-        "view_sha256": { "type": "string" },
-        "canonical_manifest_sha256": { "type": "string" },
-        "sealed_entry_sha256": { "type": "string" },
-        "bundle_sha256": { "type": "string" },
-        "manifest_sha256": { "type": "string" },
-        "retention_sha256": { "type": "string" },
-        "workflow_sha256": { "type": "string" },
-        "projection_sha256": { "type": "string" },
-        "retained_projection_sha256": { "type": "string" }
-      }
-    },
     "nonNegativeInteger": { "type": "integer", "minimum": 0 },
     "countMap": {
       "type": "object",
@@ -549,7 +378,7 @@
             { "type": "null" }
           ]
         },
-        "engine_mapping_provenance_state": { "enum": ["verified_current_catalog", "unverified_historical_catalog", "unavailable_legacy", "source_audit_not_mapped"] },
+        "engine_mapping_provenance_state": { "enum": ["verified_current_catalog", "unverified_historical_catalog", "unavailable_legacy"] },
         "engine_mapping_provenance": {
           "oneOf": [
             { "$ref": "#/$defs/mappingProvenance" },
@@ -588,8 +417,8 @@
         "snapshot_state": { "enum": ["run_snapshot", "legacy_run_snapshot_missing"] },
         "evidence_reference_state": { "enum": ["missing", "validated_from_observation_only", "validated_from_run_snapshot"] },
         "framework_mapping_state": {
-          "enum": ["run_snapshot_relationships_used", "no_packaged_catalog_relationship", "not_exported_without_exact_evidence", "not_exported_without_run_snapshot", "source_audit_not_mapped"],
-          "$comment": "Version 1.4 separates no_packaged_catalog_relationship -- a complete, exactly evidenced snapshot the catalog carries no entry for -- from run_snapshot_relationships_used. Version 1.3 documents reported both as the latter. source_audit_not_mapped means admitted source audit findings are intentionally not mapped to framework controls; it is not missing legacy provenance."
+          "enum": ["run_snapshot_relationships_used", "no_packaged_catalog_relationship", "not_exported_without_exact_evidence", "not_exported_without_run_snapshot"],
+          "$comment": "Version 1.4 separates no_packaged_catalog_relationship -- a complete, exactly evidenced snapshot the catalog carries no entry for -- from run_snapshot_relationships_used. Version 1.3 documents reported both as the latter."
         }
       }
     },

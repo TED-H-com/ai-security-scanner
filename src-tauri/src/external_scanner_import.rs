@@ -591,7 +591,6 @@ fn normalize_finding(
             Some(format!("{file}:{line}"))
         });
     let details = ScannerFindingDetails {
-        remediation_code_changes: None,
         description: display_text(row.get("description"), 4_096),
         remediation: display_text(row.get("remediation_steps"), 4_096),
         installed_version: None,
@@ -627,7 +626,6 @@ fn normalize_finding(
         severity, confidence, priority, priority_reasons: vec!["Upstream severity retained from an external report.".into()],
         asset_ids: vec![request.asset_id.clone()],
         evidence: vec![Evidence {
-            provider_record: None,
             id: evidence_id, finding_id: id, run_id: run_id.into(), engine_run_id: Some(task_id.into()),
             kind: EvidenceKind::RawToolOutput, engine_id: "strix".into(), scanner_details: Some(details),
             source_rule: Some(source_rule.into()), result_pointer_sha256: Some(pointer_hash),
@@ -908,8 +906,7 @@ mod tests {
             }
         }
         let legacy_bundle =
-            crate::export::case_for_export(&reopened, crate::export::RedactionProfile::Standard)
-                .unwrap();
+            crate::export::case_for_export(&reopened, crate::export::RedactionProfile::Standard);
         assert!(
             !serde_json::to_string(&legacy_bundle)
                 .unwrap()

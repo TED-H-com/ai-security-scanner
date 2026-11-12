@@ -1,6 +1,6 @@
 [package]
 name = "ai-security-scanner"
-version = "0.6.1"
+version = "0.6.2"
 description = "Guided security scans and one clear report"
 authors = ["Ted Huang and ai-security-scanner contributors"]
 edition = "2024"
@@ -76,7 +76,6 @@ base64 = "0.23.1"
 clap = { version = "4.6.6", features = ["derive", "env"], optional = true }
 # Platform data-root verification is library code used by every binary feature.
 directories = "6.0.0"
-dunce = "=1.0.5"
 ed25519-dalek = "3.0.0"
 flate2 = "1.1.9"
 fs2 = "0.4.3"
@@ -100,7 +99,6 @@ tauri-plugin-dialog = { version = "2.8.4", optional = true }
 tauri-plugin-opener = { version = "=2.7.2", optional = true }
 tauri-plugin-process = { version = "=2.4.0", optional = true }
 tauri-plugin-updater = { version = "=2.14.1", optional = true }
-tempfile = "3.27.0"
 thiserror = "2.0.20"
 tokio = { version = "1.53.1", features = ["process", "rt-multi-thread", "sync", "time", "macros", "net", "io-util", "signal"] }
 tracing = "0.1.44"
@@ -112,6 +110,7 @@ zeroize = { version = "1.9.0", features = ["derive"] }
 zip = { version = "=9.4.1", default-features = false, features = ["deflate-flate2"] }
 
 [dev-dependencies]
+tempfile = "3.27.0"
 tokio = { version = "1.53.1", features = ["test-util"] }
 
 [target.'cfg(target_os = "linux")'.dependencies]

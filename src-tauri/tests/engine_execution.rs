@@ -1,7 +1,5 @@
 #![allow(dead_code)]
 
-use ai_security_scanner_lib::{agent_audit_admission, agent_audit_failure};
-
 #[path = "../src/adapter.rs"]
 mod adapter;
 #[path = "../src/artifact_store.rs"]

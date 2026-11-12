@@ -1,10 +1,10 @@
-//! Cross-process ownership for data-directory writers.
+//! Cross-process ownership for destructive data-directory operations.
 //!
 //! SQLite serializes database writes, but it cannot coordinate the desktop's
 //! in-memory workers and credential capabilities with a standalone CLI. The
-//! desktop and foreground scan coordinator own one exclusive lease for their
-//! lifetime. Read-only CLI inspection remains available; CLI writers acquire
-//! the same lease and fail closed while another owner is running.
+//! desktop therefore owns one exclusive lease for its lifetime. Read-only CLI
+//! inspection remains available; destructive CLI maintenance must acquire the
+//! same lease and fails closed while the desktop is running.
 
 use crate::error::{AppError, AppResult};
 use fs2::FileExt;
@@ -16,7 +16,7 @@ use std::path::{Path, PathBuf};
 use std::sync::{Mutex, mpsc};
 
 const LEASE_FILENAME: &str = ".exclusive-process.lock";
-pub(crate) const DATA_DIRECTORY_LEASE_CONTENTION_MESSAGE: &str = "another ai-security-scanner desktop, foreground scan, or maintenance operation owns this local data directory; close that desktop or let the exact operation finish, then retry";
+pub(crate) const DATA_DIRECTORY_LEASE_CONTENTION_MESSAGE: &str = "another ai-security-scanner desktop or destructive maintenance operation owns this local data directory; close that desktop or let the exact operation finish, then retry";
 
 #[cfg(windows)]
 #[derive(Debug)]
@@ -91,7 +91,7 @@ impl WindowsOwnedMutex {
                         unsafe {
                             CloseHandle(handle);
                         }
-                        let _ = ready_send.send(Err(AppError::DataDirectoryBusy(
+                        let _ = ready_send.send(Err(AppError::NotAvailable(
                             DATA_DIRECTORY_LEASE_CONTENTION_MESSAGE.into(),
                         )));
                     }
@@ -667,7 +667,7 @@ impl DataDirectoryExclusiveLease {
             if error.kind() == contention.kind()
                 && error.raw_os_error() == contention.raw_os_error()
             {
-                return Err(AppError::DataDirectoryBusy(
+                return Err(AppError::NotAvailable(
                     DATA_DIRECTORY_LEASE_CONTENTION_MESSAGE.into(),
                 ));
             }
@@ -994,7 +994,7 @@ mod tests {
         assert_eq!(first.path(), temporary.path().join(LEASE_FILENAME));
         assert!(matches!(
             DataDirectoryExclusiveLease::acquire(temporary.path()),
-            Err(AppError::DataDirectoryBusy(_))
+            Err(AppError::NotAvailable(_))
         ));
         drop(first);
         DataDirectoryExclusiveLease::acquire(temporary.path()).unwrap();
@@ -1035,7 +1035,7 @@ mod tests {
         fs::create_dir(&case_only_replacement).unwrap();
         assert!(matches!(
             DataDirectoryExclusiveLease::acquire(&case_only_replacement),
-            Err(AppError::DataDirectoryBusy(_))
+            Err(AppError::NotAvailable(_))
         ));
 
         drop(pinned_directory);
@@ -1074,7 +1074,7 @@ mod tests {
 
         assert!(matches!(
             DataDirectoryExclusiveLease::acquire(&root),
-            Err(AppError::DataDirectoryBusy(_))
+            Err(AppError::NotAvailable(_))
         ));
         release_windows_lease_child(&mut child);
         assert!(child.wait().unwrap().success());
@@ -1237,7 +1237,7 @@ mod tests {
 
         assert!(matches!(
             DataDirectoryExclusiveLease::acquire(temporary.path()),
-            Err(AppError::DataDirectoryBusy(_))
+            Err(AppError::NotAvailable(_))
         ));
     }
 }

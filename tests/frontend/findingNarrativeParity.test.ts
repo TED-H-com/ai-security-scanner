@@ -263,20 +263,6 @@ test("the Chinese interface calls a scanner 掃描工具", () => {
     violations,
   );
   findRetiredWord(
-    "src-tauri/src/agent_audit_failure/wording.rs",
-    readFileSync(new URL("../../src-tauri/src/agent_audit_failure/wording.rs", import.meta.url), "utf8"),
-    violations,
-  );
-  const reportRendererSource = readFileSync(
-    new URL("../../src-tauri/src/report_renderer.rs", import.meta.url),
-    "utf8",
-  );
-  findRetiredWord(
-    "src-tauri/src/report_renderer.rs",
-    beforeModTests(reportRendererSource, "src-tauri/src/report_renderer.rs"),
-    violations,
-  );
-  findRetiredWord(
     "src-tauri/src/finding_narrative.rs",
     beforeModTests(rustSource, "src-tauri/src/finding_narrative.rs"),
     violations,

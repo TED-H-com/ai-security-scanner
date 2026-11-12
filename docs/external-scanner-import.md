@@ -2,8 +2,6 @@
 
 Strix findings can be imported into an existing project's unified report without running Strix. In the project's advanced coverage controls, select the native `vulnerabilities.json`, select one target found in that file, associate it with an existing asset, and import. Imported evidence appears in a new terminal report alongside its original finding IDs, ratings, timestamps, remediation and raw JSON attachment. Scan coverage remains unverified; an import does not produce a clean scan verdict.
 
-Cloudflare has a separate development [validation and private-retention path](cloudflare-provider.md). Its reported-only projection is not accepted by these Strix import commands and is not yet integrated into case reports or complete case archives. See [current availability](release-model.md).
-
 The CLI exposes the same boundary:
 
 ```sh
@@ -51,7 +49,7 @@ ai-security-scanner-cli export combine --case-id CASE \
   --destination /path/to/combined-report.json --json
 ```
 
-Standard redaction is the default; `--redaction none` keeps original identifiers and `--locale zh-Hant` localizes readable HTML. JSON uses `ai-security-scanner.selected-run-report/v1`, embedding each selected source's canonical shared report and an asset/source index. The export receipt contains the ordered selected run IDs, the written file's SHA-256 and a private `report_snapshot` reference. The shared desktop/CLI backend saves the receipt in `combined_exports`; [saved report snapshots](report-snapshots.md#preserve-a-combined-report) support offline retrieval/replay and archive/restore. Existing files are never overwritten. Composition does not create a scan run, alter saved findings or coverage, infer current clean status, or infer that a historical finding was fixed. Evidence references are included. Combined HTML can also include source/task ZIPs with explicit original-file and private-archive choices; see [combined originals](report-snapshots.md#include-original-files). Standard redaction excludes sensitive originals from the shared report.
+Standard redaction is the default; `--redaction none` keeps original identifiers and `--locale zh-Hant` localizes readable HTML. JSON uses `ai-security-scanner.selected-run-report/v1`, embedding each selected source's canonical shared report and an asset/source index. The export receipt contains the selected run IDs and the written file's SHA-256. Existing files are never overwritten. This is a read-only composition: it does not create a scan run, alter saved findings or coverage, add a single-run export history entry, infer current clean status, or infer that a historical finding was fixed. Evidence references are included; sensitive original files remain available through their individual source report exports.
 
 ## Upstream integration decisions
 

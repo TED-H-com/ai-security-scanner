@@ -1,10 +1,7 @@
-mod cloudflare_audit;
-pub(crate) mod source_view;
 use crate::domain::{AssessmentCase, CaseSummary};
 use crate::error::{AppError, AppResult};
 use chrono::Utc;
-use rusqlite::{Connection, OpenFlags, OptionalExtension, TransactionBehavior, params};
-use sha2::{Digest, Sha256};
+use rusqlite::{Connection, OptionalExtension, TransactionBehavior, params};
 use std::fs;
 use std::path::{Path, PathBuf};
 use std::sync::{Mutex, MutexGuard};
@@ -16,45 +13,6 @@ pub struct CaseEvent {
     pub event_type: String,
     pub occurred_at: String,
     pub payload_json: String,
-}
-
-const SCAN_COMMAND_RECEIPT_EVENT: &str = "scan.foreground_terminal";
-const SCAN_COMMAND_RECEIPT_SCHEMA: &str = "ai-security-scanner.scan-command-receipt/v1";
-const MAX_SCAN_COMMAND_RECEIPT_BYTES: usize = 1024 * 1024;
-
-/// Durable acknowledgement of one foreground operation. A receipt records
-/// command completion independently of scan coverage and cleanup outcomes in
-/// `payload`; its existence alone never means the target passed every check.
-#[derive(Debug, Clone, serde::Serialize, serde::Deserialize, PartialEq, Eq)]
-#[serde(deny_unknown_fields)]
-pub struct ScanCommandReceipt {
-    pub schema_version: String,
-    pub case_id: String,
-    pub run_id: String,
-    pub request_id: String,
-    pub case_revision: i64,
-    pub event_sequence: i64,
-    pub occurred_at: String,
-    pub payload: serde_json::Value,
-    pub digest: String,
-}
-
-impl ScanCommandReceipt {
-    /// Event sequence is a local history index. The digest binds the complete
-    /// saved acknowledgement independently of that index, including its
-    /// original workspace revision and occurrence time.
-    fn content_digest(&self) -> AppResult<String> {
-        let body = serde_json::json!({
-            "schema_version": self.schema_version,
-            "case_id": self.case_id,
-            "run_id": self.run_id,
-            "request_id": self.request_id,
-            "case_revision": self.case_revision,
-            "occurred_at": self.occurred_at,
-            "payload": self.payload,
-        });
-        Ok(hex::encode(Sha256::digest(serde_json::to_vec(&body)?)))
-    }
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -86,17 +44,6 @@ pub struct ReadableCaseListing {
     pub recovery_diagnostics: Vec<CaseRecoveryDiagnostic>,
 }
 
-/// One SQLite read snapshot for a portable archive. `document_json` preserves
-/// the persisted bytes, while `case` is decoded without current triage or
-/// compatibility projections. The source revision is not a restore token.
-#[derive(Debug, Clone)]
-pub struct StoredCaseSnapshot {
-    pub case: AssessmentCase,
-    pub document_json: String,
-    pub events: Vec<CaseEvent>,
-    pub revision: i64,
-}
-
 pub struct Storage {
     path: PathBuf,
     connection: Mutex<Connection>,
@@ -121,70 +68,6 @@ struct SaveCaseFaultInjection {
 }
 
 impl Storage {
-    /// Opens an existing case database without preparing a workspace, migrating
-    /// its schema, changing permissions, or recovering interrupted work.
-    ///
-    /// SQLite still coordinates WAL readers through its own sidecars. On
-    /// read-only media, the WAL and SHM must already exist and be readable. Do
-    /// not use SQLite's `immutable` option here: a live owner's committed WAL
-    /// must remain visible to status readers.
-    pub fn open_read_only(path: impl AsRef<Path>) -> AppResult<Self> {
-        Self::open_read_only_with_timeout(path, std::time::Duration::from_secs(5))
-    }
-
-    /// Read-only recovery must return busy immediately, without automatic retries.
-    pub fn open_read_only_no_wait(path: impl AsRef<Path>) -> AppResult<Self> {
-        Self::open_read_only_with_timeout(path, std::time::Duration::ZERO)
-    }
-
-    fn open_read_only_with_timeout(
-        path: impl AsRef<Path>,
-        timeout: std::time::Duration,
-    ) -> AppResult<Self> {
-        let requested_path = path.as_ref();
-        let metadata = fs::symlink_metadata(requested_path).map_err(|error| {
-            AppError::Storage(format!(
-                "read-only inspection requires an existing case database at {}: {error}",
-                requested_path.display()
-            ))
-        })?;
-        if metadata.file_type().is_symlink() || !metadata.is_file() {
-            return Err(AppError::Storage(
-                "case database must be a regular non-symlink file".into(),
-            ));
-        }
-        let parent = requested_path
-            .parent()
-            .filter(|parent| !parent.as_os_str().is_empty())
-            .unwrap_or_else(|| Path::new("."));
-        let parent_metadata = fs::symlink_metadata(parent)?;
-        if parent_metadata.file_type().is_symlink() || !parent_metadata.is_dir() {
-            return Err(AppError::Storage(
-                "case database parent must be a real directory, not a symlink".into(),
-            ));
-        }
-        let filename = requested_path.file_name().ok_or_else(|| {
-            AppError::Storage("case database path must include a filename".into())
-        })?;
-        let path = crate::internal_paths::canonicalize(parent)?.join(filename);
-        let connection = Connection::open_with_flags(
-            &path,
-            OpenFlags::SQLITE_OPEN_READ_ONLY
-                | OpenFlags::SQLITE_OPEN_NO_MUTEX
-                | OpenFlags::SQLITE_OPEN_NOFOLLOW,
-        )?;
-        connection.busy_timeout(timeout)?;
-        connection.pragma_update(None, "query_only", "ON")?;
-        validate_read_only_schema(&connection)?;
-
-        Ok(Self {
-            path,
-            connection: Mutex::new(connection),
-            #[cfg(test)]
-            save_case_faults: Mutex::new(std::collections::VecDeque::new()),
-        })
-    }
-
     pub fn open(path: impl AsRef<Path>) -> AppResult<Self> {
         let requested_path = path.as_ref();
         let parent = requested_path
@@ -349,28 +232,6 @@ impl Storage {
     /// New cases carry revision zero; every successful save advances the
     /// in-memory revision after the transaction commits.
     pub fn save_case(&self, case: &mut AssessmentCase, event_type: &str) -> AppResult<()> {
-        self.save_case_event(case, event_type, None)
-    }
-
-    /// The case document and immutable admission receipt commit together.
-    pub(crate) fn save_admitted_case(
-        &self,
-        case: &mut AssessmentCase,
-        admission: &crate::agent_audit_admission::AgentAuditAdmission,
-    ) -> AppResult<()> {
-        self.save_case_event(
-            case,
-            crate::agent_audit_admission::ADMITTED_EVENT,
-            Some(admission),
-        )
-    }
-
-    fn save_case_event(
-        &self,
-        case: &mut AssessmentCase,
-        event_type: &str,
-        admission: Option<&crate::agent_audit_admission::AgentAuditAdmission>,
-    ) -> AppResult<()> {
         #[cfg(test)]
         if let Some(fault) = self.take_save_case_fault(event_type) {
             return Err(match fault {
@@ -382,7 +243,6 @@ impl Storage {
                 }
             });
         }
-        crate::agent_audit_admission::check_write(case)?;
         normalize_scan_request_outcome_invariants(case);
         if case.storage_revision < 0 {
             return Err(AppError::Storage(
@@ -400,47 +260,6 @@ impl Storage {
         let mut connection = self.connection()?;
         let transaction = connection.transaction_with_behavior(TransactionBehavior::Immediate)?;
 
-        // Both keys are omitted when empty, so ordinary cases skip decoding the
-        // stored document on every save.
-        let previous: Option<(i64, Option<String>)> = transaction
-            .query_row(
-                r#"SELECT revision,
-                   CASE WHEN ?2 OR instr(document_json, '"agent_audit_admissions"') > 0
-                        OR instr(document_json, '"format_requirements"') > 0
-                   THEN document_json END FROM cases WHERE id = ?1"#,
-                params![
-                    case.id,
-                    admission.is_some() || crate::agent_audit_failure::has_failure(case)
-                ],
-                |r| Ok((r.get(0)?, r.get(1)?)),
-            )
-            .optional()?;
-        if previous.as_ref().map(|(revision, _)| *revision)
-            != (expected_revision != 0).then_some(expected_revision)
-        {
-            return Err(AppError::Conflict(format!(
-                "case {} changed or was deleted after it was loaded",
-                case.id
-            )));
-        }
-        let previous = previous
-            .and_then(|(_, document)| document)
-            .map(|document| serde_json::from_str::<AssessmentCase>(&document))
-            .transpose()?;
-        if let Some(previous) = &previous {
-            if admission.is_some_and(|a| {
-                previous.agent_audit_admissions.iter().any(|p| {
-                    p.identities.session_id == a.identities.session_id
-                        || p.request_id == a.request_id
-                })
-            }) {
-                return Err(AppError::Conflict(
-                    "audit admission appeared during commit".into(),
-                ));
-            }
-            crate::agent_audit_admission::check_update(previous, case)?;
-        }
-        crate::agent_audit_failure::check_existing(previous.as_ref(), case)?;
         let affected = if expected_revision == 0 {
             transaction.execute(
                 r#"
@@ -505,13 +324,8 @@ impl Storage {
             params![
                 case.id,
                 event_type,
-                admission.map_or_else(|| Utc::now().to_rfc3339(), |a| a.admitted_at.to_rfc3339()),
-                admission
-                    .map_or_else(
-                        || serde_json::json!({ "status": case.status }),
-                        |a| a.receipt(next_revision),
-                    )
-                    .to_string(),
+                Utc::now().to_rfc3339(),
+                serde_json::json!({ "status": case.status }).to_string(),
             ],
         )?;
 
@@ -542,187 +356,6 @@ impl Storage {
                 "saved project {id} could not be opened; its original data was preserved"
             ))
         })
-    }
-
-    /// Freeze the exact persisted document and its historical event rows from
-    /// one read transaction. A concurrent writer can continue in WAL mode;
-    /// its later commits cannot be mixed into this archive's event history.
-    pub fn snapshot_case_for_archive(&self, id: &str) -> AppResult<StoredCaseSnapshot> {
-        let mut connection = self.connection()?;
-        let transaction = connection.transaction_with_behavior(TransactionBehavior::Deferred)?;
-        validate_read_only_schema(&transaction)?;
-        let stored: Option<(i64, String)> = transaction
-            .query_row(
-                "SELECT revision, document_json FROM cases WHERE id = ?1",
-                [id],
-                |row| Ok((row.get(0)?, row.get(1)?)),
-            )
-            .optional()?;
-        let (revision, document_json) =
-            stored.ok_or_else(|| AppError::CaseNotFound(id.to_owned()))?;
-        let case = decode_stored_case_document(id, revision, &document_json).map_err(|detail| {
-            AppError::Storage(format!(
-                "saved project {id} cannot be archived without changing its persisted data: {detail}"
-            ))
-        })?;
-        crate::agent_audit_admission::check_format(&case)?;
-        let events = read_case_events(&transaction, id)?;
-        validate_archived_events(id, &events)?;
-        transaction.commit()?;
-        Ok(StoredCaseSnapshot {
-            case,
-            document_json,
-            events,
-            revision,
-        })
-    }
-
-    /// Check the optimistic boundary immediately before archive publication.
-    /// Missing, replaced, or changed source rows require a fresh snapshot.
-    pub fn assert_case_revision(&self, id: &str, expected: i64) -> AppResult<()> {
-        let connection = self.connection()?;
-        let actual: Option<i64> = connection
-            .query_row("SELECT revision FROM cases WHERE id = ?1", [id], |row| {
-                row.get(0)
-            })
-            .optional()?;
-        if expected < 1 || actual != Some(expected) {
-            return Err(AppError::Conflict(format!(
-                "case {id} changed or was deleted after the archive snapshot was captured"
-            )));
-        }
-        Ok(())
-    }
-
-    /// Import a validated archive DTO into a new, empty staging database.
-    /// The archive coordinator owns authorization deactivation and reference
-    /// validation before calling this method. No current-time case projection,
-    /// selected-case setting, worker state, or credential is initialized here.
-    pub fn import_archived_case(
-        &self,
-        case: &mut AssessmentCase,
-        events: &[CaseEvent],
-        archive_id: &str,
-    ) -> AppResult<()> {
-        self.import_archived_case_with_provider(case, events, archive_id, None)
-    }
-
-    pub(crate) fn import_archived_case_with_provider(
-        &self,
-        case: &mut AssessmentCase,
-        events: &[CaseEvent],
-        archive_id: &str,
-        provider: Option<&crate::case_archive::VerifiedProviderHistory>,
-    ) -> AppResult<()> {
-        crate::case_archive::check_restore_case(case, provider)?;
-        if case.id.trim().is_empty() || archive_id.trim().is_empty() {
-            return Err(AppError::InvalidRequest(
-                "archive restore requires a case identity and an archive identity".into(),
-            ));
-        }
-        validate_archived_events(&case.id, events)?;
-        let document = serde_json::to_string(case)?;
-        let status = serde_json::to_string(&case.status)?
-            .trim_matches('"')
-            .to_string();
-        let mut connection = self.connection()?;
-        let transaction = connection.transaction_with_behavior(TransactionBehavior::Immediate)?;
-        validate_read_only_schema(&transaction)?;
-        let occupied: bool = transaction.query_row(
-            "SELECT EXISTS(SELECT 1 FROM cases)
-                 OR EXISTS(SELECT 1 FROM case_events)
-                 OR EXISTS(SELECT 1 FROM app_settings)
-                 OR EXISTS(SELECT 1 FROM artifact_deletion_obligations)
-                 OR EXISTS(SELECT 1 FROM sqlite_sequence WHERE seq > 0)",
-            [],
-            |row| row.get(0),
-        )?;
-        if occupied {
-            return Err(AppError::Conflict(
-                "archive restore requires a fresh, empty case database".into(),
-            ));
-        }
-        transaction.execute(
-            "INSERT INTO cases (id, title, organization_name, status, is_demo,
-                 created_at, updated_at, document_json, revision)
-             VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, 1)",
-            params![
-                case.id,
-                case.title,
-                case.profile.organization_name,
-                status,
-                case.is_demo,
-                case.created_at.to_rfc3339(),
-                case.updated_at.to_rfc3339(),
-                document,
-            ],
-        )?;
-        for event in events {
-            transaction.execute(
-                "INSERT INTO case_events (sequence, case_id, event_type, occurred_at, payload_json)
-                 VALUES (?1, ?2, ?3, ?4, ?5)",
-                params![
-                    event.sequence,
-                    event.case_id,
-                    event.event_type,
-                    event.occurred_at,
-                    event.payload_json,
-                ],
-            )?;
-        }
-        let mut payload = serde_json::json!({
-            "archive_id": archive_id,
-            "source_case_revision": (case.storage_revision > 0).then_some(case.storage_revision),
-            "local_storage_revision": 1,
-            "historical_event_count": events.len(),
-        });
-        if let Some(provider) = provider {
-            payload["provider_history"] = serde_json::to_value(provider.metadata())?;
-        }
-        transaction.execute(
-            "INSERT INTO case_events (case_id, event_type, occurred_at, payload_json)
-             VALUES (?1, 'case.restored', ?2, ?3)",
-            params![case.id, Utc::now().to_rfc3339(), payload.to_string(),],
-        )?;
-        transaction.commit()?;
-        case.storage_revision = 1;
-        Ok(())
-    }
-
-    /// Finish a restored staging database before the coordinator publishes its
-    /// directory. Consumption closes the SQLite handle after a complete WAL
-    /// truncation; a busy reader or a failed close prevents publication.
-    pub fn checkpoint_for_archive_restore(self) -> AppResult<()> {
-        let connection = self
-            .connection
-            .into_inner()
-            .map_err(|_| AppError::Storage("database lock was poisoned".into()))?;
-        let mode: String = connection.pragma_query_value(None, "journal_mode", |row| row.get(0))?;
-        if mode != "wal" {
-            return Err(AppError::Storage(
-                "archive restore staging requires a WAL database".into(),
-            ));
-        }
-        let (busy, log_frames, checkpointed): (i64, i64, i64) =
-            connection.query_row("PRAGMA wal_checkpoint(TRUNCATE)", [], |row| {
-                Ok((row.get(0)?, row.get(1)?, row.get(2)?))
-            })?;
-        if busy != 0 {
-            return Err(AppError::Conflict(
-                "archive restore database is still in use; WAL checkpoint could not finish".into(),
-            ));
-        }
-        if log_frames != 0 || checkpointed != 0 {
-            return Err(AppError::Storage(
-                "archive restore WAL was not completely truncated".into(),
-            ));
-        }
-        connection.close().map_err(|(_, error)| {
-            AppError::Storage(format!(
-                "archive restore database could not be closed: {error}"
-            ))
-        })?;
-        Ok(())
     }
 
     #[cfg(test)]
@@ -851,122 +484,26 @@ impl Storage {
             .optional()?)
     }
 
-    /// Read the restore boundary without loading historical event payloads.
-    pub fn latest_case_restore_sequence(&self, case_id: &str) -> AppResult<Option<i64>> {
-        let connection = self.connection()?;
-        Ok(connection.query_row(
-            "SELECT MAX(sequence) FROM case_events WHERE case_id = ?1 AND event_type = 'case.restored'",
-            [case_id],
-            |row| row.get(0),
-        )?)
-    }
-
     pub fn list_case_events(&self, case_id: &str) -> AppResult<Vec<CaseEvent>> {
         let connection = self.connection()?;
-        read_case_events(&connection, case_id)
-    }
-
-    /// Append an acknowledgement and advance the optimistic case boundary in
-    /// one transaction. The existing case document and timestamps stay intact.
-    /// Call only after the owned worker has stopped and its exact generation
-    /// has been reconciled (or a recovery obligation has been recorded).
-    pub fn record_scan_command_receipt(
-        &self,
-        case_id: &str,
-        run_id: &str,
-        request_id: &str,
-        payload: &serde_json::Value,
-    ) -> AppResult<ScanCommandReceipt> {
-        for identity in [case_id, run_id, request_id] {
-            if identity.is_empty() || identity.len() > 256 || identity.chars().any(char::is_control)
-            {
-                return Err(AppError::InvalidRequest(
-                    "scan command receipt requires bounded nonempty identities".into(),
-                ));
-            }
-        }
-        if !payload.is_object()
-            || serde_json::to_vec(payload)?.len() > MAX_SCAN_COMMAND_RECEIPT_BYTES
-        {
-            return Err(AppError::InvalidRequest(
-                "scan command receipt payload must be an object of at most 1 MiB".into(),
-            ));
-        }
-        let mut connection = self.connection()?;
-        let transaction = connection.transaction_with_behavior(TransactionBehavior::Immediate)?;
-        let stored: Option<(i64, String)> = transaction
-            .query_row(
-                "SELECT revision, document_json FROM cases WHERE id = ?1",
-                [case_id],
-                |row| Ok((row.get(0)?, row.get(1)?)),
-            )
-            .optional()?;
-        let (revision, document) =
-            stored.ok_or_else(|| AppError::CaseNotFound(case_id.to_owned()))?;
-        let case =
-            decode_stored_case_document(case_id, revision, &document).map_err(AppError::Storage)?;
-        if !case.scan_runs.iter().any(|run| run.id == run_id) {
-            return Err(AppError::InvalidRequest(
-                "scan command receipt requires an existing exact run".into(),
-            ));
-        }
-        for receipt in read_scan_command_receipts(&transaction, case_id, None)? {
-            if receipt.request_id == request_id {
-                if receipt.run_id != run_id || receipt.payload != *payload {
-                    return Err(AppError::Conflict(
-                        "scan command request already has a different saved acknowledgement".into(),
-                    ));
-                }
-                return Ok(receipt);
-            }
-        }
-        let next_revision = revision
-            .checked_add(1)
-            .ok_or_else(|| AppError::Storage("case storage revision overflowed".into()))?;
-        let mut receipt = ScanCommandReceipt {
-            schema_version: SCAN_COMMAND_RECEIPT_SCHEMA.into(),
-            case_id: case_id.into(),
-            run_id: run_id.into(),
-            request_id: request_id.into(),
-            case_revision: next_revision,
-            event_sequence: 0,
-            occurred_at: Utc::now().to_rfc3339(),
-            payload: payload.clone(),
-            digest: String::new(),
-        };
-        receipt.digest = receipt.content_digest()?;
-        transaction.execute(
-            "UPDATE cases SET revision = ?2 WHERE id = ?1 AND revision = ?3",
-            params![case_id, next_revision, revision],
+        let mut statement = connection.prepare(
+            r#"
+            SELECT sequence, case_id, event_type, occurred_at, payload_json
+            FROM case_events
+            WHERE case_id = ?1
+            ORDER BY sequence ASC
+            "#,
         )?;
-        transaction.execute(
-            "INSERT INTO case_events(case_id, event_type, occurred_at, payload_json)
-             VALUES (?1, ?2, ?3, ?4)",
-            params![
-                case_id,
-                SCAN_COMMAND_RECEIPT_EVENT,
-                receipt.occurred_at,
-                serde_json::to_string(&receipt)?,
-            ],
-        )?;
-        receipt.event_sequence = transaction.last_insert_rowid();
-        transaction.execute(
-            "UPDATE case_events SET payload_json = ?2 WHERE sequence = ?1",
-            params![receipt.event_sequence, serde_json::to_string(&receipt)?],
-        )?;
-        transaction.commit()?;
-        Ok(receipt)
-    }
-
-    /// Read saved foreground acknowledgements without recovery or mutation.
-    /// Original receipts also survive complete case archive/restore as events.
-    pub fn scan_command_receipts(
-        &self,
-        case_id: &str,
-        run_id: Option<&str>,
-    ) -> AppResult<Vec<ScanCommandReceipt>> {
-        let connection = self.connection()?;
-        read_scan_command_receipts(&connection, case_id, run_id)
+        let rows = statement.query_map([case_id], |row| {
+            Ok(CaseEvent {
+                sequence: row.get(0)?,
+                case_id: row.get(1)?,
+                event_type: row.get(2)?,
+                occurred_at: row.get(3)?,
+                payload_json: row.get(4)?,
+            })
+        })?;
+        rows.collect::<Result<Vec<_>, _>>().map_err(Into::into)
     }
 
     /// Permanently removes one exact case document and its event history.
@@ -1168,126 +705,7 @@ impl Storage {
     }
 }
 
-fn read_scan_command_receipts(
-    connection: &Connection,
-    case_id: &str,
-    run_id: Option<&str>,
-) -> AppResult<Vec<ScanCommandReceipt>> {
-    let mut statement = connection.prepare(
-        "SELECT sequence, occurred_at, payload_json FROM case_events
-         WHERE case_id = ?1 AND event_type = ?2 ORDER BY sequence ASC",
-    )?;
-    let rows = statement.query_map(params![case_id, SCAN_COMMAND_RECEIPT_EVENT], |row| {
-        Ok((
-            row.get::<_, i64>(0)?,
-            row.get::<_, String>(1)?,
-            row.get::<_, String>(2)?,
-        ))
-    })?;
-    let mut receipts = Vec::new();
-    for row in rows {
-        let (sequence, occurred_at, document) = row?;
-        // Allow the bounded identity/header overhead beyond the payload cap.
-        if document.len() > MAX_SCAN_COMMAND_RECEIPT_BYTES + 4096 {
-            return Err(AppError::Storage(
-                "saved scan command receipt is oversized".into(),
-            ));
-        }
-        let receipt: ScanCommandReceipt = serde_json::from_str(&document)?;
-        if receipt.schema_version != SCAN_COMMAND_RECEIPT_SCHEMA
-            || receipt.case_id != case_id
-            || receipt.event_sequence != sequence
-            || receipt.occurred_at != occurred_at
-            || receipt.case_revision < 1
-            || receipt.content_digest()? != receipt.digest
-        {
-            return Err(AppError::Storage(
-                "saved scan command receipt identity or digest is invalid".into(),
-            ));
-        }
-        if run_id.is_none_or(|run_id| receipt.run_id == run_id) {
-            receipts.push(receipt);
-        }
-    }
-    Ok(receipts)
-}
-
-fn read_case_events(connection: &Connection, case_id: &str) -> AppResult<Vec<CaseEvent>> {
-    let mut statement = connection.prepare(
-        "SELECT sequence, case_id, event_type, occurred_at, payload_json
-         FROM case_events WHERE case_id = ?1 ORDER BY sequence ASC",
-    )?;
-    let rows = statement.query_map([case_id], |row| {
-        Ok(CaseEvent {
-            sequence: row.get(0)?,
-            case_id: row.get(1)?,
-            event_type: row.get(2)?,
-            occurred_at: row.get(3)?,
-            payload_json: row.get(4)?,
-        })
-    })?;
-    rows.collect::<Result<Vec<_>, _>>().map_err(Into::into)
-}
-
-fn validate_archived_events(case_id: &str, events: &[CaseEvent]) -> AppResult<()> {
-    let mut previous = 0;
-    for event in events {
-        if event.case_id != case_id || event.sequence <= previous || event.sequence == i64::MAX {
-            return Err(AppError::InvalidRequest(
-                "archive events must belong to the case and have increasing positive sequences with room for a restore event".into(),
-            ));
-        }
-        previous = event.sequence;
-    }
-    Ok(())
-}
-
-fn validate_read_only_schema(connection: &Connection) -> AppResult<()> {
-    let versions = (|| -> rusqlite::Result<Vec<i64>> {
-        let mut statement =
-            connection.prepare("SELECT version FROM schema_migrations ORDER BY version")?;
-        statement.query_map([], |row| row.get(0))?.collect()
-    })()
-    .map_err(|error| {
-        if matches!(error.sqlite_error_code(), Some(rusqlite::ErrorCode::DatabaseBusy | rusqlite::ErrorCode::DatabaseLocked)) {
-            return AppError::from(error);
-        }
-        AppError::Storage(format!(
-            "read-only inspection requires an initialized, compatible case database schema; no migration or recovery was attempted: {error}"
-        ))
-    })?;
-    if versions != [1, 2] {
-        return Err(AppError::Storage(format!(
-            "unsupported case database schema for read-only inspection: migrations {versions:?}, expected [1, 2]; use a compatible application to prepare this database"
-        )));
-    }
-    connection
-        .prepare(
-            "SELECT id, title, organization_name, status, is_demo, created_at, updated_at, document_json, revision FROM cases LIMIT 0",
-        )
-        .map_err(|error| {
-            if matches!(error.sqlite_error_code(), Some(rusqlite::ErrorCode::DatabaseBusy | rusqlite::ErrorCode::DatabaseLocked)) {
-                return AppError::from(error);
-            }
-            AppError::Storage(format!(
-                "unsupported case database schema for read-only inspection: {error}"
-            ))
-        })?;
-    Ok(())
-}
-
 fn decode_stored_case(
-    stored_id: &str,
-    revision: i64,
-    document: &str,
-) -> Result<AssessmentCase, String> {
-    let mut case = decode_stored_case_document(stored_id, revision, document)?;
-    normalize_scan_request_outcome_invariants(&mut case);
-    case.apply_effective_finding_statuses(Utc::now());
-    Ok(case)
-}
-
-fn decode_stored_case_document(
     stored_id: &str,
     revision: i64,
     document: &str,
@@ -1307,6 +725,8 @@ fn decode_stored_case_document(
         return Err("document identity does not match database identity".into());
     }
     case.storage_revision = revision;
+    normalize_scan_request_outcome_invariants(&mut case);
+    case.apply_effective_finding_statuses(Utc::now());
     Ok(case)
 }
 
@@ -1384,170 +804,6 @@ mod tests {
                 notes: None,
             },
         )
-    }
-
-    #[test]
-    fn foreground_receipt_is_atomic_idempotent_and_readable_without_a_writer() {
-        let directory = tempfile::tempdir().unwrap();
-        let path = directory.path().join("casework.db");
-        let storage = Storage::open(&path).unwrap();
-        let mut case = crate::demo::build_demo_case();
-        storage.save_case(&mut case, "case.created").unwrap();
-        let before = storage.snapshot_case_for_archive(&case.id).unwrap();
-        let selected_run_id = case.scan_runs[0].id.clone();
-        let run_id = selected_run_id.as_str();
-        let payload = serde_json::json!({
-            "command_outcome": "completed", "run_completeness": "partial",
-            "cleanup_pending": true,
-        });
-        let receipt = storage
-            .record_scan_command_receipt(&case.id, run_id, "request-1", &payload)
-            .unwrap();
-        assert_eq!(receipt.case_revision, before.revision + 1);
-        assert_eq!(receipt.digest, receipt.content_digest().unwrap());
-        let after = storage.snapshot_case_for_archive(&case.id).unwrap();
-        assert_eq!(after.document_json, before.document_json);
-        assert_eq!(after.events.len(), before.events.len() + 1);
-        assert_eq!(after.case.updated_at, before.case.updated_at);
-        assert_eq!(
-            storage
-                .record_scan_command_receipt(&case.id, run_id, "request-1", &payload)
-                .unwrap(),
-            receipt
-        );
-        assert_eq!(
-            storage.get_case(&case.id).unwrap().storage_revision,
-            receipt.case_revision
-        );
-        assert!(matches!(
-            storage.save_case(&mut case, "stale.writer"),
-            Err(AppError::Conflict(_))
-        ));
-        let reader = Storage::open_read_only(&path).unwrap();
-        assert_eq!(
-            reader
-                .scan_command_receipts(&case.id, Some(run_id))
-                .unwrap(),
-            vec![receipt.clone()]
-        );
-        assert!(
-            reader
-                .scan_command_receipts(&case.id, Some("other-run"))
-                .unwrap()
-                .is_empty()
-        );
-        assert!(
-            reader
-                .record_scan_command_receipt(&case.id, run_id, "reader-write", &payload)
-                .is_err()
-        );
-        drop(reader);
-        drop(storage);
-        assert_eq!(
-            Storage::open_read_only(path)
-                .unwrap()
-                .scan_command_receipts(&case.id, None)
-                .unwrap(),
-            vec![receipt]
-        );
-    }
-
-    #[test]
-    fn foreground_receipt_rejects_conflicts_missing_runs_and_corrupt_history() {
-        let directory = tempfile::tempdir().unwrap();
-        let storage = Storage::open(directory.path().join("casework.db")).unwrap();
-        let mut case = crate::demo::build_demo_case();
-        storage.save_case(&mut case, "case.created").unwrap();
-        let run_id = &case.scan_runs[0].id;
-        let payload = serde_json::json!({"command_outcome": "interrupted"});
-        let receipt = storage
-            .record_scan_command_receipt(&case.id, run_id, "same-request", &payload)
-            .unwrap();
-        let before = storage.snapshot_case_for_archive(&case.id).unwrap();
-        assert!(matches!(
-            storage.record_scan_command_receipt(
-                &case.id,
-                run_id,
-                "same-request",
-                &serde_json::json!({"command_outcome": "completed"})
-            ),
-            Err(AppError::Conflict(_))
-        ));
-        assert!(
-            storage
-                .record_scan_command_receipt(&case.id, "missing-run", "new-request", &payload)
-                .is_err()
-        );
-        assert!(
-            storage
-                .record_scan_command_receipt(&case.id, run_id, "", &payload)
-                .is_err()
-        );
-        assert!(
-            storage
-                .record_scan_command_receipt(
-                    &case.id,
-                    run_id,
-                    "oversized",
-                    &serde_json::json!({"data": "x".repeat(MAX_SCAN_COMMAND_RECEIPT_BYTES)})
-                )
-                .is_err()
-        );
-        let after = storage.snapshot_case_for_archive(&case.id).unwrap();
-        assert_eq!(before.revision, after.revision);
-        assert_eq!(before.events, after.events);
-        let mut corrupt = receipt.clone();
-        corrupt.payload = serde_json::json!({"command_outcome": "completed"});
-        storage
-            .connection()
-            .unwrap()
-            .execute(
-                "UPDATE case_events SET payload_json = ?1 WHERE sequence = ?2",
-                params![
-                    serde_json::to_string(&corrupt).unwrap(),
-                    receipt.event_sequence
-                ],
-            )
-            .unwrap();
-        assert!(storage.scan_command_receipts(&case.id, None).is_err());
-        assert!(
-            storage
-                .record_scan_command_receipt(&case.id, run_id, "same-request", &payload)
-                .is_err()
-        );
-        assert_eq!(
-            storage.get_case(&case.id).unwrap().storage_revision,
-            receipt.case_revision
-        );
-    }
-
-    #[test]
-    fn foreground_receipts_survive_archive_event_import_with_original_digest() {
-        let directory = tempfile::tempdir().unwrap();
-        let source = Storage::open(directory.path().join("source.db")).unwrap();
-        let mut case = crate::demo::build_demo_case();
-        source.save_case(&mut case, "case.created").unwrap();
-        let receipt = source
-            .record_scan_command_receipt(
-                &case.id,
-                &case.scan_runs[0].id,
-                "saved-request",
-                &serde_json::json!({"command_outcome": "completed"}),
-            )
-            .unwrap();
-        let snapshot = source.snapshot_case_for_archive(&case.id).unwrap();
-        let destination = Storage::open(directory.path().join("destination.db")).unwrap();
-        let mut restored = snapshot.case;
-        destination
-            .import_archived_case(&mut restored, &snapshot.events, "archive-test")
-            .unwrap();
-        assert_eq!(restored.storage_revision, 1);
-        assert_eq!(
-            destination
-                .scan_command_receipts(&restored.id, None)
-                .unwrap(),
-            vec![receipt]
-        );
     }
 
     #[test]
@@ -2010,316 +1266,6 @@ mod tests {
             storage.get_case(&case.id).expect("case survives").title,
             "newer case"
         );
-    }
-
-    #[test]
-    fn archive_snapshot_keeps_exact_document_and_unprojected_historical_workflow() {
-        use crate::domain::{FindingStatus, FindingWorkflowEvent};
-
-        let directory = tempfile::tempdir().unwrap();
-        let storage = Storage::open(directory.path().join("casework.db")).unwrap();
-        let mut case = crate::demo::build_demo_case();
-        case.findings[0].status = FindingStatus::FalsePositive;
-        case.finding_workflow_events.push(FindingWorkflowEvent {
-            id: "expired-review".into(),
-            case_id: case.id.clone(),
-            finding_id: case.findings[0].id.clone(),
-            from_status: FindingStatus::Unreviewed,
-            to_status: FindingStatus::FalsePositive,
-            decided_by: "fixture-reviewer".into(),
-            decided_at: Utc::now() - chrono::Duration::days(2),
-            reason: "Historical fixture decision".into(),
-            expires_at: Some(Utc::now() - chrono::Duration::days(1)),
-        });
-        storage.save_case(&mut case, "fixture.saved").unwrap();
-        let document = format!("\n{}\n", serde_json::to_string_pretty(&case).unwrap());
-        storage
-            .connection()
-            .unwrap()
-            .execute(
-                "UPDATE cases SET document_json = ?1 WHERE id = ?2",
-                params![document, case.id],
-            )
-            .unwrap();
-        let reader = Storage::open_read_only(storage.path()).unwrap();
-        let snapshot = reader.snapshot_case_for_archive(&case.id).unwrap();
-
-        assert_eq!(snapshot.document_json, document);
-        assert_eq!(snapshot.revision, 1);
-        assert_eq!(snapshot.case.storage_revision, 1);
-        assert_eq!(
-            snapshot.case.findings[0].status,
-            FindingStatus::FalsePositive
-        );
-        assert_eq!(
-            serde_json::to_value(&snapshot.case).unwrap(),
-            serde_json::to_value(&case).unwrap()
-        );
-        assert_eq!(snapshot.events, storage.list_case_events(&case.id).unwrap());
-        assert_eq!(
-            reader.get_case(&case.id).unwrap().findings[0].status,
-            FindingStatus::Unreviewed,
-            "normal display applies expiry, archive capture must not"
-        );
-        assert_eq!(
-            storage
-                .snapshot_case_for_archive(&case.id)
-                .unwrap()
-                .document_json,
-            document
-        );
-    }
-
-    #[test]
-    fn archive_snapshot_reads_case_and_events_from_one_concurrent_commit() {
-        let directory = tempfile::tempdir().unwrap();
-        let storage = Arc::new(Storage::open(directory.path().join("casework.db")).unwrap());
-        let mut case = sample_case();
-        storage.save_case(&mut case, "fixture.created").unwrap();
-        let case_id = case.id.clone();
-        let reader = Storage::open_read_only(storage.path()).unwrap();
-        let start = Arc::new(Barrier::new(2));
-        let writer = {
-            let storage = Arc::clone(&storage);
-            let start = Arc::clone(&start);
-            std::thread::spawn(move || {
-                start.wait();
-                for revision in 2..=151 {
-                    case.title = format!("Revision {revision}");
-                    storage.save_case(&mut case, "fixture.checkpoint").unwrap();
-                    std::thread::yield_now();
-                }
-            })
-        };
-        start.wait();
-        for _ in 0..150 {
-            let snapshot = reader.snapshot_case_for_archive(&case_id).unwrap();
-            assert_eq!(snapshot.events.len() as i64, snapshot.revision);
-            assert_eq!(snapshot.events.last().unwrap().sequence, snapshot.revision);
-            if snapshot.revision > 1 {
-                assert_eq!(
-                    snapshot.case.title,
-                    format!("Revision {}", snapshot.revision)
-                );
-            }
-            std::thread::yield_now();
-        }
-        writer.join().unwrap();
-        assert_eq!(
-            reader.snapshot_case_for_archive(&case_id).unwrap().revision,
-            151
-        );
-    }
-
-    #[test]
-    fn archive_revision_check_rejects_updates_and_deleted_source_rows() {
-        let directory = tempfile::tempdir().unwrap();
-        let storage = Storage::open(directory.path().join("casework.db")).unwrap();
-        let mut case = sample_case();
-        storage.save_case(&mut case, "fixture.created").unwrap();
-        let reader = Storage::open_read_only(storage.path()).unwrap();
-        let snapshot = reader.snapshot_case_for_archive(&case.id).unwrap();
-        reader
-            .assert_case_revision(&case.id, snapshot.revision)
-            .unwrap();
-        case.title = "Updated while archive blobs were copied".into();
-        storage.save_case(&mut case, "fixture.updated").unwrap();
-        assert!(matches!(
-            reader.assert_case_revision(&case.id, snapshot.revision),
-            Err(AppError::Conflict(_))
-        ));
-        storage
-            .delete_case(&case.id, case.storage_revision, None)
-            .unwrap();
-        assert!(matches!(
-            reader.assert_case_revision(&case.id, case.storage_revision),
-            Err(AppError::Conflict(_))
-        ));
-    }
-
-    fn archive_events(case_id: &str) -> Vec<CaseEvent> {
-        [7, 12]
-            .into_iter()
-            .map(|sequence| CaseEvent {
-                sequence,
-                case_id: case_id.into(),
-                event_type: format!("historical.{sequence}"),
-                occurred_at: "2026-09-20T01:02:03.123456+00:00".into(),
-                payload_json: "{ \"historical\": true, \"value\": 7 }\n".into(),
-            })
-            .collect()
-    }
-
-    #[test]
-    fn archive_import_preserves_dto_and_event_sequences_and_closes_staging_database() {
-        let directory = tempfile::tempdir().unwrap();
-        let database = directory.path().join("casework.db");
-        let storage = Storage::open(&database).unwrap();
-        let mut case = crate::demo::build_demo_case();
-        case.storage_revision = 42;
-        let expected = serde_json::to_value(&case).unwrap();
-        let events = archive_events(&case.id);
-        storage
-            .import_archived_case(&mut case, &events, "archive-identity")
-            .unwrap();
-        assert_eq!(case.storage_revision, 1);
-        assert_eq!(storage.selected_case_id().unwrap(), None);
-        let snapshot = storage.snapshot_case_for_archive(&case.id).unwrap();
-        assert_eq!(snapshot.revision, 1);
-        assert_eq!(serde_json::to_value(&snapshot.case).unwrap(), expected);
-        assert_eq!(&snapshot.events[..events.len()], events.as_slice());
-        let restore = snapshot.events.last().unwrap();
-        assert_eq!(restore.sequence, 13);
-        assert_eq!(restore.event_type, "case.restored");
-        assert_eq!(restore.case_id, case.id);
-        let receipt: serde_json::Value = serde_json::from_str(&restore.payload_json).unwrap();
-        assert_eq!(receipt["archive_id"], "archive-identity");
-        assert_eq!(receipt["source_case_revision"], 42);
-        assert_eq!(receipt["local_storage_revision"], 1);
-        storage.checkpoint_for_archive_restore().unwrap();
-        assert!(!database.with_file_name("casework.db-wal").exists());
-        assert!(!database.with_file_name("casework.db-shm").exists());
-        let reopened = Storage::open_read_only(&database).unwrap();
-        let after_close = reopened.snapshot_case_for_archive(&case.id).unwrap();
-        assert_eq!(serde_json::to_value(after_close.case).unwrap(), expected);
-        assert_eq!(after_close.events, snapshot.events);
-    }
-
-    #[test]
-    fn archive_import_rolls_back_case_and_history_when_restore_event_fails() {
-        let directory = tempfile::tempdir().unwrap();
-        let storage = Storage::open(directory.path().join("casework.db")).unwrap();
-        storage
-            .connection()
-            .unwrap()
-            .execute_batch(
-                "CREATE TRIGGER fail_restore_event BEFORE INSERT ON case_events
-             WHEN NEW.event_type = 'case.restored'
-             BEGIN SELECT RAISE(ABORT, 'injected restore event failure'); END;",
-            )
-            .unwrap();
-        let mut case = sample_case();
-        case.storage_revision = 99;
-        let events = archive_events(&case.id);
-        assert!(
-            storage
-                .import_archived_case(&mut case, &events, "archive-identity")
-                .is_err()
-        );
-        assert_eq!(case.storage_revision, 99);
-        assert!(storage.list_cases().unwrap().is_empty());
-        assert!(storage.list_case_events(&case.id).unwrap().is_empty());
-        storage
-            .connection()
-            .unwrap()
-            .execute_batch("DROP TRIGGER fail_restore_event")
-            .unwrap();
-        storage
-            .import_archived_case(&mut case, &events, "archive-identity")
-            .unwrap();
-        assert_eq!(case.storage_revision, 1);
-        assert_eq!(
-            storage
-                .list_case_events(&case.id)
-                .unwrap()
-                .last()
-                .unwrap()
-                .sequence,
-            13
-        );
-    }
-
-    #[test]
-    fn archive_import_requires_a_fresh_database_without_settings_or_cleanup_obligations() {
-        for existing in ["case", "settings", "cleanup", "deleted-history"] {
-            let directory = tempfile::tempdir().unwrap();
-            let storage = Storage::open(directory.path().join("casework.db")).unwrap();
-            let mut existing_case = sample_case();
-            match existing {
-                "case" | "deleted-history" => {
-                    storage
-                        .save_case(&mut existing_case, "fixture.created")
-                        .unwrap();
-                    if existing == "deleted-history" {
-                        storage
-                            .delete_case(&existing_case.id, existing_case.storage_revision, None)
-                            .unwrap();
-                    }
-                }
-                "settings" => storage.set_selected_case(Some("old-selection")).unwrap(),
-                "cleanup" => storage
-                    .import_artifact_deletion_obligation("old-case", "/fixture-only/old-path")
-                    .unwrap(),
-                _ => unreachable!(),
-            }
-            let mut imported = sample_case();
-            assert!(
-                matches!(
-                    storage.import_archived_case(&mut imported, &[], "archive-identity"),
-                    Err(AppError::Conflict(_))
-                ),
-                "must refuse {existing}"
-            );
-            assert_eq!(imported.storage_revision, 0);
-            assert!(matches!(
-                storage.get_case(&imported.id),
-                Err(AppError::CaseNotFound(_))
-            ));
-        }
-    }
-
-    #[test]
-    fn archive_import_rejects_wrong_case_or_invalid_event_sequences_without_partial_writes() {
-        let directory = tempfile::tempdir().unwrap();
-        let storage = Storage::open(directory.path().join("casework.db")).unwrap();
-        let mut case = sample_case();
-        for invalid in ["foreign-case", "duplicate", "zero", "exhausted"] {
-            let mut events = archive_events(&case.id);
-            match invalid {
-                "foreign-case" => events[0].case_id = "other-case".into(),
-                "duplicate" => events[1].sequence = events[0].sequence,
-                "zero" => events[0].sequence = 0,
-                "exhausted" => events[1].sequence = i64::MAX,
-                _ => unreachable!(),
-            }
-            assert!(matches!(
-                storage.import_archived_case(&mut case, &events, "archive-identity"),
-                Err(AppError::InvalidRequest(_))
-            ));
-            assert!(storage.list_cases().unwrap().is_empty());
-            assert!(storage.list_case_events(&case.id).unwrap().is_empty());
-            assert_eq!(case.storage_revision, 0);
-        }
-    }
-
-    #[test]
-    fn archive_restore_checkpoint_refuses_an_active_wal_reader() {
-        let directory = tempfile::tempdir().unwrap();
-        let database = directory.path().join("casework.db");
-        let storage = Storage::open(&database).unwrap();
-        let mut case = sample_case();
-        storage.save_case(&mut case, "fixture.created").unwrap();
-        let reader =
-            Connection::open_with_flags(&database, OpenFlags::SQLITE_OPEN_READ_ONLY).unwrap();
-        reader
-            .execute_batch("BEGIN; SELECT document_json FROM cases;")
-            .unwrap();
-        case.title = "A newer committed row".into();
-        storage.save_case(&mut case, "fixture.updated").unwrap();
-        storage
-            .connection()
-            .unwrap()
-            .busy_timeout(std::time::Duration::ZERO)
-            .unwrap();
-        assert!(matches!(
-            storage.checkpoint_for_archive_restore(),
-            Err(AppError::Conflict(_))
-        ));
-        reader.execute_batch("ROLLBACK").unwrap();
-        drop(reader);
-        let reopened = Storage::open(&database).unwrap();
-        assert_eq!(reopened.get_case(&case.id).unwrap().title, case.title);
-        reopened.checkpoint_for_archive_restore().unwrap();
     }
 
     #[cfg(unix)]

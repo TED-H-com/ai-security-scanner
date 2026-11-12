@@ -149,19 +149,3 @@ test("the export decision line exposes disclosure, scope, and honest integrity b
   assert.match(source, /Demo sample: integrity record unavailable/u);
   assert.match(source, /<div className="export-actions">[\s\S]*aria-describedby="export-preview-status"/u);
 });
-
-test("source audit single and mixed runs offer report formats, case bundles and attachments", async () => {
-  const { auditRun } = await import("../support/sourceAudit.ts");
-  const { runSupportsReportAttachments } = await import("../../src/exportFormatEligibility.ts");
-  for (const mixed of [false, true]) {
-    const source = auditRun();
-    if (mixed) source.engineRuns.push({ ...engine(), taskKind: { kind: "catalog_engine" } });
-    for (const format of ["html", "json", "case_bundle"] as const) assert.equal(exportFormatIsAvailable(format, source), true);
-    for (const format of ["framework_report", "ocsf", "oscal"] as const) {
-      assert.equal(exportFormatIsAvailable(format, source), true);
-      assert.equal(resetUnavailableExportFormat(format, source), format);
-    }
-    assert.equal(runSupportsReportAttachments(source), true);
-    assert.equal(runSupportsFindingOnlyExport(source), true);
-  }
-});

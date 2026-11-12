@@ -1176,13 +1176,12 @@ mod tests {
     fn capture_fixture(
         profile: ProviderSourceProfile,
     ) -> (
-        crate::test_temp::TempDir,
         LiveProviderCapture,
         SnapshotConnectorRegistry,
         Arc<Mutex<Vec<String>>>,
     ) {
-        let temp = crate::test_temp::tempdir().unwrap();
-        let root = temp.path().join("connector-artifacts");
+        let temp = tempfile::tempdir().unwrap();
+        let root = temp.keep().join("connector-artifacts");
         fs::create_dir(&root).unwrap();
         let registry = SnapshotConnectorRegistry::new(&root).unwrap();
         let events = Arc::new(Mutex::new(Vec::new()));
@@ -1213,7 +1212,7 @@ mod tests {
             now(),
             &mut persist,
         );
-        (temp, capture, registry, events)
+        (capture, registry, events)
     }
 
     #[test]
@@ -1224,7 +1223,7 @@ mod tests {
             ProviderSourceProfile::GcpOrganizationReadOnlyAccessToken,
             ProviderSourceProfile::Microsoft365TenantReadOnlyAccessToken,
         ] {
-            let (_temp, capture, registry, events) = capture_fixture(profile);
+            let (capture, registry, events) = capture_fixture(profile);
             assert!(capture.complete(), "{profile:?}: {capture:?}");
             let artifacts = capture.artifact_set.expect("artifact set");
             assert!(
@@ -1272,7 +1271,7 @@ mod tests {
     #[test]
     fn microsoft365_discovery_reads_only_the_tenant() {
         let profile = ProviderSourceProfile::Microsoft365TenantReadOnlyAccessToken;
-        let (_temp, capture, registry, events) = capture_fixture(profile);
+        let (capture, registry, events) = capture_fixture(profile);
         assert!(capture.complete(), "{capture:?}");
         let event_log = events.lock().unwrap().clone();
         assert_eq!(event_log.len(), 2, "{event_log:?}");
@@ -1305,7 +1304,7 @@ mod tests {
     #[test]
     fn raw_provider_artifacts_are_content_addressed_and_private() {
         use std::os::unix::fs::PermissionsExt;
-        let (_temp, capture, registry, _) =
+        let (capture, registry, _) =
             capture_fixture(ProviderSourceProfile::AzureTenantReadOnlyAccessToken);
         let set = capture.artifact_set.unwrap();
         let reference = &set.pages[0].artifact;
@@ -1325,7 +1324,7 @@ mod tests {
 
     #[test]
     fn empty_azure_resource_inventory_keeps_exact_subscription_asset() {
-        let temp = crate::test_temp::tempdir().unwrap();
+        let temp = tempfile::tempdir().unwrap();
         let root = temp.path().join("artifacts");
         fs::create_dir(&root).unwrap();
         let registry = SnapshotConnectorRegistry::new(&root).unwrap();
@@ -1397,7 +1396,7 @@ mod tests {
 
     #[test]
     fn connected_empty_gcp_response_is_complete_but_never_claims_an_asset() {
-        let temp = crate::test_temp::tempdir().unwrap();
+        let temp = tempfile::tempdir().unwrap();
         let root = temp.path().join("artifacts");
         fs::create_dir(&root).unwrap();
         let registry = SnapshotConnectorRegistry::new(&root).unwrap();
@@ -1454,7 +1453,7 @@ mod tests {
 
     #[test]
     fn gcp_discovery_proves_nested_folder_projects_back_to_the_exact_organization() {
-        let temp = crate::test_temp::tempdir().unwrap();
+        let temp = tempfile::tempdir().unwrap();
         let root = temp.path().join("artifacts");
         fs::create_dir(&root).unwrap();
         let registry = SnapshotConnectorRegistry::new(&root).unwrap();
@@ -1539,7 +1538,7 @@ mod tests {
 
     #[test]
     fn aws_discovery_speaks_organizations_json_and_follows_next_token() {
-        let temp = crate::test_temp::tempdir().unwrap();
+        let temp = tempfile::tempdir().unwrap();
         let root = temp.path().join("artifacts");
         fs::create_dir(&root).unwrap();
         let registry = SnapshotConnectorRegistry::new(&root).unwrap();
@@ -1851,7 +1850,7 @@ mod tests {
             ),
         ];
         for (response, expected_code, persisted) in cases {
-            let temp = crate::test_temp::tempdir().unwrap();
+            let temp = tempfile::tempdir().unwrap();
             let root = temp.path().join("artifacts");
             fs::create_dir(&root).unwrap();
             let registry = SnapshotConnectorRegistry::new(&root).unwrap();

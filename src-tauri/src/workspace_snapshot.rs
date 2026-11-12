@@ -819,9 +819,7 @@ fn excluded_secret_candidate_ancestor(component: &str) -> bool {
     )
 }
 
-pub(crate) const SECRET_NAME_CLASSIFIER_VERSION: u32 = 1;
-
-pub(crate) fn likely_secret_config_file_name(file_name: &str) -> bool {
+fn likely_secret_config_file_name(file_name: &str) -> bool {
     let name = file_name.to_ascii_lowercase();
     if name == ".env" || name == ".envrc" || name.starts_with(".env.") {
         return true;
@@ -1588,7 +1586,7 @@ fn validate_reference(reference: &WorkspaceSnapshotReference) -> AppResult<()> {
     Ok(())
 }
 
-pub(crate) fn validate_manifest(
+fn validate_manifest(
     manifest: &WorkspaceSnapshotManifest,
     reference: &WorkspaceSnapshotReference,
 ) -> AppResult<()> {
@@ -2963,18 +2961,12 @@ fn remove_private_tree(path: &Path) {
     let _ = fs::remove_dir_all(path);
 }
 
-pub(crate) fn make_tree_deletable(path: &Path) {
+fn make_tree_deletable(path: &Path) {
     let Ok(metadata) = fs::symlink_metadata(path) else {
         return;
     };
-    #[cfg(windows)]
-    {
-        use std::os::windows::fs::MetadataExt;
-        if metadata.file_attributes() & 0x400 != 0 {
-            return;
-        }
-    }
     if metadata.file_type().is_symlink() {
+        let _ = fs::remove_file(path);
         return;
     }
     if metadata.is_dir() {
@@ -2985,18 +2977,11 @@ pub(crate) fn make_tree_deletable(path: &Path) {
             }
         }
     } else {
-        #[cfg(unix)]
-        {
-            use std::os::unix::fs::MetadataExt;
-            if metadata.nlink() != 1 {
-                return;
-            }
-        }
         let _ = make_file_deletable(path);
     }
 }
 
-pub(crate) fn make_snapshot_tree_readonly(path: &Path) -> AppResult<()> {
+fn make_snapshot_tree_readonly(path: &Path) -> AppResult<()> {
     for entry in fs::read_dir(path)? {
         let entry = entry?;
         let metadata = fs::symlink_metadata(entry.path())?;
@@ -3043,13 +3028,17 @@ fn set_private_file(path: &Path) -> AppResult<()> {
 
 #[cfg(windows)]
 fn make_file_deletable(path: &Path) -> AppResult<()> {
-    let _single_link_guard = crate::case_archive_io::single_link_regular_file(path)?;
+    use std::os::windows::ffi::OsStrExt;
     use windows_sys::Win32::Storage::FileSystem::{
         FILE_ATTRIBUTE_NORMAL, FILE_ATTRIBUTE_READONLY, GetFileAttributesW,
         INVALID_FILE_ATTRIBUTES, SetFileAttributesW,
     };
 
-    let encoded = crate::internal_paths::win32_path(path)?;
+    let encoded = path
+        .as_os_str()
+        .encode_wide()
+        .chain(std::iter::once(0))
+        .collect::<Vec<_>>();
     // SAFETY: `encoded` is NUL-terminated and lives for the duration of each
     // Windows API call.
     let attributes = unsafe { GetFileAttributesW(encoded.as_ptr()) };
@@ -3111,7 +3100,7 @@ mod tests {
 
     #[test]
     fn schema_two_node_facts_are_accepted_only_as_a_complete_exact_inventory() {
-        let selected = crate::test_temp::tempdir().expect("node-facts source");
+        let selected = tempfile::tempdir().expect("node-facts source");
         let node = selected.path().join("node-snapshot");
         fs::create_dir(&node).expect("node-facts directory");
         let fixture = Path::new(env!("CARGO_MANIFEST_DIR"))
@@ -3126,7 +3115,7 @@ mod tests {
         ] {
             fs::copy(fixture.join(name), node.join(name)).expect("copy node-facts fixture");
         }
-        let artifacts = crate::test_temp::tempdir().expect("node-facts artifacts");
+        let artifacts = tempfile::tempdir().expect("node-facts artifacts");
         create_workspace_snapshot_with_profile(
             artifacts.path(),
             "case-node-facts",
@@ -3141,8 +3130,7 @@ mod tests {
         let mut profile: Value = serde_json::from_slice(&fs::read(&profile_path).unwrap()).unwrap();
         profile["processes"][0]["name"] = Value::String("unapproved-process".into());
         fs::write(&profile_path, serde_json::to_vec(&profile).unwrap()).unwrap();
-        let rejected_artifacts =
-            crate::test_temp::tempdir().expect("rejected node-facts artifacts");
+        let rejected_artifacts = tempfile::tempdir().expect("rejected node-facts artifacts");
         assert!(
             create_workspace_snapshot_with_profile(
                 rejected_artifacts.path(),
@@ -3160,7 +3148,7 @@ mod tests {
     #[cfg(windows)]
     #[test]
     fn windows_fresh_workspace_file_has_an_exact_current_user_only_dacl() {
-        let temporary = crate::test_temp::tempdir().expect("isolated Windows workspace parent");
+        let temporary = tempfile::tempdir().expect("isolated Windows workspace parent");
         let product_root = temporary.path().join("isolated-product-data");
         let _guard =
             crate::managed_runtime::ensure_private_product_data_directory_for_isolated_test(
@@ -3301,133 +3289,4 @@ mod tests {
         assert!(state.exclusions.is_empty());
         assert!(state.ignore_rule_sources.is_empty());
     }
-}
-
-#[cfg(test)]
-#[test]
-fn secret_name_classifier_golden_requires_version_bump() {
-    let names = [
-        ".env",
-        ".ENV",
-        ".env.local",
-        ".ENV.LOCAL",
-        ".envrc",
-        ".ENVRC",
-        ".npmrc",
-        ".NPMRC",
-        ".yarnrc",
-        ".YARNRC",
-        ".pypirc",
-        ".PYPIRC",
-        ".netrc",
-        ".NETRC",
-        ".pgpass",
-        ".PGPASS",
-        ".my.cnf",
-        ".MY.CNF",
-        ".git-credentials",
-        ".GIT-CREDENTIALS",
-        ".htpasswd",
-        ".HTPASSWD",
-        "id_rsa",
-        "ID_RSA",
-        "id_dsa",
-        "ID_DSA",
-        "id_ecdsa",
-        "ID_ECDSA",
-        "id_ed25519",
-        "ID_ED25519",
-        "terraform.tfstate",
-        "TERRAFORM.TFSTATE",
-        "terraform.tfstate.backup",
-        "TERRAFORM.TFSTATE.BACKUP",
-        "application_default_credentials.json",
-        "APPLICATION_DEFAULT_CREDENTIALS.JSON",
-        "a.tfvars",
-        "A.TFVARS",
-        "a.tfvars.json",
-        "A.TFVARS.JSON",
-        "a.pem",
-        "A.PEM",
-        "a.key",
-        "A.KEY",
-        "secret",
-        "SECRET",
-        "secrets",
-        "SECRETS",
-        "credential",
-        "CREDENTIAL",
-        "credentials",
-        "CREDENTIALS",
-        "secret.txt",
-        "SECRET.TXT",
-        "credentials.json",
-        "CREDENTIALS.JSON",
-        "env",
-        "ENV",
-        ".envrc.local",
-        ".ENVRC.LOCAL",
-        ".environment",
-        ".ENVIRONMENT",
-        "x.env",
-        "X.ENV",
-        ".npmrcx",
-        ".NPMRCX",
-        "a.tfstate",
-        "A.TFSTATE",
-        "id_rsa.pub",
-        "ID_RSA.PUB",
-        "a.pem.txt",
-        "A.PEM.TXT",
-        "key",
-        "KEY",
-        "secretary",
-        "SECRETARY",
-        "mysecret",
-        "MYSECRET",
-        "secret-key",
-        "SECRET-KEY",
-        "credentials_backup",
-        "CREDENTIALS_BACKUP",
-        "secrets/x",
-        "SECRETS/X",
-        "README.md",
-        "README.MD",
-    ];
-    let observed = names
-        .into_iter()
-        .map(|name| (name, likely_secret_config_file_name(name)))
-        .collect::<Vec<_>>();
-    assert_eq!(
-        (
-            SECRET_NAME_CLASSIFIER_VERSION,
-            sha256_bytes(&serde_json::to_vec(&observed).unwrap())
-        ),
-        (
-            1,
-            "7aaf7edc54262dbb16ca8b7c548454020f7efeaf9c78569568d909d414c58d4c".into()
-        )
-    );
-}
-
-#[cfg(unix)]
-#[test]
-fn unsealing_owned_trees_does_not_change_external_link_permissions() {
-    use std::os::unix::fs::{PermissionsExt, symlink};
-    let root = tempfile::tempdir().unwrap();
-    let tree = root.path().join("tree");
-    fs::create_dir(&tree).unwrap();
-    let outside = root.path().join("outside");
-    fs::write(&outside, b"synthetic external file").unwrap();
-    fs::set_permissions(&outside, fs::Permissions::from_mode(0o400)).unwrap();
-    fs::hard_link(&outside, tree.join("hardlink")).unwrap();
-    symlink(&outside, tree.join("symlink")).unwrap();
-    fs::set_permissions(&tree, fs::Permissions::from_mode(0o500)).unwrap();
-    make_tree_deletable(&tree);
-    assert_eq!(
-        fs::metadata(&outside).unwrap().permissions().mode() & 0o777,
-        0o400
-    );
-    fs::remove_dir_all(&tree).unwrap();
-    assert_eq!(fs::read(&outside).unwrap(), b"synthetic external file");
 }

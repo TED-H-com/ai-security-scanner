@@ -1,7 +1,3 @@
-#[allow(dead_code)]
-#[path = "../src/test_temp.rs"]
-mod test_temp;
-
 use ai_security_scanner_lib::adapters::builtin_adapter_registry;
 use ai_security_scanner_lib::artifact_store::ArtifactStore;
 use ai_security_scanner_lib::beginner_report::{
@@ -382,7 +378,7 @@ fn write_node_snapshot(root: &Path) {
 
 #[test]
 fn local_case_lifecycle_preserves_scope_evidence_and_comparison_truth() {
-    let temporary = test_temp::tempdir().expect("lifecycle temporary directory");
+    let temporary = tempfile::tempdir().expect("lifecycle temporary directory");
     let storage = Storage::open(temporary.path().join("casework.db")).expect("private storage");
     let engines = EngineRegistry::load_builtin().expect("supported built-in engine catalog");
     let adapters = builtin_adapter_registry().expect("built-in adapters");
@@ -794,7 +790,7 @@ fn local_case_lifecycle_preserves_scope_evidence_and_comparison_truth() {
 
 #[test]
 fn mixed_environment_fake_runtime_reopens_one_shared_report_and_export() {
-    let temporary = test_temp::tempdir().expect("mixed-environment temporary directory");
+    let temporary = tempfile::tempdir().expect("mixed-environment temporary directory");
     let database_path = temporary.path().join("mixed-casework.db");
     let artifact_root = temporary.path().join("mixed-artifacts");
     let signing_key = temporary.path().join("mixed-integrity-key");
@@ -1353,7 +1349,7 @@ fn mixed_environment_fake_runtime_reopens_one_shared_report_and_export() {
 
 #[test]
 fn typed_container_and_kubernetes_inputs_complete_the_product_lifecycle() {
-    let temporary = test_temp::tempdir().expect("typed lifecycle temporary directory");
+    let temporary = tempfile::tempdir().expect("typed lifecycle temporary directory");
     let storage = Storage::open(temporary.path().join("typed-casework.db")).unwrap();
     let engines = EngineRegistry::load_builtin().unwrap();
     let adapters = builtin_adapter_registry().unwrap();
@@ -1617,7 +1613,7 @@ struct GreenboneFrameworkVertical {
 }
 
 fn execute_greenbone_framework_vertical(ai_system_applicable: bool) -> GreenboneFrameworkVertical {
-    let temporary = test_temp::tempdir().expect("Greenbone framework vertical temporary directory");
+    let temporary = tempfile::tempdir().expect("Greenbone framework vertical temporary directory");
     let storage = Storage::open(temporary.path().join("casework.db")).expect("private storage");
     let engines = EngineRegistry::load_builtin().expect("supported built-in engine catalog");
     let adapters = builtin_adapter_registry().expect("built-in adapters");
@@ -2306,7 +2302,7 @@ fn stored_workspace_reference(
 /// join the earliest baseline line to the only current line.
 #[test]
 fn refreshed_folder_keeps_a_moved_gitleaks_line_under_the_same_asset() {
-    let temporary = test_temp::tempdir().expect("refresh lifecycle directory");
+    let temporary = tempfile::tempdir().expect("refresh lifecycle directory");
     let storage = Storage::open(temporary.path().join("casework.db")).expect("private storage");
     let engines = EngineRegistry::load_builtin().expect("supported built-in engine catalog");
     let adapters = builtin_adapter_registry().expect("built-in adapters");
