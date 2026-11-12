@@ -1,8 +1,14 @@
 # Current product review
 
-Reviewed: 2026-10-03
+Desktop journey reviewed: 2026-10-03. Development status updated: 2026-11-10.
 
 Canonical behavior: [Product specification](product-spec.md)
+
+## Skill-first development status
+
+The [accepted migration](plans/skill-first-cloudflare-migration.md) adds one skill entry over the shared core. Foreground execution/recovery, pinned bootstrap with selected-engine preparation, report snapshots/combined originals and existing-case archive/restore are implemented. Cloudflare document/bundle validation and private retention are implemented; trusted audit execution and case/report integration are pending. A real Linux Gitleaks scan through archive/restore is recorded in [development status](development-status.md). Cold-host automatic runtime acquisition and the complete multi-platform/mixed-asset skill journey remain unverified.
+
+The desktop and its public repository operator skill remain the default. The new path is not released; see [publication status and the preview recommendation](release-model.md). The desktop review below remains its recorded user-path assessment.
 
 ## Product outcome
 

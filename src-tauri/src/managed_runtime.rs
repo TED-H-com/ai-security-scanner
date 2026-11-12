@@ -69,6 +69,9 @@ const WINDOWS_WSL_PROVIDER_DELETE_TIMEOUT: Duration = Duration::from_secs(10);
 #[cfg(windows)]
 const WINDOWS_WSL_PROVIDER_DELETE_POLL: Duration = Duration::from_millis(100);
 const DOWNLOAD_CONNECT_TIMEOUT: Duration = Duration::from_secs(30);
+// reqwest's blocking timeout applies to each Response::read, not the whole
+// body. Keep stalled reads bounded so cooperative cancellation can return.
+const DOWNLOAD_IO_TIMEOUT: Duration = Duration::from_secs(30);
 const DOWNLOAD_TOTAL_TIMEOUT: Duration = Duration::from_secs(4 * 60 * 60);
 const DOWNLOAD_CHUNK_BYTES: usize = 128 * 1024;
 // The longest setup command is a ten-minute machine init/start. Download work
@@ -812,7 +815,8 @@ impl ManagedRuntimeSetupStatus {
 #[derive(Debug, Default)]
 pub struct ManagedRuntimeSetupController {
     status: Mutex<ManagedRuntimeSetupStatus>,
-    cancel_requested: AtomicBool,
+    cancel_requested: Arc<AtomicBool>,
+    external_cancellation: bool,
     prerequisite_repair_active: AtomicBool,
 }
 
@@ -825,8 +829,17 @@ impl ManagedRuntimeSetupController {
             status: Mutex::new(
                 ManagedRuntimeSetupStatus::packaged_runtime_admission_failure(reason),
             ),
-            cancel_requested: AtomicBool::new(false),
+            cancel_requested: Arc::new(AtomicBool::new(false)),
+            external_cancellation: false,
             prerequisite_repair_active: AtomicBool::new(false),
+        }
+    }
+
+    fn with_external_cancellation(cancellation: Arc<AtomicBool>) -> Self {
+        Self {
+            cancel_requested: cancellation,
+            external_cancellation: true,
+            ..Self::default()
         }
     }
 
@@ -871,7 +884,9 @@ impl ManagedRuntimeSetupController {
                 "managed runtime setup is already active".into(),
             ));
         }
-        self.cancel_requested.store(false, Ordering::Release);
+        if !self.external_cancellation {
+            self.cancel_requested.store(false, Ordering::Release);
+        }
         let operation_id = Uuid::new_v4().hyphenated().to_string();
         *status = ManagedRuntimeSetupStatus {
             operation_id: Some(operation_id.clone()),
@@ -1077,7 +1092,7 @@ impl ManagedRuntimeSetupController {
             status.detail = "Scan-tool preparation stop status: current step completing.".into();
         } else if status.prerequisite_repair_active {
             status.detail = "Windows preparation stop status: current step completing.".into();
-        } else {
+        } else if !self.external_cancellation {
             // A stale cancel must never poison the next setup attempt.
             self.cancel_requested.store(false, Ordering::Release);
         }
@@ -1224,7 +1239,9 @@ impl ManagedRuntimeSetupController {
         if phase != ManagedRuntimeSetupPhase::Failed || status.failure_reason.is_none() {
             status.detail = detail;
         }
-        self.cancel_requested.store(false, Ordering::Release);
+        if !self.external_cancellation {
+            self.cancel_requested.store(false, Ordering::Release);
+        }
         self.prerequisite_repair_active
             .store(false, Ordering::Release);
         record_managed_runtime_setup_heartbeat(&mut status, Utc::now());
@@ -1729,6 +1746,23 @@ trait ManagedCommandRunner: Send + Sync {
         args: &[OsString],
         timeout: Duration,
     ) -> io::Result<ManagedCommandOutput>;
+
+    fn output_cancellable(
+        &self,
+        command: &ManagedRuntimeCommand,
+        args: &[OsString],
+        timeout: Duration,
+        cancellation: &AtomicBool,
+    ) -> io::Result<ManagedCommandOutput> {
+        if cancellation.load(Ordering::Acquire) {
+            return Err(managed_command_cancelled_error());
+        }
+        let result = self.output(command, args, timeout);
+        if cancellation.load(Ordering::Acquire) {
+            return Err(managed_command_cancelled_error());
+        }
+        result
+    }
 }
 
 trait WindowsWslRegistrationReader: Send + Sync {
@@ -1791,6 +1825,33 @@ impl ManagedCommandRunner for DirectManagedCommandRunner {
         args: &[OsString],
         timeout: Duration,
     ) -> io::Result<ManagedCommandOutput> {
+        self.output_with_cancellation(command, args, timeout, &|| false)
+    }
+
+    fn output_cancellable(
+        &self,
+        command: &ManagedRuntimeCommand,
+        args: &[OsString],
+        timeout: Duration,
+        cancellation: &AtomicBool,
+    ) -> io::Result<ManagedCommandOutput> {
+        self.output_with_cancellation(command, args, timeout, &|| {
+            cancellation.load(Ordering::Acquire)
+        })
+    }
+}
+
+impl DirectManagedCommandRunner {
+    fn output_with_cancellation(
+        &self,
+        command: &ManagedRuntimeCommand,
+        args: &[OsString],
+        timeout: Duration,
+        is_cancelled: &dyn Fn() -> bool,
+    ) -> io::Result<ManagedCommandOutput> {
+        if is_cancelled() {
+            return Err(managed_command_cancelled_error());
+        }
         let deadline = Instant::now().checked_add(timeout).ok_or_else(|| {
             io::Error::new(
                 io::ErrorKind::InvalidInput,
@@ -1798,7 +1859,7 @@ impl ManagedCommandRunner for DirectManagedCommandRunner {
             )
         })?;
         #[cfg(windows)]
-        let _execution_guard = command.acquire_windows_execution_guard(deadline, &|| false)?;
+        let _execution_guard = command.acquire_windows_execution_guard(deadline, is_cancelled)?;
         if Instant::now() >= deadline {
             return Err(managed_command_deadline_error());
         }
@@ -1812,6 +1873,9 @@ impl ManagedCommandRunner for DirectManagedCommandRunner {
             .stdout(Stdio::piped())
             .stderr(Stdio::piped());
         let mut process_tree = ManagedCommandProcessTree::prepare(&mut process)?;
+        if is_cancelled() {
+            return Err(managed_command_cancelled_error());
+        }
         if Instant::now() >= deadline {
             return Err(managed_command_deadline_error());
         }
@@ -1865,6 +1929,13 @@ impl ManagedCommandRunner for DirectManagedCommandRunner {
 
         let mut terminated = false;
         let process_result = loop {
+            if is_cancelled() {
+                terminated = true;
+                break Err(managed_command_error_with_cleanup(
+                    managed_command_cancelled_error(),
+                    process_tree.terminate_and_wait(&mut child),
+                ));
+            }
             if oversized.load(Ordering::Acquire) {
                 terminated = true;
                 break Err(managed_command_error_with_cleanup(
@@ -1932,6 +2003,7 @@ impl ManagedCommandRunner for DirectManagedCommandRunner {
             oversized.as_ref(),
             &process_tree,
             &mut child,
+            is_cancelled,
         );
         if oversized.load(Ordering::Acquire) {
             let mut error = if terminated {
@@ -1995,6 +2067,13 @@ fn managed_command_deadline_error() -> io::Error {
     io::Error::new(
         io::ErrorKind::TimedOut,
         "managed runtime command exceeded its deadline",
+    )
+}
+
+fn managed_command_cancelled_error() -> io::Error {
+    io::Error::new(
+        io::ErrorKind::Interrupted,
+        "managed runtime preparation was cancelled",
     )
 }
 
@@ -2098,6 +2177,7 @@ fn finish_managed_command_captures(
     oversized: &AtomicBool,
     process_tree: &ManagedCommandProcessTree,
     child: &mut Child,
+    is_cancelled: &dyn Fn() -> bool,
 ) -> io::Result<(Vec<u8>, Vec<u8>)> {
     let mut stdout = None;
     let mut stderr = None;
@@ -2108,6 +2188,16 @@ fn finish_managed_command_captures(
     let mut post_kill = *process_tree_terminated;
 
     loop {
+        if is_cancelled() && !post_kill {
+            let cleanup = process_tree.terminate_and_wait(child);
+            *process_tree_terminated = true;
+            post_kill = true;
+            drain_deadline = Instant::now() + MANAGED_COMMAND_PIPE_DRAIN_TIMEOUT;
+            primary_error = Some(managed_command_error_with_cleanup(
+                managed_command_cancelled_error(),
+                cleanup,
+            ));
+        }
         let mut stdout_failed = false;
         if !stdout_complete && let Some(result) = stdout_capture.try_finish() {
             stdout_complete = true;
@@ -2528,7 +2618,10 @@ impl HttpsManagedArtifactDownloader {
     fn client() -> AppResult<Client> {
         Client::builder()
             .connect_timeout(DOWNLOAD_CONNECT_TIMEOUT)
-            .timeout(DOWNLOAD_TOTAL_TIMEOUT)
+            // Blocking reqwest applies this independently to receiving the
+            // response and each body read. A stalled peer must release the
+            // foreground cancellation worker; the partial remains resumable.
+            .timeout(DOWNLOAD_IO_TIMEOUT)
             .redirect(reqwest::redirect::Policy::custom(|attempt| {
                 if attempt.previous().len() >= 5 {
                     return attempt.error("too many managed runtime artifact redirects");
@@ -2572,6 +2665,16 @@ impl ManagedArtifactDownloader for HttpsManagedArtifactDownloader {
         destination: &Path,
         progress: &mut dyn FnMut(u64, u64, u64) -> AppResult<()>,
     ) -> AppResult<()> {
+        let started = Instant::now();
+        let mut bounded_progress = |received, total, resumed| {
+            if started.elapsed() >= DOWNLOAD_TOTAL_TIMEOUT {
+                return Err(AppError::Runtime(
+                    "managed runtime image download exceeded its total deadline".into(),
+                ));
+            }
+            progress(received, total, resumed)
+        };
+        let progress: &mut dyn FnMut(u64, u64, u64) -> AppResult<()> = &mut bounded_progress;
         let mut existing = regular_file_length_or_zero(destination)?;
         if existing > image.size_bytes {
             return Err(AppError::NotAuthorized(
@@ -3145,6 +3248,53 @@ impl ManagedRuntimeManager {
         self.start_locked(None)
     }
 
+    /// One cancellable foreground start, sharing the normal lifecycle and
+    /// download checkpoints. It never enters the desktop's automatic Windows
+    /// prerequisite-repair loop and never clears the caller's cancellation.
+    pub fn start_cancellable(
+        &self,
+        cancellation: &Arc<AtomicBool>,
+    ) -> AppResult<ManagedRuntimeCommand> {
+        let controller =
+            ManagedRuntimeSetupController::with_external_cancellation(cancellation.clone());
+        self.start_cancellable_with_attempt(&controller, || {
+            controller.check_cancelled()?;
+            let _lock = self.lock()?;
+            controller.check_cancelled()?;
+            self.start_locked(Some(&controller))
+        })
+    }
+
+    fn start_cancellable_with_attempt<F>(
+        &self,
+        controller: &ManagedRuntimeSetupController,
+        attempt: F,
+    ) -> AppResult<ManagedRuntimeCommand>
+    where
+        F: FnOnce() -> AppResult<ManagedRuntimeCommand>,
+    {
+        let operation_id = controller.begin()?;
+        let mut guard = ManagedRuntimeSetupWorkerGuard::new(controller, operation_id.clone());
+        let result = controller.check_cancelled().and_then(|()| attempt());
+        let result = if controller.cancel_requested.load(Ordering::Acquire) {
+            controller.finish_cancelled(&operation_id)?;
+            Err(setup_cancelled_error())
+        } else {
+            match result {
+                Ok(command) => {
+                    controller.finish_completed(&operation_id, "managed runtime is available")?;
+                    Ok(command)
+                }
+                Err(error) => {
+                    controller.finish_failed(&operation_id, error.to_string())?;
+                    Err(error)
+                }
+            }
+        };
+        guard.disarm();
+        result
+    }
+
     /// Runs the same lifecycle as [`Self::start`] while publishing a
     /// queryable, cancellable first-run setup state. Only one setup may be
     /// active for a controller at a time. Ordinary on-demand starts remain
@@ -3513,11 +3663,12 @@ impl ManagedRuntimeManager {
                     ));
                 }
                 let start_result = self
-                    .run_command(
+                    .run_command_cancellable(
                         ManagedCommandOperation::MachineStart,
                         command,
                         ["machine", "start", "--quiet", machine_name],
                         remaining.min(MACHINE_START_TIMEOUT),
+                        setup,
                     )
                     .and_then(|output| require_success("managed runtime machine start", &output));
                 let Err(start_error) = start_result else {
@@ -3659,6 +3810,7 @@ impl ManagedRuntimeManager {
                 target,
                 &self.machine_image_path(target),
                 &fresh_machine_name,
+                setup,
             )
             .map_err(|error| {
                 AppError::Runtime(format!(
@@ -6031,12 +6183,13 @@ impl ManagedRuntimeManager {
         Ok(destination)
     }
 
-    fn initialize_machine(
+    fn initialize_machine_with_setup(
         &self,
         command: &ManagedRuntimeCommand,
         target: &ManagedTarget,
         image: &Path,
         machine_name: &str,
+        setup: Option<&ManagedRuntimeSetupController>,
     ) -> AppResult<()> {
         let image = image.to_str().ok_or_else(|| {
             AppError::Runtime(
@@ -6065,11 +6218,12 @@ impl ManagedRuntimeManager {
             OsString::from(image),
             OsString::from(machine_name),
         ]);
-        let output = self.run_command_args(
+        let output = self.run_command_args_cancellable(
             ManagedCommandOperation::MachineInitialization,
             command,
             &args,
             MACHINE_INIT_TIMEOUT,
+            setup,
         )?;
         require_success("managed runtime machine initialization", &output)
     }
@@ -6080,10 +6234,11 @@ impl ManagedRuntimeManager {
         target: &ManagedTarget,
         image: &Path,
         machine_name: &str,
+        setup: Option<&ManagedRuntimeSetupController>,
     ) -> Result<(), MachineInitializationAttemptFailure> {
         if target.operating_system != ManagedOperatingSystem::Windows {
             return self
-                .initialize_machine(command, target, image, machine_name)
+                .initialize_machine_with_setup(command, target, image, machine_name, setup)
                 .map_err(MachineInitializationAttemptFailure::Initialization);
         }
         self.ensure_windows_wsl_ownership_proof_locked(
@@ -6092,7 +6247,8 @@ impl ManagedRuntimeManager {
             WindowsWslOwnershipBasis::InitIntent,
         )
         .map_err(MachineInitializationAttemptFailure::OwnershipJournal)?;
-        let initialization = self.initialize_machine(command, target, image, machine_name);
+        let initialization =
+            self.initialize_machine_with_setup(command, target, image, machine_name, setup);
         let proven_machine = if initialization.is_ok() {
             self.verify_current_windows_wsl_machine_registration_binding(machine_name)
                 .and_then(|_| {
@@ -6141,6 +6297,7 @@ impl ManagedRuntimeManager {
             target,
             image,
             machine_name,
+            setup,
         ) {
             Ok(()) => return Ok((command.clone(), machine_name.into())),
             Err(MachineInitializationAttemptFailure::Initialization(error)) => error,
@@ -6235,6 +6392,7 @@ impl ManagedRuntimeManager {
                 target,
                 image,
                 &fresh_machine_name,
+                setup,
             )
             .map_err(|error| {
                 AppError::Runtime(format!(
@@ -6250,8 +6408,13 @@ impl ManagedRuntimeManager {
                 "retrying the private scan-tool initialization once after Windows confirmed no partial workspace",
             )?;
         }
-        match self.initialize_machine_with_one_shot_wsl_intent(command, target, image, machine_name)
-        {
+        match self.initialize_machine_with_one_shot_wsl_intent(
+            command,
+            target,
+            image,
+            machine_name,
+            setup,
+        ) {
             Ok(()) => Ok((command.clone(), machine_name.into())),
             Err(MachineInitializationAttemptFailure::OwnershipJournal(error)) => Err(error),
             Err(MachineInitializationAttemptFailure::Initialization(retry_error)) => {
@@ -6468,6 +6631,37 @@ impl ManagedRuntimeManager {
             .map_err(|error| {
                 AppError::Runtime(format!("{} could not execute: {error}", operation.label()))
             })
+    }
+
+    fn run_command_cancellable<const N: usize>(
+        &self,
+        operation: ManagedCommandOperation,
+        command: &ManagedRuntimeCommand,
+        args: [&str; N],
+        timeout: Duration,
+        setup: Option<&ManagedRuntimeSetupController>,
+    ) -> AppResult<ManagedCommandOutput> {
+        let args = args.into_iter().map(OsString::from).collect::<Vec<_>>();
+        self.run_command_args_cancellable(operation, command, &args, timeout, setup)
+    }
+
+    fn run_command_args_cancellable(
+        &self,
+        operation: ManagedCommandOperation,
+        command: &ManagedRuntimeCommand,
+        args: &[OsString],
+        timeout: Duration,
+        setup: Option<&ManagedRuntimeSetupController>,
+    ) -> AppResult<ManagedCommandOutput> {
+        match setup {
+            Some(setup) => self
+                .commands
+                .output_cancellable(command, args, timeout, &setup.cancel_requested)
+                .map_err(|error| {
+                    AppError::Runtime(format!("{} could not execute: {error}", operation.label()))
+                }),
+            None => self.run_command_args(operation, command, args, timeout),
+        }
     }
 
     fn lock(&self) -> AppResult<ManagedRuntimeLock> {
@@ -16695,6 +16889,50 @@ mod tests {
 
     #[cfg(unix)]
     #[test]
+    fn cancellable_direct_command_joins_running_and_exited_leader_descendants() {
+        for wait_for_child in [true, false] {
+            let temp = TempDir::new().expect("temporary root");
+            let pid_file = temp.path().join("descendant.pid");
+            let command = direct_unix_test_command(
+                temp.path(),
+                BTreeMap::from([(OsString::from("PID_FILE"), pid_file.as_os_str().to_owned())]),
+            );
+            let suffix = if wait_for_child { "; wait" } else { "" };
+            let args = [
+                OsString::from("-c"),
+                OsString::from(format!(
+                    "/bin/sleep 30 & child=$!; printf '%s' \"$child\" > \"$PID_FILE\"{suffix}"
+                )),
+            ];
+            let token = Arc::new(AtomicBool::new(false));
+            let worker_token = token.clone();
+            let marker = pid_file.clone();
+            let cancel = thread::spawn(move || {
+                let deadline = Instant::now() + Duration::from_secs(2);
+                while !marker.exists() && Instant::now() < deadline {
+                    thread::sleep(Duration::from_millis(5));
+                }
+                thread::sleep(Duration::from_millis(50));
+                worker_token.store(true, Ordering::Release);
+            });
+            let started = Instant::now();
+            let error = DirectManagedCommandRunner
+                .output_cancellable(&command, &args, Duration::from_secs(60), &token)
+                .expect_err("cancellation must terminate owned descendants");
+            cancel.join().expect("cancel worker");
+            assert_eq!(error.kind(), io::ErrorKind::Interrupted);
+            assert!(started.elapsed() < Duration::from_secs(3));
+            let pid = fs::read_to_string(pid_file)
+                .unwrap()
+                .parse::<i32>()
+                .unwrap();
+            assert_unix_process_is_reaped(pid);
+            assert!(token.load(Ordering::Acquire));
+        }
+    }
+
+    #[cfg(unix)]
+    #[test]
     fn direct_command_timeout_bounds_inherited_pipes_and_terminates_the_process_group() {
         let temp = TempDir::new().expect("temporary root");
         let pid_file = temp.path().join("descendant.pid");
@@ -22815,6 +23053,7 @@ mod tests {
                 &windows_target,
                 &image,
                 &expected_machine,
+                None,
             )
             .expect_err("fixture initialization fails");
 
@@ -23864,6 +24103,110 @@ mod tests {
             assert!(message.contains(operation.label()));
             assert!(!message.contains("must-not-appear"));
         }
+    }
+
+    #[test]
+    fn cancellable_start_preserves_a_latched_token_and_performs_no_setup_work() {
+        let mut fixture = fixture();
+        let downloader = Arc::new(FakeDownloader {
+            bytes: fixture.image.clone(),
+            calls: Mutex::new(0),
+        });
+        let repairer = Arc::new(FakeWindowsWslPrerequisiteRepairer::new(vec![]));
+        fixture.manager.downloader = downloader.clone();
+        fixture.manager.prerequisite_repairer = repairer.clone();
+        let token = Arc::new(AtomicBool::new(true));
+        let error = fixture
+            .manager
+            .start_cancellable(&token)
+            .expect_err("already cancelled");
+        assert!(error.to_string().contains("cancelled"));
+        assert!(token.load(Ordering::Acquire));
+        assert_eq!(*downloader.calls.lock().unwrap(), 0);
+        assert!(fixture.commands.calls().is_empty());
+        assert!(repairer.actions().is_empty());
+        assert!(!fixture.manager.versions_root().exists());
+        assert!(!fixture.manager.image_cache_root().exists());
+    }
+
+    #[test]
+    fn cancellable_start_reports_a_prerequisite_failure_without_repair_or_retry() {
+        let mut fixture = fixture();
+        let repairer = Arc::new(FakeWindowsWslPrerequisiteRepairer::new(vec![]));
+        fixture.manager.prerequisite_repairer = repairer.clone();
+        let token = Arc::new(AtomicBool::new(false));
+        let controller = ManagedRuntimeSetupController::with_external_cancellation(token.clone());
+        let error = fixture
+            .manager
+            .start_cancellable_with_attempt(&controller, || {
+                fail_windows_wsl_prerequisite(
+                    Some(&controller),
+                    WindowsWslPrerequisiteFailure::not_installed(Some(1)),
+                )?;
+                unreachable!("modeled missing WSL fails before returning a command")
+            })
+            .expect_err("one attempt must stop at the prerequisite failure");
+        assert!(!error.to_string().is_empty());
+        assert!(repairer.actions().is_empty());
+        assert!(fixture.commands.calls().is_empty());
+        let status = controller.status().unwrap();
+        assert_eq!(status.phase, ManagedRuntimeSetupPhase::Failed);
+        assert_eq!(
+            status.failure_reason,
+            Some(ManagedRuntimeSetupFailureReason::WslNotInstalled)
+        );
+        assert!(!status.active);
+        assert!(!token.load(Ordering::Acquire));
+    }
+
+    #[test]
+    fn cancellable_start_download_checkpoint_retains_prefix_without_initialization() {
+        struct CancelDownloader {
+            token: Arc<AtomicBool>,
+        }
+        impl ManagedArtifactDownloader for CancelDownloader {
+            fn acquire(
+                &self,
+                image: &ManagedMachineImage,
+                destination: &Path,
+                progress: &mut dyn FnMut(u64, u64, u64) -> AppResult<()>,
+            ) -> AppResult<()> {
+                let mut file = open_private_download_file(destination, false)?;
+                file.write_all(b"pinned-")?;
+                file.sync_all()?;
+                self.token.store(true, Ordering::Release);
+                progress(7, image.size_bytes, 0)
+            }
+        }
+        let mut fixture = fixture();
+        let token = Arc::new(AtomicBool::new(false));
+        fixture.manager.downloader = Arc::new(CancelDownloader {
+            token: token.clone(),
+        });
+        let controller = ManagedRuntimeSetupController::with_external_cancellation(token.clone());
+        let target = fixture.manager.loaded.target().unwrap();
+        let error = fixture
+            .manager
+            .start_cancellable_with_attempt(&controller, || {
+                fixture
+                    .manager
+                    .acquire_machine_image_locked(target, Some(&controller))?;
+                panic!("cancelled download cannot reach machine initialization");
+            })
+            .expect_err("download cancellation must propagate");
+        assert!(error.to_string().contains("cancelled"));
+        assert!(token.load(Ordering::Acquire));
+        assert!(fixture.commands.calls().is_empty());
+        assert!(!fixture.manager.machine_image_path(target).exists());
+        let partial = fixture
+            .manager
+            .machine_image_path(target)
+            .with_extension("download-part");
+        assert_eq!(fs::read(partial).unwrap(), b"pinned-");
+        assert_eq!(
+            controller.status().unwrap().phase,
+            ManagedRuntimeSetupPhase::Cancelled
+        );
     }
 
     #[test]

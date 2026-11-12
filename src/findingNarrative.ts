@@ -1,3 +1,4 @@
+import { failureTranslation } from "./auditFailure.ts";
 import type { Locale } from "./i18n/core";
 import type {
   AwsIamPolicyFindingDetails,
@@ -451,6 +452,7 @@ const withoutConfidenceMethodology = (english: string): string => {
 export const findingSummarySentence = (
   locale: Locale,
   options: {
+    sourceAudit?: boolean;
     englishFallback: string;
     severity?: Severity;
     severityLabel: string;
@@ -461,6 +463,7 @@ export const findingSummarySentence = (
     family?: FindingFamily;
   },
 ): string => {
+  if (options.sourceAudit) return options.englishFallback;
   const verdict = controlVerdict(options.family, options.englishFallback, locale === "zh-TW");
   if (verdict) return verdict;
   const englishFallback = withoutConfidenceMethodology(options.englishFallback)
@@ -476,7 +479,8 @@ export const findingSummarySentence = (
     severityBasisCode,
     priorityReasons: options.priorityReasons,
   });
-  const engineName = engineNameFrom(englishFallback);
+  const name = engineNameFrom(englishFallback);
+  const engineName = name === "Cloudflare source audit" ? "Cloudflare 原始碼稽核" : name;
   if (!engineName) return englishFallback;
   let summary: string;
   if (unratedSeverity) {
@@ -538,6 +542,7 @@ const directLegacyImpact = (english: string): string => {
 export const findingImpactSentence = (
   locale: Locale,
   options: {
+    sourceAudit?: boolean;
     englishFallback: string;
     severity?: Severity;
     severityLabel: string;
@@ -547,6 +552,7 @@ export const findingImpactSentence = (
     contextFactors?: readonly ContextFactor[];
   },
 ): string => {
+  if (options.sourceAudit) return options.englishFallback;
   const consequence = options.family
     ? (locale !== "zh-TW" ? CONSEQUENCE_ENGLISH[options.family] : CONSEQUENCE[options.family])
     : undefined;
@@ -1001,6 +1007,7 @@ export const localizedCoverageDimension = (
     return whole ? `${check} 檢查` : `${check} 未完成的部分`;
   }
   if (locale !== "zh-TW") return dimension;
+  if (dimension === "Source audit coverage") return "原始碼稽核涵蓋範圍";
   const lower = dimension.toLocaleLowerCase("en");
 
   const noVerdictSeparators = [": no verdict for ", ": manual review for "];
@@ -1213,6 +1220,7 @@ const withCheck = (check: string, label: string): string => {
  * that one, English key and Chinese sentence together.
  */
 const COVERAGE_GAP_PROSE: ReadonlyArray<readonly [string, string]> = [
+  ["Continue the source audit from the listed paths.", "請從列出的路徑繼續原始碼稽核。"],
   [
     "This check's packaged scanner cannot read this kind of target, so nothing was tested by it.",
     "這項檢查的內建掃描工具無法讀取這類目標，因此沒有測試任何內容。",
@@ -1751,6 +1759,22 @@ export const coverageGapProse = (
   locale: Locale,
   english: string,
 ): string => {
+  const failure = failureTranslation(english);
+  if (failure) return locale === "zh-TW" ? failure : english;
+  if (locale === "zh-TW") {
+    for (const [suffix, before, after] of [
+      [" unit remains.", "尚有 ", " 個單元未完成。"],
+      [" units remain.", "尚有 ", " 個單元未完成。"],
+      [" unit is outside the audit scope.", "有 ", " 個單元不在稽核範圍內。"],
+      [" units are outside the audit scope.", "有 ", " 個單元不在稽核範圍內。"],
+    ]) {
+      if (english.endsWith(suffix!)) {
+        const n = english.slice(0, -suffix!.length);
+        if (/^\d+$/u.test(n)) return `${before}${n}${after}`;
+      }
+    }
+  }
+
   if (locale !== "zh-TW") return english;
   const trimmed = english.trim();
   const reviewBase = "Maester evaluated this control but did not return a pass or fail verdict.";
@@ -1930,6 +1954,7 @@ export const testedObservationProse = (
   locale: Locale,
   english: string,
 ): string => {
+  if (english === "Recorded source audit" && locale === "zh-TW") return "已記錄的原始碼稽核";
   const trimmed = english.trim();
   if (locale !== "zh-TW") return trimmed;
   return (
@@ -1963,6 +1988,7 @@ export const testedValueZhHant = (
   dimension: string,
   value: string,
 ): string | undefined => {
+  if (dimension === "Source audit coverage") return value;
   // Every Greenbone profile row counts its own frozen checks and names the
   // asset. Only the noun differs, so they share one shape.
   const countedProfile = (noun: string, translated: string): string | undefined => {
@@ -2591,12 +2617,14 @@ export const findingUnconfirmedByCoverage = (
 export const findingActionSentence = (
   locale: Locale,
   options: {
+    sourceAudit?: boolean;
     englishFallback: string;
     family?: FindingFamily;
     awsIamPolicy?: AwsIamPolicyFindingDetails;
     unconfirmedByCoverage?: boolean;
   },
 ): string => {
+  if (options.sourceAudit) return options.englishFallback;
   if (options.unconfirmedByCoverage) {
     return locale === "zh-TW"
       ? INCOMPLETE_CHECK_CONFIRM_ACTION_ZH_HANT
@@ -2643,6 +2671,7 @@ export const beginnerStepAction = (
   },
   findings: readonly {
     findingId: string;
+    sourceAudit?: boolean;
     severityBasisCode?: SeverityBasisCode;
     evidenceReferences: readonly {
       detailsFrozen?: boolean;
@@ -2656,6 +2685,7 @@ export const beginnerStepAction = (
   const derivedFrom = step.findingId
     ? findings.find((finding) => finding.findingId === step.findingId)
     : undefined;
+  if (derivedFrom?.sourceAudit) return step.action;
   if (step.unattributed) {
     const engineId = step.reason.split(" ")[0] || step.reason;
     return findingUnattributedGap(locale, engineId, step.unattributed, {
@@ -2709,6 +2739,9 @@ const REQUESTED_LIMIT_KIND_SUFFIXES: ReadonlyArray<readonly [string, string]> = 
  * fixed strings rather than composed ones, so they never carry a holder.
  */
 const requestedLimitKindZh = (kind: string): string | undefined => {
+  if (kind === "declared invocation limit") return "宣告的呼叫次數上限";
+  if (kind === "remaining invocations") return "剩餘呼叫次數";
+  if (kind === "issued invocations") return "已發出的呼叫次數";
   if (kind === "endpoint") return "連線端點";
   if (kind === "connection timeout") return "連線逾時限制";
   if (kind === "application payload") return "應用資料量";

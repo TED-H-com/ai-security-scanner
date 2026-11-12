@@ -1,3 +1,5 @@
+import type { AuditFailureOutcome, AuditFailureEnding } from "./auditFailure";
+import type { SourceAuditReportWire, ProviderRecordRefWire } from "./sourceAuditTypes";
 import type { IncidentCampaignReport } from "./incidentFocusProfile";
 import type { InternalDeviceScanProfile } from "./internalDeviceProfile";
 import type { InternalEndpointScanProfile } from "./internalEndpointProfile";
@@ -829,6 +831,8 @@ export type EngineRecoveryAction =
 
 /** Exact `EngineTaskKind` tags and fields serialized by the native Rust domain. */
 export type EngineTaskKindWire =
+  | { kind: "agent_audit_failure"; providerId: string; outcome: AuditFailureOutcome }
+  | { kind: "agent_audit"; providerId: string; admissionId: string }
   | { kind: "catalog_engine" }
   | { kind: "external_report_import"; sourceFormat: string; sourceSha256: string }
   | {
@@ -1081,6 +1085,7 @@ export type BeginnerCheckResultKindWire = "security_check" | "inventory" | "conn
 export type BeginnerCheckResultKind = BeginnerCheckResultKindWire | "unknown";
 
 export interface BeginnerActualCheck {
+  outcome?: { summary: string; reason: string; nextAction: string };
   taskId: string;
   checkId: string;
   /** Absent only on reports saved before check-result semantics were frozen. */
@@ -1154,6 +1159,7 @@ export type BeginnerFindingSnapshotSource =
   | "observation_only";
 
 export interface BeginnerReportFinding {
+  sourceAudit?: boolean;
   findingId: string;
   fingerprint: string;
   snapshotSource: BeginnerFindingSnapshotSource;
@@ -1185,6 +1191,7 @@ export interface BeginnerReportFinding {
   rollbackConsiderations?: string;
   verificationGuidance?: string;
   evidenceReferences: Array<{
+    providerRecord?: ProviderRecordRefWire;
     evidenceId: string;
     engineId: string;
     /** True only when the optional provenance came from this selected run. */
@@ -1242,6 +1249,8 @@ export interface BeginnerUnavailableTechnicalValue {
 }
 
 export type BeginnerTechnicalExecution =
+  | { kind: "agent_audit_failure"; runId: string; receiptSha256: string; terminalSha256: string; occurredAt: string; ending: AuditFailureEnding }
+  | { kind: "agent_audit"; providerId: string; admissionId: string }
   | { kind: "external_report_import"; engineId: string; sourceFormat: string; sourceSha256: string; contract: string }
   | {
       kind: "catalog_engine";
@@ -1376,6 +1385,7 @@ export interface BeginnerInventory {
 }
 
 export interface BeginnerMasterReport {
+  sourceAudits?: SourceAuditReportWire[];
   incidentFocus?: IncidentCampaignReport;
   schemaVersion: string;
   caseId: string;
@@ -1539,6 +1549,7 @@ export type EvidenceKind =
   | "raw_tool_output";
 
 export interface Evidence {
+  providerRecord?: ProviderRecordRefWire;
   id: string;
   sourceEngine: string;
   /** Exact normalized upstream rule or detector identifier, when retained. */
@@ -1668,6 +1679,7 @@ export type ConfidenceBasisCode =
   | "missing_detection_quality_score";
 
 export interface Finding {
+  sourceAudit?: boolean;
   id: string;
   caseId?: string;
   fingerprint: string;
@@ -1956,6 +1968,7 @@ export interface ExportPreview {
   selectedRunEvidenceCount: number;
   scanRunCount: number;
   selectedEngineRunCount: number;
+  selectedSourceAuditCount?: number;
   externalScopeGrantCount: number;
   incompleteEngineRunCount: number;
   notExecutedEngineRunCount: number;

@@ -4,6 +4,8 @@
 
 The Review screen is the execution boundary. Network scanners receive the exact displayed targets and ports after confirmation. Local scans receive an isolated snapshot of the selected source.
 
+The selected development [foreground CLI](foreground-scans.md) uses existing reviewed assets and effective scope grants; it does not create authorization. [Cloudflare validation/retention](cloudflare-provider.md) checks supplied data and preserves originals; it is not an audit or a new runnable scanner. See [current delivery status](release-model.md).
+
 ## IT environment
 
 An IT-environment project can contain repositories, websites, and internal systems. The execution plan binds each asset to applicable checks; one engine never expands its scope to every compatible asset.

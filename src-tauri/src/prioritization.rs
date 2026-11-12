@@ -528,6 +528,7 @@ mod tests {
 
     fn evidence(engine: &str, rule: Option<&str>) -> crate::domain::Evidence {
         crate::domain::Evidence {
+            provider_record: None,
             id: "evidence".into(),
             finding_id: "finding".into(),
             run_id: "run".into(),

@@ -28,6 +28,9 @@ jobs:
       framework: ${{ steps.classify.outputs.framework }}
       release_contract: ${{ steps.classify.outputs.release_contract }}
       windows_runtime: ${{ steps.classify.outputs.windows_runtime }}
+      windows_installer: ${{ steps.classify.outputs.windows_installer }}
+      skill_bootstrap: ${{ steps.classify.outputs.skill_bootstrap }}
+      skill_native: ${{ steps.classify.outputs.skill_native }}
       docs_only: ${{ steps.classify.outputs.docs_only }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -38,6 +41,8 @@ jobs:
           node-version: 24.15.0
       - name: Test changed-boundary and duplicated-skill drift guards
         run: node --test tests/ci/*.test.mjs
+      - name: Verify frozen report corpus and screenshot receipts
+        run: node scripts/verify-report-fidelity-baseline.mjs
       - name: Classify changed paths
         id: classify
         shell: bash
@@ -88,12 +93,76 @@ jobs:
           steps.classify.outputs.engine != 'true' &&
           steps.classify.outputs.framework != 'true' &&
           steps.classify.outputs.release_contract != 'true' &&
-          steps.classify.outputs.windows_runtime != 'true'
+          steps.classify.outputs.windows_runtime != 'true' &&
+          steps.classify.outputs.skill_bootstrap != 'true' &&
+          steps.classify.outputs.skill_native != 'true'
         shell: bash
         run: |
           echo "::warning::The change affects CI/classifier metadata or an unclassified path; only classifier tests are scheduled."
           echo "Classifier-only scope: review new functional paths and add the smallest relevant boundary when needed." |
             tee -a "$GITHUB_STEP_SUMMARY"
+
+  skill-bootstrap:
+    name: Skill bootstrap contracts
+    needs: changes
+    if: needs.changes.outputs.skill_bootstrap == 'true'
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 24.15.0
+      - run: node scripts/skill/sync-skill.mjs --check
+      - run: node --test tests/skill/*.test.mjs
+      - run: node --test providers/cloudflare/upstream/skills/security-audit/*.test.cjs
+
+  skill-native:
+    name: Skill native core (${{ matrix.os }})
+    needs: changes
+    if: needs.changes.outputs.skill_native == 'true'
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-24.04, macos-15, windows-2025]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 24.15.0
+      - uses: dtolnay/rust-toolchain@4360b52568e2003a75bf9bc1d59f33a8e3fc893c # action commit, 2026-08-21
+        with:
+          toolchain: 1.98.0
+      - uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2.9.2
+        with:
+          workspaces: . -> target
+      - name: Initialize the native Windows compiler environment
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: ./scripts/ci/initialize-windows-toolchain.ps1
+      - name: Test bootstrap cache and command ownership
+        run: node --test tests/skill/*.test.mjs
+      - name: Verify native source bootstrap and cache reuse
+        id: native-smoke
+        if: ${{ !cancelled() }}
+        env:
+          SKILL_SMOKE_RESULT: ${{ runner.temp }}/skill-bootstrap-native.json
+        run: node scripts/ci/skill-bootstrap-smoke.mjs
+      - name: Replay reports and round-trip archives without scanner runtime
+        if: ${{ !cancelled() }}
+        run: >-
+          cargo test --locked --no-fail-fast --package ai-security-scanner --no-default-features
+          --features cli --test cli_build_identity --test cli_report_snapshot --test cli_case_archive
+          --test cli_runtime_prepare --test cli_cloudflare_provider --test report_fidelity_baseline
+          --test cli_cloudflare_bundle --test cli_cloudflare_source_view --test cli_cloudflare_audit
+      - name: Retain native bootstrap evidence
+        if: ${{ !cancelled() && steps.native-smoke.outcome == 'success' }}
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: skill-bootstrap-${{ matrix.os }}
+          path: ${{ runner.temp }}/skill-bootstrap-native.json
+          if-no-files-found: error
+          retention-days: 14
 
   frontend:
     name: Frontend
@@ -163,6 +232,9 @@ jobs:
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 24.15.0
       - uses: dtolnay/rust-toolchain@4360b52568e2003a75bf9bc1d59f33a8e3fc893c # action commit, 2026-08-21
         with:
           toolchain: 1.98.0
@@ -266,6 +338,7 @@ jobs:
       - name: Compile Windows desktop
         run: cargo check --locked --package ai-security-scanner --features desktop --lib
       - name: Compile the reviewed custom NSIS installer
+        if: needs.changes.outputs.windows_installer == 'true'
         run: >-
           npm run tauri build -- --ci --bundles nsis
           --config '{"bundle":{"createUpdaterArtifacts":false}}'
@@ -323,6 +396,8 @@ jobs:
       - rust-core
       - windows-managed-runtime
       - desktop-linux
+      - skill-bootstrap
+      - skill-native
     runs-on: ubuntu-24.04
     env:
       CHANGES_RESULT: ${{ needs.changes.result }}
@@ -340,6 +415,10 @@ jobs:
       WINDOWS_RESULT: ${{ needs['windows-managed-runtime'].result }}
       DESKTOP_EXPECTED: ${{ needs.changes.outputs.desktop }}
       DESKTOP_RESULT: ${{ needs['desktop-linux'].result }}
+      SKILL_BOOTSTRAP_EXPECTED: ${{ needs.changes.outputs.skill_bootstrap }}
+      SKILL_BOOTSTRAP_RESULT: ${{ needs['skill-bootstrap'].result }}
+      SKILL_NATIVE_EXPECTED: ${{ needs.changes.outputs.skill_native }}
+      SKILL_NATIVE_RESULT: ${{ needs['skill-native'].result }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0

@@ -1,0 +1,57 @@
+[
+  {
+    "coverage_id": "src%2Frouter.ts%23POST%20%2Fusers%2F%3Aid::src%2Fauthz.ts%23requireOwner::packages%2Fapi::ATTACK-CLASSES.md%23Access%20control",
+    "canonical_refs": {
+      "surface": "src/router.ts#POST /users/:id",
+      "boundary": "src/authz.ts#requireOwner",
+      "subsystem": "packages/api",
+      "attack_class": "ATTACK-CLASSES.md#Access control"
+    },
+    "surface": "Update-user route",
+    "boundary": "Object ownership",
+    "subsystem": "API",
+    "attack_class": "Access control",
+    "starting_paths": [
+      "src/router.ts",
+      "src/authz.ts"
+    ],
+    "ordinary_attack_class_block": "ATTACK-CLASSES.md#Access control",
+    "selected_companion_blocks": [],
+    "excluded_blocks": [
+      {
+        "block": "WEB-PROTOCOL-AND-AUTH.md#Cache behavior",
+        "reason": "The route is not cached."
+      }
+    ],
+    "prior_status": "new",
+    "attempts": [],
+    "wave": 1,
+    "status": "candidate",
+    "agent_id": "hunter-1",
+    "reviewed_paths": [
+      "src/handler.c",
+      "src/model.c",
+      "src/store.c"
+    ],
+    "local_checks": [
+      {
+        "agent_id": "hunter-1",
+        "reviewed_paths": [
+          "src/handler.c",
+          "src/model.c",
+          "src/store.c"
+        ],
+        "invariant": "Only the owner changes an object.",
+        "method": "source",
+        "result": "Synthetic source-only reference fixture.",
+        "artifact": null
+      }
+    ],
+    "result_fingerprints": [
+      "src-handler-missing-check",
+      "src-parser-size-hypothesis",
+      "src-router-auth-bypass"
+    ],
+    "unresolved": []
+  }
+]

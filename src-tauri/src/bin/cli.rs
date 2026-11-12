@@ -1,5 +1,17 @@
+#[path = "../cli/cloudflare_audit.rs"]
+mod cloudflare_audit;
+#[path = "../cli/parent_control.rs"]
+mod parent_control;
+#[path = "../cli/provider_common.rs"]
+mod provider_common;
+#[path = "../cli/runtime_prepare.rs"]
+mod runtime_prepare;
+#[path = "../cli/source_view.rs"]
+mod source_view;
+
 use ai_security_scanner_lib::adapters::builtin_adapter_registry;
 use ai_security_scanner_lib::artifact_store::{ArtifactContext, ArtifactStore};
+use ai_security_scanner_lib::beginner_report::build_beginner_master_report;
 use ai_security_scanner_lib::bootstrap::executor::{
     bootstrap_cleanup_obligation_summary, list_bootstrap_cleanup_obligations,
 };
@@ -16,13 +28,14 @@ use ai_security_scanner_lib::container_runtime::{
     RuntimeCommandProvenance, RuntimePreflight, RuntimeProvider, ScannerCredentialSet,
     cleanup_orphaned_credentials,
 };
+use ai_security_scanner_lib::core_state::CoreState;
 use ai_security_scanner_lib::correlation::correlation_report;
 use ai_security_scanner_lib::demo::build_demo_case;
 use ai_security_scanner_lib::discovery::run_connector;
 use ai_security_scanner_lib::domain::{
-    AssessmentActivity, CaseStatus, CreateCaseRequest, DataClass, DistributionMode, EngineManifest,
-    EngineRunStatus, FindingStatus, ScanPermission, ScopeGrant, SourceConnectionStatus, SourceKind,
-    new_id,
+    AssessmentActivity, AssessmentCase, CaseStatus, CreateCaseRequest, DataClass, DistributionMode,
+    EngineManifest, EngineRunStatus, FindingStatus, ScanPermission, ScopeGrant,
+    SourceConnectionStatus, SourceKind, new_id,
 };
 use ai_security_scanner_lib::error::{AppError, AppResult};
 use ai_security_scanner_lib::export::{
@@ -50,7 +63,11 @@ use ai_security_scanner_lib::product_uninstall::{
 };
 use ai_security_scanner_lib::registry::EngineRegistry;
 use ai_security_scanner_lib::runtime::detect_runtime;
-use ai_security_scanner_lib::storage::Storage;
+use ai_security_scanner_lib::scan_coordinator::{
+    ScanCoordinator, ScanEventKind, ScanEventSink, TerminalJobReconciliation,
+    task_requires_captured_recovery, validate_recovery_without_target_contact,
+};
+use ai_security_scanner_lib::storage::{ScanCommandReceipt, Storage};
 use ai_security_scanner_lib::workspace_snapshot::{
     WorkspaceInputProfile, WorkspaceSnapshotLimits, create_workspace_snapshot_with_profile,
     resolve_workspace_snapshot,
@@ -65,6 +82,9 @@ use std::collections::{BTreeMap, BTreeSet};
 use std::fs::{self, OpenOptions};
 use std::io::{self, Read, Write};
 use std::path::{Component, Path, PathBuf};
+use std::sync::atomic::{AtomicBool, AtomicU8, AtomicUsize, Ordering};
+use std::sync::{Arc, Mutex};
+use std::time::{Duration, Instant};
 
 #[cfg(unix)]
 use std::os::unix::fs::OpenOptionsExt;
@@ -119,6 +139,23 @@ struct Cli {
 
 #[derive(Debug, Subcommand)]
 enum Command {
+    /// Inspect this binary's build identity without opening data or a runtime.
+    BuildIdentity,
+    /// Validate provider documents without running an audit or importing findings.
+    Provider {
+        #[command(subcommand)]
+        command: ProviderCommand,
+    },
+    /// Preserve, verify, and restore a private portable case archive.
+    Archive {
+        #[command(subcommand)]
+        command: ArchiveCommand,
+    },
+    /// Freeze, inspect, retrieve, or replay a terminal report without scanners.
+    Report {
+        #[command(subcommand)]
+        command: ReportCommand,
+    },
     #[cfg(feature = "installer-runtime-cache")]
     /// Verify and seed the installed package's exact managed-runtime payload
     /// into private state before the desktop first opens.
@@ -151,7 +188,7 @@ enum Command {
         #[command(subcommand)]
         command: FindingCommand,
     },
-    /// Plan and inspect scans. Planning never starts a scanner process.
+    /// Plan, run, recover, and inspect scans. Planning never starts a scanner process.
     Scan {
         #[command(subcommand)]
         command: ScanCommand,
@@ -663,10 +700,15 @@ impl From<PermissionArg> for ScanPermission {
 enum ScanCommand {
     /// Persist an immutable, credential-free dispatch plan. Does not execute it.
     Plan(ScanPlanArgs),
+    /// Own a foreground scan until its exact result is saved. Uses existing approved scope.
+    Run(ForegroundScanArgs),
+    /// Reparse captured results or clean exact recorded resources after an owner has ended.
+    Recover(ForegroundRecoveryArgs),
     /// Request execution without accepting credentials on the command line.
     Start(ScanTransitionArgs),
     /// Persist a new plan tied to a terminal baseline. Does not execute it.
     RescanPlan(RescanPlanArgs),
+    /// Read saved progress without migrations, recovery, or an execution-owner lease.
     Status(ScanStatusArgs),
     Pause(ScanTransitionArgs),
     Resume(ScanTransitionArgs),
@@ -690,6 +732,42 @@ struct ScanPlanArgs {
     /// applicable to the case assets and effective scope grants.
     #[arg(long, value_delimiter = ',')]
     engine: Vec<String>,
+}
+
+#[derive(Debug, Args)]
+struct ForegroundScanArgs {
+    #[arg(long)]
+    case_id: String,
+    /// Remain the execution owner until the durable result or recovery obligation is saved.
+    #[arg(long, required = true)]
+    wait: bool,
+    /// Exact engine IDs. Omit to use applicable checks within existing approved scope.
+    #[arg(long, value_delimiter = ',')]
+    engine: Vec<String>,
+    #[arg(long)]
+    campaign: Option<String>,
+    /// Emit progress records followed by one terminal envelope (the default).
+    #[arg(long, conflicts_with = "json")]
+    ndjson: bool,
+    /// Fixed parent cancellation pipe; EOF also requests cancellation.
+    #[arg(long, hide = true)]
+    bootstrap_control_stdin: bool,
+}
+
+#[derive(Debug, Args)]
+struct ForegroundRecoveryArgs {
+    #[arg(long)]
+    case_id: String,
+    #[arg(long)]
+    run_id: String,
+    #[arg(long, required = true)]
+    wait: bool,
+    /// Emit progress records followed by one terminal envelope (the default).
+    #[arg(long, conflicts_with = "json")]
+    ndjson: bool,
+    /// Fixed parent cancellation pipe; EOF also requests cancellation.
+    #[arg(long, hide = true)]
+    bootstrap_control_stdin: bool,
 }
 
 #[derive(Debug, Args)]
@@ -757,6 +835,14 @@ enum ExportIdentityCommand {
 
 #[derive(Debug, Args)]
 struct ExportCombineArgs {
+    /// Include original files; oversized attachments use a private full-case archive.
+    #[arg(long, requires_all = ["acknowledge_sensitive_raw_artifacts", "acknowledge_sensitive_data"])]
+    include_raw_artifacts: bool,
+    #[arg(long)]
+    acknowledge_sensitive_raw_artifacts: bool,
+    /// Allow a private archive containing the complete case and all recorded evidence if needed.
+    #[arg(long)]
+    acknowledge_sensitive_data: bool,
     #[arg(long)]
     case_id: String,
     /// Two to sixteen explicit source run IDs, separated by commas or repeated.
@@ -801,6 +887,108 @@ struct ExportCreateArgs {
     /// Explicit acknowledgement required with --include-raw-artifacts.
     #[arg(long)]
     acknowledge_sensitive_raw_artifacts: bool,
+}
+
+#[derive(Debug, Subcommand)]
+enum ArchiveCommand {
+    /// Save complete case data, raw evidence and frozen terminal reports.
+    Create(ArchiveCreateArgs),
+    /// Verify all bytes and references without opening a workspace or runtime.
+    Verify {
+        #[arg(long)]
+        archive: PathBuf,
+    },
+    /// Inspect restoration into a new workspace without publishing anything.
+    RestorePreview(ArchiveRestorePreviewArgs),
+    /// Restore into a new workspace with scan authority and connections disabled.
+    Restore(ArchiveRestoreArgs),
+}
+
+#[derive(Debug, Args)]
+struct ArchiveCreateArgs {
+    #[arg(long)]
+    case_id: String,
+    #[arg(long)]
+    destination: PathBuf,
+    /// Archives contain unredacted case context and all recorded raw evidence.
+    #[arg(long, required = true)]
+    acknowledge_sensitive_data: bool,
+    /// Include recorded immutable source snapshots; never reads the current target tree.
+    #[arg(long)]
+    include_source_snapshots: bool,
+    /// Include original prior exports and mandatory coverage companions.
+    #[arg(long)]
+    include_export_files: bool,
+    /// Additionally preserve an earlier saved report snapshot. Repeat as needed.
+    #[arg(long = "report-snapshot")]
+    report_snapshots: Vec<PathBuf>,
+}
+
+#[derive(Debug, Args)]
+struct ArchiveRestorePreviewArgs {
+    #[arg(long)]
+    archive: PathBuf,
+    #[arg(long)]
+    destination: PathBuf,
+}
+
+#[derive(Debug, Args)]
+struct ArchiveRestoreArgs {
+    #[arg(long)]
+    archive: PathBuf,
+    #[arg(long)]
+    destination: PathBuf,
+    /// Restore private case context, selected source files and raw evidence locally.
+    #[arg(long, required = true)]
+    acknowledge_sensitive_data: bool,
+}
+
+#[derive(Debug, Subcommand)]
+enum ReportCommand {
+    /// Save original HTML/JSON and private frozen inputs for one or more terminal runs.
+    Snapshot(ReportSnapshotArgs),
+    /// Verify saved bytes and report whether this core can replay the snapshot.
+    Inspect {
+        #[arg(long)]
+        snapshot: PathBuf,
+    },
+    /// Re-render a saved report with its exact compatible trusted core.
+    Replay(ReportSavedDocumentArgs),
+    /// Retrieve exact original report bytes, including without a compatible renderer.
+    Retrieve(ReportSavedDocumentArgs),
+}
+
+#[derive(Debug, Args)]
+struct ReportSnapshotArgs {
+    #[arg(long)]
+    case_id: String,
+    /// One source, or two to sixteen ordered sources separated by commas or repeated.
+    #[arg(long, value_delimiter = ',', required = true)]
+    run_id: Vec<String>,
+    /// Private snapshot filename. Existing files are never overwritten.
+    #[arg(long)]
+    destination: PathBuf,
+    /// Snapshots retain unredacted local case context even when report output is redacted.
+    #[arg(long, required = true)]
+    acknowledge_private_context: bool,
+    #[arg(long, value_enum, default_value_t = RedactionArg::Standard)]
+    redaction: RedactionArg,
+    #[arg(long, value_enum, default_value_t = ReportLocaleArg::En)]
+    locale: ReportLocaleArg,
+    #[arg(long, requires = "acknowledge_sensitive_raw_artifacts")]
+    include_raw_artifacts: bool,
+    #[arg(long)]
+    acknowledge_sensitive_raw_artifacts: bool,
+}
+
+#[derive(Debug, Args)]
+struct ReportSavedDocumentArgs {
+    #[arg(long)]
+    snapshot: PathBuf,
+    #[arg(long, value_enum)]
+    format: CombinedExportFormatArg,
+    #[arg(long)]
+    destination: PathBuf,
 }
 
 #[derive(Debug, Clone, Copy, ValueEnum)]
@@ -885,6 +1073,8 @@ enum EngineCommand {
 
 #[derive(Debug, Subcommand)]
 enum RuntimeCommand {
+    /// Prepare only the selected pinned engines; does not scan or authorize targets.
+    Prepare(runtime_prepare::PrepareArgs),
     /// Manage the app-private, release-pinned local runtime.
     Managed {
         #[command(subcommand)]
@@ -996,20 +1186,63 @@ async fn main() {
         data_dir: matches.value_source("data_dir"),
         managed_runtime_bundle: matches.value_source("managed_runtime_bundle"),
     };
-    let cli = Cli::from_arg_matches(&matches).unwrap_or_else(|error| error.exit());
+    let cli = parse_cli_matches(&matches).unwrap_or_else(|error| error.exit());
     let json_errors = cli.json;
+    let temporary_operation = match &cli.command {
+        Command::Provider {
+            command: ProviderCommand::Cloudflare { command },
+        } => match command {
+            CloudflareCommand::ValidateDocument { .. } => Some("validate-document"),
+            CloudflareCommand::ValidateBundle { .. } => Some("validate-bundle"),
+            CloudflareCommand::RetainBundle { .. } => Some("retain-bundle"),
+            _ => None,
+        },
+        _ => None,
+    };
     match execute(cli, option_sources).await {
         Ok(0) => {}
         Ok(exit_code) => std::process::exit(i32::from(exit_code)),
         Err(error) => {
+            if matches!(error, AppError::UnsafeTemporaryDirectory)
+                && let Some(operation) = temporary_operation
+            {
+                let value = provider_common::error(provider_common::envelope(operation), error);
+                std::process::exit(i32::from(provider_common::deliver(value, json_errors)));
+            }
             if json_errors {
-                eprintln!("{}", json!({ "error": error.to_string() }));
+                eprintln!(
+                    "{}",
+                    json!({ "error": error.to_string(), "error_code": foreground_error_class(&error).1 })
+                );
             } else {
                 eprintln!("error: {error}");
             }
             std::process::exit(1);
         }
     }
+}
+
+fn parse_cli_matches(matches: &clap::ArgMatches) -> Result<Cli, clap::Error> {
+    let cli = Cli::from_arg_matches(matches)?;
+    let ndjson = match &cli.command {
+        Command::Scan {
+            command: ScanCommand::Run(args),
+        } => args.ndjson,
+        Command::Scan {
+            command: ScanCommand::Recover(args),
+        } => args.ndjson,
+        _ => false,
+    };
+    // Clap validates a subcommand before propagating an ancestor's global
+    // values. Check this cross-level conflict after propagation, still before
+    // any command dispatch or workspace initialization.
+    if cli.json && ndjson {
+        return Err(Cli::command().error(
+            clap::error::ErrorKind::ArgumentConflict,
+            "--json cannot be used with --ndjson",
+        ));
+    }
+    Ok(cli)
 }
 
 #[derive(Debug, Clone, Copy, Default)]
@@ -1071,7 +1304,1120 @@ impl GlobalOptionSources {
     }
 }
 
+const FOREGROUND_COMMAND_SCHEMA: &str = "ai-security-scanner.scan-command/v1";
+const FOREGROUND_EVENT_SCHEMA: &str = "ai-security-scanner.scan-event/v1";
+const FOREGROUND_POLL: Duration = Duration::from_millis(25);
+
+#[derive(Clone)]
+struct ForegroundRequest {
+    operation: &'static str,
+    request_id: String,
+    case_id: String,
+    run_id: Option<String>,
+    plan: ScanPlanRequest,
+    data_dir: Option<PathBuf>,
+    managed_runtime_bundle: Option<PathBuf>,
+    release_approved_local_image_directory: Option<PathBuf>,
+}
+
+const FOREGROUND_OUTPUT_DEADLINE: Duration = Duration::from_secs(2);
+
+struct ForegroundOutputLine {
+    bytes: Vec<u8>,
+    acknowledge: Option<std::sync::mpsc::Sender<Result<(), String>>>,
+}
+
+struct ForegroundOutput {
+    request_id: String,
+    json_only: bool,
+    run_id: Mutex<Option<String>>,
+    writer: Mutex<Option<std::sync::mpsc::SyncSender<ForegroundOutputLine>>>,
+    writer_thread: Mutex<Option<std::thread::JoinHandle<()>>>,
+    failed: Arc<AtomicBool>,
+    inflight: Arc<Mutex<Option<Instant>>>,
+    pending: Arc<AtomicUsize>,
+    stop: Arc<AtomicU8>,
+}
+
+impl ForegroundOutput {
+    fn new(request: &ForegroundRequest, json_only: bool, stop: Arc<AtomicU8>) -> io::Result<Self> {
+        let (send, receive) = std::sync::mpsc::sync_channel::<ForegroundOutputLine>(32);
+        let failed = Arc::new(AtomicBool::new(false));
+        let inflight = Arc::new(Mutex::new(None));
+        let pending = Arc::new(AtomicUsize::new(0));
+        let (thread_failed, thread_inflight, thread_pending, thread_stop) = (
+            failed.clone(),
+            inflight.clone(),
+            pending.clone(),
+            stop.clone(),
+        );
+        // This thread holds only stdout and delivery health. It never owns a
+        // scanner, runtime, database, coordinator, or data-directory lease.
+        let writer_thread = std::thread::Builder::new()
+            .name("foreground-stdout".into())
+            .spawn(move || {
+                let mut stdout = io::stdout();
+                while let Ok(line) = receive.recv() {
+                    *thread_inflight
+                        .lock()
+                        .unwrap_or_else(std::sync::PoisonError::into_inner) = Some(Instant::now());
+                    let result = stdout.write_all(&line.bytes).and_then(|()| stdout.flush());
+                    *thread_inflight
+                        .lock()
+                        .unwrap_or_else(std::sync::PoisonError::into_inner) = None;
+                    thread_pending.fetch_sub(1, Ordering::AcqRel);
+                    let failed_write = result.is_err();
+                    if failed_write {
+                        thread_failed.store(true, Ordering::Release);
+                        let _ =
+                            thread_stop.compare_exchange(0, 4, Ordering::AcqRel, Ordering::Acquire);
+                    }
+                    let terminal = line.acknowledge.is_some();
+                    if let Some(acknowledge) = line.acknowledge {
+                        let _ = acknowledge.send(result.map_err(|error| error.to_string()));
+                    }
+                    if failed_write || terminal {
+                        break;
+                    }
+                }
+            })?;
+        Ok(Self {
+            request_id: request.request_id.clone(),
+            json_only,
+            run_id: Mutex::new(request.run_id.clone()),
+            writer: Mutex::new(Some(send)),
+            writer_thread: Mutex::new(Some(writer_thread)),
+            failed,
+            inflight,
+            pending,
+            stop,
+        })
+    }
+
+    fn mark_failed(&self) {
+        self.failed.store(true, Ordering::Release);
+        let _ = self
+            .stop
+            .compare_exchange(0, 4, Ordering::AcqRel, Ordering::Acquire);
+    }
+
+    fn check_delivery(&self) {
+        let expired = self
+            .inflight
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner)
+            .is_some_and(|started| started.elapsed() >= FOREGROUND_OUTPUT_DEADLINE);
+        if expired {
+            self.mark_failed();
+        }
+    }
+
+    fn enqueue(
+        &self,
+        value: &Value,
+        acknowledge: Option<std::sync::mpsc::Sender<Result<(), String>>>,
+    ) -> io::Result<()> {
+        self.check_delivery();
+        if self.failed.load(Ordering::Acquire) {
+            return Err(io::Error::new(
+                io::ErrorKind::BrokenPipe,
+                "scan output is unavailable",
+            ));
+        }
+        let mut bytes = serde_json::to_vec(value).map_err(io::Error::other)?;
+        bytes.push(b'\n');
+        self.pending.fetch_add(1, Ordering::AcqRel);
+        let queued = self
+            .writer
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner)
+            .as_ref()
+            .is_some_and(|writer| {
+                writer
+                    .try_send(ForegroundOutputLine { bytes, acknowledge })
+                    .is_ok()
+            });
+        if !queued {
+            self.pending.fetch_sub(1, Ordering::AcqRel);
+            self.mark_failed();
+            return Err(io::Error::new(
+                io::ErrorKind::BrokenPipe,
+                "scan output queue cannot accept another record",
+            ));
+        }
+        Ok(())
+    }
+
+    fn write(&self, value: &Value) -> io::Result<()> {
+        self.enqueue(value, None)
+    }
+
+    fn settle_events(&self) {
+        let started = Instant::now();
+        while self.pending.load(Ordering::Acquire) > 0 && !self.failed.load(Ordering::Acquire) {
+            self.check_delivery();
+            if started.elapsed() >= FOREGROUND_OUTPUT_DEADLINE {
+                self.mark_failed();
+                break;
+            }
+            std::thread::sleep(FOREGROUND_POLL);
+        }
+    }
+
+    fn finish(&self, terminal: &Value) -> io::Result<()> {
+        let (acknowledge, receive) = std::sync::mpsc::channel();
+        let result = self.enqueue(terminal, Some(acknowledge)).and_then(|()| {
+            receive
+                .recv_timeout(FOREGROUND_OUTPUT_DEADLINE)
+                .map_err(|error| io::Error::new(io::ErrorKind::TimedOut, error.to_string()))?
+                .map_err(io::Error::other)
+        });
+        self.writer
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner)
+            .take();
+        if result.is_err() {
+            self.mark_failed();
+        }
+        if let Some(thread) = self
+            .writer_thread
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner)
+            .take()
+            && (result.is_ok() || thread.is_finished())
+        {
+            let _ = thread.join();
+        }
+        // A permanently blocked stdout thread may outlive this bounded
+        // delivery attempt. Every scanner/preparer and CoreState has already
+        // finished before the CLI exits 4, which terminates this I/O-only
+        // thread. No scan ownership is detached and no inherited fd flags
+        // are changed.
+        result
+    }
+}
+
+impl ScanEventSink for ForegroundOutput {
+    fn emit(&self, kind: ScanEventKind, case: &AssessmentCase) -> AppResult<()> {
+        // Returning an error publishes cancellation through the coordinator
+        // before another task is dispatched. The owner still joins the worker.
+        if self.stop.load(Ordering::Acquire) != 0 {
+            return Err(AppError::Runtime(
+                "foreground scan cancellation was requested".into(),
+            ));
+        }
+        if self.json_only {
+            return Ok(());
+        }
+        let selected = self
+            .run_id
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner);
+        let run = match selected.as_deref() {
+            Some(id) => case.scan_runs.iter().find(|run| run.id == id),
+            None => case.scan_runs.last(),
+        };
+        let runs = run.into_iter().map(|run| json!({
+            "run_id": run.id,
+            "task_count": run.engine_runs.len(),
+            "tasks": run.engine_runs.iter().take(256).map(foreground_task_summary).collect::<Vec<_>>(),
+            "tasks_truncated": run.engine_runs.len() > 256,
+        })).collect::<Vec<_>>();
+        self.write(&json!({
+            "schema_version": FOREGROUND_EVENT_SCHEMA,
+            "type": "event",
+            "event": match kind { ScanEventKind::Progress => "progress", ScanEventKind::Finished => "finished" },
+            "request_id": self.request_id,
+            "case_id": case.id,
+            "runs": runs,
+        })).map_err(|error| AppError::Runtime(format!("foreground output failed: {error}")))
+    }
+}
+
+fn foreground_task_summary(task: &ai_security_scanner_lib::domain::EngineRun) -> Value {
+    json!({
+        "task_id": task.id,
+        "engine_id": task.engine_id,
+        "status": task.status,
+        "phase": task.phase.chars().take(256).collect::<String>(),
+        "error_code": task.error_code,
+    })
+}
+
+fn foreground_error_class(error: &AppError) -> (u8, &'static str, bool) {
+    ai_security_scanner_lib::error::foreground_error_class(error)
+}
+
+fn foreground_terminal(
+    request: &ForegroundRequest,
+    run_id: Option<&str>,
+    exit_code: u8,
+    outcome: &str,
+    error_code: Option<&str>,
+    retryable: bool,
+    result: Value,
+) -> Value {
+    json!({
+        "schema_version": FOREGROUND_COMMAND_SCHEMA,
+        "type": "terminal",
+        "operation": request.operation,
+        "request_id": request.request_id,
+        "command_outcome": outcome,
+        "error_code": error_code,
+        "retryable": retryable,
+        "exit_code": exit_code,
+        "case_id": request.case_id,
+        "run_id": run_id,
+        "result": result,
+        "receipt": null,
+        "case_revision": null,
+    })
+}
+
+fn foreground_rejected(request: &ForegroundRequest, error: AppError) -> Value {
+    let (code, name, retryable) = foreground_error_class(&error);
+    eprintln!("error: {error}");
+    foreground_terminal(
+        request,
+        request.run_id.as_deref(),
+        code,
+        if code == 4 { "failed" } else { "rejected" },
+        Some(name),
+        retryable,
+        Value::Null,
+    )
+}
+
+async fn execute_foreground_scan(cli: &Cli) -> u8 {
+    let (operation, case_id, run_id, plan, parent_control) = match &cli.command {
+        Command::Scan {
+            command: ScanCommand::Run(args),
+        } => (
+            "scan.run",
+            args.case_id.clone(),
+            None,
+            ScanPlanRequest {
+                campaign_id: args.campaign.clone(),
+                engine_ids: args.engine.clone(),
+                engine_asset_routes: Vec::new(),
+            },
+            args.bootstrap_control_stdin,
+        ),
+        Command::Scan {
+            command: ScanCommand::Recover(args),
+        } => (
+            "scan.recover",
+            args.case_id.clone(),
+            Some(args.run_id.clone()),
+            ScanPlanRequest::default(),
+            args.bootstrap_control_stdin,
+        ),
+        _ => unreachable!("foreground dispatch requires run or recover"),
+    };
+    let request = ForegroundRequest {
+        operation,
+        request_id: new_id(),
+        case_id,
+        run_id,
+        plan,
+        data_dir: cli.data_dir.clone(),
+        managed_runtime_bundle: cli.managed_runtime_bundle.clone(),
+        release_approved_local_image_directory: cli.release_approved_local_image_directory.clone(),
+    };
+    let stop = Arc::new(AtomicU8::new(0));
+    let output = match ForegroundOutput::new(&request, cli.json, stop.clone()) {
+        Ok(output) => Arc::new(output),
+        Err(error) => {
+            eprintln!("cannot start foreground output: {error}");
+            return 4;
+        }
+    };
+    if parent_control {
+        let control_stop = stop.clone();
+        if let Err(error) = parent_control::listen(move |code| {
+            let _ = control_stop.compare_exchange(0, code, Ordering::AcqRel, Ordering::Acquire);
+        }) {
+            let terminal = foreground_rejected(&request, error.into());
+            let _ = output.finish(&terminal);
+            return 4;
+        }
+    }
+    // Install signal handlers before admission. Signals only request cancellation;
+    // no path abandons a worker, preparer, or its exclusive directory lease.
+    #[cfg(unix)]
+    let signals = (|| -> io::Result<_> {
+        Ok((
+            tokio::signal::unix::signal(tokio::signal::unix::SignalKind::interrupt())?,
+            tokio::signal::unix::signal(tokio::signal::unix::SignalKind::terminate())?,
+        ))
+    })();
+    #[cfg(unix)]
+    let (mut interrupt, mut terminate) = match signals {
+        Ok(signals) => signals,
+        Err(error) => {
+            let terminal = foreground_rejected(
+                &request,
+                AppError::Internal(format!(
+                    "cannot install foreground signal handlers: {error}"
+                )),
+            );
+            let _ = output.finish(&terminal);
+            return 4;
+        }
+    };
+    #[cfg(not(unix))]
+    let interrupt = tokio::signal::ctrl_c();
+    #[cfg(not(unix))]
+    tokio::pin!(interrupt);
+
+    let worker_request = request.clone();
+    let worker_output = output.clone();
+    // Runtime/provider clients include blocking resources. Construct, run, join,
+    // and drop all of them on this blocking owner, outside Tokio's async worker.
+    let mut owner = tokio::task::spawn_blocking(move || {
+        foreground_owned_operation(&worker_request, &worker_output).unwrap_or_else(|error| {
+            let mut terminal = foreground_rejected(&worker_request, error);
+            terminal["run_id"] = json!(
+                worker_output
+                    .run_id
+                    .lock()
+                    .unwrap_or_else(std::sync::PoisonError::into_inner)
+                    .as_deref()
+            );
+            terminal
+        })
+    });
+    let joined = loop {
+        #[cfg(unix)]
+        tokio::select! {
+            completed = &mut owner => break completed,
+            _ = interrupt.recv() => { let _ = stop.compare_exchange(0, 130, Ordering::AcqRel, Ordering::Acquire); },
+            _ = terminate.recv() => { let _ = stop.compare_exchange(0, 143, Ordering::AcqRel, Ordering::Acquire); },
+        }
+        #[cfg(not(unix))]
+        tokio::select! {
+            completed = &mut owner => break completed,
+            signal = &mut interrupt, if stop.load(Ordering::Acquire) == 0 => {
+                match signal {
+                    Ok(()) => { let _ = stop.compare_exchange(0, 130, Ordering::AcqRel, Ordering::Acquire); },
+                    Err(error) => { eprintln!("foreground signal handler failed: {error}"); let _ = stop.compare_exchange(0, 4, Ordering::AcqRel, Ordering::Acquire); },
+                }
+            },
+        }
+    };
+    let terminal = match joined {
+        Ok(terminal) => terminal,
+        Err(error) => foreground_terminal(
+            &request,
+            request.run_id.as_deref(),
+            4,
+            "failed",
+            Some("owner_failed"),
+            true,
+            json!({"detail": error.to_string()}),
+        ),
+    };
+    let exit_code = terminal["exit_code"].as_u64().unwrap_or(4) as u8;
+    if let Err(error) = output.finish(&terminal) {
+        // The receipt was committed before attempting the final write. A broken
+        // acknowledgement cannot relaunch work or change that immutable receipt.
+        eprintln!(
+            "foreground output failed: {error}; inspect scan status for the saved command receipt (request {})",
+            request.request_id
+        );
+        return 4;
+    }
+    exit_code
+}
+
+fn foreground_owned_operation(
+    request: &ForegroundRequest,
+    output: &Arc<ForegroundOutput>,
+) -> AppResult<Value> {
+    let data_dir = resolve_data_dir(request.data_dir.clone())?;
+    if !data_dir.join("casework.db").is_file() {
+        return Err(AppError::NotAvailable(
+            "foreground execution requires an existing case database".into(),
+        ));
+    }
+    let lease = DataDirectoryExclusiveLease::acquire(&data_dir)?;
+    let storage = Storage::open(data_dir.join("casework.db"))?;
+    let before = storage.get_case(&request.case_id)?;
+    if request.run_id.as_ref().is_some_and(|id| {
+        before
+            .scan_runs
+            .iter()
+            .filter(|r| &r.id == id)
+            .flat_map(|r| &r.engine_runs)
+            .any(|t| {
+                matches!(
+                    t.task_kind,
+                    ai_security_scanner_lib::domain::EngineTaskKind::AgentAuditFailure { .. }
+                )
+            })
+    }) {
+        return Err(AppError::NotAvailable("Replay the identical Cloudflare preparation or termination request to retain its report.".into()));
+    }
+    if let Some(run_id) = &request.run_id
+        && before
+            .scan_runs
+            .iter()
+            .filter(|r| &r.id == run_id)
+            .flat_map(|r| &r.engine_runs)
+            .any(|t| {
+                matches!(
+                    t.task_kind,
+                    ai_security_scanner_lib::domain::EngineTaskKind::AgentAudit { .. }
+                )
+            })
+    {
+        // An admitted audit is immutable saved work, never a scanner recovery job.
+        ai_security_scanner_lib::agent_audit_admission::check_format(&before)?;
+        let retained =
+            ai_security_scanner_lib::cloudflare_provider::audit::admit::retain_report_snapshot(
+                &storage,
+                &data_dir,
+                &request.case_id,
+                run_id,
+            );
+        return Ok(match retained {
+            Ok(case) => {
+                let (mut result, _) = foreground_result(&case, run_id)?;
+                result["report_snapshot_state"] = json!("retained");
+                foreground_terminal(request, Some(run_id), 0, "completed", None, false, result)
+            }
+            Err(error) => {
+                let (exit_code, code, retryable) = foreground_error_class(&error);
+                let mut result = json!({"next_operation":"admit_replay", "next_action":"Replay the original provider cloudflare admit request."});
+                ai_security_scanner_lib::cloudflare_provider::audit::admit::snapshot_failure(
+                    &mut result,
+                    &error,
+                );
+                foreground_terminal(
+                    request,
+                    Some(run_id),
+                    exit_code,
+                    if retryable { "failed" } else { "rejected" },
+                    Some(code),
+                    retryable,
+                    result,
+                )
+            }
+        });
+    }
+    let before_runs = before
+        .scan_runs
+        .iter()
+        .map(|run| run.id.clone())
+        .collect::<BTreeSet<_>>();
+    let artifact_root = data_dir.join("artifacts");
+    fs::create_dir_all(&artifact_root)?;
+    let mut state = CoreState::new(
+        storage,
+        EngineRegistry::load_builtin()?,
+        builtin_adapter_registry()?,
+        artifact_root,
+        data_dir.join("integrity-signing-key"),
+    )
+    .with_process_lease(lease);
+    match open_managed_runtime_manager(&data_dir, request.managed_runtime_bundle.as_deref()) {
+        Ok(manager) => state = state.with_managed_runtime(manager),
+        Err(error) if request.managed_runtime_bundle.is_some() => {
+            state = state.with_runtime_initialization_error(error.to_string())
+        }
+        // A source checkout without a managed package may use an already
+        // installed compatibility provider through the shared runtime policy.
+        Err(_) => {}
+    }
+    if let Some(directory) = &request.release_approved_local_image_directory {
+        state = state.with_release_approved_local_image_directory(directory.clone());
+    }
+    let state = Arc::new(state);
+    let coordinator = ScanCoordinator::new(state.clone(), output.clone());
+    if output.stop.load(Ordering::Acquire) != 0 {
+        let code = output.stop.load(Ordering::Acquire);
+        return Ok(foreground_terminal(
+            request,
+            request.run_id.as_deref(),
+            code,
+            if code == 4 { "failed" } else { "interrupted" },
+            Some(if code == 4 {
+                "cancellation_control_failed"
+            } else {
+                "interrupted"
+            }),
+            true,
+            Value::Null,
+        ));
+    }
+    let admitted = match &request.run_id {
+        Some(run_id) => coordinator.recover_owned(&request.case_id, run_id),
+        None => coordinator.start_owned(&request.case_id, Vec::new(), request.plan.clone()),
+    };
+    let mut failure: Option<(&'static str, String)> = None;
+    let (run_id, owned_job) = match admitted {
+        Ok(admission) => {
+            let exact_run = admission
+                .snapshot
+                .as_ref()
+                .map(|snapshot| snapshot.key.scan_run_id.clone())
+                .or_else(|| {
+                    admission
+                        .owned_job
+                        .as_ref()
+                        .map(|job| job.initial_snapshot().key.scan_run_id.clone())
+                })
+                .or_else(|| request.run_id.clone())
+                .or_else(|| {
+                    admission
+                        .case
+                        .scan_runs
+                        .iter()
+                        .find(|run| !before_runs.contains(&run.id))
+                        .map(|run| run.id.clone())
+                });
+            (exact_run, admission.owned_job)
+        }
+        Err(error) => {
+            // Admission may have persisted a run before a later local failure.
+            // Preserve that exact run instead of confusing it with an older run.
+            let _ = coordinator.join_preparers();
+            let after = state.storage.get_case(&request.case_id)?;
+            let created = after
+                .scan_runs
+                .iter()
+                .find(|run| !before_runs.contains(&run.id))
+                .map(|run| run.id.clone());
+            if created.is_none() {
+                return Err(error);
+            }
+            failure = Some(("admission_failed", error.to_string()));
+            (created, None)
+        }
+    };
+    let run_id = run_id.ok_or_else(|| {
+        AppError::Internal("foreground admission returned no exact run identity".into())
+    })?;
+    *output
+        .run_id
+        .lock()
+        .unwrap_or_else(std::sync::PoisonError::into_inner) = Some(run_id.clone());
+    if let Some(job) = owned_job {
+        let mut cancel_attempts = 0;
+        while !job.is_finished() {
+            output.check_delivery();
+            if output.stop.load(Ordering::Acquire) != 0 && cancel_attempts < 3 {
+                cancel_attempts += 1;
+                match coordinator.cancel_owned(&request.case_id, &run_id) {
+                    Ok(()) => {
+                        cancel_attempts = 3;
+                        if failure
+                            .as_ref()
+                            .is_some_and(|(code, _)| *code == "cancellation_failed")
+                        {
+                            failure = None;
+                        }
+                    }
+                    Err(error) => {
+                        failure = Some(("cancellation_failed", error.to_string()));
+                    }
+                }
+            }
+            std::thread::sleep(FOREGROUND_POLL);
+        }
+        match job.join() {
+            Ok(completion) => {
+                if completion.callback_panicked {
+                    failure = Some((
+                        "callback_failed",
+                        "foreground completion callback panicked".into(),
+                    ));
+                }
+                let mut reconciled = false;
+                for _ in 0..3 {
+                    match coordinator.reconcile_terminal(&completion.snapshot) {
+                        Ok(TerminalJobReconciliation::Reconciled) => {
+                            reconciled = true;
+                            if failure
+                                .as_ref()
+                                .is_some_and(|(code, _)| *code == "terminal_reconciliation_failed")
+                            {
+                                failure = None;
+                            }
+                            break;
+                        }
+                        Ok(TerminalJobReconciliation::InProgress) => {}
+                        Ok(TerminalJobReconciliation::NotCurrent) => {
+                            failure = Some((
+                                "terminal_reconciliation_failed",
+                                "the exact worker generation was not current for reconciliation"
+                                    .into(),
+                            ));
+                            break;
+                        }
+                        Err(error) => {
+                            failure = Some(("terminal_reconciliation_failed", error.to_string()));
+                        }
+                    }
+                    std::thread::sleep(FOREGROUND_POLL);
+                }
+                if !reconciled && failure.is_none() {
+                    failure = Some((
+                        "terminal_reconciliation_failed",
+                        "terminal reconciliation remains in progress".into(),
+                    ));
+                }
+            }
+            Err(error) => {
+                failure = Some(("worker_join_failed", error.to_string()));
+            }
+        }
+    }
+    if let Err(error) = coordinator.join_preparers() {
+        failure = Some(("preparation_join_failed", error.to_string()));
+    }
+    output.settle_events();
+    if let Err(error) = state
+        .case_service()
+        .retain_terminal_report_snapshot(&request.case_id, &run_id)
+    {
+        failure = Some(("terminal_report_snapshot_failed", error.to_string()));
+    }
+    let case = state.storage.get_case(&request.case_id)?;
+    let (result, recovery_required) = foreground_result(&case, &run_id)?;
+    let stop = output.stop.load(Ordering::Acquire);
+    let recovery_retryable = request.operation == "scan.recover"
+        && (result["recovery"]["available_without_target_contact"]
+            .as_bool()
+            .unwrap_or(false)
+            || result["report_snapshot_retry_command"].is_array());
+    let (exit_code, outcome, error_code, retryable) = if matches!(stop, 130 | 143) {
+        (stop, "interrupted", Some("interrupted"), true)
+    } else if output.failed.load(Ordering::Acquire) {
+        (4, "failed", Some("output_failed"), true)
+    } else if stop == 4 {
+        (4, "failed", Some("cancellation_control_failed"), true)
+    } else if recovery_required {
+        (4, "recovery_required", Some("recovery_required"), true)
+    } else if let Some((code, _)) = &failure {
+        (4, "failed", Some(*code), true)
+    } else {
+        (0, "completed", None, false)
+    };
+    if let Some((_, detail)) = failure {
+        eprintln!("foreground scan: {detail}");
+    }
+    let mut terminal = foreground_terminal(
+        request,
+        Some(&run_id),
+        exit_code,
+        outcome,
+        error_code,
+        retryable && recovery_retryable,
+        result,
+    );
+    let mut payload = terminal.clone();
+    payload
+        .as_object_mut()
+        .expect("terminal object")
+        .remove("receipt");
+    payload
+        .as_object_mut()
+        .expect("terminal object")
+        .remove("case_revision");
+    match state.storage.record_scan_command_receipt(
+        &request.case_id,
+        &run_id,
+        &request.request_id,
+        &payload,
+    ) {
+        Ok(receipt) => {
+            terminal["case_revision"] = json!(receipt.case_revision);
+            terminal["receipt"] = serde_json::to_value(receipt)?;
+        }
+        Err(error) => {
+            eprintln!("foreground command receipt could not be saved: {error}");
+            terminal["exit_code"] = json!(4);
+            terminal["command_outcome"] = json!("failed");
+            terminal["error_code"] = json!("receipt_persistence_failed");
+            terminal["retryable"] = json!(recovery_retryable);
+            terminal["case_revision"] = json!(case.storage_revision());
+        }
+    }
+    Ok(terminal)
+}
+
+fn foreground_result(case: &AssessmentCase, run_id: &str) -> AppResult<(Value, bool)> {
+    let run = case
+        .scan_runs
+        .iter()
+        .find(|run| run.id == run_id)
+        .ok_or_else(|| {
+            AppError::Internal("owned scan run disappeared before acknowledgement".into())
+        })?;
+    let pending = run
+        .engine_runs
+        .iter()
+        .filter(|task| {
+            let terminal_status = matches!(
+                task.status,
+                EngineRunStatus::Completed
+                    | EngineRunStatus::PartiallyCompleted
+                    | EngineRunStatus::Failed
+                    | EngineRunStatus::Cancelled
+                    | EngineRunStatus::NotExecuted
+            );
+            let pending_checkpoint = task
+                .resume_token
+                .as_deref()
+                .map(|token| {
+                    ExecutionCheckpoint::from_resume_token(token)
+                        .map(|checkpoint| {
+                            checkpoint.case_id != case.id
+                                || checkpoint.scan_run_id != run_id
+                                || checkpoint.engine_run_id != task.id
+                                || checkpoint.engine_id != task.engine_id
+                                || !checkpoint.cleanup_completed
+                                || task_requires_captured_recovery(task)
+                                || matches!(
+                                    checkpoint.stage,
+                                    ExecutionStage::CleanupPending
+                                        | ExecutionStage::Running
+                                        | ExecutionStage::CapturingArtifacts
+                                )
+                        })
+                        .unwrap_or(true)
+                })
+                .unwrap_or_else(|| {
+                    task.started_at.is_some()
+                        && task.status != EngineRunStatus::NotExecuted
+                        && matches!(
+                            task.task_kind,
+                            ai_security_scanner_lib::domain::EngineTaskKind::CatalogEngine
+                        )
+                        && task.cleanup_removed != Some(true)
+                });
+            !terminal_status
+                || task.scan_run_id != run.id
+                || pending_checkpoint
+                || matches!(
+                    task.phase.as_str(),
+                    "cleanup_pending"
+                        | "interrupted_restart"
+                        | "interrupted_restart_cleanup_pending"
+                )
+        })
+        .collect::<Vec<_>>();
+    let report = build_beginner_master_report(case, run_id).ok();
+    let recovery_required = !pending.is_empty() || report.is_none();
+    let recovery_available = recovery_required
+        && !pending.is_empty()
+        && pending.iter().all(|task| task.resume_token.is_some())
+        && validate_recovery_without_target_contact(case, run_id).is_ok();
+    let coverage_gaps = report
+        .as_ref()
+        .map(|report| {
+            report
+                .coverage_gaps
+                .iter()
+                .take(128)
+                .map(|gap| {
+                    json!({
+                        "kind": gap.kind, "class": gap.class, "task_id": gap.task_id,
+                        "dimension": gap.dimension.chars().take(256).collect::<String>(),
+                        "reason": gap.reason.chars().take(1024).collect::<String>(),
+                        "next_action_code": gap.next_action_code,
+                    })
+                })
+                .collect::<Vec<_>>()
+        })
+        .unwrap_or_default();
+    let summary = json!({
+        "tasks": run.engine_runs.iter().take(256).map(foreground_task_summary).collect::<Vec<_>>(),
+        "task_count": run.engine_runs.len(),
+        "tasks_truncated": run.engine_runs.len() > 256,
+        "completeness": report.as_ref().map(|report| json!(report.state.summary)).unwrap_or(json!("unknown")),
+        "finding_count": report.as_ref().map(|report| report.findings.len()),
+        "coverage_gap_count": report.as_ref().map(|report| report.coverage_gaps.len()),
+        "coverage_gaps": coverage_gaps,
+        "coverage_gaps_truncated": report.as_ref().is_some_and(|report| report.coverage_gaps.len() > 128),
+        "request_outcome": run.request_outcome,
+        "recovery": {
+            "required": recovery_required,
+            "available_without_target_contact": recovery_available,
+            "status_command": ["scan", "status", "--case-id", case.id.as_str(), "--run-id", run_id],
+            "pending_task_count": pending.len(),
+            "pending_tasks": pending.iter().take(256).map(|task| json!({"task_id":task.id,"phase":task.phase,"runtime_provider":task.runtime_provider,"checkpoint_retained":task.resume_token.is_some()})).collect::<Vec<_>>(),
+            "pending_tasks_truncated": pending.len() > 256,
+            "next_command": recovery_available.then(|| vec!["scan", "recover", "--case-id", case.id.as_str(), "--run-id", run_id, "--wait"]),
+        },
+        "report_snapshot": ai_security_scanner_lib::report_snapshot::current_run_snapshot(case, run_id)?,
+        "report_snapshot_retry_command": (ai_security_scanner_lib::report_snapshot::terminal_snapshot_ready(run)
+            && ai_security_scanner_lib::report_snapshot::current_run_snapshot(case, run_id)?.is_none())
+            .then(|| vec!["scan", "recover", "--case-id", case.id.as_str(), "--run-id", run_id, "--wait"]),
+        // Private snapshots stay in the artifact tree; no share file is exported.
+        "artifacts": [],
+    });
+    Ok((summary, recovery_required))
+}
+
+fn build_identity() -> Value {
+    let optional = |value: &'static str| (!value.is_empty()).then_some(value);
+    json!({
+        "schema_version": "ai-security-scanner.build-identity/v1",
+        "product": "ai-security-scanner",
+        "product_version": env!("CARGO_PKG_VERSION"),
+        "target": env!("AI_SECURITY_SCANNER_BUILD_TARGET"),
+        "rustc_version": String::from_utf8(
+            hex::decode(env!("AI_SECURITY_SCANNER_BUILD_RUSTC_HEX"))
+                .expect("build script encoded compiler identity")
+        ).expect("build script validated compiler identity UTF-8"),
+        "features": env!("AI_SECURITY_SCANNER_BUILD_FEATURES")
+            .split(',').filter(|feature| !feature.is_empty()).collect::<Vec<_>>(),
+        "report_source_sha256": env!("AI_SECURITY_SCANNER_REPORT_CORE_SHA256"),
+        "bootstrap_input_sha256": optional(env!("AI_SECURITY_SCANNER_BOOTSTRAP_INPUT_SHA256")),
+        "bootstrap_recipe": optional(env!("AI_SECURITY_SCANNER_BOOTSTRAP_RECIPE")),
+    })
+}
+
+#[derive(Debug, Subcommand)]
+enum ProviderCommand {
+    Cloudflare {
+        #[command(subcommand)]
+        command: CloudflareCommand,
+    },
+}
+
+#[derive(Debug, Subcommand)]
+enum CloudflareCommand {
+    /// Permanently end an unsealed audit while preserving recorded custody.
+    Terminate {
+        #[arg(long)]
+        request: PathBuf,
+    },
+    /// Record audit preparation without invoking a model or target code.
+    Prepare {
+        #[arg(long)]
+        request: PathBuf,
+    },
+    /// Record assignment issuance or interruption without launching work.
+    Checkpoint {
+        #[arg(long)]
+        request: PathBuf,
+    },
+    /// Validate captured terminal bytes without recording or sealing.
+    Validate {
+        #[arg(long)]
+        request: PathBuf,
+    },
+    /// Seal validated captured bytes and commit workflow-recorded provenance.
+    Finalize {
+        #[arg(long)]
+        request: PathBuf,
+    },
+    /// Admit a verified sealed audit into its existing case.
+    Admit {
+        #[arg(long)]
+        request: PathBuf,
+    },
+    /// Read a historical audit preparation and its descriptor without a writer lease.
+    Status(cloudflare_audit::StatusArgs),
+    /// Recover exact captured document or assignment bytes to a new private file.
+    RetrieveCaptured(cloudflare_audit::RetrieveArgs),
+    /// Fully verify a sealed audit offline against stored custody records.
+    InspectSealed {
+        #[arg(long)]
+        case_id: String,
+        #[arg(long)]
+        session_id: String,
+    },
+    /// Prepare a policy-filtered view from an approved frozen repository.
+    PrepareSourceView(source_view::PrepareArgs),
+    /// Verify a source view offline without acquiring a writer lease.
+    InspectSourceView {
+        #[arg(long)]
+        input: PathBuf,
+        #[arg(long)]
+        expected_manifest_sha256: Option<String>,
+        #[arg(long)]
+        canonical_payload: Option<PathBuf>,
+    },
+    /// Read one historical preparation receipt without acquiring a writer lease.
+    SourceViewStatus {
+        #[arg(long)]
+        case_id: String,
+        #[arg(long)]
+        request_id: String,
+    },
+    /// Preserve validated original files and source view in a new private directory.
+    RetainBundle {
+        #[arg(long)]
+        bundle: PathBuf,
+        #[arg(long)]
+        source_view: PathBuf,
+        #[arg(long)]
+        expected_bundle_sha256: String,
+        #[arg(long)]
+        destination: PathBuf,
+    },
+    /// Verify saved bytes offline without starting Node or a scanner runtime.
+    InspectRetained {
+        #[arg(long)]
+        input: PathBuf,
+        #[arg(long)]
+        expected_retention_sha256: Option<String>,
+    },
+    /// Retrieve one indexed saved member without overwriting an existing file.
+    RetrieveRetained {
+        #[arg(long)]
+        input: PathBuf,
+        #[arg(long)]
+        expected_retention_sha256: String,
+        #[arg(long)]
+        member: String,
+        #[arg(long)]
+        destination: PathBuf,
+    },
+    /// Cross-check a reported bundle and explicit source view without importing it.
+    ValidateBundle {
+        #[arg(long)]
+        bundle: PathBuf,
+        #[arg(long)]
+        source_view: PathBuf,
+    },
+    /// Check one native document; this does not admit a completed audit bundle.
+    ValidateDocument {
+        #[arg(long, value_enum)]
+        document: CloudflareDocumentKind,
+        #[arg(long)]
+        input: PathBuf,
+    },
+}
+
+#[derive(Debug, Clone, Copy, ValueEnum)]
+enum CloudflareDocumentKind {
+    Findings,
+    CoverageLedger,
+}
+
 async fn execute(cli: Cli, option_sources: GlobalOptionSources) -> AppResult<u8> {
+    if matches!(&cli.command, Command::BuildIdentity) {
+        print_value(&build_identity(), cli.json)?;
+        return Ok(0);
+    }
+    if let Command::Provider {
+        command: ProviderCommand::Cloudflare { command },
+    } = &cli.command
+    {
+        if let Some(code) = cloudflare_audit::execute(&cli, command, option_sources).await {
+            return Ok(code);
+        }
+        if let Some(code) = source_view::execute(&cli, command, option_sources).await {
+            return Ok(code);
+        }
+        use ai_security_scanner_lib::cloudflare_provider::retained::{
+            inspect_retained, retain_bundle, retrieve_retained,
+        };
+        match command {
+            CloudflareCommand::RetainBundle {
+                bundle,
+                source_view,
+                expected_bundle_sha256,
+                destination,
+            } => {
+                print_value(
+                    &retain_bundle(bundle, source_view, expected_bundle_sha256, destination)
+                        .await?,
+                    cli.json,
+                )?;
+                return Ok(0);
+            }
+            CloudflareCommand::InspectRetained {
+                input,
+                expected_retention_sha256,
+            } => {
+                print_value(
+                    &inspect_retained(input, expected_retention_sha256.as_deref())?,
+                    cli.json,
+                )?;
+                return Ok(0);
+            }
+            CloudflareCommand::RetrieveRetained {
+                input,
+                expected_retention_sha256,
+                member,
+                destination,
+            } => {
+                print_value(
+                    &retrieve_retained(input, expected_retention_sha256, member, destination)?,
+                    cli.json,
+                )?;
+                return Ok(0);
+            }
+            _ => {}
+        }
+    }
+    if let Command::Provider {
+        command:
+            ProviderCommand::Cloudflare {
+                command:
+                    CloudflareCommand::ValidateBundle {
+                        bundle,
+                        source_view,
+                    },
+            },
+    } = &cli.command
+    {
+        let receipt = ai_security_scanner_lib::cloudflare_provider::bundle::validate_bundle(
+            bundle,
+            source_view,
+        )
+        .await?;
+        let code = if receipt.valid { 0 } else { 2 };
+        print_value(&receipt, cli.json)?;
+        return Ok(code);
+    }
+    if let Command::Provider {
+        command:
+            ProviderCommand::Cloudflare {
+                command: CloudflareCommand::ValidateDocument { document, input },
+            },
+    } = &cli.command
+    {
+        use ai_security_scanner_lib::cloudflare_provider::{CloudflareDocument, validate_document};
+        let document = match document {
+            CloudflareDocumentKind::Findings => CloudflareDocument::Findings,
+            CloudflareDocumentKind::CoverageLedger => CloudflareDocument::CoverageLedger,
+        };
+        let receipt = validate_document(document, input).await?;
+        let code = if receipt.validation.valid { 0 } else { 2 };
+        print_value(&receipt, cli.json)?;
+        return Ok(code);
+    }
+    if let Command::Runtime {
+        command: RuntimeCommand::Prepare(args),
+    } = &cli.command
+    {
+        return Ok(runtime_prepare::execute(&cli, args, option_sources).await);
+    }
+    if matches!(
+        &cli.command,
+        Command::Scan {
+            command: ScanCommand::Run(_) | ScanCommand::Recover(_)
+        }
+    ) {
+        return Ok(execute_foreground_scan(&cli).await);
+    }
+    if let Command::Archive { command } = &cli.command {
+        execute_archive(command, cli.data_dir.clone(), cli.json)?;
+        return Ok(0);
+    }
+    // Saved-report operations are independent of the database, registry,
+    // runtime, signing keys and even the existence of the normal data root.
+    if let Command::Report { command } = &cli.command {
+        execute_report(command, cli.data_dir.clone(), cli.json)?;
+        return Ok(0);
+    }
     #[cfg(feature = "installer-runtime-cache")]
     if matches!(cli.command, Command::WindowsInstallerRuntimeCache) {
         return execute_windows_installer_runtime_cache_early(option_sources);
@@ -1087,6 +2433,19 @@ async fn execute(cli: Cli, option_sources: GlobalOptionSources) -> AppResult<u8>
     let release_approved_local_image_directory = cli.release_approved_local_image_directory;
     let data_dir_was_overridden = cli.data_dir.is_some();
     let data_dir = resolve_data_dir(cli.data_dir)?;
+    // Status must also work while the desktop or a foreground worker owns the
+    // workspace. Dispatch before directory preparation, migrations, permission
+    // changes, runtime initialization, or acquiring any writer lease.
+    if let Command::Scan {
+        command: ScanCommand::Status(args),
+    } = &cli.command
+    {
+        let storage = Storage::open_read_only(data_dir.join("casework.db"))?;
+        let (case, receipts) =
+            read_coherent_scan_status(&storage, &args.case_id, args.run_id.as_deref())?;
+        print_scan_status(&case, args.run_id.as_deref(), &receipts, cli.json)?;
+        return Ok(0);
+    }
     let _product_data_guard: Option<_> = if data_dir_was_overridden {
         prepare_overridden_data_directory(&data_dir)?;
         None
@@ -1135,6 +2494,10 @@ async fn execute(cli: Cli, option_sources: GlobalOptionSources) -> AppResult<u8>
     );
 
     match cli.command {
+        Command::BuildIdentity => unreachable!("build identity is early-dispatched"),
+        Command::Provider { .. } => unreachable!("provider commands are early-dispatched"),
+        Command::Archive { .. } => unreachable!("archive commands are early-dispatched"),
+        Command::Report { .. } => unreachable!("report commands are early-dispatched"),
         Command::ExternalReportPreview { report } => {
             print_value(
                 &ai_security_scanner_lib::external_scanner_import::preview_external_scanner_import(
@@ -1287,6 +2650,113 @@ async fn execute(cli: Cli, option_sources: GlobalOptionSources) -> AppResult<u8>
     }
 
     Ok(0)
+}
+
+fn execute_archive(
+    command: &ArchiveCommand,
+    data_dir: Option<PathBuf>,
+    json_output: bool,
+) -> AppResult<()> {
+    use ai_security_scanner_lib::case_archive;
+    match command {
+        ArchiveCommand::Create(args) => {
+            if !args.acknowledge_sensitive_data {
+                return Err(AppError::InvalidRequest(
+                    "archive creation requires --acknowledge-sensitive-data".into(),
+                ));
+            }
+            let data_dir = resolve_data_dir(data_dir)?;
+            let receipt = case_archive::create_archive(
+                &data_dir,
+                &args.case_id,
+                &args.destination,
+                &case_archive::ArchiveOptions {
+                    include_source_snapshots: args.include_source_snapshots,
+                    include_export_files: args.include_export_files,
+                    report_snapshots: args.report_snapshots.clone(),
+                },
+            )?;
+            print_value(&receipt, json_output)?;
+        }
+        ArchiveCommand::Verify { archive } => {
+            print_value(&case_archive::inspect_archive(archive)?, json_output)?
+        }
+        ArchiveCommand::RestorePreview(args) => print_value(
+            &case_archive::preview_restore(&args.archive, &args.destination)?,
+            json_output,
+        )?,
+        ArchiveCommand::Restore(args) => {
+            if !args.acknowledge_sensitive_data {
+                return Err(AppError::InvalidRequest(
+                    "archive restoration requires --acknowledge-sensitive-data".into(),
+                ));
+            }
+            print_value(
+                &case_archive::restore_archive(&args.archive, &args.destination)?,
+                json_output,
+            )?;
+        }
+    }
+    Ok(())
+}
+
+fn execute_report(
+    command: &ReportCommand,
+    data_dir: Option<PathBuf>,
+    json_output: bool,
+) -> AppResult<()> {
+    use ai_security_scanner_lib::report_snapshot::{ReportDocumentFormat, ReportSnapshot};
+    match command {
+        ReportCommand::Snapshot(args) => {
+            if !args.acknowledge_private_context {
+                return Err(AppError::InvalidRequest(
+                    "report snapshots contain private case context; select --acknowledge-private-context to save one".into(),
+                ));
+            }
+            if args.include_raw_artifacts && !args.acknowledge_sensitive_raw_artifacts {
+                return Err(AppError::InvalidRequest(
+                    "original attachments require --acknowledge-sensitive-raw-artifacts".into(),
+                ));
+            }
+            let data_dir = resolve_data_dir(data_dir)?;
+            let storage = Storage::open_read_only(data_dir.join("casework.db"))?;
+            let case = storage.get_case(&args.case_id)?;
+            let options = ExportOptions {
+                redaction: args.redaction.into(),
+                include_raw_artifacts: args.include_raw_artifacts,
+                locale: args.locale.into(),
+            };
+            let snapshot = if let [run_id] = args.run_id.as_slice() {
+                ReportSnapshot::capture(&case, run_id, options, &data_dir.join("artifacts"))?
+            } else {
+                ReportSnapshot::capture_combined_with_originals(
+                    &case,
+                    &args.run_id,
+                    options,
+                    &data_dir.join("artifacts"),
+                    None,
+                )?
+            };
+            print_value(&snapshot.save(&args.destination)?, json_output)?;
+        }
+        ReportCommand::Inspect { snapshot } => {
+            print_value(&ReportSnapshot::load(snapshot)?.verify()?, json_output)?;
+        }
+        ReportCommand::Replay(args) | ReportCommand::Retrieve(args) => {
+            let snapshot = ReportSnapshot::load(&args.snapshot)?;
+            let format = match args.format {
+                CombinedExportFormatArg::Html => ReportDocumentFormat::Html,
+                CombinedExportFormatArg::Json => ReportDocumentFormat::Json,
+            };
+            let receipt = if matches!(command, ReportCommand::Replay(_)) {
+                snapshot.replay(format, &args.destination)?
+            } else {
+                snapshot.retrieve(format, &args.destination)?
+            };
+            print_value(&receipt, json_output)?;
+        }
+    }
+    Ok(())
 }
 
 fn validate_product_uninstall_option_sources(option_sources: GlobalOptionSources) -> AppResult<()> {
@@ -1534,6 +3004,16 @@ fn command_requires_exclusive_data_directory(command: &Command) -> bool {
         // ProductUninstall is early-dispatched and acquires the same lease
         // before database/catalog initialization.
         Command::ProductUninstall(_) => false,
+        Command::BuildIdentity
+        | Command::Provider { .. }
+        | Command::Archive { .. }
+        | Command::Report { .. } => false,
+        Command::Runtime {
+            command: RuntimeCommand::Prepare(_),
+        } => false,
+        Command::Scan {
+            command: ScanCommand::Status(_),
+        } => false,
         Command::ExternalReportImport { .. } | Command::ExternalReportImportBatch { .. } => true,
         Command::Case {
             command: CaseCommand::Delete { .. } | CaseCommand::DeleteArtifacts { .. },
@@ -1550,7 +3030,10 @@ fn command_requires_exclusive_data_directory(command: &Command) -> bool {
         Command::Export {
             command: ExportCommand::Identity { .. },
         } => true,
-        _ => false,
+        // Every command reaching normal initialization opens writable Storage,
+        // which may migrate even when the selected operation only reads data.
+        // Truly read-only commands dispatch above that initialization path.
+        _ => true,
     }
 }
 
@@ -2116,6 +3599,9 @@ fn execute_scan(
     json_output: bool,
 ) -> AppResult<()> {
     match command {
+        ScanCommand::Run(_) | ScanCommand::Recover(_) => {
+            unreachable!("foreground scan ownership is early-dispatched")
+        }
         ScanCommand::Plan(args) => {
             let plan = service.plan_scan(
                 &args.case_id,
@@ -2160,27 +3646,7 @@ fn execute_scan(
         }
         ScanCommand::Status(args) => {
             let case = service.show_case(&args.case_id)?;
-            let runs = match args.run_id.as_deref() {
-                Some(run_id) => vec![
-                    case.scan_runs
-                        .iter()
-                        .find(|run| run.id == run_id)
-                        .cloned()
-                        .ok_or_else(|| {
-                            AppError::InvalidRequest(format!("scan run not found: {run_id}"))
-                        })?,
-                ],
-                None => case.scan_runs.clone(),
-            };
-            print_value(
-                &json!({
-                    "case_id": case.id,
-                    "case_status": case.status,
-                    "runs": runs,
-                    "coverage": case.coverage,
-                }),
-                json_output,
-            )?;
+            print_scan_status(&case, args.run_id.as_deref(), &[], json_output)?;
         }
         ScanCommand::Pause(args) => {
             return Err(out_of_process_scan_control_error(
@@ -2202,6 +3668,57 @@ fn execute_scan(
         }
     }
     Ok(())
+}
+
+fn read_coherent_scan_status(
+    storage: &Storage,
+    case_id: &str,
+    run_id: Option<&str>,
+) -> AppResult<(AssessmentCase, Vec<ScanCommandReceipt>)> {
+    // Both case changes and receipt commits advance this revision. A live
+    // owner may commit between these reads; only present a case and receipts
+    // that were observed within the same unchanged revision. This check reads
+    // existing state and never acquires the writer lease or changes storage.
+    for _ in 0..3 {
+        let case = storage.get_case(case_id)?;
+        let receipts = storage.scan_command_receipts(case_id, run_id)?;
+        match storage.assert_case_revision(case_id, case.storage_revision()) {
+            Ok(()) => return Ok((case, receipts)),
+            Err(AppError::Conflict(_)) => continue,
+            Err(error) => return Err(error),
+        }
+    }
+    Err(AppError::Conflict(
+        "saved scan status changed while it was being read; retry the status query".into(),
+    ))
+}
+
+fn print_scan_status(
+    case: &AssessmentCase,
+    run_id: Option<&str>,
+    command_receipts: &[ScanCommandReceipt],
+    json_output: bool,
+) -> AppResult<()> {
+    let runs = match run_id {
+        Some(run_id) => vec![
+            case.scan_runs
+                .iter()
+                .find(|run| run.id == run_id)
+                .ok_or_else(|| AppError::InvalidRequest(format!("scan run not found: {run_id}")))?,
+        ],
+        None => case.scan_runs.iter().collect(),
+    };
+    print_value(
+        &json!({
+            "case_id": case.id,
+            "case_status": case.status,
+            "command_receipts": command_receipts,
+            "runs": runs,
+            "run_report_snapshots": case.run_report_snapshots.iter().filter(|record| run_id.is_none_or(|id| id == record.run_id)).collect::<Vec<_>>(),
+            "coverage": case.coverage,
+        }),
+        json_output,
+    )
 }
 
 fn cancel_never_started_scan(
@@ -2256,7 +3773,8 @@ fn cancel_never_started_scan(
             ),
         ));
     }
-    service.cancel_scan(case_id, run_id)
+    service.cancel_scan(case_id, run_id)?;
+    service.retain_terminal_report_snapshot(case_id, run_id)
 }
 
 fn engine_run_status_has_live_work(status: &EngineRunStatus) -> bool {
@@ -2328,24 +3846,22 @@ fn execute_export(
 ) -> AppResult<()> {
     match command {
         ExportCommand::Combine(args) => {
-            use ai_security_scanner_lib::selected_run_report::{
-                SelectedRunReportFormat, export_selected_run_report,
-            };
-            let case = service.show_case(&args.case_id)?;
+            use ai_security_scanner_lib::selected_run_report::SelectedRunReportFormat;
             let format = match args.format {
                 CombinedExportFormatArg::Html => SelectedRunReportFormat::Html,
                 CombinedExportFormatArg::Json => SelectedRunReportFormat::Json,
             };
-            let receipt = export_selected_run_report(
-                &case,
+            let receipt = service.export_selected_runs_with_archive(
+                &args.case_id,
                 &args.run_id,
                 format,
                 &args.destination,
-                &ExportOptions {
+                ExportOptions {
                     redaction: args.redaction.into(),
-                    include_raw_artifacts: false,
+                    include_raw_artifacts: args.include_raw_artifacts,
                     locale: args.locale.into(),
                 },
+                args.acknowledge_sensitive_data,
             )?;
             print_value(&receipt, json_output)?;
         }
@@ -2487,6 +4003,7 @@ async fn execute_runtime(
     json_output: bool,
 ) -> AppResult<()> {
     match command {
+        RuntimeCommand::Prepare(_) => unreachable!("runtime preparation is early-dispatched"),
         RuntimeCommand::Managed { command } => {
             execute_managed_runtime_cli_command(
                 data_dir,
@@ -4049,6 +5566,10 @@ fn print_value(value: &(impl Serialize + ?Sized), compact: bool) -> AppResult<()
 
 #[cfg(test)]
 mod tests {
+    mod test_temp {
+        include!("../test_temp.rs");
+    }
+
     use super::*;
     use ai_security_scanner_lib::adapter::AdapterRegistry;
     use ai_security_scanner_lib::case_service::PersistedPreDispatchTransition;
@@ -4067,12 +5588,12 @@ mod tests {
         adapters: AdapterRegistry,
         artifact_root: PathBuf,
         signing_key_path: PathBuf,
-        _directory: tempfile::TempDir,
+        _directory: test_temp::TempDir,
     }
 
     impl CliScopeFixture {
         fn new() -> Self {
-            let directory = tempfile::tempdir().expect("temporary directory");
+            let directory = test_temp::tempdir().expect("temporary directory");
             let artifact_root = directory.path().join("artifacts");
             fs::create_dir(&artifact_root).expect("artifact root");
             Self {
@@ -5469,7 +6990,7 @@ mod tests {
 
     #[test]
     fn cli_data_root_explicit_override_is_preserved_exactly() {
-        let temporary = tempfile::tempdir().expect("temporary directory");
+        let temporary = test_temp::tempdir().expect("temporary directory");
         let override_path = temporary.path().join("legacy").join("caller-selected-data");
 
         assert_eq!(
@@ -5483,7 +7004,7 @@ mod tests {
 
     #[test]
     fn cli_data_root_legacy_notice_requires_durable_state_and_never_rewrites_it() {
-        let temporary = tempfile::tempdir().expect("temporary directory");
+        let temporary = test_temp::tempdir().expect("temporary directory");
         let canonical = temporary.path().join("canonical");
         let legacy = temporary.path().join("legacy");
         fs::create_dir(&legacy).expect("legacy directory");
@@ -5635,7 +7156,7 @@ mod tests {
     #[cfg(feature = "installer-runtime-cache")]
     #[test]
     fn windows_installer_runtime_cache_resolves_only_the_real_direct_package_sibling() {
-        let temporary = tempfile::tempdir().unwrap();
+        let temporary = test_temp::tempdir().unwrap();
         let package = temporary.path().join("package");
         fs::create_dir(&package).unwrap();
         let executable = package.join("ai-security-scanner-cli.exe");
@@ -5912,6 +7433,239 @@ mod tests {
     }
 
     #[test]
+    fn foreground_scan_requires_wait_and_an_unambiguous_output_mode() {
+        for command in [
+            vec!["scanner", "scan", "run", "--case-id", "case"],
+            vec![
+                "scanner",
+                "scan",
+                "recover",
+                "--case-id",
+                "case",
+                "--run-id",
+                "run",
+            ],
+            vec![
+                "scanner",
+                "--json",
+                "scan",
+                "run",
+                "--case-id",
+                "case",
+                "--wait",
+                "--ndjson",
+            ],
+        ] {
+            let result = Cli::command()
+                .try_get_matches_from(command.clone())
+                .and_then(|matches| parse_cli_matches(&matches));
+            assert!(
+                result.is_err(),
+                "conflicting or incomplete foreground arguments accepted: {command:?}"
+            );
+        }
+        for operation in ["run", "recover"] {
+            for ancestor_json in [true, false] {
+                let mut args = vec!["scanner"];
+                if ancestor_json {
+                    args.push("--json");
+                }
+                args.extend(["scan", operation, "--case-id", "case", "--wait", "--ndjson"]);
+                if operation == "recover" {
+                    args.extend(["--run-id", "run"]);
+                }
+                if !ancestor_json {
+                    args.push("--json");
+                }
+                let parsed = Cli::command()
+                    .try_get_matches_from(args)
+                    .and_then(|matches| parse_cli_matches(&matches));
+                assert_eq!(
+                    parsed.unwrap_err().kind(),
+                    clap::error::ErrorKind::ArgumentConflict
+                );
+            }
+        }
+        let parsed = Cli::try_parse_from([
+            "scanner",
+            "scan",
+            "run",
+            "--case-id",
+            "case",
+            "--wait",
+            "--engine",
+            "semgrep,gitleaks",
+            "--ndjson",
+        ])
+        .unwrap();
+        let Command::Scan {
+            command: ScanCommand::Run(args),
+        } = parsed.command
+        else {
+            panic!("run");
+        };
+        assert!(args.wait);
+        assert!(args.ndjson);
+        assert_eq!(args.engine, ["semgrep", "gitleaks"]);
+        let recovered = Cli::try_parse_from([
+            "scanner",
+            "scan",
+            "recover",
+            "--case-id",
+            "case",
+            "--run-id",
+            "run",
+            "--wait",
+        ])
+        .unwrap();
+        assert!(command_requires_exclusive_data_directory(
+            &recovered.command
+        ));
+        let status =
+            Cli::try_parse_from(["scanner", "scan", "status", "--case-id", "case"]).unwrap();
+        assert!(!command_requires_exclusive_data_directory(&status.command));
+    }
+
+    #[test]
+    fn foreground_and_snapshot_error_classes_preserve_every_app_error_variant() {
+        for (error, expected) in [
+            (AppError::UnsafeArchiveParent, (2, "invalid_request", false)),
+            (
+                AppError::UnsafeTemporaryDirectory,
+                (2, "unsafe_temporary_directory", false),
+            ),
+            (
+                AppError::UnsafeFilesystemEntry,
+                (2, "unsafe_filesystem_entry", false),
+            ),
+            (
+                AppError::CaseNotFound("case".into()),
+                (2, "case_not_found", false),
+            ),
+            (
+                AppError::InvalidRequest("request".into()),
+                (2, "invalid_request", false),
+            ),
+            (AppError::Conflict("conflict".into()), (3, "conflict", true)),
+            (
+                AppError::DataDirectoryBusy("busy".into()),
+                (3, "data_directory_busy", true),
+            ),
+            (
+                AppError::Storage("storage".into()),
+                (4, "storage_failed", true),
+            ),
+            (
+                AppError::EngineRegistry("registry".into()),
+                (4, "engine_registry_failed", false),
+            ),
+            (
+                AppError::Runtime("runtime".into()),
+                (4, "runtime_failed", true),
+            ),
+            (
+                AppError::NotAuthorized("authorization".into()),
+                (2, "not_authorized", false),
+            ),
+            (
+                AppError::NotAvailable("availability".into()),
+                (2, "not_available", false),
+            ),
+            (
+                AppError::Internal("internal".into()),
+                (4, "internal_failed", true),
+            ),
+        ] {
+            assert_eq!(foreground_error_class(&error), expected, "{error:?}");
+            let mut result = json!({});
+            ai_security_scanner_lib::cloudflare_provider::audit::admit::snapshot_failure(
+                &mut result,
+                &error,
+            );
+            assert_eq!(result["report_snapshot_state"], "pending");
+            assert_eq!(
+                result["report_snapshot_error_code"], expected.1,
+                "{error:?}"
+            );
+            assert_eq!(result["report_snapshot_retryable"], expected.2, "{error:?}");
+        }
+    }
+
+    #[test]
+    fn foreground_busy_classification_uses_the_error_type() {
+        assert_eq!(
+            foreground_error_class(&AppError::DataDirectoryBusy("busy".into())),
+            (3, "data_directory_busy", true)
+        );
+        assert_eq!(
+            foreground_error_class(&AppError::NotAvailable("another owner is busy".into())),
+            (2, "not_available", false)
+        );
+        assert_eq!(
+            foreground_error_class(&AppError::Storage("busy".into())),
+            (4, "storage_failed", true)
+        );
+    }
+
+    #[test]
+    fn foreground_summary_retains_invalid_foreign_and_missing_recovery_proof() {
+        let mut case = build_demo_case();
+        case.scan_runs.truncate(1);
+        case.scan_runs[0].engine_runs.truncate(1);
+        let run_id = case.scan_runs[0].id.clone();
+        let task = &mut case.scan_runs[0].engine_runs[0];
+        task.status = EngineRunStatus::Completed;
+        task.phase = "completed".into();
+        task.cleanup_removed = Some(true);
+        let checkpoint = ExecutionCheckpoint {
+            case_id: case.id.clone(),
+            scan_run_id: run_id.clone(),
+            engine_run_id: task.id.clone(),
+            engine_id: task.engine_id.clone(),
+            attempt: 1,
+            stage: ExecutionStage::Completed,
+            container_name: None,
+            scope_sha256: None,
+            launcher_plan_sha256: None,
+            zap_plan_sha256: None,
+            artifact_ids: vec![],
+            cleanup_completed: true,
+            last_error: None,
+            failure_code: None,
+            runtime_command_provenance: None,
+            runtime_provider: None,
+            managed_network: None,
+        };
+        task.resume_token = Some(checkpoint.resume_token().unwrap());
+        assert!(!foreground_result(&case, &run_id).unwrap().1);
+        let mut foreign = checkpoint.clone();
+        foreign.case_id = "another-case".into();
+        case.scan_runs[0].engine_runs[0].resume_token = Some(foreign.resume_token().unwrap());
+        assert!(foreground_result(&case, &run_id).unwrap().1);
+        let mut invalid = serde_json::to_value(&checkpoint).unwrap();
+        invalid["runtime_provider"] = json!("docker");
+        let invalid_bytes = serde_json::to_string(&invalid).unwrap();
+        case.scan_runs[0].engine_runs[0].resume_token = Some(invalid_bytes.clone());
+        assert!(foreground_result(&case, &run_id).unwrap().1);
+        assert_eq!(
+            case.scan_runs[0].engine_runs[0].resume_token.as_deref(),
+            Some(invalid_bytes.as_str())
+        );
+        let task = &mut case.scan_runs[0].engine_runs[0];
+        task.resume_token = None;
+        task.cleanup_removed = None;
+        task.started_at = Some(Utc::now());
+        task.runtime_provider = Some("docker".into());
+        assert!(foreground_result(&case, &run_id).unwrap().1);
+        let task = &mut case.scan_runs[0].engine_runs[0];
+        task.status = EngineRunStatus::NotExecuted;
+        task.phase = "not_executed".into();
+        task.started_at = None;
+        task.runtime_provider = None;
+        assert!(!foreground_result(&case, &run_id).unwrap().1);
+    }
+
+    #[test]
     fn destructive_cross_process_commands_require_the_data_directory_lease() {
         let delete = Cli::try_parse_from([
             "ai-security-scanner",
@@ -5968,7 +7722,7 @@ mod tests {
             &qualify_egress.command
         ));
         assert!(command_requires_exclusive_data_directory(&status.command));
-        assert!(!command_requires_exclusive_data_directory(&doctor.command));
+        assert!(command_requires_exclusive_data_directory(&doctor.command));
         assert!(command_is_managed_runtime_status(&status.command));
         assert!(!command_is_managed_runtime_status(&install.command));
         assert!(!command_is_managed_runtime_status(&qualify.command));
@@ -5994,7 +7748,7 @@ mod tests {
 
     #[tokio::test]
     async fn cli_cancel_fails_closed_when_the_data_directory_lease_is_owned() {
-        let temporary = tempfile::tempdir().expect("temporary data directory");
+        let temporary = test_temp::tempdir().expect("temporary data directory");
         let held = DataDirectoryExclusiveLease::acquire(temporary.path()).expect("first lease");
         let expected = DataDirectoryExclusiveLease::acquire(temporary.path())
             .expect_err("second lease must be refused")
@@ -6147,7 +7901,7 @@ mod tests {
 
     #[test]
     fn fixed_managed_container_qualification_runs_offline_and_cleans_up() {
-        let temporary = tempfile::tempdir().expect("temporary directory");
+        let temporary = test_temp::tempdir().expect("temporary directory");
         let evidence_root = temporary.path().join("qualification");
         let runtime = FakeContainerRuntime::default();
         runtime.set_behavior(FakeRunBehavior {
@@ -6220,7 +7974,7 @@ mod tests {
 
     #[test]
     fn fixed_managed_container_qualification_fails_closed_on_cleanup_error() {
-        let temporary = tempfile::tempdir().expect("temporary directory");
+        let temporary = test_temp::tempdir().expect("temporary directory");
         let runtime = FakeContainerRuntime::default();
         runtime.set_behavior(FakeRunBehavior {
             exit_code: Some(0),
@@ -6244,7 +7998,7 @@ mod tests {
 
     #[test]
     fn fixed_managed_container_qualification_rejects_compatibility_runtime() {
-        let temporary = tempfile::tempdir().expect("temporary directory");
+        let temporary = test_temp::tempdir().expect("temporary directory");
         let runtime = FakeContainerRuntime::default();
         let engines = EngineRegistry::load_builtin().expect("catalog");
         let preflight = RuntimePreflight {
@@ -6272,7 +8026,7 @@ mod tests {
 
     #[test]
     fn fixed_managed_container_qualification_rejects_findings_after_cleanup() {
-        let temporary = tempfile::tempdir().expect("temporary directory");
+        let temporary = test_temp::tempdir().expect("temporary directory");
         let runtime = FakeContainerRuntime::default();
         runtime.set_behavior(FakeRunBehavior {
             exit_code: Some(0),
@@ -6496,7 +8250,7 @@ mod tests {
     fn scope_approve_external_permissions_round_trip_canonical_scope_and_output() {
         let fixture = CliScopeFixture::new();
         let (case_id, asset_id) = fixture.discovered_domain();
-        let documents = tempfile::tempdir().expect("scope document directory");
+        let documents = test_temp::tempdir().expect("scope document directory");
         let cases = [
             (
                 PermissionArg::PassiveExternalDiscovery,
@@ -6594,7 +8348,7 @@ mod tests {
     #[test]
     fn invalid_external_scope_files_fail_distinctly_before_case_lookup() {
         let fixture = CliScopeFixture::new();
-        let documents = tempfile::tempdir().expect("scope document directory");
+        let documents = test_temp::tempdir().expect("scope document directory");
         let missing = documents.path().join("missing.json");
         let directory = documents.path().join("directory.json");
         fs::create_dir(&directory).expect("non-regular scope fixture");
@@ -6650,7 +8404,7 @@ mod tests {
         use std::os::unix::fs::symlink;
 
         let fixture = CliScopeFixture::new();
-        let documents = tempfile::tempdir().expect("scope document directory");
+        let documents = test_temp::tempdir().expect("scope document directory");
         let target = documents.path().join("valid-target.json");
         write_external_scope(&target, "low_impact_external");
         let selected = documents.path().join("selected-symlink.json");
@@ -6684,7 +8438,7 @@ mod tests {
         use std::os::unix::fs::symlink;
 
         let fixture = CliScopeFixture::new();
-        let documents = tempfile::tempdir().expect("scope document directory");
+        let documents = test_temp::tempdir().expect("scope document directory");
         let resolved_directory = documents.path().join("resolved-directory");
         fs::create_dir(&resolved_directory).expect("resolved scope directory");
         let target = resolved_directory.join("valid-scope.json");
@@ -6721,7 +8475,7 @@ mod tests {
         use std::os::unix::fs::symlink;
 
         let fixture = CliScopeFixture::new();
-        let documents = tempfile::tempdir().expect("scope document directory");
+        let documents = test_temp::tempdir().expect("scope document directory");
         let selected = documents.path().join("selected-scope.json");
         write_external_scope(&selected, "low_impact_external");
         let target = documents.path().join("replacement-target.json");
@@ -6763,7 +8517,7 @@ mod tests {
     fn external_scope_activity_mismatch_is_still_refused_by_service() {
         let fixture = CliScopeFixture::new();
         let (case_id, asset_id) = fixture.discovered_domain();
-        let documents = tempfile::tempdir().expect("scope document directory");
+        let documents = test_temp::tempdir().expect("scope document directory");
         let path = documents.path().join("mismatched.json");
         write_external_scope(&path, "active_external");
 
@@ -6798,7 +8552,7 @@ mod tests {
     fn external_scope_without_external_permission_keeps_service_error() {
         let fixture = CliScopeFixture::new();
         let (case_id, asset_id) = fixture.discovered_domain();
-        let documents = tempfile::tempdir().expect("scope document directory");
+        let documents = test_temp::tempdir().expect("scope document directory");
         let path = documents.path().join("inventory.json");
         write_external_scope(&path, "low_impact_external");
 
@@ -6984,7 +8738,7 @@ mod tests {
 
     #[test]
     fn connector_artifact_root_is_private_and_scoped_to_one_case() {
-        let temporary = tempfile::tempdir().expect("temporary directory");
+        let temporary = test_temp::tempdir().expect("temporary directory");
         let artifact_root = temporary.path().join("artifacts");
         fs::create_dir(&artifact_root).expect("artifact root");
 
@@ -7018,7 +8772,7 @@ mod tests {
 
     #[test]
     fn connector_artifact_root_rejects_unsafe_case_paths() {
-        let temporary = tempfile::tempdir().expect("temporary directory");
+        let temporary = test_temp::tempdir().expect("temporary directory");
         let artifact_root = temporary.path().join("artifacts");
         fs::create_dir(&artifact_root).expect("artifact root");
 
@@ -7037,7 +8791,7 @@ mod tests {
     fn connector_artifact_root_rejects_symlinked_case_directory() {
         use std::os::unix::fs::symlink;
 
-        let temporary = tempfile::tempdir().expect("temporary directory");
+        let temporary = test_temp::tempdir().expect("temporary directory");
         let artifact_root = temporary.path().join("artifacts");
         let outside = temporary.path().join("outside");
         fs::create_dir(&artifact_root).expect("artifact root");
@@ -7056,7 +8810,7 @@ mod tests {
 
     #[test]
     fn case_artifact_deletion_removes_cli_connector_snapshots() {
-        let temporary = tempfile::tempdir().expect("temporary directory");
+        let temporary = test_temp::tempdir().expect("temporary directory");
         let artifact_root = temporary.path().join("artifacts");
         fs::create_dir(&artifact_root).expect("artifact root");
         let storage = Storage::open(temporary.path().join("casework.db")).expect("storage");

@@ -1,0 +1,27 @@
+{
+  "decision": "rejected",
+  "record": {
+    "verdict": "rejected",
+    "fingerprint": "src-router-auth-bypass",
+    "title": "Authorization bypass in router",
+    "description": "The candidate claimed a route bypassed authorization.",
+    "claimed_root_cause": "dispatch was claimed to skip the authorization wrapper.",
+    "trace": [
+      {
+        "kind": "sink",
+        "file": "src/store.c",
+        "line": 30,
+        "scope": "handle",
+        "description": "Attacker data reaches the operation."
+      }
+    ],
+    "evidence": [
+      {
+        "file": "src/handler.c",
+        "line": 10,
+        "description": "The source performs the operation without the required check."
+      }
+    ],
+    "reason": "All routes pass through the authorization wrapper before dispatch."
+  }
+}

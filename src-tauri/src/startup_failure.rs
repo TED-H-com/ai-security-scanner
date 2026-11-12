@@ -1,5 +1,4 @@
 use crate::error::AppError;
-use crate::process_lease::DATA_DIRECTORY_LEASE_CONTENTION_MESSAGE;
 #[cfg(any(unix, test))]
 use std::ffi::OsStr;
 
@@ -37,11 +36,7 @@ impl StartupFailure {
 
     pub(crate) fn lease(error: AppError) -> Self {
         match error {
-            AppError::NotAvailable(message)
-                if message == DATA_DIRECTORY_LEASE_CONTENTION_MESSAGE =>
-            {
-                Self::DataDirectoryInUse
-            }
+            AppError::DataDirectoryBusy(_) => Self::DataDirectoryInUse,
             error => Self::preparation(StartupResource::LocalDataDirectory, error),
         }
     }
@@ -49,10 +44,10 @@ impl StartupFailure {
     pub(crate) fn message(&self, language: DisplayLanguage) -> String {
         match (self, language) {
             (Self::DataDirectoryInUse, DisplayLanguage::English) =>
-                "Another ai-security-scanner desktop or maintenance operation is using this local data directory; close it and try again."
+                "Another ai-security-scanner desktop, foreground scan, or maintenance operation is using this local data directory; close it and try again."
                     .into(),
             (Self::DataDirectoryInUse, DisplayLanguage::TraditionalChinese) =>
-                "另一個 ai-security-scanner 桌面程式或維護作業正在使用這個本機資料目錄；請關閉它，然後再試一次。"
+                "另一個 ai-security-scanner 桌面程式、前景掃描或維護作業正在使用這個本機資料目錄；請關閉它，然後再試一次。"
                     .into(),
             (Self::Preparation { resource, detail }, DisplayLanguage::English) => format!(
                 "ai-security-scanner could not {}: {}.",
@@ -221,11 +216,11 @@ mod tests {
         assert_eq!(failure, StartupFailure::DataDirectoryInUse);
         assert_eq!(
             failure.message(DisplayLanguage::English),
-            "Another ai-security-scanner desktop or maintenance operation is using this local data directory; close it and try again."
+            "Another ai-security-scanner desktop, foreground scan, or maintenance operation is using this local data directory; close it and try again."
         );
         assert_eq!(
             failure.message(DisplayLanguage::TraditionalChinese),
-            "另一個 ai-security-scanner 桌面程式或維護作業正在使用這個本機資料目錄；請關閉它，然後再試一次。"
+            "另一個 ai-security-scanner 桌面程式、前景掃描或維護作業正在使用這個本機資料目錄；請關閉它，然後再試一次。"
         );
 
         drop(first);

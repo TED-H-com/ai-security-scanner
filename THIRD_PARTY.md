@@ -2,7 +2,7 @@
 
 Status: current source and artifact inventory
 
-Last updated: 2026-11-06
+Last updated: 2026-11-10
 
 Exact engine artifacts: [`engines/catalog.json`](engines/catalog.json)
 
@@ -23,6 +23,12 @@ Release automation generates locked dependency notices, engine notices, managed-
 - `ARCHIVED`: upstream is archived and requires a maintenance/replacement decision.
 
 `ALLOW`, `SOURCE_OFFER`, and `SOURCE_ARCHIVE` apply only to the exact recorded artifact and are engineering dispositions rather than legal advice. `UPSTREAM_PINNED` is not a blanket permission or a statement that the artifact is inside the desktop installer. `MANUAL`, `RESEARCH`, `ARCHIVED`, and `NOT_DISTRIBUTED` never imply release approval.
+
+## Development provider resources
+
+Cloudflare's [security-audit-skill](https://github.com/cloudflare/security-audit-skill/tree/c1c8a8c1471069fb0e188eeaff69b8e8db6564a8) is retained at a fixed source revision for the development provider. The [lock inventory](providers/cloudflare/upstream.lock.json) binds 22 unchanged upstream files, including method instructions, schemas, validators, tests and the [MIT license](providers/cloudflare/upstream/LICENSE). The native development CLI embeds selected validator/schema/license resources; the product wrapper retains attribution for its copied findings preflight.
+
+This is a source inventory entry, not a new desktop release declaration. [Provider capabilities](providers/cloudflare/provider.json) currently enable validation and private retention/retrieval, with audit execution and case admission disabled. See [provider documentation](docs/cloudflare-provider.md) and [publication status](docs/release-model.md).
 
 ## Catalog engine inventory
 

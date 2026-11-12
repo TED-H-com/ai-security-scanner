@@ -3,8 +3,9 @@ use crate::beginner_report::{
     BeginnerMasterReport, BeginnerReportError, TechnicalExecution, build_beginner_master_report,
 };
 use crate::domain::{
-    AssessmentCase, Asset, CaseExport, DataSource, EngineTaskKind, Finding, InventoryObservation,
-    InventoryObservationKind, RawArtifact, ScanRun, ScannerFindingDetails, ScopeGrant, new_id,
+    AssessmentCase, Asset, CaseExport, DataSource, EngineTaskKind, Finding, FindingFamily,
+    InventoryObservation, InventoryObservationKind, RawArtifact, ScanRun, ScannerFindingDetails,
+    ScopeGrant, Severity, new_id,
 };
 use crate::error::{AppError, AppResult};
 use crate::export_identity::{
@@ -203,6 +204,7 @@ pub struct BundleVerification {
 struct ArtifactSource {
     archive_path: String,
     source_path: PathBuf,
+    provider_original: Option<(PathBuf, RawArtifact)>,
     expected_sha256: String,
     expected_byte_length: u64,
     media_type: String,
@@ -256,6 +258,7 @@ pub fn create_case_bundle_at(
     options: ExportOptions,
     created_at: DateTime<Utc>,
 ) -> AppResult<CaseExport> {
+    crate::agent_audit_admission::check_bundle(case)?;
     let run = selected_run(case, run_id)?;
     // A report is a terminal deliverable. Resolve it before creating a
     // directory, key, or temporary archive so active scan work has no export
@@ -303,7 +306,7 @@ pub fn create_case_bundle_at(
     // work plans and attempt journals. The report is then redacted as a
     // presentation document; execution evidence is never reconstructed from
     // the reduced export case.
-    let redacted_case = case_for_export(case, options.redaction);
+    let redacted_case = case_for_export(case, options.redaction)?;
     let artifact_root = artifact_root.as_ref();
     let (artifact_records, artifact_sources) = prepare_artifacts(
         case,
@@ -384,6 +387,7 @@ pub fn create_case_bundle_at(
         format: Some("case_bundle".into()),
         path: destination.display().to_string(),
         sha256: archive_sha256,
+        report_snapshot: None,
         coverage_manifest_path: None,
         coverage_manifest_sha256: None,
         signature: Some(envelope.signature_base64),
@@ -621,6 +625,9 @@ fn build_archive(
         "local_signing_identity".into(),
         LOCAL_SIGNING_IDENTITY_SCHEMA_VERSION.into(),
     );
+    if documents.contains_key("source-audit-admissions.json") {
+        schemas.insert("source_audit_admissions".into(), "1".into());
+    }
     schemas.insert("ocsf".into(), OCSF_SCHEMA_VERSION.into());
     schemas.insert("oscal".into(), OSCAL_VERSION.into());
     let mut notices = vec![
@@ -640,7 +647,7 @@ fn build_archive(
     let manifest = BundleManifest {
         schema_version: BUNDLE_SCHEMA_VERSION.into(),
         product_name: "ai-security-scanner".into(),
-        product_version: env!("CARGO_PKG_VERSION").into(),
+        product_version: crate::product_version::current().into(),
         created_at,
         case_id: case.id.clone(),
         run_id: run_id.into(),
@@ -691,6 +698,21 @@ fn append_artifact<W: Write>(
     source: &ArtifactSource,
 ) -> AppResult<BundleEntry> {
     validate_portable_archive_path(Path::new(&source.archive_path))?;
+    if let Some((root, artifact)) = &source.provider_original {
+        let bytes = crate::artifact_store::read_verified_raw_artifact(
+            root,
+            artifact,
+            source.expected_byte_length,
+        )?;
+        append_bytes(archive, &source.archive_path, &bytes)?;
+        return Ok(BundleEntry {
+            path: source.archive_path.clone(),
+            media_type: source.media_type.clone(),
+            sha256: source.expected_sha256.clone(),
+            byte_length: bytes.len() as u64,
+            contains_sensitive_data: true,
+        });
+    }
     let metadata = fs::symlink_metadata(&source.source_path)?;
     if metadata.file_type().is_symlink() || !metadata.is_file() {
         return Err(AppError::InvalidRequest(format!(
@@ -789,6 +811,34 @@ fn build_documents(
         }
     });
     insert_json(&mut documents, "case.json", &case_document, false)?;
+    if !case.agent_audit_admissions.is_empty() {
+        let tasks: Vec<_> = case
+            .scan_runs
+            .iter()
+            .flat_map(|run| {
+                run.engine_runs.iter().filter_map(move |task| {
+                let admission = crate::source_audit_report::admission(case, task)?;
+                Some(json!({
+                    "case_id": case.id, "run_id": run.id, "task_id": task.id,
+                    "provider_id": admission.provider_id, "admission_id": admission.admission_id,
+                    "task_kind": task.task_kind, "method": "Cloudflare source audit",
+                    "asset_ids": task.asset_ids, "status": task.status,
+                    "started_at": task.started_at, "finished_at": task.finished_at,
+                }))
+            })
+            })
+            .collect();
+        insert_json(
+            &mut documents,
+            "source-audit-admissions.json",
+            &json!({
+                "schema_version": "1", "case_id": case.id,
+                "digest_scope": "Admission and native digests commit to original material, not this profile-masked document. The bundle manifest hashes the exported document.",
+                "admissions": case.agent_audit_admissions, "provider_tasks": tasks,
+            }),
+            true,
+        )?;
+    }
     insert_json(
         &mut documents,
         "assets.json",
@@ -877,7 +927,7 @@ fn build_documents(
         &json!({
             "schema_version": BEGINNER_MASTER_REPORT_SCHEMA_VERSION,
             "product_name": "ai-security-scanner",
-            "product_version": env!("CARGO_PKG_VERSION"),
+            "product_version": crate::product_version::current(),
             "export_kind": "beginner_master_report",
             "selected_run_id": beginner_report.run_id.clone(),
             "redaction_profile": redaction.as_str(),
@@ -891,7 +941,15 @@ fn build_documents(
         "exports/master-framework-report.json".into(),
         PreparedDocument {
             media_type: "application/json".into(),
-            bytes: export_master_framework_report_bytes(case, run_id)?,
+            bytes: if case.agent_audit_admissions.is_empty() {
+                export_master_framework_report_bytes(case, run_id)?
+            } else {
+                json_bytes(&crate::exporters::framework_report::report_with_audits(
+                    case,
+                    run_id,
+                    beginner_report.source_audits.clone(),
+                )?)?
+            },
             contains_sensitive_data: true,
         },
     );
@@ -1058,7 +1116,10 @@ fn built_in_task_records(case: &AssessmentCase) -> Vec<Value> {
     let mut records = Vec::new();
     for run in &case.scan_runs {
         for engine_run in &run.engine_runs {
-            if matches!(engine_run.task_kind, EngineTaskKind::CatalogEngine) {
+            if matches!(
+                engine_run.task_kind,
+                EngineTaskKind::CatalogEngine | EngineTaskKind::AgentAudit { .. }
+            ) {
                 continue;
             }
             records.push(json!({
@@ -1101,9 +1162,11 @@ fn selected_run<'a>(case: &'a AssessmentCase, run_id: &str) -> AppResult<&'a Sca
 pub(crate) fn case_for_export(
     case: &AssessmentCase,
     redaction: RedactionProfile,
-) -> AssessmentCase {
+) -> AppResult<AssessmentCase> {
     let mut exported = case.clone();
     exported.exports.clear();
+    exported.combined_exports.clear();
+    exported.run_report_snapshots.clear();
     // Portable bundles must not revive the vulnerability-oriented prose that
     // older cases stored for Naabu/httpx reachability rows. The durable source
     // remains untouched; only the report/export projection is normalized.
@@ -1119,7 +1182,13 @@ pub(crate) fn case_for_export(
 
     if redaction == RedactionProfile::Standard {
         let sensitive_replacements = standard_redaction_replacements(&exported);
+        let provider_replacements = provider_title_replacements(&exported, &sensitive_replacements);
         let iam_aliases = IamAliases::of(&exported);
+        for admission in &mut exported.agent_audit_admissions {
+            let count = redact_provider(admission, &provider_replacements)?;
+            admission.retained_projection["withheld_code_fields"] = serde_json::json!(count.code);
+            admission.retained_projection["withheld_text_fields"] = serde_json::json!(count.text);
+        }
         exported.title = REDACTED_CASE_TITLE.into();
         exported.profile.organization_name = "[redacted]".into();
         exported.profile.notes = None;
@@ -1216,11 +1285,24 @@ pub(crate) fn case_for_export(
             }
         }
         for finding in &mut exported.findings {
-            redact_finding(finding, &sensitive_replacements, &iam_aliases);
+            if finding.evidence.iter().any(|e| e.provider_record.is_some()) {
+                redact_known_literals(&mut finding.title, &provider_replacements);
+            }
+            redact_finding(finding, &sensitive_replacements, &iam_aliases)?;
         }
         for observation in &mut exported.finding_observations {
             if let Some(snapshot) = &mut observation.finding_snapshot {
-                redact_finding(snapshot, &sensitive_replacements, &iam_aliases);
+                let provider = snapshot
+                    .evidence
+                    .iter()
+                    .any(|e| e.provider_record.is_some());
+                if provider {
+                    redact_known_literals(&mut snapshot.title, &provider_replacements);
+                }
+                redact_finding(snapshot, &sensitive_replacements, &iam_aliases)?;
+                if provider {
+                    observation.fingerprint = provider_pseudonym("fp", &observation.fingerprint);
+                }
             }
         }
         for observation in &mut exported.inventory_observations {
@@ -1245,7 +1327,7 @@ pub(crate) fn case_for_export(
             }
         }
     }
-    exported
+    Ok(exported)
 }
 
 /// Removes the identifying half of one inventory observation.
@@ -1331,6 +1413,7 @@ pub(crate) fn beginner_report_for_export(
     redaction: RedactionProfile,
 ) -> AppResult<BeginnerMasterReport> {
     let mut report = build_beginner_master_report(case, run_id).map_err(|error| match error {
+        BeginnerReportError::NotAvailable { message } => AppError::NotAvailable(message),
         BeginnerReportError::RunInProgress { .. } => {
             AppError::NotAvailable("scan is in progress".into())
         }
@@ -1339,12 +1422,15 @@ pub(crate) fn beginner_report_for_export(
     if redaction == RedactionProfile::Standard {
         let mut alias_case = case.clone();
         sort_case(&mut alias_case);
-        redact_beginner_master_report(&mut report, &alias_case);
+        redact_beginner_master_report(&mut report, &alias_case)?;
     }
     Ok(report)
 }
 
-fn redact_beginner_master_report(report: &mut BeginnerMasterReport, case: &AssessmentCase) {
+fn redact_beginner_master_report(
+    report: &mut BeginnerMasterReport,
+    case: &AssessmentCase,
+) -> AppResult<()> {
     // Legacy external imports did not retain the target outside their private
     // raw attachment. Never guess those identifiers from free-form prose.
     let legacy_import_ids: BTreeSet<_> = case
@@ -1362,7 +1448,16 @@ fn redact_beginner_master_report(report: &mut BeginnerMasterReport, case: &Asses
         .map(|finding| finding.id.as_str())
         .collect();
     let replacements = standard_redaction_replacements(case);
+    let provider_replacements = provider_title_replacements(case, &replacements);
     let aliases = IamAliases::of(case);
+    for audit in &mut report.source_audits {
+        let count = redact_provider(audit, &provider_replacements)?;
+        for gap in &mut audit.coverage_gaps {
+            gap.label = gap.coverage_id.clone();
+        }
+        audit.withheld_code_fields = count.code;
+        audit.withheld_text_fields = count.text;
+    }
     let iam_context_by_finding = report
         .findings
         .iter()
@@ -1446,9 +1541,13 @@ fn redact_beginner_master_report(report: &mut BeginnerMasterReport, case: &Asses
 
     for check in &mut report.actual.checks {
         for dimension in &mut check.tested_dimensions {
-            redact_known_literals(&mut dimension.dimension, &replacements);
-            redact_known_literals(&mut dimension.value, &replacements);
-            redact_known_literals(&mut dimension.observation, &replacements);
+            if dimension.dimension == "Source audit coverage" {
+                dimension.value = REDACTED_LOCATION.into();
+            } else {
+                redact_known_literals(&mut dimension.dimension, &replacements);
+                redact_known_literals(&mut dimension.value, &replacements);
+                redact_known_literals(&mut dimension.observation, &replacements);
+            }
         }
     }
     for (index, scope) in report.actual.network_scopes.iter_mut().enumerate() {
@@ -1461,7 +1560,10 @@ fn redact_beginner_master_report(report: &mut BeginnerMasterReport, case: &Asses
         redact_known_literals(&mut unavailable.explanation, &replacements);
     }
     for gap in &mut report.coverage_gaps {
-        if gap.kind == crate::beginner_report::CoverageGapKind::Excluded {
+        if gap.dimension == "Source audit coverage" {
+            // Aggregated audit reasons and actions are product prose with counts only.
+            continue;
+        } else if gap.kind == crate::beginner_report::CoverageGapKind::Excluded {
             gap.dimension = "Excluded coverage area".into();
             gap.reason = "[redacted coverage detail]".into();
         } else if gap.kind == crate::beginner_report::CoverageGapKind::ManualReview {
@@ -1494,6 +1596,22 @@ fn redact_beginner_master_report(report: &mut BeginnerMasterReport, case: &Asses
     }
 
     for finding in &mut report.findings {
+        if finding.source_audit {
+            redact_known_literals(&mut finding.title, &provider_replacements);
+            finding.fingerprint = provider_pseudonym("fp", &finding.fingerprint);
+            let provider = finding
+                .evidence_references
+                .first()
+                .map(|r| r.engine_id.as_str())
+                .unwrap_or("Cloudflare");
+            redact_provider_narrative(
+                &mut finding.plain_language_risk,
+                &mut finding.possible_impact,
+                &mut finding.next_step,
+                &finding.severity,
+                provider,
+            );
+        }
         if legacy_import_ids.contains(finding.finding_id.as_str()) {
             finding.title = "Imported finding (source identifiers withheld)".into();
             finding.plain_language_risk =
@@ -1539,8 +1657,16 @@ fn redact_beginner_master_report(report: &mut BeginnerMasterReport, case: &Asses
             if reference.pointer.is_some() {
                 reference.pointer = Some("[redacted result pointer]".into());
             }
+            if let Some(provider) = &mut reference.provider_record {
+                redact_provider(provider, &replacements)?;
+            }
             if let Some(details) = &mut reference.scanner_details {
-                redact_scanner_finding_details(details, &replacements, &aliases);
+                if finding.source_audit {
+                    redact_provider(details, &replacements)?;
+                    reference.redacted = Some(true);
+                } else {
+                    redact_scanner_finding_details(details, &replacements, &aliases);
+                }
             }
         }
         if let Some(iam) = finding.evidence_references.iter().find_map(|reference| {
@@ -1647,6 +1773,14 @@ fn redact_beginner_master_report(report: &mut BeginnerMasterReport, case: &Asses
         })
         .collect::<BTreeMap<_, _>>();
     for step in &mut report.next_steps {
+        if report.coverage_gaps.iter().any(|g| {
+            g.dimension == "Source audit coverage"
+                && g.task_id == step.task_id
+                && g.reason == step.reason
+        }) {
+            // The audit continuation action is product prose, independent of locations.
+            continue;
+        }
         // Same unreachable-by-replacement problem as the coverage gap this
         // step is derived from: the identifier is registered on no asset, so
         // the pass below cannot rewrite it. Both of this step's sentences name
@@ -1701,6 +1835,8 @@ fn redact_beginner_master_report(report: &mut BeginnerMasterReport, case: &Asses
             TechnicalExecution::InvalidBuiltInTask { explanation } => {
                 redact_known_literals(explanation, &replacements);
             }
+            TechnicalExecution::AgentAudit { .. }
+            | TechnicalExecution::AgentAuditFailure { .. } => {}
             TechnicalExecution::CatalogEngine { .. }
             | TechnicalExecution::ExternalReportImport { .. } => {}
         }
@@ -1716,6 +1852,7 @@ fn redact_beginner_master_report(report: &mut BeginnerMasterReport, case: &Asses
     for warning in &mut report.data_quality_warnings {
         redact_known_literals(warning, &replacements);
     }
+    Ok(())
 }
 
 /// The same removal, on the projected report the HTML and JSON exports render
@@ -1796,7 +1933,25 @@ fn redact_asset_record(asset: &mut Asset, alias: String) {
     asset.metadata.clear();
 }
 
-fn redact_finding(finding: &mut Finding, replacements: &[(String, String)], aliases: &IamAliases) {
+fn redact_finding(
+    finding: &mut Finding,
+    replacements: &[(String, String)],
+    aliases: &IamAliases,
+) -> AppResult<()> {
+    if let Some(evidence) = finding
+        .evidence
+        .iter()
+        .find(|e| e.provider_record.is_some())
+    {
+        finding.fingerprint = provider_pseudonym("fp", &finding.fingerprint);
+        redact_provider_narrative(
+            &mut finding.plain_language_summary,
+            &mut finding.possible_impact,
+            &mut finding.recommendation,
+            &finding.severity,
+            &evidence.engine_id,
+        );
+    }
     if crate::external_scanner_import::legacy_import_missing_target(finding) {
         finding.title = "Imported finding (source identifiers withheld)".into();
         finding.plain_language_summary =
@@ -1847,7 +2002,14 @@ fn redact_finding(finding: &mut Finding, replacements: &[(String, String)], alia
             evidence.location = Some(REDACTED_LOCATION.into());
         }
         if let Some(details) = &mut evidence.scanner_details {
-            redact_scanner_finding_details(details, replacements, aliases);
+            if evidence.provider_record.is_some() {
+                redact_provider(details, replacements)?;
+            } else {
+                redact_scanner_finding_details(details, replacements, aliases);
+            }
+        }
+        if let Some(provider) = &mut evidence.provider_record {
+            redact_provider(provider, replacements)?;
         }
         evidence.pointer = None;
         evidence.redacted = true;
@@ -1866,6 +2028,7 @@ fn redact_finding(finding: &mut Finding, replacements: &[(String, String)], alia
             iam,
         );
     }
+    Ok(())
 }
 
 /// Stable numbers for the IAM names a Standard export withholds.
@@ -2362,7 +2525,19 @@ fn prepare_artifacts(
         } else {
             Some("standard redaction excludes artifacts marked sensitive".into())
         };
-        let archive_path = include.then(|| format!("artifacts/sha256/{sha256}"));
+        let provider_binding = case.agent_audit_admissions.iter().find_map(|admission| {
+            admission
+                .artifacts
+                .iter()
+                .find(|binding| binding.artifact_id == artifact.id)
+        });
+        let archive_path = include.then(|| match provider_binding {
+            Some(binding) => format!(
+                "artifacts/source-audits/{}/{}/{}",
+                artifact.run_id, artifact.engine_run_id, binding.member_path
+            ),
+            None => format!("artifacts/sha256/{sha256}"),
+        });
 
         if let Some(archive_path) = &archive_path {
             let root = root.as_ref().expect("included artifacts require a root");
@@ -2370,6 +2545,7 @@ fn prepare_artifacts(
             let new_source = ArtifactSource {
                 archive_path: archive_path.clone(),
                 source_path,
+                provider_original: provider_binding.map(|_| (root.clone(), artifact.clone())),
                 expected_sha256: sha256.clone(),
                 expected_byte_length: artifact.byte_length,
                 media_type: artifact.media_type.clone(),
@@ -3020,6 +3196,270 @@ impl<R: Read> Read for HashingReader<R> {
     }
 }
 
+/// Provider prose follows the shared scanner policy: withhold free text and
+/// locations, retain machine identity, and replace known literals only in titles.
+#[derive(Default, Debug, PartialEq, Eq)]
+struct ProviderRedactions {
+    code: usize,
+    text: usize,
+}
+const WITHHELD_PROVIDER_TEXT: &str = "[withheld provider text in the standard profile]";
+const WITHHELD_PROVIDER_CODE: &str = "[withheld in the standard profile]";
+fn replace_provider_strings(value: &mut serde_json::Value, marker: &str) -> usize {
+    match value {
+        serde_json::Value::String(text) => {
+            *text = marker.into();
+            1
+        }
+        serde_json::Value::Array(values) => values
+            .iter_mut()
+            .map(|v| replace_provider_strings(v, marker))
+            .sum(),
+        serde_json::Value::Object(values) => values
+            .values_mut()
+            .map(|v| replace_provider_strings(v, marker))
+            .sum(),
+        _ => 0,
+    }
+}
+fn redact_provider_value(
+    value: &mut serde_json::Value,
+    key: &str,
+    replacements: &[(String, String)],
+    count: &mut ProviderRedactions,
+) {
+    use serde_json::Value;
+    if matches!(
+        key,
+        "coverage_id"
+            | "coverage_ids"
+            | "fingerprint"
+            | "native_fingerprint"
+            | "result_fingerprints"
+            | "unresolved_candidates"
+            | "unresolved"
+    ) {
+        fn mask(value: &mut Value, prefix: &str) {
+            match value {
+                Value::String(text) => *text = provider_pseudonym(prefix, text),
+                Value::Array(values) => {
+                    for value in values {
+                        mask(value, prefix);
+                    }
+                }
+                _ => {}
+            }
+        }
+        mask(
+            value,
+            if key.starts_with("coverage_") {
+                "unit"
+            } else {
+                "fp"
+            },
+        );
+        return;
+    }
+    if matches!(key, "fixed_code" | "payloads" | "instructions") {
+        count.code += replace_provider_strings(value, WITHHELD_PROVIDER_CODE);
+        return;
+    }
+    if matches!(
+        key,
+        "file"
+            | "path"
+            | "file_name"
+            | "starting_paths"
+            | "reviewed_paths"
+            | "excluded_paths"
+            | "canonical_refs"
+            | "ordinary_attack_class_block"
+            | "selected_companion_blocks"
+            | "block"
+            | "source_ref"
+            | "continuation_paths"
+            | "member_path"
+            | "artifact"
+    ) || (key == "scope" && value.is_array())
+    {
+        replace_provider_strings(value, REDACTED_LOCATION);
+        return;
+    }
+    // Gap labels are derived presentation, not additional provider text.
+    if key == "coverage_gaps" {
+        if let Value::Array(gaps) = value {
+            for gap in gaps {
+                if let Value::Object(fields) = gap {
+                    fields.remove("label");
+                    for (key, value) in fields.iter_mut() {
+                        redact_provider_value(value, key, replacements, count);
+                    }
+                    let label = fields
+                        .get("coverage_id")
+                        .cloned()
+                        .unwrap_or_else(|| Value::String(REDACTED_LOCATION.into()));
+                    fields.insert("label".into(), label);
+                }
+            }
+        }
+        return;
+    }
+    match value {
+        Value::Object(fields) => {
+            for (key, value) in fields {
+                redact_provider_value(value, key, replacements, count);
+            }
+        }
+        Value::Array(values) => {
+            for value in values {
+                redact_provider_value(value, key, replacements, count);
+            }
+        }
+        Value::String(text) => {
+            if key == "title" {
+                redact_known_literals(text, replacements);
+            } else if !(key.ends_with("sha256")
+                || key.ends_with("_id")
+                || key.ends_with("_ids")
+                || key.ends_with("_at")
+                || matches!(
+                    key,
+                    "id" | "schema_version"
+                        | "provider"
+                        | "upstream_commit"
+                        | "verdict"
+                        | "status"
+                        | "reported_run_status"
+                        | "prior_status"
+                        | "method"
+                        | "kind"
+                        | "profile"
+                        | "provenance"
+                        | "state"
+                        | "severity"
+                        | "overall_severity"
+                        | "score"
+                        | "code"
+                        | "reported_verifier_assignments"
+                        | "verification_scope"
+                ))
+            {
+                *text = WITHHELD_PROVIDER_TEXT.into();
+                count.text += 1;
+            }
+        }
+        _ => {}
+    }
+}
+// Provider identifiers may repeat in titles. Keep their replacements separate
+// from product prose, which must not change when a provider chooses a common word.
+fn provider_title_replacements(
+    case: &AssessmentCase,
+    aliases: &[(String, String)],
+) -> Vec<(String, String)> {
+    let mut replacements = aliases.to_vec();
+    for admission in &case.agent_audit_admissions {
+        collect_provider_identifiers(&admission.retained_projection, "", &mut replacements);
+    }
+    replacements.sort_by(|a, b| b.0.len().cmp(&a.0.len()).then_with(|| a.cmp(b)));
+    replacements.dedup();
+    replacements
+}
+
+fn collect_provider_identifiers(
+    value: &serde_json::Value,
+    key: &str,
+    replacements: &mut Vec<(String, String)>,
+) {
+    match value {
+        serde_json::Value::Object(fields) => {
+            for (key, value) in fields {
+                collect_provider_identifiers(value, key, replacements);
+            }
+        }
+        serde_json::Value::Array(values) => {
+            for value in values {
+                collect_provider_identifiers(value, key, replacements);
+            }
+        }
+        serde_json::Value::String(text)
+            if !text.is_empty()
+                && matches!(
+                    key,
+                    "coverage_id"
+                        | "coverage_ids"
+                        | "fingerprint"
+                        | "native_fingerprint"
+                        | "result_fingerprints"
+                        | "unresolved_candidates"
+                        | "unresolved"
+                ) =>
+        {
+            replacements.push((
+                text.clone(),
+                provider_pseudonym(
+                    if key.starts_with("coverage_") {
+                        "unit"
+                    } else {
+                        "fp"
+                    },
+                    text,
+                ),
+            ));
+        }
+        _ => {}
+    }
+}
+
+fn provider_pseudonym(prefix: &str, original: &str) -> String {
+    format!(
+        "{prefix}-{}",
+        &hex::encode(Sha256::digest(original.as_bytes()))[..12]
+    )
+}
+
+fn redact_provider<T: serde::Serialize + serde::de::DeserializeOwned>(
+    value: &mut T,
+    replacements: &[(String, String)],
+) -> AppResult<ProviderRedactions> {
+    let mut document = serde_json::to_value(&*value)?;
+    let mut count = ProviderRedactions::default();
+    redact_provider_value(&mut document, "", replacements, &mut count);
+    *value = serde_json::from_value(document)?;
+    Ok(count)
+}
+
+fn redact_provider_narrative(
+    summary: &mut String,
+    impact: &mut String,
+    action: &mut String,
+    severity: &Severity,
+    provider: &str,
+) {
+    let provider = if provider == "cloudflare-security-audit" {
+        "Cloudflare source audit"
+    } else {
+        provider
+    };
+    let label = crate::report_renderer::enum_key(severity);
+    let article = if matches!(severity, Severity::Informational | Severity::Unknown) {
+        "an"
+    } else {
+        "a"
+    };
+    *summary = crate::finding_narrative::summary_english(
+        &format!("{provider} reported {article} {label}-severity condition on the assessed asset."),
+        Some(FindingFamily::SourceCode),
+    );
+    *impact = crate::finding_narrative::impact_english("", Some(FindingFamily::SourceCode), &[]);
+    *action = crate::finding_narrative::finding_next_action_english(
+        "",
+        Some(FindingFamily::SourceCode),
+        None,
+        false,
+    );
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -3036,6 +3476,180 @@ mod tests {
     use chrono::TimeZone;
     use std::collections::BTreeMap;
     use tempfile::tempdir;
+
+    #[test]
+    fn provider_redaction_masks_prose_and_locations_without_changing_identity() {
+        let prose = [
+            "description",
+            "root_cause",
+            "claimed_root_cause",
+            "intended_behavior",
+            "attacker_perspective",
+            "observed_result",
+            "strategy",
+            "blockers",
+            "reason",
+            "reassignment_reason",
+            "incomplete_reason",
+            "invariant",
+            "result",
+        ];
+        let paths = [
+            "file",
+            "path",
+            "file_name",
+            "starting_paths",
+            "reviewed_paths",
+            "excluded_paths",
+            "canonical_refs",
+            "ordinary_attack_class_block",
+            "selected_companion_blocks",
+            "block",
+            "source_ref",
+            "member_path",
+            "artifact",
+        ];
+        let identities = [
+            "task_id",
+            "admitted_at",
+            "verdict",
+            "status",
+            "prior_status",
+            "method",
+            "kind",
+            "profile",
+            "state",
+            "severity",
+            "overall_severity",
+            "score",
+            "native_record_sha256",
+            "upstream_commit",
+        ];
+        let mut value = json!({"title":"private title", "scope":["private"], "fixed_code":"private", "payloads":["private"], "instructions":["private"], "validation_plan":{"local":"private", "deployment":"private"}, "unresolved_candidates":["private"], "unresolved":["private"], "line":42, "count":2});
+        for key in prose.iter().chain(paths.iter()).chain(identities.iter()) {
+            value[*key] = json!("private");
+        }
+        let original = value.clone();
+        let counts = redact_provider(&mut value, &[("private".into(), "alias".into())]).unwrap();
+        assert_eq!(
+            counts,
+            ProviderRedactions {
+                code: 3,
+                text: prose.len() + 2
+            }
+        );
+        for key in prose {
+            assert_eq!(value[key], WITHHELD_PROVIDER_TEXT, "{key}");
+        }
+        for key in paths {
+            assert_eq!(value[key], REDACTED_LOCATION, "{key}");
+        }
+        for key in identities {
+            assert_eq!(value[key], original[key], "{key}");
+        }
+        assert_eq!(value["title"], "alias title");
+        assert_eq!(
+            value["unresolved_candidates"][0],
+            provider_pseudonym("fp", "private")
+        );
+        assert_eq!(value["unresolved"], value["unresolved_candidates"]);
+        assert_eq!(value["scope"][0], REDACTED_LOCATION);
+        assert_eq!(value["line"], 42);
+        assert_eq!(value["count"], 2);
+        for key in ["fixed_code", "payloads", "instructions"] {
+            assert!(!value[key].to_string().contains("private"));
+        }
+    }
+
+    #[test]
+    fn provider_redaction_round_trip_failure_is_an_error_and_preserves_input() {
+        #[derive(Serialize, Deserialize)]
+        struct Typed {
+            description: Severity,
+        }
+        let mut value = Typed {
+            description: Severity::High,
+        };
+        assert!(redact_provider(&mut value, &[]).is_err());
+        assert_eq!(value.description, Severity::High);
+    }
+
+    #[test]
+    fn admitted_case_export_uses_shared_masks_and_keeps_unredacted_values() {
+        let (mut case, plan) = crate::agent_audit_admission::tests::planned();
+        case.agent_audit_admissions.push(plan.admission);
+        let a = &mut case.agent_audit_admissions[0];
+        a.outcome.incomplete_reason = Some("unregistered private reason".into());
+        a.retained_projection["records"] = json!([{"native_record":{"title":case.title, "description":"unregistered private description", "trace":[{"file":"private.rs", "line":7}], "remediation":{"strategy":"private strategy", "code_changes":[{"file_name":"private.rs", "fixed_code":"private code"}]}}}]);
+        let original = json!(case.agent_audit_admissions);
+        assert_eq!(
+            json!(
+                case_for_export(&case, RedactionProfile::None)
+                    .unwrap()
+                    .agent_audit_admissions
+            ),
+            original
+        );
+        let exported = case_for_export(&case, RedactionProfile::Standard).unwrap();
+        let a = &exported.agent_audit_admissions[0];
+        assert_eq!(
+            a.outcome.incomplete_reason.as_deref(),
+            Some(WITHHELD_PROVIDER_TEXT)
+        );
+        assert_eq!(a.source.scope, vec![REDACTED_LOCATION]);
+        assert_eq!(a.source.source_ref, REDACTED_LOCATION);
+        assert_eq!(a.admission_id, case.agent_audit_admissions[0].admission_id);
+        let r = &a.retained_projection["records"][0]["native_record"];
+        assert_eq!(r["description"], WITHHELD_PROVIDER_TEXT);
+        assert_eq!(r["trace"][0]["file"], REDACTED_LOCATION);
+        assert_eq!(r["trace"][0]["line"], 7);
+        assert_ne!(r["title"], case.title);
+        assert_eq!(a.retained_projection["withheld_code_fields"], 1);
+        assert!(
+            a.retained_projection["withheld_text_fields"]
+                .as_u64()
+                .unwrap()
+                >= 3
+        );
+        assert_eq!(json!(case.agent_audit_admissions), original);
+    }
+
+    #[test]
+    fn source_audit_identifier_masks_and_exact_withheld_counts() {
+        let (case, mut plan) = crate::agent_audit_admission::tests::planned();
+        plan.admission.outcome.incomplete_reason = Some("private reason".into());
+        plan.admission.retained_projection = json!({
+            "schema_version":"test", "provider_id":plan.admission.provider_id,
+            "provenance":"workflow_recorded", "reported_run_status":"incomplete",
+            "reported_counts":{"confirmed":0,"needs_validation":1,"rejected":0,"reported_confirmed_by_severity":{}},
+            "coverage_by_status":{"blocked":1}, "unresolved_candidates":["private-fingerprint"],
+            "records":[{"fingerprint":"private-fingerprint", "verdict":"needs_validation", "severity":null,
+                "native_record":{"description":"private prose", "fixed_code":"private code"},
+                "native_record_index":0,"native_record_sha256":"digest", "source_locations":[],
+                "coverage_ids":["private-unit"],"reported_verifier_assignments":[]}],
+            "native_coverage_ledger":[{"coverage_id":"private-unit","status":"blocked",
+                "attack_class":"private class","surface":"private surface",
+                "starting_paths":["private.rs"],"unresolved":["private-fingerprint"]}]
+        });
+        let case = plan.resulting_case(&case).unwrap();
+        let masked = case_for_export(&case, RedactionProfile::Standard).unwrap();
+        let projection = &masked.agent_audit_admissions[0].retained_projection;
+        assert_eq!(projection["withheld_text_fields"], 4);
+        assert_eq!(projection["withheld_code_fields"], 1);
+        let report =
+            beginner_report_for_export(&case, "audit-run", RedactionProfile::Standard).unwrap();
+        let audit = &report.source_audits[0];
+        assert_eq!(audit.withheld_text_fields, 4);
+        assert_eq!(audit.withheld_code_fields, 1);
+        let fp = provider_pseudonym("fp", "private-fingerprint");
+        assert_eq!(projection["native_coverage_ledger"][0]["unresolved"][0], fp);
+        assert_eq!(audit.coverage_gaps[0].unresolved, vec![fp.clone()]);
+        assert_eq!(audit.unresolved_candidates, vec![fp]);
+        assert_eq!(
+            audit.coverage_gaps[0].label,
+            provider_pseudonym("unit", "private-unit")
+        );
+    }
 
     fn fixture(artifact_root: &Path, sensitive: bool) -> AssessmentCase {
         let time = Utc.with_ymd_and_hms(2026, 8, 24, 12, 0, 0).unwrap();
@@ -3156,6 +3770,48 @@ mod tests {
     }
 
     #[test]
+    fn admitted_case_redaction_withholds_code_in_retained_projection_and_keeps_hashes() {
+        let (base, plan) = crate::agent_audit_admission::tests::planned();
+        let mut case = plan.resulting_case(&base).unwrap();
+        case.title = "private-provider-identity".into();
+        let a = &mut case.agent_audit_admissions[0];
+        a.source.policy_id = "private-provider-identity".into();
+        a.outcome.incomplete_reason = Some("private-provider-identity".into());
+        a.retained_projection = serde_json::json!({"records":[{"native_record":{
+            "title":"private-provider-identity", "description":"private-provider-identity",
+            "remediation":{"strategy":"private-provider-identity","code_changes":[{"fixed_code":"DO-NOT-SHARE"}]},
+            "execution":{"payloads":["DO-NOT-SHARE"],"instructions":["DO-NOT-SHARE"]}
+        }}]});
+        let original = serde_json::to_value(&case).unwrap();
+        let redacted = case_for_export(&case, RedactionProfile::Standard).unwrap();
+        let text = serde_json::to_string(&redacted).unwrap();
+        assert!(!text.contains("DO-NOT-SHARE"));
+        let admission = &redacted.agent_audit_admissions[0];
+        assert_eq!(admission.source.policy_id, "private-provider-identity");
+        assert!(
+            !admission
+                .retained_projection
+                .to_string()
+                .contains("private-provider-identity")
+        );
+        assert_eq!(
+            admission.outcome.incomplete_reason.as_deref(),
+            Some(WITHHELD_PROVIDER_TEXT)
+        );
+        assert_eq!(admission.retained_projection["withheld_code_fields"], 3);
+        assert_eq!(
+            admission.admission_sha256,
+            case.agent_audit_admissions[0].admission_sha256
+        );
+        assert_eq!(serde_json::to_value(&case).unwrap(), original);
+        assert!(
+            serde_json::to_string(&case_for_export(&case, RedactionProfile::None).unwrap())
+                .unwrap()
+                .contains("DO-NOT-SHARE")
+        );
+    }
+
+    #[test]
     fn standard_redaction_preserves_only_asset_scope_keys_reconstructible_from_asset_id() {
         let temp = tempdir().unwrap();
         let artifact_root = temp.path().join("artifacts");
@@ -3208,7 +3864,7 @@ mod tests {
             },
         ];
 
-        let redacted = case_for_export(&case, RedactionProfile::Standard);
+        let redacted = case_for_export(&case, RedactionProfile::Standard).unwrap();
         let coverage_by_id = redacted
             .coverage
             .iter()
@@ -3271,6 +3927,7 @@ mod tests {
             priority_reasons: vec!["Source severity: medium".into()],
             asset_ids: vec!["asset-1".into()],
             evidence: vec![Evidence {
+                provider_record: None,
                 id: "evidence-cloudsplaining".into(),
                 finding_id: "finding-cloudsplaining".into(),
                 run_id: "run-1".into(),
@@ -3278,6 +3935,7 @@ mod tests {
                 kind: EvidenceKind::Configuration,
                 engine_id: "cloudsplaining".into(),
                 scanner_details: Some(ScannerFindingDetails {
+                    remediation_code_changes: None,
                     description: Some("Upstream policy description".into()),
                     remediation: None,
                     installed_version: None,
@@ -3326,11 +3984,11 @@ mod tests {
             finding_snapshot: Some(finding),
         });
 
-        let unredacted = case_for_export(&case, RedactionProfile::None);
+        let unredacted = case_for_export(&case, RedactionProfile::None).unwrap();
         assert!(unredacted.findings[0].title.ends_with("policy a"));
         assert!(unredacted.findings[0].recommendation.contains("role IT"));
 
-        let redacted = case_for_export(&case, RedactionProfile::Standard);
+        let redacted = case_for_export(&case, RedactionProfile::Standard).unwrap();
         let redacted_finding = &redacted.findings[0];
         assert_eq!(
             redacted_finding.title,
@@ -3408,7 +4066,8 @@ mod tests {
             }
         }
 
-        let redacted_legacy_case = case_for_export(&legacy_case, RedactionProfile::Standard);
+        let redacted_legacy_case =
+            case_for_export(&legacy_case, RedactionProfile::Standard).unwrap();
         assert_eq!(
             redacted_legacy_case.findings[0].title,
             "Cloudsplaining IAM policy finding (details redacted)"
@@ -3573,6 +4232,7 @@ mod tests {
             priority_reasons: vec![],
             asset_ids: vec!["asset-1".into()],
             evidence: vec![Evidence {
+                provider_record: None,
                 id: "evidence-run-1-legacy".into(),
                 finding_id: finding_id.clone(),
                 run_id: "run-1".into(),
@@ -3670,6 +4330,7 @@ mod tests {
             priority_reasons: vec![],
             asset_ids: vec!["asset-1".into()],
             evidence: vec![Evidence {
+                provider_record: None,
                 id: "evidence-run-2".into(),
                 finding_id: "finding-run-2".into(),
                 run_id: "run-2".into(),
@@ -3815,6 +4476,7 @@ mod tests {
                 priority_reasons: vec![],
                 asset_ids: vec!["asset-1".into()],
                 evidence: vec![Evidence {
+                    provider_record: None,
                     id: format!("evidence-{id}"),
                     finding_id: id.into(),
                     run_id: artifact.run_id.clone(),
@@ -4174,6 +4836,7 @@ mod tests {
             priority_reasons: vec![],
             asset_ids: vec!["asset-1".into()],
             evidence: vec![Evidence {
+                provider_record: None,
                 id: "evidence-1".into(),
                 finding_id,
                 run_id: "run-1".into(),
@@ -4203,6 +4866,7 @@ mod tests {
 
         validate_evidence_references(&case).unwrap();
         case.findings[0].evidence[0].scanner_details = Some(ScannerFindingDetails {
+            remediation_code_changes: None,
             description: None,
             remediation: None,
             installed_version: None,
@@ -4431,7 +5095,7 @@ mod tests {
             tags: vec![],
         });
 
-        let redacted = case_for_export(&case, RedactionProfile::Standard);
+        let redacted = case_for_export(&case, RedactionProfile::Standard).unwrap();
         let encoded = serde_json::to_string(&redacted).unwrap();
 
         assert_eq!(redacted.assets[0].name, "Asset 1");
@@ -4539,7 +5203,7 @@ mod tests {
             ),
         ];
 
-        let unredacted_case = case_for_export(&case, RedactionProfile::None);
+        let unredacted_case = case_for_export(&case, RedactionProfile::None).unwrap();
         assert_eq!(
             unredacted_case
                 .inventory_observations
@@ -4606,7 +5270,7 @@ mod tests {
             );
         }
 
-        let redacted_case = case_for_export(&case, RedactionProfile::Standard);
+        let redacted_case = case_for_export(&case, RedactionProfile::Standard).unwrap();
         let redacted_json = serde_json::to_string(&redacted_case).unwrap();
         for sentinel in [
             ENDPOINT,
@@ -5187,6 +5851,7 @@ mod tests {
             priority_reasons: vec![format!("Observed at {PLAN_ADDRESS_ONE}")],
             asset_ids: vec!["asset-1".into()],
             evidence: vec![Evidence {
+                provider_record: None,
                 id: "evidence-1".into(),
                 finding_id: "finding-1".into(),
                 run_id: "run-1".into(),
@@ -5194,6 +5859,7 @@ mod tests {
                 kind: EvidenceKind::Observation,
                 engine_id: NAABU_ENGINE_ID.into(),
                 scanner_details: Some(ScannerFindingDetails {
+                    remediation_code_changes: None,
                     description: Some(ARBITRARY_SCANNER_DESCRIPTION.into()),
                     remediation: Some(ARBITRARY_SCANNER_REMEDIATION.into()),
                     installed_version: Some(format!("installed on {PLAN_HOSTNAME}")),
@@ -5275,8 +5941,9 @@ mod tests {
         });
         case.raw_artifacts[0].relative_path = format!("raw/{SENTINEL}.txt");
 
-        let unredacted_value = serde_json::to_value(case_for_export(&case, RedactionProfile::None))
-            .expect("the unredacted case serializes");
+        let unredacted_value =
+            serde_json::to_value(case_for_export(&case, RedactionProfile::None).unwrap())
+                .expect("the unredacted case serializes");
         let unredacted = serde_json::to_string(&unredacted_value).unwrap();
         assert!(
             unredacted.contains(SENTINEL),
@@ -5317,7 +5984,7 @@ mod tests {
                 .is_empty(),
             "attempt-result redaction fixture must be meaningful"
         );
-        let redacted = case_for_export(&case, RedactionProfile::Standard);
+        let redacted = case_for_export(&case, RedactionProfile::Standard).unwrap();
         let redacted_value = serde_json::to_value(&redacted).expect("the redacted case serializes");
         let redacted_json = serde_json::to_string(&redacted).unwrap();
         assert!(!redacted_json.contains(SENTINEL));
@@ -5651,14 +6318,14 @@ mod tests {
         ];
         case.scan_runs[0].report_asset_snapshots = input_snapshots.clone();
 
-        let unredacted = case_for_export(&case, RedactionProfile::None);
+        let unredacted = case_for_export(&case, RedactionProfile::None).unwrap();
         assert_eq!(
             serde_json::to_value(&unredacted.scan_runs[0].report_asset_snapshots).unwrap(),
             serde_json::to_value(&input_snapshots).unwrap(),
             "RedactionProfile::None must leave the frozen report assets unchanged"
         );
 
-        let redacted = case_for_export(&case, RedactionProfile::Standard);
+        let redacted = case_for_export(&case, RedactionProfile::Standard).unwrap();
         assert!(
             !serde_json::to_string(&redacted.scan_runs)
                 .unwrap()
@@ -5857,7 +6524,7 @@ mod tests {
 
         // The bundle carries the same identifier in its own payload, on a
         // separate code path from the beginner report.
-        let bundle = case_for_export(&case, RedactionProfile::Standard);
+        let bundle = case_for_export(&case, RedactionProfile::Standard).unwrap();
         assert!(
             !serde_json::to_string(&bundle)
                 .unwrap()
@@ -5913,7 +6580,7 @@ mod tests {
         );
         assert!(!gap.reason.contains("Upstream detail:"));
 
-        let bundle = case_for_export(&case, RedactionProfile::Standard);
+        let bundle = case_for_export(&case, RedactionProfile::Standard).unwrap();
         let bundle_json = serde_json::to_string(&bundle).unwrap();
         assert!(!bundle_json.contains(PRIVATE_DETAIL));
         let bundled_control = &bundle.scan_runs[0].engine_runs[0].manual_review_controls[0];
@@ -5943,7 +6610,7 @@ mod tests {
         let evidence_before = serde_json::to_value(&finding.evidence).unwrap();
         case.finding_observations[0].finding_snapshot = Some(finding.clone());
 
-        let bundle_case = case_for_export(&case, RedactionProfile::None);
+        let bundle_case = case_for_export(&case, RedactionProfile::None).unwrap();
         let exported = &bundle_case.findings[0];
         let exported_snapshot = bundle_case.finding_observations[0]
             .finding_snapshot
@@ -6058,5 +6725,104 @@ mod tests {
             .find(|finding| finding.finding_id == redacted_group.representative_finding_id)
             .unwrap();
         assert_eq!(redacted_group.title, redacted_finding.title);
+    }
+
+    #[test]
+    fn legacy_bundle_bytes_match_pre_admission_support() {
+        let _version = crate::product_version::pin("0.6.0");
+        // Fixed input, time, signing key and identity. Hashes were measured
+        // through the native runner against the pre-slice bundle implementation.
+        #[derive(Serialize)]
+        struct Unsigned<'a> {
+            schema_version: &'a str,
+            algorithm: &'a str,
+            key_id: &'a str,
+            public_key_base64: &'a str,
+            established_at: DateTime<Utc>,
+            continuity_event: crate::export_identity::SigningIdentityContinuityEvent,
+            previous_identity: &'a Option<Box<LocalSigningIdentityDocument>>,
+            notice: &'a str,
+        }
+        let temp = tempdir().unwrap();
+        let root = temp.path().join("artifacts");
+        let mut case = fixture(&root, false);
+        let time = Utc.with_ymd_and_hms(2026, 8, 24, 13, 0, 0).unwrap();
+        case.created_at = time;
+        case.updated_at = time;
+        case.knowledge_cutoff = Some(time);
+        let key = SigningKey::from_bytes(&[23; 32]);
+        let public = BASE64.encode(key.verifying_key().as_bytes());
+        let key_id = sha256_bytes(key.verifying_key().as_bytes());
+        let mut identity = load_or_create_local_signing_identity(&temp.path().join("identity.key"))
+            .unwrap()
+            .document;
+        identity.established_at = time;
+        identity.key_id = key_id.clone();
+        identity.public_key_base64 = public.clone();
+        let payload = serde_json::to_vec(&Unsigned {
+            schema_version: &identity.schema_version,
+            algorithm: &identity.algorithm,
+            key_id: &identity.key_id,
+            public_key_base64: &identity.public_key_base64,
+            established_at: time,
+            continuity_event: identity.continuity_event,
+            previous_identity: &identity.previous_identity,
+            notice: &identity.notice,
+        })
+        .unwrap();
+        identity.self_signature_base64 = BASE64.encode(key.sign(&payload).to_bytes());
+        verify_identity_document(&identity, 1).unwrap();
+        let mut hashes = BTreeMap::new();
+        for profile in [RedactionProfile::None, RedactionProfile::Standard] {
+            for raw in [false, true] {
+                let redacted = case_for_export(&case, profile).unwrap();
+                let report = beginner_report_for_export(&case, "run-1", profile).unwrap();
+                let (records, sources) = prepare_artifacts(&case, &root, profile, raw).unwrap();
+                let mut documents = build_documents(
+                    &redacted,
+                    &case.scan_runs[0],
+                    &report,
+                    &records,
+                    profile,
+                    raw,
+                    time,
+                )
+                .unwrap();
+                assert!(!documents.contains_key("source-audit-admissions.json"));
+                insert_json(&mut documents, SIGNING_IDENTITY_PATH, &identity, false).unwrap();
+                let path = temp
+                    .path()
+                    .join(format!("{}-{raw}.case.tar.gz", profile.as_str()));
+                build_archive(
+                    File::create(&path).unwrap(),
+                    &documents,
+                    &sources,
+                    &case,
+                    "run-1",
+                    profile,
+                    time,
+                    &key,
+                    &key_id,
+                    &public,
+                    records.len(),
+                )
+                .unwrap();
+                let verified = verify_case_bundle(&path).unwrap();
+                assert!(
+                    !verified
+                        .manifest
+                        .schemas
+                        .contains_key("source_audit_admissions")
+                );
+                hashes.insert(
+                    format!("{}-{raw}", profile.as_str()),
+                    verified.archive_sha256,
+                );
+            }
+        }
+        assert_eq!(
+            json!(hashes),
+            json!({"none-false": "dcee54a95ac2cb5dd7bb8d20625b34a9b56c74015454baeda5dc464bcea6140d", "none-true": "e66ef9b61573a86f39ac181465d63efb7270e1cfd687c20da4bb062a568146d8", "standard-false": "f8b44779b445f6fedf23be502c1c4f76efd790072dccfbc891557e9e796bc57b", "standard-true": "ba3eab79536479b074d0610263d3443830e0c692bcdda4c0f663c5f932367095"})
+        );
     }
 }

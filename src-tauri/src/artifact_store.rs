@@ -381,6 +381,12 @@ impl ArtifactStore {
         &self.root
     }
 
+    pub(crate) fn prepare_report_snapshot_directory(&self, case_id: &str) -> AppResult<PathBuf> {
+        let case_id = safe_component("case id", case_id)?;
+        let case_root = prepare_private_directory_component(&self.root, &self.root, case_id)?;
+        prepare_private_directory_component(&self.root, &case_root, "report-snapshots")
+    }
+
     pub fn prepare_run(
         &self,
         context: &ArtifactContext,
@@ -694,7 +700,7 @@ fn collect_regular_files(
     Ok(())
 }
 
-fn prepare_private_directory_component(
+pub(crate) fn prepare_private_directory_component(
     artifact_root: &Path,
     parent: &Path,
     component: &str,
@@ -776,7 +782,7 @@ fn safe_filename(value: &str) -> AppResult<&str> {
     Ok(value)
 }
 
-fn normalized_artifact_relative_path(artifact: &RawArtifact) -> AppResult<&Path> {
+pub(crate) fn normalized_artifact_relative_path(artifact: &RawArtifact) -> AppResult<&Path> {
     let relative = Path::new(&artifact.relative_path);
     let slash_components_are_normal = !artifact.relative_path.is_empty()
         && !artifact.relative_path.contains(['\\', '\0'])
@@ -795,7 +801,7 @@ fn normalized_artifact_relative_path(artifact: &RawArtifact) -> AppResult<&Path>
     Ok(relative)
 }
 
-fn unsafe_artifact_path(artifact: &RawArtifact) -> AppError {
+pub(crate) fn unsafe_artifact_path(artifact: &RawArtifact) -> AppError {
     AppError::Runtime(format!(
         "artifact {} has an unsafe or non-normalized relative path",
         artifact.id
@@ -957,7 +963,7 @@ fn open_read_append_no_follow(path: &Path) -> std::io::Result<File> {
     options.open(path)
 }
 
-fn open_read_write_no_follow(path: &Path) -> std::io::Result<File> {
+pub(crate) fn open_read_write_no_follow(path: &Path) -> std::io::Result<File> {
     let mut options = OpenOptions::new();
     options.read(true).write(true);
     #[cfg(unix)]
@@ -1002,7 +1008,11 @@ fn verify_capture_path_identity(root: &Path, path: &Path, held_file: &File) -> A
     verify_open_path_identity(root, path, held_file, "private capture")
 }
 
-fn verify_control_path_identity(root: &Path, path: &Path, held_file: &File) -> AppResult<()> {
+pub(crate) fn verify_control_path_identity(
+    root: &Path,
+    path: &Path,
+    held_file: &File,
+) -> AppResult<()> {
     verify_open_path_identity(root, path, held_file, "private control")
 }
 
@@ -1394,7 +1404,7 @@ fn verify_existing_private_control_file(
     result
 }
 
-fn sha256_bytes(bytes: &[u8]) -> String {
+pub(crate) fn sha256_bytes(bytes: &[u8]) -> String {
     hex::encode(Sha256::digest(bytes))
 }
 

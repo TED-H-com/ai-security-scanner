@@ -1,3 +1,5 @@
+import { hasSourceAudit } from "../runLifecycle";
+import { runSupportsReportAttachments } from "../exportFormatEligibility";
 import { useEffect, useState } from "react";
 
 import { caseIdentityPresentation } from "../caseIdentityPresentation";
@@ -217,6 +219,7 @@ const copy = {
   findings: { en: "Case / selected-run result records", zhTW: "案件全部／本輪結果紀錄" },
   evidenceIndexes: { en: "All / selected-run evidence records", zhTW: "全部／本輪證據索引" },
   runs: { en: "Scan runs / selected-run jobs", zhTW: "掃描輪次／本輪工作" },
+  sourceAudits: { en: "Selected source audits", zhTW: "本輪原始碼稽核" },
   externalPolicies: { en: "Pinned external-scope grants", zhTW: "固定的外部範圍授權" },
   rawEvidence: { en: "Raw evidence included / omitted", zhTW: "原始證據包含／略過" },
   sensitiveOmitted: { en: "Sensitive raw evidence omitted", zhTW: "略過的敏感原始證據" },
@@ -356,7 +359,8 @@ export function ExportPage({ workspace, selectedRunId, runningScanResultsPending
     .map((run) => `${run.id}:${run.status}:${run.progress}:${run.finishedAt ?? ""}`)
     .join("|")}`;
   const [format, setFormat] = useState<ExportFormat>("html");
-  const [includeRawEvidence, setIncludeRawEvidence] = useState(false);
+  const [requestedRawEvidence, setIncludeRawEvidence] = useState(false);
+  const includeRawEvidence = requestedRawEvidence && runSupportsReportAttachments(selectedRun);
   const [redactSensitiveValues, setRedactSensitiveValues] = useState(!demoMode);
   const [preview, setPreview] = useState<ExportPreview>();
   const [previewError, setPreviewError] = useState<string>();
@@ -469,7 +473,7 @@ export function ExportPage({ workspace, selectedRunId, runningScanResultsPending
   // debounce -- the sentence below must never describe settings the user has
   // already changed. HTML and case bundles can carry original files when
   // redaction is off; see the copy note on `includeRawBundle`.
-  const formatSupportsAttachments = format === "case_bundle" || format === "html";
+  const formatSupportsAttachments = runSupportsReportAttachments(selectedRun) && (format === "case_bundle" || format === "html");
   const rawSourcesAttached = formatSupportsAttachments && includeRawEvidence && !redactSensitiveValues;
   // Signing and case-wide asset relations remain specific to case bundles.
   // HTML attachments do not change either of those contracts.
@@ -495,6 +499,7 @@ export function ExportPage({ workspace, selectedRunId, runningScanResultsPending
   const privacyTone = rawSourcesAttached ? "danger" : redactSensitiveValues ? "neutral" : "warning";
   const shownCount = (value: number | undefined): string => value === undefined ? "—" : formatNumber(value);
   const renderFormatCard = (id: ExportFormat) => {
+    if (hasSourceAudit(selectedRun) && !exportFormatIsAvailable(id, selectedRun)) return null;
     const item = formatCopy[id];
     const unavailableWithoutRun = isFindingOnlyExportFormat(id) && !findingOnlyFormatsAvailable;
     const unavailableInDemo = demoMode && id !== "json";
@@ -696,6 +701,7 @@ export function ExportPage({ workspace, selectedRunId, runningScanResultsPending
             <div><dt>{text(copy.findings)}</dt><dd>{preview ? `${formatNumber(preview.canonicalFindingCount)} / ${formatNumber(preview.selectedRunFindingCount)}` : "—"}</dd></div>
             <div><dt>{text(copy.evidenceIndexes)}</dt><dd>{preview ? `${formatNumber(preview.evidenceIndexCount)} / ${formatNumber(preview.selectedRunEvidenceCount)}` : "—"}</dd></div>
             <div><dt>{text(copy.runs)}</dt><dd>{preview ? `${formatNumber(preview.scanRunCount)} / ${formatNumber(preview.selectedEngineRunCount)}` : "—"}</dd></div>
+            {Boolean(preview?.selectedSourceAuditCount) && <div><dt>{text(copy.sourceAudits)}</dt><dd>{shownCount(preview?.selectedSourceAuditCount)}</dd></div>}
             <div><dt>{text(copy.externalPolicies)}</dt><dd>{shownCount(preview?.externalScopeGrantCount)}</dd></div>
             <div><dt>{text(copy.rawEvidence)}</dt><dd>{preview ? `${formatNumber(preview.rawArtifactsIncluded)} / ${formatNumber(preview.rawArtifactsOmitted)}` : "—"}</dd></div>
             <div><dt>{text(copy.sensitiveOmitted)}</dt><dd>{shownCount(preview?.sensitiveRawArtifactsOmitted)}</dd></div>

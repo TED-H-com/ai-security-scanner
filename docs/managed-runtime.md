@@ -6,6 +6,10 @@ Product behavior: [Product specification](product-spec.md)
 
 The managed runtime executes containerized scanners without turning runtime administration into a user task. Its component, process, directory, ownership, and deletion boundaries isolate disposable scan infrastructure from cases, evidence, reports, and unrelated system state.
 
+## Development skill preparation
+
+The [pinned bootstrap](skill-bootstrap.md) and development CLI `runtime prepare` can prepare selected pinned scanner images through an existing compatible runtime or an explicitly selected verified managed-runtime bundle. Automatic acquisition of that bundle on a cold host is still pending; the desktop setup behavior below does not establish that the new skill entry already provisions it. [Publication status](release-model.md) separates the two deliveries.
+
 ## Product-facing runtime contract
 
 `ai-security-scanner` can run containerized engines on a clean supported Windows workstation without asking the user to install Docker, Podman, QEMU, or a system service manually. The runtime is disposable product infrastructure, not the product workspace.

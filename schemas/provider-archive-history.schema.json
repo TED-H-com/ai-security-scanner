@@ -1,0 +1,376 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "ai-security-scanner.provider-archive-history/v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "preparations"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": "ai-security-scanner.provider-archive-history/v1"
+    },
+    "preparations": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/preparation"
+      }
+    }
+  },
+  "$defs": {
+    "member": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "path",
+        "sha256",
+        "byte_length"
+      ],
+      "properties": {
+        "path": {
+          "type": "string",
+          "minLength": 1
+        },
+        "sha256": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        },
+        "byte_length": {
+          "type": "integer",
+          "minimum": 0
+        }
+      }
+    },
+    "head": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "sequence",
+        "entry_sha256"
+      ],
+      "properties": {
+        "sequence": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "entry_sha256": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        }
+      }
+    },
+    "selector": {
+      "oneOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "type",
+            "name",
+            "revision"
+          ],
+          "properties": {
+            "type": {
+              "const": "document"
+            },
+            "name": {
+              "type": "string",
+              "minLength": 1
+            },
+            "revision": {
+              "type": "integer",
+              "minimum": 1
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "type",
+            "assignment_id"
+          ],
+          "properties": {
+            "type": {
+              "const": "assignment"
+            },
+            "assignment_id": {
+              "type": "string",
+              "minLength": 1
+            }
+          }
+        }
+      ]
+    },
+    "captured": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "selector",
+        "role",
+        "sha256",
+        "byte_length",
+        "available",
+        "member"
+      ],
+      "properties": {
+        "selector": {
+          "$ref": "#/$defs/selector"
+        },
+        "role": {
+          "anyOf": [
+            {
+              "enum": [
+                "reconnaissance_baseline",
+                "reconnaissance_focused",
+                "hunter",
+                "post_wave_critic",
+                "final_clean_critic",
+                "candidate_verifier",
+                "final_verifier"
+              ]
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "sha256": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        },
+        "byte_length": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "available": {
+          "type": "boolean"
+        },
+        "member": {
+          "anyOf": [
+            {
+              "type": "string",
+              "minLength": 1
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      }
+    },
+    "completeness": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "recorded_history",
+        "accepted_captures",
+        "sealed_package",
+        "source_bodies"
+      ],
+      "properties": {
+        "recorded_history": {
+          "type": "boolean"
+        },
+        "accepted_captures": {
+          "type": "boolean"
+        },
+        "sealed_package": {
+          "type": "boolean"
+        },
+        "source_bodies": {
+          "type": "boolean"
+        }
+      }
+    },
+    "preparation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "provider_id",
+        "preparation_request_id",
+        "session_id",
+        "provider_run_id",
+        "provider_task_id",
+        "state",
+        "recorded_head",
+        "seal_sha256",
+        "admission_id",
+        "admission_sha256",
+        "descriptor",
+        "package",
+        "captured",
+        "source_body_omissions",
+        "completeness"
+      ],
+      "properties": {
+        "provider_id": {
+          "const": "cloudflare-security-audit"
+        },
+        "preparation_request_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "session_id": {
+          "anyOf": [
+            {
+              "type": "string",
+              "minLength": 1
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "provider_run_id": {
+          "anyOf": [
+            {
+              "type": "string",
+              "minLength": 1
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "provider_task_id": {
+          "anyOf": [
+            {
+              "type": "string",
+              "minLength": 1
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "state": {
+          "enum": [
+            "admitted",
+            "sealed",
+            "unsealed",
+            "blocked"
+          ]
+        },
+        "recorded_head": {
+          "$ref": "#/$defs/head"
+        },
+        "seal_sha256": {
+          "anyOf": [
+            {
+              "type": "string",
+              "pattern": "^[a-f0-9]{64}$"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "admission_id": {
+          "anyOf": [
+            {
+              "type": "string",
+              "minLength": 1
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "admission_sha256": {
+          "anyOf": [
+            {
+              "type": "string",
+              "pattern": "^[a-f0-9]{64}$"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "descriptor": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/member"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "package": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/member"
+          }
+        },
+        "captured": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/captured"
+          }
+        },
+        "source_body_omissions": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/member"
+          }
+        },
+        "completeness": {
+          "$ref": "#/$defs/completeness"
+        },
+        "termination": {
+          "$ref": "#/$defs/termination"
+        },
+        "outcome_run": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "run_id",
+            "task_id"
+          ],
+          "properties": {
+            "run_id": {
+              "type": "string",
+              "minLength": 1
+            },
+            "task_id": {
+              "type": "string",
+              "minLength": 1
+            }
+          }
+        }
+      }
+    },
+    "termination": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "entry_sha256",
+        "occurred_at",
+        "reason"
+      ],
+      "properties": {
+        "entry_sha256": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        },
+        "occurred_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "reason": {
+          "enum": [
+            "host_cancelled",
+            "host_interrupted",
+            "budget_exhausted",
+            "authorization_unavailable",
+            "required_artifacts_unavailable",
+            "workflow_failed"
+          ]
+        }
+      }
+    }
+  }
+}

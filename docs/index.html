@@ -82,10 +82,14 @@
             <span class="lang-en">Check your code, websites and company systems from one desktop app. Get one report that explains what needs attention, why it matters and what you can do next.</span><span class="lang-ja" lang="ja">コード、ウェブサイト、社内システムを 1 つのデスクトップアプリでチェック。対応が必要な問題、その理由、次にすることを 1 つのレポートで確認できます。</span>
             <span class="lang-zh" lang="zh-Hant">在一個桌面程式裡，檢查你的程式碼、網站與公司系統。看一份報告，了解哪裡需要注意、為什麼重要，以及接下來可以怎麼做。</span>
           </p>
+          <p class="snapshot-note" id="delivery-status">
+            <span class="lang-en">Desktop v0.6.1 and its repository skill are available. The new skill-first workflow is in development. <a href="#skill-development">See what is ready</a>.</span><span class="lang-ja" lang="ja">デスクトップ v0.6.1 と操作用スキルは公開済みです。新しい skill 主体のフローは開発中です。 <a href="#skill-development">開発状況</a>をご覧ください。</span>
+            <span class="lang-zh" lang="zh-Hant">桌面 v0.6.1 與操作 skill 已公開；新的 skill 主流程仍在開發。<a href="#skill-development">查看目前進度</a>。</span>
+          </p>
           <div class="button-row">
             <a class="button button-primary" href="https://github.com/TED-H-com/ai-security-scanner/releases/tag/v0.6.1">
-              <span class="lang-en">Download v0.6.1 stable release</span><span class="lang-ja" lang="ja">安定版 v0.6.1 をダウンロード</span>
-              <span class="lang-zh" lang="zh-Hant">下載 v0.6.1 正式版</span>
+              <span class="lang-en">Download desktop v0.6.1</span><span class="lang-ja" lang="ja">デスクトップ安定版 v0.6.1 をダウンロード</span>
+              <span class="lang-zh" lang="zh-Hant">下載桌面 v0.6.1 正式版</span>
               <span aria-hidden="true">→</span>
             </a>
             <a class="button button-secondary" href="#agent-skills">
@@ -372,19 +376,38 @@
             <span class="lang-zh" lang="zh-Hant">讓 AI 助手陪你完成第一次掃描。</span>
           </h2>
           <p>
-            <span class="lang-en">Claude Code or Codex on your computer can help install the app, check setup, explain the results and save your report. You choose the targets and start the scan in the desktop app.</span><span class="lang-ja" lang="ja">お使いのコンピューター上の Claude Code や Codex が、インストール、設定確認、結果の説明、レポート保存を手伝います。対象の選択とスキャン開始は、デスクトップアプリで行います。</span>
-            <span class="lang-zh" lang="zh-Hant">同一台電腦上的 Claude Code 或 Codex，可以協助安裝、確認設定、解讀結果與儲存報告。你選好目標，再從桌面程式開始掃描。</span>
+            <span class="lang-en">The published repository skill helps you install the desktop app, check readiness, understand results and save a report. You select the targets and start the scan in the app.</span><span class="lang-ja" lang="ja">公開済みのリポジトリスキルが、デスクトップアプリのインストール、準備状況の確認、結果の説明、レポート保存を支援します。対象を選び、アプリでスキャンを開始してください。</span>
+            <span class="lang-zh" lang="zh-Hant">已公開的儲存庫 skill 可以協助安裝桌面版、確認準備狀態、解讀結果與儲存報告。你選好目標，再從程式開始掃描。</span>
           </p>
         </div>
-        <p>
-          <span class="lang-en">Ask your assistant to use the ai-security-scanner skill. If it runs on another computer, it can give you instructions and download links.</span><span class="lang-ja" lang="ja">アシスタントに ai-security-scanner スキルの使用を依頼してください。別のコンピューターで動くアシスタントは、手順やダウンロードリンクを案内できます。</span>
-          <span class="lang-zh" lang="zh-Hant">告訴助手使用 ai-security-scanner skill 即可。如果助手在另一台電腦上，它可以提供操作說明與下載連結。</span>
-        </p>
-        <div class="button-row">
-          <a class="button button-primary lang-en" href="https://github.com/TED-H-com/ai-security-scanner/blob/main/docs/getting-started.md#use-with-an-agent-skill">Use a Skill</a><a class="button button-primary lang-ja" href="https://github.com/TED-H-com/ai-security-scanner/blob/main/docs/getting-started.md#use-with-an-agent-skill" lang="ja">スキルを使う</a>
-          <a class="button button-primary lang-zh" lang="zh-Hant" href="https://github.com/TED-H-com/ai-security-scanner/blob/main/docs/getting-started.zh-TW.md#透過-agent-skill-使用">使用 Skill</a>
-          <a class="button button-secondary" href="https://github.com/TED-H-com/ai-security-scanner/blob/main/.claude/skills/ai-security-scanner/SKILL.md">Claude Code Skill</a>
-          <a class="button button-secondary" href="https://github.com/TED-H-com/ai-security-scanner/blob/main/.codex/skills/ai-security-scanner/SKILL.md">Codex Skill</a>
+        <div class="tool-group">
+          <h3><span class="lang-en">Available now: desktop operator skill</span><span class="lang-ja" lang="ja">現在利用可能：デスクトップ操作用スキル</span><span class="lang-zh" lang="zh-Hant">現在可用：桌面操作 skill</span></h3>
+          <p>
+            <span class="lang-en">Open this repository in your local assistant and ask it to use ai-security-scanner. Keep the checkout available for its linked guides. An assistant on another computer can provide instructions and download links.</span><span class="lang-ja" lang="ja">ローカルのアシスタントでリポジトリを開き、ai-security-scanner の使用を依頼してください。参照先の操作ガイドを読めるよう checkout を保持します。別のコンピューター上のアシスタントは、手順とダウンロードリンクを案内できます。</span>
+            <span class="lang-zh" lang="zh-Hant">在本機助手開啟儲存庫，請它使用 ai-security-scanner，並保留 checkout 供它讀取操作文件。在另一台電腦上的助手可提供說明與下載連結。</span>
+          </p>
+          <div class="button-row">
+            <a class="button button-primary lang-en" href="https://github.com/TED-H-com/ai-security-scanner/blob/main/docs/getting-started.md#use-with-an-agent-skill">Use the desktop skill</a><a class="button button-primary lang-ja" href="https://github.com/TED-H-com/ai-security-scanner/blob/main/docs/getting-started.md#use-with-an-agent-skill" lang="ja">デスクトップ操作用スキルを使う</a>
+            <a class="button button-primary lang-zh" lang="zh-Hant" href="https://github.com/TED-H-com/ai-security-scanner/blob/main/docs/getting-started.zh-TW.md#透過-agent-skill-使用">使用桌面操作 skill</a>
+            <a class="button button-secondary" href="https://github.com/TED-H-com/ai-security-scanner/blob/main/.claude/skills/ai-security-scanner/SKILL.md">Claude Code Skill</a>
+            <a class="button button-secondary" href="https://github.com/TED-H-com/ai-security-scanner/blob/main/.codex/skills/ai-security-scanner/SKILL.md">Codex Skill</a>
+          </div>
+        </div>
+        <div class="tool-group" id="skill-development">
+          <h3><span class="lang-en">In development: scan through one skill</span><span class="lang-ja" lang="ja">開発中：1 つのスキルでスキャン</span><span class="lang-zh" lang="zh-Hant">開發中：透過單一 skill 完成掃描</span></h3>
+          <p>
+            <span class="lang-en">The next delivery brings scanning, the shared report and portable case restore into one skill. Its source implementation is not yet a published preview or stable release.</span><span class="lang-ja" lang="ja">次の段階では、スキャン、共通レポート、別の環境での案件復元を 1 つのスキルで行えるようにします。開発ソースには実装がありますが、プレビュー版も安定版も未公開です。</span>
+            <span class="lang-zh" lang="zh-Hant">下一階段以單一 skill 串起掃描、共用報告與可攜式案件還原。目前已有開發實作，尚未發布預覽版或正式版。</span>
+          </p>
+          <ul>
+            <li><span class="lang-en">Implemented: pinned setup, selected scanner preparation, foreground scans, saved reports and case archive/restore. A real Linux Gitleaks scan through restore is recorded.</span><span class="lang-ja" lang="ja">実装済み：固定ソースでの準備、選択したスキャナーの準備、フォアグラウンド実行、レポート保存、案件のアーカイブと復元。Linux では実際の Gitleaks スキャンから復元までを記録しています。</span><span class="lang-zh" lang="zh-Hant">已實作：固定來源準備、所選掃描器準備、前景掃描、報告保存與案件封存還原。Linux 已記錄真正 Gitleaks 掃描至還原。</span></li>
+            <li><span class="lang-en">Cloudflare source audit execution and case/report integration are implemented in development source; failed and not-started audit checks appear in the case, desktop Results and shared report.</span><span class="lang-ja" lang="ja">Cloudflare ソース監査の実行と案件・レポートへの統合は開発ソースに実装済みです。失敗・未開始の監査チェックは案件、デスクトップの結果画面、共通レポートに表示されます。</span><span class="lang-zh" lang="zh-Hant">Cloudflare 原始碼稽核執行與案件／報告整合已在開發原始碼實作；失敗與未開始稽核檢查會顯示於案件、桌面結果及共用報告。</span></li>
+            <li><span class="lang-en">Next: automatic runtime setup on a new computer and verification of the complete skill workflow across the declared hosts, platforms and asset types.</span><span class="lang-ja" lang="ja">次の作業：新しいコンピューターでの実行環境の自動準備と、対象のホスト、プラットフォーム、資産種別での完全な skill フローの検証。</span><span class="lang-zh" lang="zh-Hant">接下來：全新電腦的執行環境自動準備，以及宣稱宿主、平台與資產類型的完整 skill 流程驗證。</span></li>
+          </ul>
+          <div class="button-row">
+            <a class="button button-secondary" href="https://github.com/TED-H-com/ai-security-scanner/blob/main/docs/development-status.md" data-href-en="https://github.com/TED-H-com/ai-security-scanner/blob/main/docs/development-status.md" data-href-zh="https://github.com/TED-H-com/ai-security-scanner/blob/main/docs/development-status.zh-TW.md" data-href-ja="https://github.com/TED-H-com/ai-security-scanner/blob/main/docs/development-status.md"><span class="lang-en">Development progress</span><span class="lang-ja" lang="ja">開発状況</span><span class="lang-zh" lang="zh-Hant">開發進度</span></a>
+            <a class="button button-secondary" href="https://github.com/TED-H-com/ai-security-scanner/blob/main/docs/release-model.md" data-href-en="https://github.com/TED-H-com/ai-security-scanner/blob/main/docs/release-model.md" data-href-zh="https://github.com/TED-H-com/ai-security-scanner/blob/main/docs/release-model.zh-TW.md" data-href-ja="https://github.com/TED-H-com/ai-security-scanner/blob/main/docs/release-model.md"><span class="lang-en">What counts as a release?</span><span class="lang-ja" lang="ja">リリースの定義</span><span class="lang-zh" lang="zh-Hant">如何定義發布？</span></a>
+          </div>
         </div>
       </section>
 
@@ -395,8 +418,8 @@
             <span class="lang-zh" lang="zh-Hant">25 個工具，各自能幫你看什麼？</span>
           </h2>
           <p>
-            <span class="lang-en">v0.4.0 adds optional ZAP passive website checks, Agentic Radar offline workflow inventory and bounded Garak model checks. Every card links to the official GitHub repository. Star counts are a dated snapshot, not a security rating or endorsement. Research-only candidates are tracked separately and are not counted as scan capabilities.</span><span class="lang-ja" lang="ja">v0.4.0 では、ZAP の受動的なウェブチェック、Agentic Radar のオフライン構成一覧化、制限付きの Garak モデルチェックを追加しました。各カードは公式 GitHub にリンクしています。スター数は記載日時点の値で、安全性の評価や推奨を意味しません。調査中の候補は別管理で、スキャン機能の数には含めません。</span>
-            <span class="lang-zh" lang="zh-Hant">v0.4.0 新增可選的 ZAP 被動網站檢查、Agentic Radar 離線工作流程盤點與受限的 Garak 模型檢查。每張卡片都直接連到官方 GitHub repository。星星數是有日期的快照，不代表安全評分或背書。研究用候選另行追蹤，不計為掃描能力。</span>
+            <span class="lang-en">These 25 upstream tools cover security checks and supporting inventory. Open ports and software lists describe what is present; they are not vulnerabilities. Each card links to the official source. Star counts and sample reports keep their recorded dates. Cloudflare development validation is separate from this runnable catalog. Research-only candidates are not counted as scan capabilities.</span><span class="lang-ja" lang="ja">25 の上流ツールがセキュリティ検査と補助的なインベントリ収集を行います。開いているポートやソフトウェア一覧は環境の情報であり、脆弱性ではありません。各カードは公式ソースにリンクしています。スター数とサンプルレポートは記録時点の日付を保持します。開発中の Cloudflare データ検証は、この実行可能なカタログには含みません。 評価中の候補もスキャン機能には数えません。</span>
+            <span class="lang-zh" lang="zh-Hant">這 25 個上游工具涵蓋安全檢查與輔助盤點。開放連接埠、軟體清單用來描述環境，不算漏洞。每張卡片連向官方來源；星星數與範例報告保留原紀錄日期。開發中的 Cloudflare 資料驗證不計入這份可執行目錄；研究用候選也不計入掃描能力。</span>
           </p>
         </div>
 
@@ -782,8 +805,8 @@
           </p>
           <div class="button-row">
             <a class="button button-primary" href="https://github.com/TED-H-com/ai-security-scanner/releases/tag/v0.6.1">
-              <span class="lang-en">Download v0.6.1 stable release</span><span class="lang-ja" lang="ja">安定版 v0.6.1 をダウンロード</span>
-              <span class="lang-zh" lang="zh-Hant">下載 v0.6.1 正式版</span>
+              <span class="lang-en">Download desktop v0.6.1</span><span class="lang-ja" lang="ja">デスクトップ安定版 v0.6.1 をダウンロード</span>
+              <span class="lang-zh" lang="zh-Hant">下載桌面 v0.6.1 正式版</span>
               <span aria-hidden="true">→</span>
             </a>
             <a class="button button-secondary" href="https://github.com/TED-H-com/ai-security-scanner/blob/main/docs/getting-started.md" data-href-en="https://github.com/TED-H-com/ai-security-scanner/blob/main/docs/getting-started.md" data-href-zh="https://github.com/TED-H-com/ai-security-scanner/blob/main/docs/getting-started.zh-TW.md">

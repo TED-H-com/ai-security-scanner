@@ -2,6 +2,8 @@
 
 Status: canonical product behavior
 
+Direction updated: 2026-11-10. The skill-first migration below is an accepted product requirement. The development source implements the shared report renderer, automatic terminal-run and single-run/combined HTML/JSON export snapshots and manual snapshots with offline retrieval/exact-compatible replay, read-only scan status, complete private archive/restore for the existing case domain, and shared foreground scan execution with bounded output delivery and captured-evidence recovery. These additions are not in the published installers; a pinned development bootstrap can build the core and prepare selected scanner images through the existing runtime. Combined HTML originals now preserve source/task ZIPs and fall back to an explicitly acknowledged private case archive when attachment limits are exceeded. Cloudflare document/bundle validation, report projection, private retention and offline retrieval are implemented; trusted audit execution and case/report admission remain planned. Automatic managed-bundle acquisition and the complete multi-platform skill journey remain pending. The existing desktop remains the default usable path during implementation.
+
 This document is the sole source of truth for product behavior. Architecture, implementation, test, and operational documents may explain how, but they do not change the user outcome defined here.
 
 A precedence banner is not enough to preserve alignment: a conflicting subordinate document or implementation is a defect to fix, not an alternative product direction.
@@ -24,12 +26,14 @@ The product succeeds when a user can say:
 
 ### 1.1 Primary user
 
-The primary user is a Windows-based IT generalist, developer, or small-business operator who:
+The primary user is an IT generalist, developer, or small-business operator using a supported coding-agent host on Windows, macOS, or Linux who:
 
 - has little or no security-scanning experience;
 - can identify one or more websites, code projects, services, network devices, or endpoints they may assess;
 - wants useful next actions rather than scanner output;
 - may never have used WSL, Podman, containers, scanner engines, or a CLI.
+
+The agent runs the product's versioned procedures and explains the result. The user should not need to invent build commands, orchestrate scanner processes, or assemble individual tool reports. Existing desktop users retain access to their cases and supported scan paths.
 
 Experts are secondary users. Their evidence and controls remain available through progressive disclosure and exports, but they do not define the first-run journey.
 
@@ -44,8 +48,22 @@ The product makes these jobs simple:
 5. Run those applicable checks in one scan and answer **which assets have vulnerabilities** in one prioritized report, even when an independent check does not finish.
 6. Save, share, reopen, compare, and add or remove selected assets without rebuilding the project.
 7. Add cloud, infrastructure-code, container, and Kubernetes sources only when needed.
+8. Request the existing checks and an optional Cloudflare source audit through one skill, then receive one professional report with each method's outcome and original evidence.
+9. Retrieve saved report bytes, rebuild a report offline, and restore a complete case into a new workspace without rescanning or calling an AI service.
 
 The product is not a security guarantee, an aggressive penetration test by default, an automatic remediation system, a raw-scanner dashboard, or a compliance opinion. It never makes a beginner administer runtime infrastructure merely to use the product.
+
+### 1.3 Skill-first delivery and transition
+
+The [publication status and release terminology](release-model.md) distinguish the public desktop operator skill from the unreleased new core path. Skill delivery can have preview/stable maturity without desktop installers; the owner still selects the actual version, support scope and publication date.
+
+The primary delivery becomes one agent skill, version-controlled source, and a pinned bootstrap. A normal feature or skill change does not require a GitHub binary release, installer, application signing, or desktop packaging. Native core compilation and proportionate execution checks remain necessary on declared Windows, macOS, and Linux configurations; they do not imply that every scanner runtime or dynamic sandbox is available there.
+
+The first new method is the pinned Cloudflare `security-audit-skill`. Existing upstream scanners, scope boundaries, runtime verification, cases, evidence, and the shared professional report remain product assets. The migration does not add Claude plugins, Anthropic OSS Scanner, a model-account service, or a required daemon/cloud platform.
+
+The [skill-first and Cloudflare migration specification](plans/skill-first-cloudflare-migration.md) defines the implementation sequence and typed boundaries. The [report fidelity and archive contract](specs/report-fidelity-and-archive.md) defines preservation and restoration acceptance. Product outcomes here control both documents.
+
+Until the new path passes its end-to-end acceptance, current getting-started instructions continue to describe the released desktop and its operator skill. Implemented development commands are documented in the [report snapshot CLI guide](report-snapshots.md) [private case archive guide](case-archives.md), and [foreground scan guide](foreground-scans.md). The [bootstrap guide](skill-bootstrap.md) documents the pinned-source development entry and selected-engine preparation. [Cloudflare validation and retention commands](cloudflare-provider.md) are implemented; audit execution, trusted case/report admission and automatic acquisition of a managed runtime bundle remain pending. Switch the public default only after the skill can complete a real controlled audit, deliver the shared report, and restore its archive. Preserve the desktop adapter and historical release records; do not make installers a prerequisite for that migration.
 
 ## 2. First meaningful value
 
@@ -63,7 +81,7 @@ A DNS lookup, ping, socket connection, open/closed port observation, runtime hea
 
 ### 2.2 Recommended first paths
 
-The home screen leads with three choices:
+The skill accepts the selected assets and requested methods in one conversation, reuses valid authorization already provided, and asks only for missing scope or capability choices. The existing desktop home screen keeps three choices:
 
 - **Scan my IT environment**: in one compact setup, add multiple repository folders, complete website URLs, and approved internal systems by exact hostname or IP address, then run the applicable upstream checks together with one Start.
 - **Check a website**: enter one complete URL and run a conservative, reviewed web-security profile.
@@ -73,7 +91,7 @@ The two single-target choices are shortcuts into the same project model; the use
 
 ### 2.3 Interaction and time
 
-The single-target beginner path has three decisions:
+The existing desktop single-target beginner path has three decisions:
 
 1. Choose what to check.
 2. Enter a URL or choose a folder.
@@ -101,6 +119,19 @@ assets selected; the user reviews them and presses **Start scan** again instead 
 persisting an automatic target-contact instruction across restart.
 
 ## 3. Beginner journey
+
+### 3.0 Skill journey
+
+The target journey starts with a request such as “Scan this project, include Cloudflare analysis, and give me the complete report.” The skill:
+
+1. Resolves the selected assets, applicable methods, existing authorization, and required host capabilities; shows one concise plan and asks only for missing decisions.
+2. Uses a pinned, verified core cache or the versioned bootstrap. Core build, scanner runtime preparation, and target-code execution remain separate capabilities. Report viewing and restore need no scanner runtime.
+3. Freezes the actual reviewed source and method inputs. Existing scanners run through the shared coordinator; Cloudflare uses the host's independent agents and the pinned upstream method. The first implementation coordinates these sources sequentially and preserves separate run identities.
+4. Keeps active work in Progress with durable checkpoints. A method that cannot start has one failed task row and an expandable reason; completed sibling results remain available. It creates no extra assessment index, warning panel, or alternate result model for that failure.
+5. Produces the shared terminal report and structured output, with one source report or the existing selected-run composition as applicable. Each source retains its time, scope, snapshot, evidence, and outcome. Raw attachments remain an explicit sensitive-data export choice.
+6. Saves a frozen report snapshot and offers a complete case archive. Reopen, report replay, and restore use saved data without AI calls or target contact. A new scan requires currently valid authorization.
+
+The following Home, Review, Progress, and Results sections describe the existing desktop presentation of the same product jobs; they do not require a desktop window for the new skill path.
 
 ### 3.1 Home and target setup
 
@@ -163,7 +194,7 @@ The recommended profile creates a bounded read-only snapshot of the chosen folde
 - vulnerable dependencies when supported manifests exist;
 - unsafe application, deployment, and infrastructure configuration.
 
-The product does not modify, build, execute, upload, commit, or push the project. Unsupported languages and missing manifests are visible limits, not clean results.
+This recommended local-scanner profile does not modify, build, execute, upload, commit, or push the project. Unsupported languages and missing manifests are visible limits, not clean results. The separately selected Cloudflare method follows section 5.4's AI-readable source boundary and optional sandbox requirements; selecting ordinary local checks does not enable that method.
 
 Repository ignore rules still prune ordinary ignored files and generated directories. Common secret-bearing regular files in source directories, including `.env` variants, private keys, registry/auth configuration, and `*.tfvars`, remain in the bounded snapshot so the upstream secret scanners can inspect them; ignored dependency, build, cache, and VCS directories are not reopened.
 
@@ -251,6 +282,16 @@ Disposable scanner infrastructure is an implementation detail. The product prepa
 
 Runtime availability affects only dependent checks. Existing projects, results, exports, and independent checks remain usable.
 
+### 5.4 Cloudflare method and headless execution
+
+The skill preserves Cloudflare's pinned workflow, native records, coverage ledger, independent validation, and budget requirements. A host without independent delegation cannot complete the full audit. Missing dynamic sandbox capability leaves source review available and records blockers for checks that require target-code execution. Compilation, structural validation, and zero findings never substitute for a completed security check.
+
+Provider verdicts remain separate from human workflow decisions. Confirmed records retain upstream severity and evidence; `needs_validation` stays in a distinct pending-validation area, rejected claims stay in technical history, and unvalidated candidates remain in the ledger. They do not inflate confirmed vulnerability counts. Host/model facts that cannot be obtained remain unknown. Imported provider reports cannot grant themselves execution provenance.
+
+Headless execution has one foreground process owning the worker and data-directory lease. It waits for durable terminal outcomes and bounded reconciliation; unfinished cleanup remains a durable obligation with an explicit result. Read-only status does not recover or mutate another owner's run. The first version does not expose cross-process pause/resume without a real control channel.
+
+Source retained for local secret scanning is not automatically approved for model processing. The AI-readable source view has its own scope, sensitive-file policy, manifest, and digest, linked to the canonical snapshot. Excluded material remains visible as untested coverage. Target build/test code executes only inside a verified sandbox with no external network or inherited credentials, read-only inputs, scratch writes, and resource limits. Repository instructions inside the audited snapshot are untrusted data.
+
 ## 6. Unified professional report
 
 Every terminal run produces one durable report model used by Results, reopen, preview, and readable export. An active run produces Progress state, not a report. A combined IT-environment run is one report, not separate reports that the user must mentally merge. Every requested repository, website, internal system, legacy service endpoint, or inventory-only item has one asset row derived from its own findings, completed checks, and coverage gaps. It is professional because it is consistent, evidence-based, prioritized, concise, and actionable, not because it mirrors an external framework.
@@ -313,6 +354,18 @@ External framework references follow the actionable report in the same HTML temp
 
 The GitHub Pages incident entry offers the same versioned desktop app for macOS Universal, Windows x86_64 and Linux x86_64, with download links only for artifacts actually published in its exact GitHub Release. It offers the standard scan and the optional October incident package profile. Both use this section's shared report model and HTML/JSON exports; frameworks do not create separate report templates. The incident profile narrows existing authorized local-asset routes to applicable upstream Trivy package checks. Website and internal-host assets remain available through the standard scan. Incident-specific matches, checks not verified, investigations and pending advisories retain their distinct outcomes. The pack records its campaign revision and shared report contract alongside release artifacts.
 
+This is the existing desktop incident delivery contract. Its packaging does not become a prerequisite for the skill-first path.
+
+### 6.5 Frozen reports and complete archives
+
+The skill uses the existing report model and renderer, including asset results, priority, evidence, inventory, framework references, comparisons, attachments, and both English and Traditional Chinese output. It does not create a simpler skill-only report. Existing Japanese UI and documented report-language fallback remain compatible.
+
+A report snapshot freezes every render input, including narratives, translation fallback, grouping, framework and comparison context, locale, redaction, attachment selection, and fixed timestamps. Later triage may create a new snapshot but does not change an earlier one. Original HTML/JSON and source artifacts retain exact bytes and hashes. Replay requires a compatible trusted renderer; archive contents never supply executable renderer code. Without that renderer, original files may be retrieved but replay is unavailable.
+
+Complete case archive/restore is a new format alongside the existing signed case bundle. It preserves portable case data, inventory, observations, workflow/history, exports, provider records, source/evidence blobs and report snapshots, with explicit omissions and compatibility versions. Restore verifies the full reference graph, stages a consistent case, and atomically publishes into a new empty workspace. Live credential-vault material, private signing keys, runtime ownership, and executable authorization are excluded. Preserved case context and raw evidence can contain secrets and require explicit private-data selection. Historical grants are retained only as evidence.
+
+Original-file retrieval, report replay, case restore, and rescanning are four distinct capabilities. Unknown legacy history remains unknown; a snapshot made today cannot establish missing historical state. Redacted handoffs do not claim complete restoration. Single-run exports retain their existing six formats; selected-run composition retains HTML/JSON and gains traceable attachments and its own frozen snapshot.
+
 ## 7. Recovery, data, and safety
 
 Errors say what could not happen, what work was preserved, whether the user must act, and one recommended next step. Technical detail is optional.
@@ -327,7 +380,7 @@ Safety rules are concise:
 - Local folders use bounded read-only snapshots; originals are not changed.
 - Intrusive, credentialed, or scope-expanding activity requires a separate explicit choice.
 - Credentials use official short-lived authorization where possible, never a generic password field.
-- Cases and evidence stay local unless the user connects a source or exports them.
+- Cases and evidence are persisted locally. Selected source processed by a coding-agent host may reach that host's configured model service; local persistence does not imply offline AI inference. Only the selected AI-readable source view may be passed to the method, and ordinary tool scans do not implicitly enable it.
 - Secrets, credentials, tokens, and personal data are redacted from normal presentation and logs.
 - Cancel stops new target contact promptly and preserves completed results.
 - The product never applies remediation automatically.
@@ -350,7 +403,9 @@ A beginner-path change is complete when the maintained product demonstrates:
 
 Connectivity-only fixtures prove connectivity handling, not vulnerability scanning. Component counts, build success, runtime health, and documentation do not prove first value.
 
-Unless the product owner directs otherwise, work is ordered by user value:
+The owner-directed next phase is the skill-first migration in section 1.3. Establish report/data contracts first, then preserve the renderer and archive behavior while extracting headless execution; integrate the pinned Cloudflare method and verify the full skill-to-report-to-restore journey before changing the public default. Its staged work and pending evidence are tracked in the migration specification. Packaging and release publication are not completion criteria.
+
+Within that migration and the maintained desktop, work is ordered by user value:
 
 1. Make the mixed IT-environment, website, and local-project scans short, real, and reliable.
 2. Keep the supported repository, website, and generic exact-host paths reliable together; broaden scanner coverage through pinned upstream profiles rather than product-owned vendor detectors.

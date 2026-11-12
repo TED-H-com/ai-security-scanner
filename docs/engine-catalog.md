@@ -10,6 +10,8 @@ Product behavior: [Product specification](product-spec.md)
 
 This document answers two questions: what each upstream engine actually checks, and what the product adapter is allowed to do around it. An engine being present does not mean every product path performs a vulnerability scan.
 
+The development [Cloudflare provider](cloudflare-provider.md) validates and retains reported data. It does not execute audits or import case findings and is not an additional runnable entry in this catalog. [Publication status](release-model.md) distinguishes that development work from the released desktop.
+
 ## 1. Upstream-first integration rule
 
 The scanner is the upstream project. ai-security-scanner supplies a thin adapter and a common report; it does not become a fork of the scanner.

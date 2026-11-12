@@ -1,0 +1,18 @@
+{
+  "run_id": "run-fixture",
+  "repo": "synthetic-fixture",
+  "target": "owned-reference-fixture",
+  "source_ref": "synthetic-source-ref",
+  "profile": "standard",
+  "scope_paths": [
+    "src"
+  ],
+  "budget": null,
+  "execution_policy": "sandboxed-source-and-local-only",
+  "selected_companion_files": [],
+  "prior_run_paths": [],
+  "shared_file_owners": {
+    "parent": "fixture-parent"
+  },
+  "run_status": "complete"
+}

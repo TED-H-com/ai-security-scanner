@@ -275,6 +275,27 @@ impl RuntimeCommandContext {
         bounded_command_output_with_configured_stdin_until(&mut command, maximum, deadline)
     }
 
+    fn output_for_preparation(
+        &self,
+        args: &[OsString],
+        stdin: Option<File>,
+        maximum: u64,
+        timeout: StdDuration,
+        cancellation: &AtomicBool,
+    ) -> io::Result<std::process::Output> {
+        let deadline = std::time::Instant::now()
+            .checked_add(timeout)
+            .ok_or_else(runtime_command_deadline_error)?;
+        let is_cancelled = || cancellation.load(Ordering::Acquire);
+        #[cfg(windows)]
+        let _execution_guard = self.acquire_windows_execution_guard(deadline, &is_cancelled)?;
+        let mut command = Command::new(&self.binary);
+        command.args(args);
+        command.stdin(stdin.map(Stdio::from).unwrap_or_else(Stdio::null));
+        self.apply(&mut command);
+        bounded_command_output_with_cancellation(&mut command, maximum, deadline, &is_cancelled)
+    }
+
     #[cfg(windows)]
     fn acquire_windows_execution_guard(
         &self,
@@ -468,6 +489,14 @@ fn validate_runtime_security_options(
 pub struct PinnedImage {
     repository: String,
     digest: String,
+}
+
+#[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Eq)]
+#[serde(rename_all = "snake_case")]
+pub enum ImagePreparationAcquisition {
+    ExistingLocal,
+    LoadedLocalArchive,
+    Pulled,
 }
 
 impl PinnedImage {
@@ -2158,7 +2187,22 @@ fn bounded_command_output_with_configured_stdin_until(
     maximum: u64,
     deadline: std::time::Instant,
 ) -> io::Result<std::process::Output> {
+    bounded_command_output_with_cancellation(command, maximum, deadline, &|| false)
+}
+
+fn bounded_command_output_with_cancellation(
+    command: &mut Command,
+    maximum: u64,
+    deadline: std::time::Instant,
+    is_cancelled: &dyn Fn() -> bool,
+) -> io::Result<std::process::Output> {
     command.stdout(Stdio::piped()).stderr(Stdio::piped());
+    if is_cancelled() {
+        return Err(io::Error::new(
+            io::ErrorKind::Interrupted,
+            "runtime preparation was cancelled",
+        ));
+    }
     if std::time::Instant::now() >= deadline {
         return Err(runtime_command_deadline_error());
     }
@@ -2187,6 +2231,13 @@ fn bounded_command_output_with_configured_stdin_until(
     let process_result = loop {
         if let Some(status) = child.try_wait()? {
             break Ok(status);
+        }
+        if is_cancelled() {
+            process_tree.terminate_and_wait(&mut child);
+            break Err(io::Error::new(
+                io::ErrorKind::Interrupted,
+                "runtime preparation was cancelled",
+            ));
         }
         if oversized.load(Ordering::Acquire) {
             process_tree.terminate_and_wait(&mut child);
@@ -2665,6 +2716,124 @@ fn output_limit_error(maximum: u64) -> AppError {
 }
 
 impl ProcessContainerRuntime {
+    /// Inspect only the existing daemon. This does not create containers,
+    /// networks, or any target-facing execution, and cancellation owns the
+    /// bounded provider subprocess until it has been terminated and joined.
+    pub fn preparation_preflight(&self, cancellation: &AtomicBool) -> AppResult<RuntimePreflight> {
+        let operation = DirectRuntimeOperation::RuntimeExecutionPreflight;
+        let info = self.preparation_output(
+            operation,
+            &[
+                "info",
+                "--format",
+                runtime_execution_info_template(self.context.provider),
+            ],
+            None,
+            Some(cancellation),
+        )?;
+        if !info.status.success() {
+            return Err(process_failure(operation.label(), &info));
+        }
+        runtime_preflight_from_execution_info(
+            self.context.provider,
+            self.context.provenance.clone(),
+            &info.stdout,
+        )
+    }
+
+    /// Retrieve one exact pin, or inspect/load it locally in offline mode.
+    /// Pull success alone is insufficient: preparation verifies the exact
+    /// reference became available before reporting it ready.
+    pub fn prepare_image(
+        &self,
+        image: &PinnedImage,
+        offline: bool,
+        cancellation: &AtomicBool,
+    ) -> AppResult<ImagePreparationAcquisition> {
+        self.retrieve_pinned_image(image, offline, Some(cancellation), true)
+    }
+
+    fn preparation_output(
+        &self,
+        operation: DirectRuntimeOperation,
+        args: &[&str],
+        stdin: Option<File>,
+        cancellation: Option<&AtomicBool>,
+    ) -> AppResult<std::process::Output> {
+        match cancellation {
+            Some(cancellation) => {
+                let args = args
+                    .iter()
+                    .map(|arg| OsString::from(*arg))
+                    .collect::<Vec<_>>();
+                self.context
+                    .output_for_preparation(
+                        &args,
+                        stdin,
+                        MAX_RUNTIME_COMMAND_OUTPUT_BYTES,
+                        operation.timeout(),
+                        cancellation,
+                    )
+                    .map_err(|error| AppError::Runtime(format!("{}: {error}", operation.label())))
+            }
+            None => match stdin {
+                Some(stdin) => self.direct_output_with_stdin(operation, args, stdin),
+                None => self.direct_output(operation, args),
+            },
+        }
+    }
+
+    fn retrieve_pinned_image(
+        &self,
+        image: &PinnedImage,
+        offline: bool,
+        cancellation: Option<&AtomicBool>,
+        verify_after_pull: bool,
+    ) -> AppResult<ImagePreparationAcquisition> {
+        let reference = image.reference();
+        let inspect = || {
+            self.preparation_output(
+                DirectRuntimeOperation::LocalPinnedImageInspection,
+                &["image", "inspect", reference.as_str()],
+                None,
+                cancellation,
+            )
+        };
+        if inspect()?.status.success() {
+            return Ok(ImagePreparationAcquisition::ExistingLocal);
+        }
+        if let Some(directory) = self.release_approved_local_image_directory.as_deref()
+            && let Some(archive) = verified_release_approved_oci_archive(directory, image)?
+        {
+            let operation = DirectRuntimeOperation::LocalPinnedImageLoad;
+            let output =
+                self.preparation_output(operation, &["load"], Some(archive), cancellation)?;
+            if !output.status.success() {
+                return Err(process_failure(operation.label(), &output));
+            }
+            if inspect()?.status.success() {
+                return Ok(ImagePreparationAcquisition::LoadedLocalArchive);
+            }
+            return Err(AppError::Runtime("local pinned image load completed without making the exact pinned digest available".into()));
+        }
+        if offline {
+            return Err(AppError::NotAvailable("the exact image is absent from the runtime and verified local archives; offline preparation does not contact a registry".into()));
+        }
+        let operation = DirectRuntimeOperation::PinnedImagePull;
+        let output =
+            self.preparation_output(operation, &["pull", reference.as_str()], None, cancellation)?;
+        if !output.status.success() {
+            return Err(process_failure(operation.label(), &output));
+        }
+        if verify_after_pull && !inspect()?.status.success() {
+            return Err(AppError::Runtime(
+                "pinned image pull completed without making the exact pinned digest available"
+                    .into(),
+            ));
+        }
+        Ok(ImagePreparationAcquisition::Pulled)
+    }
+
     pub fn new(provider: RuntimeProvider, binary: impl Into<PathBuf>) -> AppResult<Self> {
         Ok(Self {
             context: RuntimeCommandContext::compatibility(provider, binary.into())?,
@@ -2802,10 +2971,27 @@ impl ProcessContainerRuntime {
     }
 
     pub fn detect() -> AppResult<Self> {
+        Self::detect_with_cancellation(None)
+    }
+
+    pub fn detect_for_preparation(cancellation: &AtomicBool) -> AppResult<Self> {
+        Self::detect_with_cancellation(Some(cancellation))
+    }
+
+    fn detect_with_cancellation(cancellation: Option<&AtomicBool>) -> AppResult<Self> {
         let mut errors = Vec::new();
         for provider in [RuntimeProvider::Docker, RuntimeProvider::Podman] {
+            if cancellation.is_some_and(|token| token.load(Ordering::Acquire)) {
+                return Err(AppError::Runtime(
+                    "runtime preparation was cancelled".into(),
+                ));
+            }
             let runtime = Self::new(provider, provider.program_name())?;
-            match runtime.preflight() {
+            let preflight = match cancellation {
+                Some(token) => runtime.preparation_preflight(token),
+                None => runtime.preflight(),
+            };
+            match preflight {
                 Ok(_) => return Ok(runtime),
                 Err(error) => errors.push(format!("{}: {error}", provider.program_name())),
             }
@@ -3124,43 +3310,11 @@ impl ContainerRuntime for ProcessContainerRuntime {
     }
 
     fn pull(&self, image: &PinnedImage) -> AppResult<()> {
-        let reference = image.reference();
         // Local load / pin path: if the exact digest is already in the local
         // store, do not call the registry. Unpublished GHCR pins otherwise fail
         // `docker pull` even when `docker image inspect` succeeds.
-        let inspect = self.direct_output(
-            DirectRuntimeOperation::LocalPinnedImageInspection,
-            ["image", "inspect", reference.as_str()],
-        )?;
-        if inspect.status.success() {
-            return Ok(());
-        }
-        if let Some(directory) = self.release_approved_local_image_directory.as_deref()
-            && let Some(archive) = verified_release_approved_oci_archive(directory, image)?
-        {
-            let operation = DirectRuntimeOperation::LocalPinnedImageLoad;
-            let output = self.direct_output_with_stdin(operation, ["load"], archive)?;
-            if !output.status.success() {
-                return Err(process_failure(operation.label(), &output));
-            }
-            let inspect = self.direct_output(
-                DirectRuntimeOperation::LocalPinnedImageInspection,
-                ["image", "inspect", reference.as_str()],
-            )?;
-            if inspect.status.success() {
-                return Ok(());
-            }
-            return Err(AppError::Runtime(
-                "local pinned image load completed without making the exact pinned digest available"
-                    .into(),
-            ));
-        }
-        let operation = DirectRuntimeOperation::PinnedImagePull;
-        let output = self.direct_output(operation, ["pull", reference.as_str()])?;
-        if !output.status.success() {
-            return Err(process_failure(operation.label(), &output));
-        }
-        Ok(())
+        self.retrieve_pinned_image(image, false, None, false)
+            .map(|_| ())
     }
 
     fn run(
@@ -4901,6 +5055,149 @@ exit 29
             !invocations.lines().any(|subcommand| subcommand == "pull"),
             "a locally present digest must never contact the registry"
         );
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn offline_image_preparation_only_inspects_when_no_verified_local_archive_exists() {
+        let temp = tempfile::tempdir().unwrap();
+        let binary = temp.path().join("runtime");
+        write_executable_fixture(
+            &binary,
+            "#!/bin/sh\nprintf '%s\\n' \"$*\" >> \"${0%/*}/calls\"\nexit 1\n",
+        );
+        let runtime = ProcessContainerRuntime::new(RuntimeProvider::Docker, binary)
+            .unwrap()
+            .with_release_approved_local_image_directory(None);
+        let image = PinnedImage::new(
+            "example.invalid/scanner",
+            &format!("sha256:{}", "a".repeat(64)),
+        )
+        .unwrap();
+        let error = runtime
+            .prepare_image(&image, true, &AtomicBool::new(false))
+            .unwrap_err();
+        assert!(
+            error
+                .to_string()
+                .contains("offline preparation does not contact a registry")
+        );
+        assert_eq!(
+            fs::read_to_string(temp.path().join("calls")).unwrap(),
+            format!("image inspect {}\n", image.reference())
+        );
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn offline_preparation_loads_only_a_verified_archive_and_reinspects_the_exact_pin() {
+        let temp = tempfile::tempdir().unwrap();
+        let source = temp.path().join("images");
+        let manifest = br#"{"schemaVersion":2}"#;
+        let digest = format!("sha256:{}", hex::encode(Sha256::digest(manifest)));
+        write_release_approved_oci_archive(&source, &digest, manifest);
+        let binary = temp.path().join("runtime");
+        write_executable_fixture(
+            &binary,
+            r#"#!/bin/sh
+root=${0%/*}
+printf '%s\n' "$1" >> "$root/calls"
+if [ "$1" = image ]; then test -f "$root/loaded"; exit $?; fi
+if [ "$1" = load ]; then cat >/dev/null; touch "$root/loaded"; exit 0; fi
+exit 71
+"#,
+        );
+        let runtime = ProcessContainerRuntime::new(RuntimeProvider::Docker, binary)
+            .unwrap()
+            .with_release_approved_local_image_directory(Some(source));
+        let image = PinnedImage::new("example.invalid/scanner", &digest).unwrap();
+        assert_eq!(
+            runtime
+                .prepare_image(&image, true, &AtomicBool::new(false))
+                .unwrap(),
+            ImagePreparationAcquisition::LoadedLocalArchive
+        );
+        assert_eq!(
+            fs::read_to_string(temp.path().join("calls")).unwrap(),
+            "image\nload\nimage\n"
+        );
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn preparation_cannot_report_ready_from_pull_exit_alone() {
+        let temp = tempfile::tempdir().unwrap();
+        let binary = temp.path().join("runtime");
+        write_executable_fixture(
+            &binary,
+            r#"#!/bin/sh
+printf '%s\n' "$1" >> "${0%/*}/calls"
+if [ "$1" = pull ]; then exit 0; fi
+exit 1
+"#,
+        );
+        let runtime = ProcessContainerRuntime::new(RuntimeProvider::Docker, binary)
+            .unwrap()
+            .with_release_approved_local_image_directory(None);
+        let image = PinnedImage::new(
+            "example.invalid/scanner",
+            &format!("sha256:{}", "a".repeat(64)),
+        )
+        .unwrap();
+        assert!(
+            runtime
+                .prepare_image(&image, false, &AtomicBool::new(false))
+                .unwrap_err()
+                .to_string()
+                .contains("exact pinned digest")
+        );
+        assert_eq!(
+            fs::read_to_string(temp.path().join("calls")).unwrap(),
+            "image\npull\nimage\n"
+        );
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn cancellation_terminates_and_joins_a_blocked_preparation_pull() {
+        let temp = tempfile::tempdir().unwrap();
+        let binary = temp.path().join("runtime");
+        write_executable_fixture(
+            &binary,
+            r#"#!/bin/sh
+if [ "$1" = image ]; then exit 1; fi
+if [ "$1" = pull ]; then touch "${0%/*}/pull-started"; sleep 30; exit 0; fi
+exit 73
+"#,
+        );
+        let runtime = ProcessContainerRuntime::new(RuntimeProvider::Docker, binary)
+            .unwrap()
+            .with_release_approved_local_image_directory(None);
+        let image = PinnedImage::new(
+            "example.invalid/scanner",
+            &format!("sha256:{}", "a".repeat(64)),
+        )
+        .unwrap();
+        let cancellation = Arc::new(AtomicBool::new(false));
+        let worker_cancellation = cancellation.clone();
+        let worker =
+            thread::spawn(move || runtime.prepare_image(&image, false, &worker_cancellation));
+        let wait_started = Instant::now();
+        while !temp.path().join("pull-started").exists() {
+            assert!(wait_started.elapsed() < StdDuration::from_secs(5));
+            thread::sleep(StdDuration::from_millis(10));
+        }
+        let cancelled_at = Instant::now();
+        cancellation.store(true, Ordering::Release);
+        assert!(
+            worker
+                .join()
+                .unwrap()
+                .unwrap_err()
+                .to_string()
+                .contains("cancelled")
+        );
+        assert!(cancelled_at.elapsed() < StdDuration::from_secs(3));
     }
 
     #[cfg(unix)]
