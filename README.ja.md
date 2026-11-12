@@ -31,6 +31,14 @@ macOS と Linux のローカルプロジェクトスキャンに関するセキ�
 
 [GHSA-6w49-gw8c-q7wp](https://github.com/TED-H-com/ai-security-scanner/security/advisories/GHSA-6w49-gw8c-q7wp) と [v0.6.1 のリリース記録（英語・繁体字中国語）](docs/release/v0.6.1.md)をご覧ください。
 
+## v0.6.0 の更新
+
+- 全 25 ツールを確認し、管理対象のスキャナーイメージ 18 個と KICS の公式イメージを更新しました。
+- オフライン脆弱性データベース、Greenbone フィード、Nuclei テンプレートを更新し、各ツールの証拠と修正案を保持します。
+- 専用スキャン環境とアプリの依存関係を更新し、レポート用 ZIP ライブラリのセキュリティ問題を修正しました。
+
+[変更点の詳細（英語・繁体字中国語）](docs/release/v0.6.0.md)。
+
 ## v0.5.3 の更新
 
 - Mac・Windows・Linux 向けの [10/21 検査パック](https://ted-h-com.github.io/ai-security-scanner/incident-october-21.html?lang=ja)を追加しました。

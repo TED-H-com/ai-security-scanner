@@ -27,6 +27,14 @@ Security update for local project scans on macOS and Linux. Update before scanni
 
 See [GHSA-6w49-gw8c-q7wp](https://github.com/TED-H-com/ai-security-scanner/security/advisories/GHSA-6w49-gw8c-q7wp) and the [v0.6.1 release record](docs/release/v0.6.1.md).
 
+## New in v0.6.0
+
+- Refreshes 18 managed scanner images and the official KICS image after reviewing all 25 integrated tools.
+- Updates offline vulnerability databases, Greenbone feeds and Nuclei templates while preserving each scanner's evidence and recommendations.
+- Updates the private scan runtime and application dependencies, including fixes for ZIP report-library security advisories.
+
+[Read the v0.6.0 changes](docs/release/v0.6.0.md).
+
 ## New in v0.5.3
 
 - Adds the [October 21 incident scan pack](https://ted-h-com.github.io/ai-security-scanner/incident-october-21.html) for Mac, Windows and Linux.

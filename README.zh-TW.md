@@ -27,6 +27,14 @@ v0.6.1 安裝版包含日文介面，可在 **設定 → 日本語** 選擇，�
 
 詳見 [GHSA-6w49-gw8c-q7wp](https://github.com/TED-H-com/ai-security-scanner/security/advisories/GHSA-6w49-gw8c-q7wp) 與 [v0.6.1 發布紀錄](docs/release/v0.6.1.md#繁體中文)。
 
+## v0.6.0 更新
+
+- 核對全部 25 個工具，更新 18 個自建掃描器映像與 KICS 官方映像。
+- 同步更新離線漏洞資料庫、Greenbone feed 與 Nuclei 範本，保留各工具的原始證據與修復建議。
+- 更新專用掃描環境及應用依賴，修補報告 ZIP 函式庫的安全問題。
+
+[查看 v0.6.0 更新](docs/release/v0.6.0.md#繁體中文)。
+
 ## v0.5.3 更新
 
 - 新增 Mac、Windows、Linux 的 [10/21 事件掃描包](https://ted-h-com.github.io/ai-security-scanner/incident-october-21.html?lang=zh-TW)。
