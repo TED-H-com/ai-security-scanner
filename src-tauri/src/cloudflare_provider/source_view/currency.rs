@@ -43,6 +43,9 @@ pub(crate) fn current_view(
     if !path.exists() {
         return block(BlockerCode::SnapshotUnavailable);
     }
+    if crate::case_archive_io::require_sealed_directory_root(&path).is_err() {
+        return block(BlockerCode::SourceReadFailed);
+    }
     let inspection = match inspect_source_view(
         &path,
         Some(manifest_sha256),

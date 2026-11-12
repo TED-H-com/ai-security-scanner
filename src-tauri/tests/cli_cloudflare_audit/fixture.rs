@@ -34,7 +34,7 @@ impl Fixture {
             builder
         };
         let temp = builder.tempdir().map(test_temp::TempDir::from).unwrap();
-        let root = temp.path().canonicalize().unwrap();
+        let root = paths::canonical(temp.path());
         let data = root.join("data");
         let source = root.join("source");
         fs::create_dir_all(data.join("artifacts")).unwrap();
@@ -502,4 +502,17 @@ impl RunFixture {
                 .starts_with(".validate-")
         }));
     }
+}
+
+#[path = "../support/paths.rs"]
+mod paths;
+
+// Test mutations must obey macOS's owner-write requirement for directory moves.
+pub(super) fn move_directory(source: impl AsRef<Path>, target: impl AsRef<Path>) {
+    let source = source.as_ref();
+    let target = target.as_ref();
+    let original = fs::metadata(source).unwrap().permissions();
+    writable(source);
+    fs::rename(source, target).unwrap();
+    fs::set_permissions(target, original).unwrap();
 }

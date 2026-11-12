@@ -524,7 +524,7 @@ impl RetrievalDestination {
     pub(crate) fn prepare(output: &Path, forbidden_roots: &[PathBuf]) -> AppResult<Self> {
         let (parent, output) = destination(output)?;
         for root in forbidden_roots {
-            let root = match fs::canonicalize(root) {
+            let root = match crate::internal_paths::canonicalize(root) {
                 Ok(root) => root,
                 Err(e) if e.kind() == std::io::ErrorKind::NotFound => continue,
                 Err(e) => return Err(e.into()),
@@ -596,7 +596,7 @@ mod captured_publication_tests {
         let result = RetrievalDestination::prepare(&parent.join("out"), &[])
             .unwrap()
             .publish(b"private", || {
-                fs::rename(&parent, &moved)?;
+                crate::case_archive_io::rename_entry_no_replace(&parent, &moved)?;
                 fs::create_dir(&parent)?;
                 Ok(())
             });

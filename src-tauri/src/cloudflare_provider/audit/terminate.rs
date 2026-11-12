@@ -57,11 +57,11 @@ pub fn terminate(
         .lease
         .path()
         .parent()
-        .map(std::fs::canonicalize)
+        .map(crate::internal_paths::canonicalize)
         .transpose()?
-        != Some(std::fs::canonicalize(context.data_dir)?)
-        || std::fs::canonicalize(context.storage.path())?
-            != std::fs::canonicalize(context.data_dir.join("casework.db"))?
+        != Some(crate::internal_paths::canonicalize(context.data_dir)?)
+        || crate::internal_paths::canonicalize(context.storage.path())?
+            != crate::internal_paths::canonicalize(context.data_dir.join("casework.db"))?
     {
         return Err(invalid("ownership context does not match storage"));
     }

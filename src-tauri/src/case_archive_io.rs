@@ -317,7 +317,7 @@ pub(crate) fn guard_archive_parent(path: &Path) -> AppResult<ArchiveParentGuard>
         if !pinned.is_dir() || pinned.file_attributes() & 0x400 != 0 {
             return Err(invalid("archive parent changed to an unsafe directory"));
         }
-        let path = fs::canonicalize(path)?;
+        let path = crate::internal_paths::canonicalize(path)?;
         let namespace = crate::managed_runtime::ensure_private_product_data_directory(&path)?;
         if namespace.was_created() {
             return Err(invalid("archive parent must already exist"));
@@ -331,7 +331,7 @@ pub(crate) fn guard_archive_parent(path: &Path) -> AppResult<ArchiveParentGuard>
     #[cfg(unix)]
     {
         use std::os::unix::fs::{MetadataExt, OpenOptionsExt};
-        let path = fs::canonicalize(path)?;
+        let path = crate::internal_paths::canonicalize(path)?;
         let ancestors = path.ancestors().collect::<Vec<_>>();
         let mut directories = Vec::with_capacity(ancestors.len());
         // SAFETY: geteuid has no arguments or memory-safety preconditions.
@@ -735,7 +735,7 @@ fn read_archive_in(path: &Path, temporary_parent: Option<&Path>) -> AppResult<Ve
     // resolve the platform default before verifying the real namespace.
     let parent = match temporary_parent {
         Some(parent) => parent.to_owned(),
-        None => fs::canonicalize(std::env::temp_dir())?,
+        None => crate::internal_paths::canonicalize(std::env::temp_dir())?,
     };
     let parent_guard = guard_archive_parent(&parent)?;
     let directory = private_tempdir_in(parent_guard.path(), "ai-scanner-verified-archive-")?;
@@ -1449,6 +1449,89 @@ fn sync_directory(path: &Path) -> AppResult<()> {
     Ok(())
 }
 
+/// Seal descendants while leaving the publication root movable on macOS.
+pub(crate) fn seal_directory_contents(root: &Path) -> AppResult<()> {
+    for entry in fs::read_dir(root)? {
+        let entry = entry?;
+        let metadata = fs::symlink_metadata(entry.path())?;
+        if metadata.is_dir() && !metadata.file_type().is_symlink() {
+            crate::workspace_snapshot::make_snapshot_tree_readonly(&entry.path())?;
+        } else if metadata.is_file() {
+            #[cfg(unix)]
+            let permissions = {
+                use std::os::unix::fs::PermissionsExt;
+                fs::Permissions::from_mode(0o400)
+            };
+            #[cfg(not(unix))]
+            let permissions = {
+                let mut permissions = metadata.permissions();
+                permissions.set_readonly(true);
+                permissions
+            };
+            fs::set_permissions(entry.path(), permissions)?;
+        } else {
+            return Err(AppError::UnsafeFilesystemEntry);
+        }
+    }
+    Ok(())
+}
+
+/// Finish publication only after the directory has its final name.
+pub(crate) fn seal_directory_root(root: &Path) -> AppResult<()> {
+    #[cfg(unix)]
+    {
+        use std::os::unix::fs::{OpenOptionsExt, PermissionsExt};
+        let directory = File::options()
+            .read(true)
+            .custom_flags(libc::O_DIRECTORY | libc::O_NOFOLLOW | libc::O_CLOEXEC)
+            .open(root)?;
+        directory.set_permissions(fs::Permissions::from_mode(0o500))?;
+        directory.sync_all()?;
+    }
+    #[cfg(not(unix))]
+    let _ = root;
+    Ok(())
+}
+
+/// Managed readers must not admit an interrupted source-view publication.
+pub(crate) fn require_sealed_directory_root(root: &Path) -> AppResult<()> {
+    let metadata = fs::symlink_metadata(root)?;
+    if !metadata.is_dir() || metadata.file_type().is_symlink() {
+        return Err(AppError::UnsafeFilesystemEntry);
+    }
+    #[cfg(unix)]
+    {
+        use std::os::unix::fs::PermissionsExt;
+        if metadata.permissions().mode() & 0o222 != 0 {
+            return Err(invalid("directory publication is not sealed"));
+        }
+    }
+    Ok(())
+}
+
+/// Move damaged owned bytes aside without opening their descendants for writes.
+/// The pinned directory restores its original permissions even if rename fails.
+pub(crate) fn move_preserving_root_permissions(source: &Path, target: &Path) -> AppResult<()> {
+    #[cfg(unix)]
+    {
+        use std::os::unix::fs::{OpenOptionsExt, PermissionsExt};
+        if fs::symlink_metadata(source)?.is_dir() {
+            let directory = File::options()
+                .read(true)
+                .custom_flags(libc::O_DIRECTORY | libc::O_NOFOLLOW | libc::O_CLOEXEC)
+                .open(source)?;
+            let original = directory.metadata()?.permissions();
+            directory.set_permissions(fs::Permissions::from_mode(original.mode() | 0o200))?;
+            let renamed = rename_entry_no_replace(source, target);
+            let restored = directory.set_permissions(original);
+            directory.sync_all()?;
+            restored?;
+            return renamed;
+        }
+    }
+    rename_entry_no_replace(source, target)
+}
+
 /// Publish a prepared directory atomically on one filesystem. Existing paths
 /// are never replaced, and unsupported filesystems/platforms fail closed.
 pub(crate) fn publish_directory_no_replace(stage: &Path, destination: &Path) -> AppResult<()> {
@@ -1469,6 +1552,20 @@ pub(crate) fn publish_directory_no_replace(stage: &Path, destination: &Path) -> 
 /// Move an entry itself, including a symlink, without following it or replacing a target.
 /// Callers retain responsibility for guarding both parents.
 pub(crate) fn rename_entry_no_replace(stage: &Path, destination: &Path) -> AppResult<()> {
+    // Enforce macOS's directory-owner-write requirement on every Unix host so
+    // Linux tests exercise the same publication order.
+    #[cfg(unix)]
+    {
+        use std::os::unix::fs::PermissionsExt;
+        let metadata = fs::symlink_metadata(stage)?;
+        if metadata.is_dir() && metadata.permissions().mode() & 0o200 == 0 {
+            return Err(io::Error::new(
+                io::ErrorKind::PermissionDenied,
+                "directory root must be owner-writable before rename",
+            )
+            .into());
+        }
+    }
     #[cfg(any(target_os = "linux", target_os = "macos"))]
     {
         use std::ffi::CString;
@@ -1540,13 +1637,51 @@ mod tests {
     use std::io::Cursor;
 
     fn private_fixture() -> PrivateArchiveDirectory {
-        let parent = fs::canonicalize(std::env::temp_dir()).unwrap();
+        let parent = crate::internal_paths::canonicalize(std::env::temp_dir()).unwrap();
         private_tempdir_in(&parent, "ai-scanner-archive-test-").unwrap()
     }
 
     fn private_fixture_directory(path: &Path) {
         fs::create_dir(path).unwrap();
         make_private(path, true).unwrap();
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn sealed_directory_publication_and_move_aside_preserve_permissions() {
+        use std::os::unix::fs::PermissionsExt;
+        let root = tempfile::tempdir().unwrap();
+        let stage = root.path().join("stage");
+        let published = root.path().join("published");
+        let retained = root.path().join("retained");
+        fs::create_dir(&stage).unwrap();
+        fs::write(stage.join("member"), b"evidence").unwrap();
+        seal_directory_contents(&stage).unwrap();
+        assert!(require_sealed_directory_root(&stage).is_err());
+        seal_directory_root(&stage).unwrap();
+        let error = rename_entry_no_replace(&stage, &published).unwrap_err();
+        assert!(error.to_string().contains("owner-writable"));
+        assert!(stage.exists());
+        move_preserving_root_permissions(&stage, &published).unwrap();
+        require_sealed_directory_root(&published).unwrap();
+        fs::create_dir(&retained).unwrap();
+        assert!(move_preserving_root_permissions(&published, &retained).is_err());
+        require_sealed_directory_root(&published).unwrap();
+        fs::remove_dir(&retained).unwrap();
+        move_preserving_root_permissions(&published, &retained).unwrap();
+        assert_eq!(
+            fs::metadata(&retained).unwrap().permissions().mode() & 0o777,
+            0o500
+        );
+        assert_eq!(
+            fs::metadata(retained.join("member"))
+                .unwrap()
+                .permissions()
+                .mode()
+                & 0o777,
+            0o400
+        );
+        crate::workspace_snapshot::make_tree_deletable(&retained);
     }
 
     #[test]
@@ -2203,7 +2338,10 @@ mod tests {
 
         let root = private_fixture();
         let guard = guard_archive_parent(root.path()).unwrap();
-        assert_eq!(guard.path(), fs::canonicalize(root.path()).unwrap());
+        assert_eq!(
+            guard.path(),
+            crate::internal_paths::canonicalize(root.path()).unwrap()
+        );
         let unsafe_parent = root.path().join("shared");
         fs::create_dir(&unsafe_parent).unwrap();
         fs::set_permissions(&unsafe_parent, fs::Permissions::from_mode(0o777)).unwrap();
@@ -2298,7 +2436,7 @@ mod tests {
         drop(file);
         fs::write(&source, b"original").unwrap();
         let (file, before) = open_regular(&source, MAX_ARCHIVE_ENTRY_BYTES).unwrap();
-        fs::rename(&source, directory.path().join("old-source")).unwrap();
+        rename_entry_no_replace(&source, &directory.path().join("old-source")).unwrap();
         fs::write(&source, b"original").unwrap();
         assert!(verify_unchanged(&source, &file, &before).is_err());
     }

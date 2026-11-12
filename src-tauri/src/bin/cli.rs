@@ -1,12 +1,12 @@
-#[path = "cli/cloudflare_audit.rs"]
+#[path = "../cli/cloudflare_audit.rs"]
 mod cloudflare_audit;
-#[path = "cli/parent_control.rs"]
+#[path = "../cli/parent_control.rs"]
 mod parent_control;
-#[path = "cli/provider_common.rs"]
+#[path = "../cli/provider_common.rs"]
 mod provider_common;
-#[path = "cli/runtime_prepare.rs"]
+#[path = "../cli/runtime_prepare.rs"]
 mod runtime_prepare;
-#[path = "cli/source_view.rs"]
+#[path = "../cli/source_view.rs"]
 mod source_view;
 
 use ai_security_scanner_lib::adapters::builtin_adapter_registry;

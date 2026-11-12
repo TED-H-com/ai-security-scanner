@@ -7521,8 +7521,8 @@ impl<'a> CaseService<'a> {
                 .path()
                 .file_name()
                 .is_none_or(|name| name != "casework.db")
-                || fs::canonicalize(&self.artifact_root)?
-                    != fs::canonicalize(data_dir.join("artifacts"))?
+                || crate::internal_paths::canonicalize(&self.artifact_root)?
+                    != crate::internal_paths::canonicalize(data_dir.join("artifacts"))?
             {
                 return Err(AppError::InvalidRequest(
                     "case archive requires the workspace database and artifact directory".into(),

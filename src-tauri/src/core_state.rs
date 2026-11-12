@@ -481,8 +481,8 @@ fn ensure_private_child(parent: &Path, name: &str) -> AppResult<PathBuf> {
             "case artifact directory is not a real directory".into(),
         ));
     }
-    let canonical_parent = parent.canonicalize()?;
-    let canonical_child = child.canonicalize()?;
+    let canonical_parent = crate::internal_paths::canonicalize(parent)?;
+    let canonical_child = crate::internal_paths::canonicalize(child)?;
     if canonical_child.parent() != Some(canonical_parent.as_path()) {
         return Err(AppError::NotAuthorized(
             "case artifact directory escaped its backend-owned parent".into(),

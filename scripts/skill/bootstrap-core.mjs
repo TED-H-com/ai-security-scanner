@@ -1,4 +1,4 @@
-import { createHash, randomUUID } from 'node:crypto';
+import { createHash, randomBytes, randomUUID } from 'node:crypto';
 import { spawn } from 'node:child_process';
 import { constants } from 'node:fs';
 import {
@@ -652,8 +652,10 @@ export async function prepareBootstrap(options, overrides = {}) {
       await verifySourceUnchanged();
     }
     else {
-      staging = join(root, 'staging', `${key}-${randomUUID()}`);
-      await privateDirectory(staging, true);
+      const candidate = join(root, 'staging', randomBytes(6).toString('hex'));
+      await mkdir(candidate, { mode: 0o700 });
+      staging = candidate;
+      await privateDirectory(staging);
       const snapshot = join(staging, 'source');
       await privateDirectory(snapshot, true);
       await deps.stageInputSnapshot(sourceRoot, snapshot, manifest);

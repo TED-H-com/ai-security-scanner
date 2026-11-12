@@ -173,7 +173,7 @@ struct Builder {
 
 impl Builder {
     fn new() -> AppResult<Self> {
-        let parent = fs::canonicalize(std::env::temp_dir())?;
+        let parent = crate::internal_paths::canonicalize(std::env::temp_dir())?;
         let parent_guard = transport::guard_archive_parent(&parent)?;
         let directory = transport::private_tempdir_in(&parent, "ai-scanner-archive-")?;
         Ok(Self {
@@ -499,7 +499,7 @@ pub fn create_archive(
         schema_version: "ai-security-scanner.archive-receipt/v1",
         archive_id,
         case_id: case.id.clone(),
-        path: fs::canonicalize(destination)?,
+        path: crate::internal_paths::canonicalize(destination)?,
         sha256: hash,
         byte_length: fs::metadata(destination)?.len(),
     })
@@ -1661,7 +1661,7 @@ fn canonical_destination(path: &Path) -> AppResult<PathBuf> {
     if !real_directory(parent)? {
         return Err(invalid("restore parent must be an existing real directory"));
     }
-    Ok(fs::canonicalize(parent)?.join(name))
+    Ok(crate::internal_paths::canonicalize(parent)?.join(name))
 }
 
 fn real_directory(path: &Path) -> AppResult<bool> {

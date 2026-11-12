@@ -76,6 +76,7 @@ base64 = "0.23.1"
 clap = { version = "4.6.6", features = ["derive", "env"], optional = true }
 # Platform data-root verification is library code used by every binary feature.
 directories = "6.0.0"
+dunce = "=1.0.5"
 ed25519-dalek = "3.0.0"
 flate2 = "1.1.9"
 fs2 = "0.4.3"

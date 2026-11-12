@@ -155,7 +155,7 @@ fn owned_prepare(
         .as_ref()
         .expect("explicit directory checked");
     let _directory_guard = ensure_private_product_data_directory(data_dir)?;
-    let data_dir = data_dir.canonicalize()?;
+    let data_dir = ai_security_scanner_lib::internal_paths::canonicalize(data_dir)?;
     let _lease = DataDirectoryExclusiveLease::acquire(&data_dir)?;
     let receipt_dir = data_dir.join("runtime-preparations");
     let _receipt_guard = ensure_private_product_data_directory(&receipt_dir)?;

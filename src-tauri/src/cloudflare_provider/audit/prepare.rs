@@ -57,8 +57,8 @@ fn run_directory(request: &PrepareRequest, data: &Path) -> AppResult<()> {
         }
     }
     super::super::bundle_io::BundleRoot::open(path).map_err(|_| bad())?;
-    let canonical = fs::canonicalize(path).map_err(|_| bad())?;
-    let data = fs::canonicalize(data)?;
+    let canonical = crate::internal_paths::canonicalize(path).map_err(|_| bad())?;
+    let data = crate::internal_paths::canonicalize(data)?;
     if canonical.starts_with(&data) || data.starts_with(&canonical) {
         return Err(bad());
     }
@@ -105,11 +105,11 @@ pub(crate) fn prepare_with_clock(
         .lease
         .path()
         .parent()
-        .map(fs::canonicalize)
+        .map(crate::internal_paths::canonicalize)
         .transpose()?
-        != Some(fs::canonicalize(context.data_dir)?)
-        || fs::canonicalize(context.storage.path())?
-            != fs::canonicalize(context.data_dir.join("casework.db"))?
+        != Some(crate::internal_paths::canonicalize(context.data_dir)?)
+        || crate::internal_paths::canonicalize(context.storage.path())?
+            != crate::internal_paths::canonicalize(context.data_dir.join("casework.db"))?
     {
         return Err(invalid("ownership context does not match storage"));
     }

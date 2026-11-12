@@ -126,11 +126,11 @@ fn evaluate(
         .lease
         .path()
         .parent()
-        .map(fs::canonicalize)
+        .map(crate::internal_paths::canonicalize)
         .transpose()?
-        != Some(fs::canonicalize(context.data_dir)?)
-        || fs::canonicalize(context.storage.path())?
-            != fs::canonicalize(context.data_dir.join("casework.db"))?
+        != Some(crate::internal_paths::canonicalize(context.data_dir)?)
+        || crate::internal_paths::canonicalize(context.storage.path())?
+            != crate::internal_paths::canonicalize(context.data_dir.join("casework.db"))?
     {
         return Err(invalid("ownership context does not match storage"));
     }

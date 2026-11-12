@@ -552,6 +552,7 @@ impl ReportSnapshot {
     pub(crate) fn save_managed(&self, artifact_root: &Path) -> AppResult<ReportSnapshotReference> {
         let store = crate::artifact_store::ArtifactStore::open(artifact_root)?;
         let directory = store.prepare_report_snapshot_directory(&self.case_id)?;
+        let directory = crate::internal_paths::canonicalize(directory)?;
         let receipt = self.save(&directory.join(format!("{}.json", self.snapshot_id)))?;
         Ok(ReportSnapshotReference {
             snapshot_id: self.snapshot_id.clone(),
@@ -922,6 +923,7 @@ impl ReportSnapshot {
         operation: &'static str,
     ) -> AppResult<ReportSnapshotReceipt> {
         let path = write_new_private_file(destination, bytes)?;
+        let path = crate::internal_paths::canonicalize(path)?;
         Ok(ReportSnapshotReceipt {
             schema_version: "ai-security-scanner.report-snapshot-receipt/v1",
             snapshot_id: self.snapshot_id.clone(),

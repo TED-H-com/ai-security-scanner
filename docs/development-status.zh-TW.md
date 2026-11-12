@@ -25,7 +25,7 @@
 
 以下日期章節保留各階段當時的觀察。[產品規格](product-spec.md)定義產品行為；[遷移計畫](plans/skill-first-cloudflare-migration.md)與[報告及封存契約](specs/report-fidelity-and-archive.md)說明已採納的工作。可用內容請見[發布狀態](release-model.zh-TW.md)。
 
-CI 文件與契約測試目前共 113 項。
+CI 文件與契約測試目前共 114 項。
 
 ## 11 月 12 日未完成稽核的桌面結果 — B2
 

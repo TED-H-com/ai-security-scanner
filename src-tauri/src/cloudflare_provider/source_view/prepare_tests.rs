@@ -30,7 +30,9 @@ impl Fixture {
             builder
         };
         let temp = builder.tempdir().unwrap();
-        let data = temp.path().canonicalize().unwrap().join("data");
+        let data = crate::internal_paths::canonicalize(temp.path())
+            .unwrap()
+            .join("data");
         let source = data.join("source");
         fs::create_dir_all(&source).unwrap();
         configure(&source);
@@ -221,6 +223,9 @@ fn replay_republishes_missing_and_quarantines_damaged_views() {
             "missing" => fs::remove_dir_all(&path).unwrap(),
             "removed_file" => fs::remove_file(path.join("tree/src/safe")).unwrap(),
             _ => fs::write(path.join("tree/src/safe"), b"evil").unwrap(),
+        }
+        if mutation != "missing" {
+            crate::workspace_snapshot::make_snapshot_tree_readonly(&path).unwrap();
         }
         let PreparationOutcome::Replayed(replay) = f.prepare() else {
             panic!("not replayed")
@@ -892,4 +897,26 @@ fn cloudflare_checkpoint_authority_expires_immediately_before_insert_and_on_repl
             ..
         }
     ));
+}
+
+#[cfg(unix)]
+#[test]
+fn interrupted_root_seal_is_refused_and_republished() {
+    use std::os::unix::fs::PermissionsExt;
+    let f = Fixture::new();
+    let first = committed(f.prepare());
+    let path = f.path(&first);
+    fs::set_permissions(&path, fs::Permissions::from_mode(0o700)).unwrap();
+    let case = f.storage.get_case(&f.request.case_id).unwrap();
+    assert!(
+        super::currency::current_view(&f.data, &case, &first, Utc::now())
+            .unwrap()
+            .is_err()
+    );
+    let PreparationOutcome::Replayed(replay) = f.prepare() else {
+        panic!("not replayed")
+    };
+    assert_eq!(json!(first), json!(replay));
+    crate::case_archive_io::require_sealed_directory_root(&path).unwrap();
+    inspect_source_view(&path, None, None).unwrap();
 }

@@ -166,7 +166,7 @@ impl Storage {
         let filename = requested_path.file_name().ok_or_else(|| {
             AppError::Storage("case database path must include a filename".into())
         })?;
-        let path = fs::canonicalize(parent)?.join(filename);
+        let path = crate::internal_paths::canonicalize(parent)?.join(filename);
         let connection = Connection::open_with_flags(
             &path,
             OpenFlags::SQLITE_OPEN_READ_ONLY

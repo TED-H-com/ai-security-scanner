@@ -147,7 +147,7 @@ fn assert_receipt(receipt: &Value, operation: &str, path: &Path, expected: &[u8]
     assert_eq!(receipt["byte_length"], expected.len() as u64);
     assert_eq!(
         PathBuf::from(receipt["path"].as_str().unwrap()),
-        fs::canonicalize(path).unwrap()
+        paths::canonical(path)
     );
     assert_eq!(fs::read(path).unwrap(), expected);
 }
@@ -1104,3 +1104,6 @@ fn combined_export_publication_failure_preserves_destinations_and_history() {
         assert!(saved.combined_exports.is_empty());
     }
 }
+
+#[path = "support/paths.rs"]
+mod paths;

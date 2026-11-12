@@ -248,7 +248,7 @@ fn grant_snapshot_and_view_failures_block_without_repair() {
                 }
                 "missing" => {
                     writable(&view);
-                    fs::rename(&view, view.with_extension("removed")).unwrap();
+                    move_directory(&view, view.with_extension("removed"));
                 }
                 _ => unreachable!(),
             }
@@ -608,11 +608,10 @@ fn committed_event_with_missing_descriptor_requires_current_view_before_republic
     assert_eq!(saved["result"]["descriptor_state"], "missing");
     fs::set_permissions(f.audit_root(), fs::Permissions::from_mode(0o700)).unwrap();
     let view = f.view_root();
-    writable(&view);
-    fs::rename(&view, view.with_extension("held")).unwrap();
+    move_directory(&view, view.with_extension("held"));
     assert_eq!(f.audit(&r, 3)["reason"], "view_missing");
     assert_eq!(fs::read_dir(f.audit_root()).unwrap().count(), 0);
-    fs::rename(view.with_extension("held"), &view).unwrap();
+    move_directory(view.with_extension("held"), &view);
     assert_eq!(receipt(&f.audit(&r, 0)), receipt(&saved));
     assert_eq!(
         f.audit_status("audit-one", false, 0)["result"]["descriptor_state"],

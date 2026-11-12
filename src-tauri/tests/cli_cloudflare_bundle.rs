@@ -34,7 +34,7 @@ fn fixture() -> Fixture {
         builder
     };
     let temporary = builder.tempdir().unwrap();
-    let root = temporary.path().canonicalize().unwrap();
+    let root = paths::canonical(temporary.path());
     let source = Path::new(env!("CARGO_MANIFEST_DIR")).join("../tests/fixtures/cloudflare");
     copy_tree(&source.join("bundle"), &root.join("bundle"));
     copy_tree(&source.join("source-view"), &root.join("view"));
@@ -1081,3 +1081,6 @@ fn out_of_scope_starting_paths_need_not_exist_but_reviewed_paths_must() {
     fixture.reseal();
     fixture.validate(false);
 }
+
+#[path = "support/paths.rs"]
+mod paths;

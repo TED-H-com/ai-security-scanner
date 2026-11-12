@@ -100,7 +100,7 @@ fn node_executable() -> AppResult<PathBuf> {
     for directory in std::env::split_paths(&paths).filter(|path| path.is_absolute()) {
         let candidate = directory.join(name);
         if candidate.is_file() {
-            return Ok(candidate.canonicalize()?);
+            return Ok(crate::internal_paths::canonicalize(candidate)?);
         }
     }
     Err(AppError::NotAvailable(
@@ -136,7 +136,7 @@ async fn validate_bytes(
     }
     std::str::from_utf8(bytes).map_err(|_| invalid("input is not valid UTF-8"))?;
     let node = node_executable()?;
-    let temporary_parent = std::env::temp_dir().canonicalize()?;
+    let temporary_parent = crate::internal_paths::canonicalize(std::env::temp_dir())?;
     let staging = private_tempdir_in(&temporary_parent, "scanner-cloudflare-").map_err(
         |error| match error {
             AppError::UnsafeArchiveParent => AppError::UnsafeTemporaryDirectory,
@@ -183,16 +183,19 @@ async fn execute_validator(
     bytes: &[u8],
     timeout: Duration,
 ) -> AppResult<DocumentValidation> {
+    let node = crate::internal_paths::canonicalize(node)?;
+    let staging = crate::internal_paths::canonicalize(staging)?;
+    let script = crate::internal_paths::canonicalize(staging.join("validate-document.cjs"))?;
     let mut command = tokio::process::Command::new(node);
     command
         .env_clear()
-        .current_dir(staging)
+        .current_dir(&staging)
         .args([
             "--max-old-space-size=128",
             "--no-addons",
             "--no-global-search-paths",
         ])
-        .arg(staging.join("validate-document.cjs"))
+        .arg(script)
         .arg(document.as_str())
         .stdin(Stdio::piped())
         .stdout(Stdio::piped())

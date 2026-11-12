@@ -416,7 +416,7 @@ fn checkpoint_authority_replay_lease_and_no_view_or_host_file_reads() {
     // Source-view files are not read by checkpoints; the run directory must still open.
     let view = f.view_root();
     writable(&view);
-    fs::rename(&view, view.with_extension("held")).unwrap();
+    move_directory(&view, view.with_extension("held"));
     f.checkpoint(&request, 0);
     fs::remove_dir(r["run_directory"].as_str().unwrap()).unwrap();
     assert_eq!(

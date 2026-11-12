@@ -1,12 +1,13 @@
 use super::super::{bundle::verified_read, bundle_io::BundleRoot};
 use super::*;
 use crate::case_archive_io::{
-    guard_archive_parent, make_private, private_tempdir_in, publish_directory_no_replace,
-    rename_entry_no_replace,
+    guard_archive_parent, make_private, move_preserving_root_permissions, private_tempdir_in,
+    publish_directory_no_replace, require_sealed_directory_root, seal_directory_contents,
+    seal_directory_root,
 };
 use crate::workspace_snapshot::{
     WORKSPACE_SNAPSHOT_REFERENCE_SCHEMA, WORKSPACE_SNAPSHOT_SCHEMA, WorkspaceSnapshotReference,
-    make_snapshot_tree_readonly, validate_manifest,
+    validate_manifest,
 };
 use policy::{MIB, Policy};
 use std::fs::{self, OpenOptions};
@@ -404,9 +405,11 @@ pub(super) fn publish(
         Err(e) if e.kind() == std::io::ErrorKind::NotFound => false,
         Err(e) => return Err(e.into()),
     };
-    let reuse = exists && inspect_source_view(&destination, Some(&sha), None).is_ok();
+    let reuse = exists
+        && require_sealed_directory_root(&destination).is_ok()
+        && inspect_source_view(&destination, Some(&sha), None).is_ok();
     if !reuse {
-        make_snapshot_tree_readonly(staging.path())?;
+        seal_directory_contents(staging.path())?;
     }
     // Verification and sealing can be lengthy; recheck immediately before publication.
     if !authorized() {
@@ -424,10 +427,9 @@ pub(super) fn publish(
         if exists {
             let aside = private_tempdir_in(guard.path(), ".source-view-damaged-")?;
             let retained = aside.path().with_extension("retained");
-            // Rename within the same parent, so sealed directories need no
-            // permission changes. The empty reservation's cleanup never owns
-            // the retained damaged bytes, even if subsequent publication fails.
-            rename_entry_no_replace(&destination, &retained)?;
+            // Only the root is temporarily writable. Retained damaged bytes keep
+            // their original seal, including when subsequent publication fails.
+            move_preserving_root_permissions(&destination, &retained)?;
         }
         if !authorized() {
             return Ok(Err(Blocker::new(
@@ -439,6 +441,7 @@ pub(super) fn publish(
             crate::workspace_snapshot::make_tree_deletable(staging.path());
             return Err(error);
         }
+        seal_directory_root(&destination)?;
         #[cfg(unix)]
         fs::File::open(guard.path())?.sync_all()?;
     }
@@ -458,7 +461,7 @@ mod tests {
     #[test]
     fn surplus_root_inventory_is_rejected_before_metadata_reads() {
         let temp = tempfile::tempdir().unwrap();
-        let root = temp.path().canonicalize().unwrap();
+        let root = crate::internal_paths::canonicalize(temp.path()).unwrap();
         for i in 0..1000 {
             fs::write(root.join(format!("extra-{i}")), b"").unwrap();
         }
@@ -480,7 +483,7 @@ mod tests {
     #[test]
     fn captured_stage_inspects_replays_moves_and_rejects_tampering_without_publication() {
         let temp = tempfile::tempdir().unwrap();
-        let root = temp.path().canonicalize().unwrap();
+        let root = crate::internal_paths::canonicalize(temp.path()).unwrap();
         let source = root.join("source");
         let artifacts = root.join("artifacts");
         fs::create_dir_all(source.join("credentials")).unwrap();
@@ -537,7 +540,7 @@ mod tests {
             fs::read(second.join("view.json")).unwrap()
         );
         let moved = root.join("moved");
-        fs::rename(stage, &moved).unwrap();
+        crate::case_archive_io::rename_entry_no_replace(&stage, &moved).unwrap();
         assert_eq!(
             inspect_source_view(&moved, Some(&expected), None)
                 .unwrap()

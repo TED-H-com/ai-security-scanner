@@ -428,7 +428,7 @@ mod tests {
     fn enumerated_directory_detects_added_and_removed_entries() {
         for remove in [false, true] {
             let temp = tempfile::tempdir().unwrap();
-            let root = temp.path().canonicalize().unwrap();
+            let root = crate::internal_paths::canonicalize(temp.path()).unwrap();
             std::fs::create_dir(root.join("tree")).unwrap();
             std::fs::write(root.join("tree/file"), b"safe").unwrap();
             let mut reader = BundleRoot::open(&root).unwrap();
@@ -446,7 +446,7 @@ mod tests {
     #[test]
     fn reads_detect_later_content_and_root_replacement() {
         let temporary = tempfile::tempdir().unwrap();
-        let root = temporary.path().canonicalize().unwrap();
+        let root = crate::internal_paths::canonicalize(temporary.path()).unwrap();
         std::fs::write(root.join("file"), b"a").unwrap();
         let mut reader = BundleRoot::open(&root).unwrap();
         assert_eq!(reader.read("file", 1).unwrap(), b"a");
@@ -460,7 +460,7 @@ mod tests {
     fn root_parent_member_symlinks_hardlinks_and_pipes_are_refused() {
         use std::os::unix::fs::symlink;
         let temporary = tempfile::tempdir().unwrap();
-        let root = temporary.path().canonicalize().unwrap();
+        let root = crate::internal_paths::canonicalize(temporary.path()).unwrap();
         std::fs::create_dir(root.join("real")).unwrap();
         std::fs::write(root.join("real/file"), b"[]").unwrap();
         symlink(root.join("real"), root.join("redirect")).unwrap();
@@ -478,7 +478,11 @@ mod tests {
         assert!(reader.read("pipe", 10).is_err());
         std::fs::create_dir(root.join("selected")).unwrap();
         let selected = BundleRoot::open(&root.join("selected")).unwrap();
-        std::fs::rename(root.join("selected"), root.join("moved")).unwrap();
+        crate::case_archive_io::rename_entry_no_replace(
+            &root.join("selected"),
+            &root.join("moved"),
+        )
+        .unwrap();
         std::fs::create_dir(root.join("selected")).unwrap();
         assert!(selected.verify_unchanged().is_err());
     }

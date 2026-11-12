@@ -313,7 +313,7 @@ fn member_and_package_links_are_unsafe_even_when_dangling() {
     fs::remove_file(&member).unwrap();
     fs::write(&member, original).unwrap();
     let moved = package.with_file_name("moved");
-    fs::rename(&package, &moved).unwrap();
+    move_directory(&package, &moved);
     symlink(&moved, &package).unwrap();
     refused_unchanged(&run, "unsafe_filesystem_entry");
     fs::remove_file(&package).unwrap();

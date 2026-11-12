@@ -124,7 +124,7 @@ impl Seal {
             for ancestor in member.ancestors() {
                 match fs::symlink_metadata(ancestor) {
                     Ok(m) => {
-                        if m.file_type().is_symlink() {
+                        if m.file_type().is_symlink() || (ancestor != member && !m.is_dir()) {
                             return DescriptorState::Mismatch;
                         }
                         #[cfg(windows)]
@@ -342,13 +342,16 @@ fn package(context: &OwnedContext<'_>, staged: &Staged) -> AppResult<Seal> {
             }
         }
         Err(e) if e.kind() == std::io::ErrorKind::NotFound => {
-            crate::workspace_snapshot::make_snapshot_tree_readonly(stage.0.path())?;
+            crate::case_archive_io::seal_directory_contents(stage.0.path())?;
             #[cfg(unix)]
             retained::sync_directories(stage.0.path())?;
             publish_directory_no_replace(stage.0.path(), &destination)?;
         }
         Err(e) => return Err(e.into()),
     }
+    // An orphan from a stop after rename is byte-checked above and sealed here
+    // before the record can commit. Read-only consumers require a committed seal.
+    crate::case_archive_io::seal_directory_root(&destination)?;
     #[cfg(unix)]
     fs::File::open(destination.parent().unwrap())?.sync_all()?;
     Ok(seal)

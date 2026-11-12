@@ -13,7 +13,6 @@
 
 use serde::{Deserialize, Serialize};
 use std::collections::BTreeMap;
-use std::path::Path;
 use thiserror::Error;
 use url::Url;
 
@@ -458,7 +457,10 @@ fn validate_report_destination(
     report_dir: &str,
     report_file_stem: &str,
 ) -> Result<(), ZapWorkPlanError> {
-    if !Path::new(report_dir).is_absolute() || report_dir.chars().any(char::is_control) {
+    if !report_dir.starts_with('/')
+        || report_dir.contains('\\')
+        || report_dir.chars().any(char::is_control)
+    {
         return Err(ZapWorkPlanError::InvalidReportDirectory);
     }
     if report_file_stem.is_empty()
@@ -476,6 +478,24 @@ fn validate_report_destination(
 mod tests {
     use super::*;
     use serde_json::{Value, json};
+
+    #[test]
+    fn report_directory_uses_container_posix_paths_on_every_host() {
+        assert!(validate_report_destination("/output", "report").is_ok());
+        for path in [
+            "output",
+            "./output",
+            r"C:\output",
+            r"\output",
+            r"\\server\output",
+            r"/output\child",
+        ] {
+            assert_eq!(
+                validate_report_destination(path, "report"),
+                Err(ZapWorkPlanError::InvalidReportDirectory)
+            );
+        }
+    }
 
     fn representative_bounds() -> ZapPassiveBounds {
         ZapPassiveBounds {

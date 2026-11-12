@@ -48,7 +48,18 @@ pub fn descriptor_state(data: &Path, receipt: &PreparationReceipt) -> Descriptor
             let mut cursor = Some(file.as_path());
             while let Some(path) = cursor {
                 match fs::symlink_metadata(path) {
-                    Ok(m) if m.file_type().is_symlink() => return DescriptorState::Mismatch,
+                    Ok(m) => {
+                        if m.file_type().is_symlink() || (path != file && !m.is_dir()) {
+                            return DescriptorState::Mismatch;
+                        }
+                        #[cfg(windows)]
+                        {
+                            use std::os::windows::fs::MetadataExt;
+                            if m.file_attributes() & 0x400 != 0 {
+                                return DescriptorState::Mismatch;
+                            }
+                        }
+                    }
                     Err(e) if e.kind() != std::io::ErrorKind::NotFound => {
                         return DescriptorState::Mismatch;
                     }
@@ -183,7 +194,7 @@ mod tests {
     #[test]
     fn audit_objects_reuse_orphans_preserve_corruption_and_are_private() {
         let temp = tempfile::tempdir().unwrap();
-        let path = temp.path().canonicalize().unwrap();
+        let path = crate::internal_paths::canonicalize(temp.path()).unwrap();
         make_private(&path, true).unwrap();
         object(&path, b"captured").unwrap();
         let file = path.join(digest(b"captured"));

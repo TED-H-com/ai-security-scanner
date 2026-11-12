@@ -67,7 +67,7 @@ struct Fixture {
 impl Fixture {
     fn new(mode: &str) -> Self {
         let root = tempfile::tempdir().unwrap();
-        let directory = root.path().canonicalize().unwrap();
+        let directory = paths::canonical(root.path());
         let bin = directory.join("fake-runtime");
         fs::create_dir(&bin).unwrap();
         fs::write(bin.join("docker"), FAKE_DOCKER).unwrap();
@@ -470,3 +470,6 @@ fn bootstrap_control_pipe_eof_cancel_and_terminate_preserve_owned_cleanup_and_re
         DataDirectoryExclusiveLease::acquire(&fixture.data).unwrap();
     }
 }
+
+#[path = "support/paths.rs"]
+mod paths;

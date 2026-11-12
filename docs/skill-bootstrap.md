@@ -175,7 +175,8 @@ build recipe cannot. Source-controlled Cargo configuration and unreviewed embed
 paths are rejected until the recipe accounts for them. Ambient compiler flags
 and wrappers are excluded from the controlled build environment.
 
-A new build uses private staging. Only a complete, verified entry can become the
+A new build uses private staging with a random 12-hex-character directory name
+to keep native build paths short. Only a complete, verified entry can become the
 ready entry. A failed build leaves the previous ready entry intact. Every reuse
 checks the receipt and executable bytes before inspecting or running the binary.
 Changed or corrupt entries are refused, not silently accepted or rebuilt over.

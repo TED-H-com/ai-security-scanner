@@ -447,11 +447,14 @@ blockers ask to adjust/narrow scope; unsupported asset kinds ask to select a rep
 Views live at
 `artifacts/CASE_ID/source-views/VIEW_ID/{view.json,canonical-manifest.json,tree/}`;
 only `tree/` is model-readable source. Private staging, no-follow reads, verified
-copies, staged inspection, read-only sealing and atomic no-replace publication
-protect the derived bytes. An existing destination is fully verified. A damaged
+copies and staged inspection protect the derived bytes. Contents are sealed before
+atomic no-replace publication; the root is sealed at its final path. Managed readers
+refuse an interrupted publication with a writable root; prepare replaces it. An existing destination is fully verified. A damaged
 copy or obstructing file or symlink is moved aside within the private `source-views`
 directory under a reserved non-view name before the verified replacement is
-published. Moving a symlink preserves the link itself and leaves its target untouched. Set-aside copies are
+published. Moving a sealed directory temporarily opens only its root for writing and restores
+its permissions at the retained path. Moving a symlink preserves the link itself
+and leaves its target untouched. Set-aside copies are
 never returned or reused; case-artifact deletion removes them.
 
 View identity binds canonical snapshot identity, capture `not_recorded`, policy
@@ -1167,8 +1170,9 @@ supplied bundles, even copies of the sealed payload, cannot obtain workflow
 provenance through document validation, bundle validation, retention or retrieval.
 
 The product builds the package in private staging inside the audit directory,
-flushes it, makes it read-only, publishes without replacement and flushes the
-parent. One transaction then rechecks the head, case revision, request identity
+flushes it, seals its contents, publishes without replacement, then seals its root
+and flushes the parent. If interrupted after publication, finalize verifies the
+orphan package and finishes sealing before committing. One transaction then rechecks the head, case revision, request identity
 and effective authority and appends `sealed`. That entry is the commit point:
 it records the bundle and manifest digests, hashes and lengths of
 `retained/retention.json`, `workflow.json` and `workflow-projection.json`, and the

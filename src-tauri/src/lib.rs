@@ -1,3 +1,4 @@
+pub mod internal_paths;
 #[cfg(test)]
 mod test_temp;
 #[cfg(test)]

@@ -3,7 +3,7 @@ import { createHash } from 'node:crypto';
 import { execFileSync } from 'node:child_process';
 import { chmod, link, lstat, mkdir, mkdtemp, readFile, readdir, realpath, rm, symlink, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
-import { join } from 'node:path';
+import { basename, dirname, join } from 'node:path';
 import test from 'node:test';
 import {
   BootstrapError, RECIPE, controlledBuildEnvironment, doctorBootstrap,
@@ -55,6 +55,7 @@ async function fixture(t) {
       for (const file of manifest.files) await writeFile(join(destination, file.path), await readFile(join(source, file.path)));
     },
     build: async ({ targetDirectory, manifest, configuration, offline }) => {
+      assert.match(basename(dirname(targetDirectory)), /^[a-f0-9]{12}$/);
       state.builds += 1;
       state.offline = offline;
       if (state.buildHook) await state.buildHook();

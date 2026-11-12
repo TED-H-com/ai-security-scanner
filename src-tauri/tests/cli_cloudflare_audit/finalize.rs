@@ -281,6 +281,10 @@ fn orphan_publication_is_reused_only_when_all_committed_files_match() {
         let p = path(&run, &req);
         let time = fs::metadata(&p).unwrap().modified().unwrap();
         undo_terminal(&run, &saved);
+        if index == 1 {
+            // Process stopped after rename but before sealing the published root.
+            writable(&p);
+        }
         if index != 0 {
             req["request_id"] = json!("recovery-request");
         }
@@ -295,6 +299,8 @@ fn orphan_publication_is_reused_only_when_all_committed_files_match() {
         } else {
             assert_eq!(finalize(&run, &req, 0)["result"]["replayed"], false);
             assert_eq!(status(&run)["sealed_state"], "verified");
+            #[cfg(unix)]
+            assert!(fs::metadata(&p).unwrap().permissions().readonly());
         }
         assert_eq!(time, fs::metadata(&p).unwrap().modified().unwrap());
         no_temporary(&run);
@@ -347,10 +353,10 @@ fn cheap_status_and_replay_detect_missing_and_mismatched_committed_files() {
     finalize(&run, &req, 0);
     let p = path(&run, &req);
     assert_eq!(status(&run)["sealed_state"], "verified");
-    fs::rename(&p, p.with_extension("removed")).unwrap();
+    move_directory(&p, p.with_extension("removed"));
     assert_eq!(status(&run)["sealed_state"], "missing");
     assert_eq!(finalize(&run, &req, 4)["error_code"], "storage_failed");
-    fs::rename(p.with_extension("removed"), &p).unwrap();
+    move_directory(p.with_extension("removed"), &p);
     // Payload corruption is outside the cheap status contract.
     let payload = p.join("retained/bundle/REPORT.md");
     writable(&payload);

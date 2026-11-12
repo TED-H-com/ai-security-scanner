@@ -551,11 +551,7 @@ fn archive_round_trip_preserves_case_evidence_sources_and_saved_reports_without_
     let saved = storage.snapshot_case_for_archive(&fixture.case.id).unwrap();
     assert_eq!(saved.revision, 1);
     assert_eq!(storage.selected_case_id().unwrap(), None);
-    assert_preserved_case(
-        &fixture.case,
-        &saved.case,
-        &fs::canonicalize(&destination).unwrap(),
-    );
+    assert_preserved_case(&fixture.case, &saved.case, &paths::canonical(&destination));
     assert_eq!(
         &saved.events[..fixture.events.len()],
         fixture.events.as_slice()
@@ -1998,3 +1994,6 @@ fn combined_originals_require_explicit_choices_and_reject_corrupt_source_bytes()
         .unwrap();
     assert!(saved.combined_exports.is_empty());
 }
+
+#[path = "support/paths.rs"]
+mod paths;

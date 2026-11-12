@@ -75,7 +75,7 @@ impl Fixture {
         assert!(!receipt.restores_scan_authority);
         assert_eq!(
             receipt.destination,
-            fs::canonicalize(&self.destination).unwrap()
+            crate::internal_paths::canonicalize(&self.destination).unwrap()
         );
         let verified = transport::read_archive(&self.archive).unwrap();
         assert_eq!(receipt.archive_id, verified.manifest.archive_id);

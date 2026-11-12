@@ -38,7 +38,7 @@ impl Fixture {
             builder
         };
         let temp = builder.tempdir().map(test_temp::TempDir::from).unwrap();
-        let root = temp.path().canonicalize().unwrap();
+        let root = paths::canonical(temp.path());
         let data = root.join("data");
         let source = root.join("source");
         fs::create_dir_all(data.join("artifacts")).unwrap();
@@ -1105,3 +1105,6 @@ fn preparation_sets_aside_file_and_symlink_obstructions_without_following() {
         assert_eq!(fs::read_dir(outside).unwrap().count(), 1);
     }
 }
+
+#[path = "support/paths.rs"]
+mod paths;
