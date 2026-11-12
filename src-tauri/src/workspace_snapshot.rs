@@ -934,6 +934,32 @@ fn trusted_git_binary() -> Option<PathBuf> {
     None
 }
 
+/// Starts every trusted-Git child that reads a scanned repository.
+///
+/// The repository and its configuration are examined data. The child receives
+/// only this fixed environment: no user or system configuration, no prompt, no
+/// pager, no transport of any kind, and no on-demand fetch of missing objects.
+/// Repository configuration therefore cannot make the scanner start a program
+/// or contact a network. Build every Git invocation in this crate here.
+pub(crate) fn trusted_git_command(binary: &Path) -> Command {
+    let mut command = Command::new(binary);
+    command
+        .env_clear()
+        .env("LC_ALL", "C")
+        .env("GIT_TERMINAL_PROMPT", "0")
+        .env("GIT_CONFIG_NOSYSTEM", "1")
+        .env("GIT_CONFIG_GLOBAL", "/dev/null")
+        .env("GIT_OPTIONAL_LOCKS", "0")
+        .env("GIT_PAGER", "")
+        .env("GIT_LITERAL_PATHSPECS", "1")
+        // An empty allow-list denies every transport and overrides the
+        // repository's own `protocol.*.allow` settings.
+        .env("GIT_ALLOW_PROTOCOL", "")
+        // A partial clone never fetches a missing object on demand.
+        .env("GIT_NO_LAZY_FETCH", "1");
+    command
+}
+
 fn load_bounded_git_tracked_inventory(
     repository_root: &Path,
     budget: &mut GitInventoryProbeBudget,
@@ -941,7 +967,7 @@ fn load_bounded_git_tracked_inventory(
     let binary = trusted_git_binary()?;
     let (maximum_bytes, maximum_runtime) = budget.reserve()?;
     let started = Instant::now();
-    let mut command = Command::new(binary);
+    let mut command = trusted_git_command(&binary);
     command
         .arg("--no-optional-locks")
         .args(["-c", "core.fsmonitor=false"])
@@ -952,15 +978,7 @@ fn load_bounded_git_tracked_inventory(
         .args(["ls-files", "--cached", "-z", "--"])
         .stdin(Stdio::null())
         .stdout(Stdio::piped())
-        .stderr(Stdio::null())
-        .env_clear()
-        .env("LC_ALL", "C")
-        .env("GIT_TERMINAL_PROMPT", "0")
-        .env("GIT_CONFIG_NOSYSTEM", "1")
-        .env("GIT_CONFIG_GLOBAL", "/dev/null")
-        .env("GIT_OPTIONAL_LOCKS", "0")
-        .env("GIT_PAGER", "")
-        .env("GIT_LITERAL_PATHSPECS", "1");
+        .stderr(Stdio::null());
     let outcome = command
         .spawn()
         .ok()
@@ -3219,6 +3237,37 @@ mod tests {
             assert!(binary.is_absolute());
             assert_ne!(binary, Path::new("git"));
         }
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn trusted_git_child_receives_only_the_fixed_environment() {
+        // `env` stands in for Git and prints exactly what the child was given.
+        let output = trusted_git_command(Path::new("/usr/bin/env"))
+            .stdin(Stdio::null())
+            .output()
+            .expect("run the environment fixture");
+        assert!(output.status.success());
+        let mut variables = String::from_utf8(output.stdout)
+            .expect("environment is UTF-8")
+            .lines()
+            .map(str::to_owned)
+            .collect::<Vec<_>>();
+        variables.sort();
+        assert_eq!(
+            variables,
+            [
+                "GIT_ALLOW_PROTOCOL=",
+                "GIT_CONFIG_GLOBAL=/dev/null",
+                "GIT_CONFIG_NOSYSTEM=1",
+                "GIT_LITERAL_PATHSPECS=1",
+                "GIT_NO_LAZY_FETCH=1",
+                "GIT_OPTIONAL_LOCKS=0",
+                "GIT_PAGER=",
+                "GIT_TERMINAL_PROMPT=0",
+                "LC_ALL=C",
+            ]
+        );
     }
 
     #[test]
