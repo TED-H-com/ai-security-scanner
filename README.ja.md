@@ -10,7 +10,7 @@
 
 ## 最初のスキャン
 
-1. Windows・macOS・Linux 向けの [v0.6.0 をダウンロード](https://github.com/TED-H-com/ai-security-scanner/releases/tag/v0.6.0)し、[インストール手順（英語）](docs/getting-started.md#install)に従います。スキャンツールはアプリが準備するため、Docker は不要です。
+1. Windows・macOS・Linux 向けの [v0.6.1 をダウンロード](https://github.com/TED-H-com/ai-security-scanner/releases/tag/v0.6.1)し、[インストール手順（英語）](docs/getting-started.md#install)に従います。スキャンツールはアプリが準備するため、Docker は不要です。
 2. **Settings → 日本語** で日本語に切り替えます。**自分の環境をスキャン**、**ウェブサイトをチェック**、**コード・AI プロジェクトをチェック**を選び、フォルダー、URL、社内システムを追加します。
 3. 表示された対象とチェックを確認します。ネットワーク対象をスキャンする権限があることを確認し、アプリ画面でスキャンを開始します。
 4. 終了後に**結果**を開き、**レポートを保存・共有**を選びます。形式を **HTML レポート**にして保存すると、ブラウザーで開けます。
@@ -19,19 +19,17 @@
 
 ## 日本語について
 
-v0.6.0 のインストーラーに日本語 UI が含まれています。**Settings → 日本語** で画面の言語を選べます。選択は再起動後も保存されます。
+v0.6.1 のインストーラーに日本語 UI が含まれています。**Settings → 日本語** で画面の言語を選べます。選択は再起動後も保存されます。
 
 未翻訳の動的な説明や上流ツールの出力は英語で表示される場合があります。日本語の画面から保存する HTML レポートは英語です。レポート本体は現在、英語と繁体字中国語に対応しています。
 
 日本語 UI の初期翻訳は [@kieiken](https://github.com/kieiken) の [PR #69](https://github.com/TED-H-com/ai-security-scanner/pull/69) による貢献です。
 
-## v0.6.0 の更新
+## v0.6.1 の更新
 
-- 全 25 ツールを確認し、管理対象のスキャナーイメージ 18 個と KICS の公式イメージを更新しました。
-- オフライン脆弱性データベース、Greenbone フィード、Nuclei テンプレートを更新し、各ツールの証拠と修正案を保持します。
-- 専用スキャン環境とアプリの依存関係を更新し、レポート用 ZIP ライブラリのセキュリティ問題を修正しました。
+macOS と Linux のローカルプロジェクトスキャンに関するセキュリティ更新です。自分で作成していないリポジトリをスキャンする前に更新してください。Windows では、対象の Git チェックを実行しません。
 
-[変更点の詳細（英語・繁体字中国語）](docs/release/v0.6.0.md)。
+[GHSA-6w49-gw8c-q7wp](https://github.com/TED-H-com/ai-security-scanner/security/advisories/GHSA-6w49-gw8c-q7wp) と [v0.6.1 のリリース記録（英語・繁体字中国語）](docs/release/v0.6.1.md)をご覧ください。
 
 ## v0.5.3 の更新
 

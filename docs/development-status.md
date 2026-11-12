@@ -2,9 +2,9 @@
 
 [繁體中文](development-status.zh-TW.md) · [Documentation](README.md)
 
-_Updated 2026-11-06._
+_Updated 2026-11-12._
 
-The [November 6 upstream review](engines/updates/2026-11-06.md) checks all 25 engines and completes eighteen managed image replacements, new rules/data, application dependencies and the Podman runtime. All eighteen replacements are independently verified and catalog-pinned; KICS uses its verified official image. CI document and contract tests: 105 tests cover the current source boundaries. The published desktop is now [v0.6.0](release/v0.6.0.md); its exact-source CI, frozen installers, public bytes and provenance passed verification.
+The [November 6 upstream review](engines/updates/2026-11-06.md) checks all 25 engines and completes eighteen managed image replacements, new rules/data, application dependencies and the Podman runtime. All eighteen replacements are independently verified and catalog-pinned; KICS uses its verified official image. CI document and contract tests: 105 tests cover the current source boundaries. The published desktop is now the [v0.6.1 security update](release/v0.6.1.md); its exact-source CI, frozen installers, public bytes and provenance passed verification.
 
 This page summarizes current engineering status for contributors. It is not a product specification
 or release declaration. [The product specification](product-spec.md) remains the source of truth for
@@ -12,9 +12,11 @@ product behavior, and the [current product review](product-audit.md) tracks the 
 
 ## At a glance
 
-- [v0.6.0 upstream and runtime refresh](release/v0.6.0.md) is the current stable/latest release for Windows, macOS and Linux. All 25 engines were reviewed; eighteen managed images, KICS, offline data, the private runtime and application dependencies are updated. Exact delivery and platform limits are recorded with the release.
+- [v0.6.1 security update](release/v0.6.1.md) is the current stable/latest release for Windows, macOS and Linux. Update before scanning a repository you did not create; the release record links the advisory and records the changes and observed verification.
 
-- [v0.5.3 October 21 incident scan pack](release/v0.5.3.md) is the preceding stable release for Windows, macOS and Linux. Standard and focused incident checks share the actionable HTML / JSON report with ISO and NIST references. Trivy databases, Nuclei templates and Vite development tooling are updated; public artifacts and platform observations are recorded with the release.
+- [v0.6.0 upstream and runtime refresh](release/v0.6.0.md) is the preceding stable release for Windows, macOS and Linux. All 25 engines were reviewed; eighteen managed images, KICS, offline data, the private runtime and application dependencies are updated. Exact delivery and platform limits are recorded with the release.
+
+- [v0.5.3 October 21 incident scan pack](release/v0.5.3.md) is an earlier stable release for Windows, macOS and Linux. Standard and focused incident checks share the actionable HTML / JSON report with ISO and NIST references. Trivy databases, Nuclei templates and Vite development tooling are updated; public artifacts and platform observations are recorded with the release.
 
 - [v0.5.2 upstream engine updates](release/v0.5.2.md) is an earlier stable release for Windows, macOS and Linux. It updates ten engines and offline data and repairs bounded Windows runtime execution on recent WSL. Public bytes, updater signatures, source provenance, exact-source CI and CodeQL passed; installer observations and limitations are in the release record.
 

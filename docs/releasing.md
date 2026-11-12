@@ -6,11 +6,11 @@ The product owner selects the version, channel, source commit, supported install
 
 ## Current release
 
-[v0.6.0](https://github.com/TED-H-com/ai-security-scanner/releases/tag/v0.6.0) is the current **stable/latest** desktop release for **Linux, macOS and Windows**, published on 2026-11-06. It updates eighteen managed scanner images, the official KICS image, reviewed rules and offline data, application dependencies and the private scan runtime. [Candidate 42201363511](https://github.com/TED-H-com/ai-security-scanner/actions/runs/42201363511) built exact source `991a5983763f9621d79487e6f87bca517ca0977c`; [promotion 42210726214](https://github.com/TED-H-com/ai-security-scanner/actions/runs/42210726214) published the frozen files through normal `release-publication` approval. All 49 public files matched the frozen bytes; every file's source provenance, updater signatures and legacy updater redirects passed verification. See the [delivery record](release/v0.6.0.md).
+[v0.6.1](https://github.com/TED-H-com/ai-security-scanner/releases/tag/v0.6.1) is the current **stable/latest** desktop release for **Linux, macOS and Windows**, published on 2026-11-12. It is a security update for local project scans on macOS and Linux. [Candidate 43201355243](https://github.com/TED-H-com/ai-security-scanner/actions/runs/43201355243) built exact source `9ac944e4b715267016458963c16fe5a52a920277`; [promotion 43211834588](https://github.com/TED-H-com/ai-security-scanner/actions/runs/43211834588) published the frozen files through normal `release-publication` approval. All 49 public files matched the frozen bytes; every file's source provenance, updater signatures and legacy updater redirects passed verification. See the [delivery record](release/v0.6.1.md).
 
-GitHub records `prerelease: false`; metadata records `releaseChannel: stable` and `stableTarget: 0.6.0`. The delivery record lists the exact offered installers and updater targets. Windows installers are unsigned and macOS is not notarized. Artifact-specific human-path, managed-runtime, Windows lifecycle and data-preservation observations remain in the [publication record](release/v0.6.0-publication.json).
+GitHub records `prerelease: false`; metadata records `releaseChannel: stable` and `stableTarget: 0.6.1`. The delivery record lists the exact offered installers and updater targets. Windows installers are unsigned and macOS is not notarized. Artifact-specific human-path, managed-runtime, Windows lifecycle and data-preservation observations remain in the [publication record](release/v0.6.1-publication.json).
 
-The previous stable [v0.5.3](release/v0.5.3.md) and earlier releases retain their original files and observations.
+The previous stable [v0.6.0](release/v0.6.0.md) and earlier releases retain their original files and observations.
 
 ## Release identity
 

@@ -734,10 +734,10 @@
   "October 21 incident triage, updated Trivy databases and Nuclei templates, and one shared report with ISO / NIST references.": "10/21 の事案別検査、Trivy データベースと Nuclei テンプレートの更新、ISO / NIST 参照付きの共通レポートを追加しました。",
   "Windows installer": "Windows インストーラー",
   "(unsigned; SmartScreen may warn), macOS Universal": "（未署名のため SmartScreen の警告が出る場合があります）、macOS Universal",
-  "Download v0.6.0 stable release": "安定版 v0.6.0 をダウンロード",
-  "v0.6.0 stable release.": "安定版 v0.6.0。",
-  "New in v0.6.0:": "v0.6.0 の新機能：",
-  "Choose Settings → 日本語 in v0.6.0. Your language choice is saved across restarts.": "v0.6.0 では Settings → 日本語 で切り替えられます。選択した言語は再起動後も保存されます。",
-  "tools in v0.6.0": "v0.6.0 のツール",
-  "Updated scanner engines, November vulnerability data and the private scan runtime, plus security fixes for ZIP report attachments.": "スキャナー、11 月の脆弱性データ、専用スキャン環境を更新し、ZIP レポート添付のセキュリティ問題を修正しました。"
+  "Download v0.6.1 stable release": "安定版 v0.6.1 をダウンロード",
+  "v0.6.1 stable release.": "安定版 v0.6.1。",
+  "New in v0.6.1:": "v0.6.1 の新機能：",
+  "Choose Settings → 日本語 in v0.6.1. Your language choice is saved across restarts.": "v0.6.1 では Settings → 日本語 で切り替えられます。選択した言語は再起動後も保存されます。",
+  "tools in v0.6.1": "v0.6.1 のツール",
+  "Security update for local project scans on macOS and Linux. Update before scanning a repository you did not create.": "macOS と Linux のローカルプロジェクトスキャンに関するセキュリティ更新です。自分で作成していないリポジトリをスキャンする前に更新してください。"
 }

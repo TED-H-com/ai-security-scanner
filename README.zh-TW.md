@@ -10,24 +10,22 @@
 
 ## 介面語言
 
-v0.6.0 安裝版包含日文介面，可在 **設定 → 日本語** 選擇，重新啟動後仍會保留。未翻譯的說明會顯示英文；日文介面匯出的 HTML 報告目前使用英文。另有 [日文 README](README.ja.md) 與[日文網站](https://ted-h-com.github.io/ai-security-scanner/?lang=ja)。
+v0.6.1 安裝版包含日文介面，可在 **設定 → 日本語** 選擇，重新啟動後仍會保留。未翻譯的說明會顯示英文；日文介面匯出的 HTML 報告目前使用英文。另有 [日文 README](README.ja.md) 與[日文網站](https://ted-h-com.github.io/ai-security-scanner/?lang=ja)。
 
 ## 完成第一次掃描
 
-1. [下載 v0.6.0](https://github.com/TED-H-com/ai-security-scanner/releases/tag/v0.6.0)，依你的 Windows、macOS 或 Linux 電腦[完成安裝](docs/getting-started.zh-TW.md#安裝)。程式會準備掃描工具，不需要另外安裝 Docker。
+1. [下載 v0.6.1](https://github.com/TED-H-com/ai-security-scanner/releases/tag/v0.6.1)，依你的 Windows、macOS 或 Linux 電腦[完成安裝](docs/getting-started.zh-TW.md#安裝)。程式會準備掃描工具，不需要另外安裝 Docker。
 2. 開啟程式，選擇**掃描公司環境**、**檢查網站**或**檢查程式碼或 AI 專案**，加入想檢查的資料夾、網址或內部系統。
 3. 確認畫面列出的目標與檢查內容。網站及內部系統必須是你有權檢查的對象，再從應用程式視窗開始掃描。
 4. 掃描結束後，打開**掃描結果**。按**保存或分享報告**，再儲存 **HTML 報告**，就能用瀏覽器閱讀。
 
 第一次可能需要等候工具下載，之後可以重複使用。每個畫面的操作方式都在[開始使用](docs/getting-started.zh-TW.md#從開始新掃描到-html-報告)。
 
-## v0.6.0 更新
+## v0.6.1 更新
 
-- 核對全部 25 個工具，更新 18 個自建掃描器映像與 KICS 官方映像。
-- 同步更新離線漏洞資料庫、Greenbone feed 與 Nuclei 範本，保留各工具的原始證據與修復建議。
-- 更新專用掃描環境及應用依賴，修補報告 ZIP 函式庫的安全問題。
+安全性更新：修正 macOS 與 Linux 的本機專案掃描。掃描不是自己建立的儲存庫之前，請先更新。Windows 不執行受影響的 Git 檢查。
 
-[查看 v0.6.0 更新](docs/release/v0.6.0.md#繁體中文)。
+詳見 [GHSA-6w49-gw8c-q7wp](https://github.com/TED-H-com/ai-security-scanner/security/advisories/GHSA-6w49-gw8c-q7wp) 與 [v0.6.1 發布紀錄](docs/release/v0.6.1.md#繁體中文)。
 
 ## v0.5.3 更新
 

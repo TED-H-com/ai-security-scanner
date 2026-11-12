@@ -6,11 +6,11 @@
 
 ## 目前發布版本
 
-[v0.6.0](https://github.com/TED-H-com/ai-security-scanner/releases/tag/v0.6.0) 是目前的 **stable／latest** 桌面版本，於 2026-11-06 發布，涵蓋 **Linux、macOS、Windows**，更新十八個自建掃描器映像、KICS 官方映像、規則與離線資料、應用依賴及專用掃描環境。[候選 42201363511](https://github.com/TED-H-com/ai-security-scanner/actions/runs/42201363511) 建置精確來源 `991a5983763f9621d79487e6f87bca517ca0977c`；[發布流程 42210726214](https://github.com/TED-H-com/ai-security-scanner/actions/runs/42210726214) 經正常 `release-publication` 核准後發布凍結檔案。全部 49 個公開檔案符合凍結檢查碼，每個檔案的來源證明、更新簽章與舊更新網址轉址也驗證通過。見[交付紀錄](release/v0.6.0.md#繁體中文)。
+[v0.6.1](https://github.com/TED-H-com/ai-security-scanner/releases/tag/v0.6.1) 是目前的 **stable／latest** 桌面版本，於 2026-11-12 發布，涵蓋 **Linux、macOS、Windows**，修正 macOS 與 Linux 本機專案掃描的安全問題。[候選 43201355243](https://github.com/TED-H-com/ai-security-scanner/actions/runs/43201355243) 建置精確來源 `9ac944e4b715267016458963c16fe5a52a920277`；[發布流程 43211834588](https://github.com/TED-H-com/ai-security-scanner/actions/runs/43211834588) 經正常 `release-publication` 核准後發布凍結檔案。全部 49 個公開檔案符合凍結檢查碼，每個檔案的來源證明、更新簽章與舊更新網址轉址也驗證通過。見[交付紀錄](release/v0.6.1.md#繁體中文)。
 
-GitHub 記錄 `prerelease: false`；metadata 記錄 `releaseChannel: stable`、`stableTarget: 0.6.0`。實際安裝檔與更新目標列於交付紀錄。Windows 安裝檔未簽章，macOS 未公證；各成品的真人操作、執行環境、Windows 生命週期與資料保留觀察，保存在[發布查核紀錄](release/v0.6.0-publication.json)。
+GitHub 記錄 `prerelease: false`；metadata 記錄 `releaseChannel: stable`、`stableTarget: 0.6.1`。實際安裝檔與更新目標列於交付紀錄。Windows 安裝檔未簽章，macOS 未公證；各成品的真人操作、執行環境、Windows 生命週期與資料保留觀察，保存在[發布查核紀錄](release/v0.6.1-publication.json)。
 
-前一個正式版 [v0.5.3](release/v0.5.3.md) 與更早版本保留原始檔案及觀察。
+前一個正式版 [v0.6.0](release/v0.6.0.md) 與更早版本保留原始檔案及觀察。
 
 ## 版本身分
 

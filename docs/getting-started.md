@@ -32,13 +32,13 @@ When an AWS or Microsoft 365 read-only connection expires, Results offers **Reco
 
 ## Install
 
-Download the **v0.6.0 stable release** for your computer from the [release page](https://github.com/TED-H-com/ai-security-scanner/releases/tag/v0.6.0):
+Download the **v0.6.1 stable release** for your computer from the [release page](https://github.com/TED-H-com/ai-security-scanner/releases/tag/v0.6.1):
 
 | Computer | Installer | First launch |
 | --- | --- | --- |
-| macOS, Apple silicon or Intel | [ai-security-scanner_0.6.0_universal.dmg](https://github.com/TED-H-com/ai-security-scanner/releases/download/v0.6.0/ai-security-scanner_0.6.0_universal.dmg) | Drag the app into **Applications**. It is not notarized, so run `xattr -dr com.apple.quarantine /Applications/ai-security-scanner.app` once in Terminal before opening it. |
-| Windows x86-64 | [MSI](https://github.com/TED-H-com/ai-security-scanner/releases/download/v0.6.0/ai-security-scanner_0.6.0_x64_en-US.msi) | The installer is unsigned. If SmartScreen warns, select **More info → Run anyway**. If Windows asks to install or update WSL, allow it. |
-| Debian or Ubuntu x86-64 | [ai-security-scanner_0.6.0_amd64.deb](https://github.com/TED-H-com/ai-security-scanner/releases/download/v0.6.0/ai-security-scanner_0.6.0_amd64.deb) | Install with `sudo apt install ./ai-security-scanner_0.6.0_amd64.deb`. |
+| macOS, Apple silicon or Intel | [ai-security-scanner_0.6.1_universal.dmg](https://github.com/TED-H-com/ai-security-scanner/releases/download/v0.6.1/ai-security-scanner_0.6.1_universal.dmg) | Drag the app into **Applications**. It is not notarized, so run `xattr -dr com.apple.quarantine /Applications/ai-security-scanner.app` once in Terminal before opening it. |
+| Windows x86-64 | [MSI](https://github.com/TED-H-com/ai-security-scanner/releases/download/v0.6.1/ai-security-scanner_0.6.1_x64_en-US.msi) | The installer is unsigned. If SmartScreen warns, select **More info → Run anyway**. If Windows asks to install or update WSL, allow it. |
+| Debian or Ubuntu x86-64 | [ai-security-scanner_0.6.1_amd64.deb](https://github.com/TED-H-com/ai-security-scanner/releases/download/v0.6.1/ai-security-scanner_0.6.1_amd64.deb) | Install with `sudo apt install ./ai-security-scanner_0.6.1_amd64.deb`. |
 
 Launch **ai-security-scanner** after installation. The app prepares its own scanning runtime the first time a scan needs it; Docker is not required.
 
@@ -100,7 +100,7 @@ This profile covers the displayed `scheme://host:port` origin. See [Scanning sco
 
 The app scans a bounded read-only snapshot. The original folder is not changed.
 
-### Optional checks in v0.6.0
+### Optional checks in v0.6.1
 
 The release provides these explicit choices:
 
