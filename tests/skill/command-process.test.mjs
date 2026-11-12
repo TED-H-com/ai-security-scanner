@@ -99,6 +99,33 @@ test('normal completion keeps the pipe open and returns the actual child outcome
   `], { parentControl: true }), 17);
 });
 
+test('parent-controlled child output reaches consumers through inherited parent pipes', async t => {
+  const module = new URL('../../scripts/skill/bootstrap-core.mjs', import.meta.url).href;
+  const stdout = Buffer.from([0, 10, 13, 65, 127, 128, 255]);
+  const stderr = Buffer.from([255, 128, 127, 66, 13, 10, 0]);
+  const child = `
+    process.stdout.write(Buffer.from(${JSON.stringify([...stdout])}));
+    process.stderr.write(Buffer.from(${JSON.stringify([...stderr])}));
+    process.exitCode = 17;
+  `;
+  const parent = spawn(process.execPath, ['--input-type=module', '-e', `
+    import { invokeCoreCommand } from ${JSON.stringify(module)};
+    process.exitCode = await invokeCoreCommand(process.execPath, ['-e', ${JSON.stringify(child)}], { parentControl: true });
+  `], { stdio: ['ignore', 'pipe', 'pipe'] });
+  t.after(() => { if (parent.exitCode === null && parent.signalCode === null) parent.kill('SIGKILL'); });
+  const out = [];
+  const err = [];
+  parent.stdout.on('data', bytes => out.push(bytes));
+  parent.stderr.on('data', bytes => err.push(bytes));
+  const code = await new Promise((resolve, reject) => {
+    parent.once('close', resolve);
+    parent.once('error', reject);
+  });
+  assert.equal(code, 17);
+  assert.deepEqual(Buffer.concat(out), stdout);
+  assert.deepEqual(Buffer.concat(err), stderr);
+});
+
 test('spawn failure removes cancellation listeners', async () => {
   const counts = ['SIGINT', 'SIGTERM'].map(name => process.listenerCount(name));
   await assert.rejects(invokeCoreCommand(join(tmpdir(), 'absent-scanner-core', 'cli'), [], { parentControl: true }), { code: 'ENOENT' });

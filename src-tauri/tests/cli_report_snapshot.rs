@@ -1,5 +1,12 @@
 #![cfg(feature = "cli")]
 
+#[allow(dead_code)]
+#[path = "../src/test_temp.rs"]
+mod test_temp;
+
+#[path = "support/report_version.rs"]
+mod report_version;
+
 use ai_security_scanner_lib::domain::{AssessmentCase, FindingStatus, FindingWorkflowEvent};
 use ai_security_scanner_lib::storage::Storage;
 use base64::Engine as _;
@@ -150,7 +157,7 @@ fn saved_reports_replay_and_retrieve_after_original_case_and_workspace_are_remov
     for (locale, redaction, disclosure) in
         [("en", "none", "full"), ("zh-Hant", "standard", "standard")]
     {
-        let directory = tempfile::tempdir().unwrap();
+        let directory = test_temp::tempdir().unwrap();
         let data_dir = directory.path().join("original-workspace");
         let case = saved_case(&data_dir);
         let path = directory.path().join("saved-report.json");
@@ -160,7 +167,11 @@ fn saved_reports_replay_and_retrieve_after_original_case_and_workspace_are_remov
         let snapshot_id = frozen["snapshot_id"].clone();
         for format in ["html", "json"] {
             assert_eq!(
-                original(&frozen, format),
+                report_version::normalize(
+                    &format!("{locale}-{disclosure}.{format}"),
+                    &original(&frozen, format),
+                    &report_version::baseline_version(),
+                ),
                 fixture_bytes(&format!("{locale}-{disclosure}.{format}.gz")),
                 "CLI must preserve the reviewed production {locale}/{format} output"
             );
@@ -264,7 +275,7 @@ fn saved_reports_replay_and_retrieve_after_original_case_and_workspace_are_remov
 
 #[test]
 fn unavailable_renderer_is_retrieve_only_and_does_not_create_a_workspace() {
-    let directory = tempfile::tempdir().unwrap();
+    let directory = test_temp::tempdir().unwrap();
     let data_dir = directory.path().join("source");
     let case = saved_case(&data_dir);
     let path = directory.path().join("future-renderer.json");
@@ -319,7 +330,7 @@ fn unavailable_renderer_is_retrieve_only_and_does_not_create_a_workspace() {
 
 #[test]
 fn corrupt_snapshot_hashes_fail_inspection_replay_and_retrieval_without_output() {
-    let directory = tempfile::tempdir().unwrap();
+    let directory = test_temp::tempdir().unwrap();
     let data_dir = directory.path().join("source");
     let case = saved_case(&data_dir);
     let original_path = directory.path().join("valid.json");
@@ -357,7 +368,7 @@ fn corrupt_snapshot_hashes_fail_inspection_replay_and_retrieval_without_output()
 
 #[test]
 fn snapshot_replay_and_retrieve_refuse_to_overwrite_selected_destinations() {
-    let directory = tempfile::tempdir().unwrap();
+    let directory = test_temp::tempdir().unwrap();
     let data_dir = directory.path().join("source");
     let case = saved_case(&data_dir);
     let path = directory.path().join("report.json");
@@ -392,7 +403,7 @@ fn snapshot_replay_and_retrieve_refuse_to_overwrite_selected_destinations() {
 
 #[test]
 fn private_context_acknowledgement_is_required_before_accessing_or_creating_data() {
-    let directory = tempfile::tempdir().unwrap();
+    let directory = test_temp::tempdir().unwrap();
     let data_dir = directory.path().join("missing-workspace");
     let destination = directory.path().join("output").join("snapshot.json");
     let output = cli(&data_dir)
@@ -453,7 +464,7 @@ fn ordinary_exports_keep_private_snapshots_of_the_exact_shared_documents() {
         ("html", "zh-Hant", "standard", "standard"),
         ("json", "en", "none", "full"),
     ] {
-        let directory = tempfile::tempdir().unwrap();
+        let directory = test_temp::tempdir().unwrap();
         let data = directory.path().join("data");
         let case = saved_case(&data);
         let destination = directory.path().join(format!("shared.{format}"));
@@ -478,7 +489,11 @@ fn ordinary_exports_keep_private_snapshots_of_the_exact_shared_documents() {
         assert_eq!(inspection["redaction"], redaction);
         assert_eq!(inspection["contains_sensitive_context"], true);
         assert_eq!(
-            fs::read(&destination).unwrap(),
+            report_version::normalize(
+                &format!("{locale}-{disclosure}.{format}"),
+                &fs::read(&destination).unwrap(),
+                &report_version::baseline_version(),
+            ),
             fixture_bytes(&format!("{locale}-{disclosure}.{format}.gz"))
         );
         assert_eq!(
@@ -580,7 +595,7 @@ fn export_failures_roll_back_new_documents_and_private_snapshots() {
         "history_write",
         "snapshot_directory",
     ] {
-        let directory = tempfile::tempdir().unwrap();
+        let directory = test_temp::tempdir().unwrap();
         let data = directory.path().join("data");
         let case = saved_case(&data);
         let destination = directory.path().join("shared.html");
@@ -674,7 +689,7 @@ fn retain_terminal(
 
 #[test]
 fn terminal_snapshots_are_idempotent_after_triage_and_preserve_changed_run_outcomes() {
-    let directory = tempfile::tempdir().unwrap();
+    let directory = test_temp::tempdir().unwrap();
     let data = directory.path().join("data");
     let case = ready_terminal_case(&data);
     let first = retain_terminal(&data, &case).unwrap();
@@ -724,7 +739,7 @@ fn terminal_snapshots_are_idempotent_after_triage_and_preserve_changed_run_outco
 
 #[test]
 fn terminal_snapshot_history_failure_rolls_back_private_file_and_retries() {
-    let directory = tempfile::tempdir().unwrap();
+    let directory = test_temp::tempdir().unwrap();
     let data = directory.path().join("data");
     let case = ready_terminal_case(&data);
     let connection = rusqlite::Connection::open(data.join("casework.db")).unwrap();
@@ -776,7 +791,7 @@ fn active_cleanup_and_unverified_checkpoints_do_not_create_terminal_reports() {
             Some("invalid-checkpoint"),
         ),
     ] {
-        let directory = tempfile::tempdir().unwrap();
+        let directory = test_temp::tempdir().unwrap();
         let data = directory.path().join("data");
         let mut case = ready_terminal_case(&data);
         let task = &mut case.scan_runs.last_mut().unwrap().engine_runs[0];
@@ -857,7 +872,7 @@ fn combined_export(
 #[test]
 fn combined_exports_freeze_ordered_sources_and_replay_without_the_original_workspace() {
     for (format, locale) in [("html", "zh-Hant"), ("json", "en")] {
-        let directory = tempfile::tempdir().unwrap();
+        let directory = test_temp::tempdir().unwrap();
         let data = directory.path().join("data");
         let case = combined_case(&data);
         let ids: Vec<_> = case
@@ -943,7 +958,7 @@ fn combined_exports_freeze_ordered_sources_and_replay_without_the_original_works
 
 #[test]
 fn combined_manual_snapshots_validate_sources_and_preserve_retrieve_only_compatibility() {
-    let directory = tempfile::tempdir().unwrap();
+    let directory = test_temp::tempdir().unwrap();
     let data = directory.path().join("data");
     let case = combined_case(&data);
     let ids: Vec<_> = case.scan_runs.iter().map(|run| run.id.clone()).collect();
@@ -1043,7 +1058,7 @@ fn combined_manual_snapshots_validate_sources_and_preserve_retrieve_only_compati
 #[test]
 fn combined_export_publication_failure_preserves_destinations_and_history() {
     for fault in ["history", "occupied", "snapshot_directory"] {
-        let directory = tempfile::tempdir().unwrap();
+        let directory = test_temp::tempdir().unwrap();
         let data = directory.path().join("data");
         let case = combined_case(&data);
         let ids: Vec<_> = case.scan_runs.iter().map(|run| run.id.clone()).collect();

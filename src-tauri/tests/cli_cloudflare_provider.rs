@@ -1,5 +1,9 @@
 #![cfg(feature = "cli")]
 
+#[allow(dead_code)]
+#[path = "../src/test_temp.rs"]
+mod test_temp;
+
 use ai_security_scanner_lib::process_lease::DataDirectoryExclusiveLease;
 use serde_json::Value;
 use sha2::{Digest, Sha256};
@@ -43,7 +47,7 @@ fn receipt(output: &Output, code: i32) -> Value {
 
 #[test]
 fn native_documents_validate_without_creating_data_or_acquiring_its_lease() {
-    let temporary = tempfile::tempdir().unwrap();
+    let temporary = test_temp::tempdir().unwrap();
     let missing = temporary.path().join("missing-data");
     let held = temporary.path().join("held-data");
     let _lease = DataDirectoryExclusiveLease::acquire(&held).unwrap();
@@ -80,7 +84,7 @@ fn native_documents_validate_without_creating_data_or_acquiring_its_lease() {
 
 #[test]
 fn invalid_documents_return_structured_failure_and_nonzero_exit() {
-    let temporary = tempfile::tempdir().unwrap();
+    let temporary = test_temp::tempdir().unwrap();
     let input = temporary.path().join("invalid.json");
     for (contents, phase) in [
         (b"{}".as_slice(), "upstream"),
@@ -102,7 +106,7 @@ fn invalid_documents_return_structured_failure_and_nonzero_exit() {
 
 #[test]
 fn invalid_file_bytes_fail_before_starting_a_runtime() {
-    let temporary = tempfile::tempdir().unwrap();
+    let temporary = test_temp::tempdir().unwrap();
     let input = temporary.path().join("input.json");
     for bytes in [vec![0xff, 0xfe], vec![b' '; 5 * 1024 * 1024 + 1]] {
         std::fs::write(&input, bytes).unwrap();
@@ -123,7 +127,7 @@ fn invalid_file_bytes_fail_before_starting_a_runtime() {
 
 #[test]
 fn node_options_and_report_commands_cannot_execute_input() {
-    let temporary = tempfile::tempdir().unwrap();
+    let temporary = test_temp::tempdir().unwrap();
     let marker = temporary.path().join("must-not-exist");
     let malicious_module = temporary.path().join("injected.cjs");
     std::fs::write(
@@ -159,7 +163,7 @@ fn node_options_and_report_commands_cannot_execute_input() {
 
 #[test]
 fn absent_node_is_an_operational_error_without_scan_state() {
-    let temporary = tempfile::tempdir().unwrap();
+    let temporary = test_temp::tempdir().unwrap();
     let input = temporary.path().join("findings.json");
     let data = temporary.path().join("data");
     std::fs::write(&input, "[]").unwrap();
@@ -175,7 +179,7 @@ fn absent_node_is_an_operational_error_without_scan_state() {
 #[cfg(windows)]
 #[test]
 fn windows_device_network_and_stream_paths_are_refused_before_open() {
-    let temporary = tempfile::tempdir().unwrap();
+    let temporary = test_temp::tempdir().unwrap();
     for path in [
         r"\\.\pipe\scanner-validator-test",
         r"\\server\share\findings.json",
@@ -201,7 +205,7 @@ fn windows_device_network_and_stream_paths_are_refused_before_open() {
 #[test]
 fn links_and_named_pipes_are_rejected_without_blocking() {
     use std::os::unix::fs::symlink;
-    let temporary = tempfile::tempdir().unwrap();
+    let temporary = test_temp::tempdir().unwrap();
     let original = temporary.path().join("original.json");
     std::fs::write(&original, "[]").unwrap();
     let link = temporary.path().join("symlink.json");

@@ -279,6 +279,7 @@ pub(super) fn fixed_report(report: ReportSnapshot) -> ReportSnapshot {
 
 #[test]
 fn legacy_archive_fixed_bytes() {
+    let _version = crate::product_version::pin("0.6.0");
     // Normalize synthetic UUIDs and times before saving; never normalize the archive.
     fn normalize(value: &mut serde_json::Value, ids: &mut BTreeMap<String, String>) {
         match value {

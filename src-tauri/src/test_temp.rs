@@ -29,9 +29,19 @@ impl TempDir {
 // Keep tempfile's naming, prefix, permissions and parent-directory options.
 impl From<tempfile::TempDir> for TempDir {
     fn from(directory: tempfile::TempDir) -> Self {
-        Self {
-            path: directory.keep(),
-        }
+        // macOS and symlinked TMPDIRs may reach this root through an alias.
+        // Product inputs must use its real path; keep ownership for cleanup.
+        // Windows keeps its plain drive path instead of a verbatim \\?\ form.
+        let path = if cfg!(unix) {
+            directory
+                .path()
+                .canonicalize()
+                .expect("canonical temporary root")
+        } else {
+            directory.path().to_owned()
+        };
+        let _ = directory.keep();
+        Self { path }
     }
 }
 

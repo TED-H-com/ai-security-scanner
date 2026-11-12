@@ -1,12 +1,16 @@
 #![cfg(feature = "cli")]
 
+#[allow(dead_code)]
+#[path = "../src/test_temp.rs"]
+mod test_temp;
+
 use ai_security_scanner_lib::process_lease::DataDirectoryExclusiveLease;
 use serde_json::Value;
 use std::process::Command;
 
 #[test]
 fn build_identity_needs_no_workspace_runtime_or_writer_lease() {
-    let temporary = tempfile::tempdir().unwrap();
+    let temporary = test_temp::tempdir().unwrap();
     let missing = temporary.path().join("must-not-create");
     let held = temporary.path().join("held-workspace");
     let _lease = DataDirectoryExclusiveLease::acquire(&held).unwrap();

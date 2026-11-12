@@ -900,13 +900,14 @@ export async function runPrepared(result, argv, overrides = {}) {
 
 export function invokeCoreCommand(executable, args, { environment = process.env, parentControl = false } = {}) {
   // Keep output connected to the consumer, preserving the core's bounded output
-  // delivery. Only stdin is private. A separate Unix process group receives
-  // cancellation once, via the pipe. The child stays referenced until close.
+  // delivery. Only stdin is private. Detach owning commands on every platform
+  // so parent death closes the pipe instead of killing the child (including
+  // Windows job teardown). The child stays referenced until close.
   return new Promise((resolvePromise, reject) => {
     const child = spawn(executable, args, {
       shell: false, env: environment, windowsHide: true,
       stdio: parentControl ? ['pipe', 'inherit', 'inherit'] : 'inherit',
-      detached: parentControl && process.platform !== 'win32',
+      detached: parentControl,
     });
     let requested = false;
     const requestStop = signal => {

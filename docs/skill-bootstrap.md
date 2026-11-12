@@ -154,7 +154,9 @@ The bootstrap uses a fixed cancellation pipe for selected preparation and for
 `run -- ... scan run`, `scan recover`, and `runtime prepare`. Ctrl+C requests
 cancellation and waits for the core to finish cleanup and save its outcome.
 An unexpected bootstrap exit closes the pipe and also requests cancellation.
-The bootstrap preserves the core's terminal output and exit code. This path no
+Owning commands run detached on every platform so they can finish cleanup after
+the bootstrap exits, including on Windows. Standard output and standard error
+remain inherited, and the bootstrap preserves the core's exit code. This path no
 longer uses Node's forceful Windows `child.kill()` for these owning commands;
 Windows/macOS execution still needs native verification before the default
 operator route changes.

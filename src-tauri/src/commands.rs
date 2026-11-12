@@ -17,7 +17,7 @@ use crate::discovery::run_connector;
 use crate::domain::*;
 use crate::error::{AppError, AppResult};
 use crate::export::{ExportOptions, RedactionProfile, ReportLocale, verify_case_bundle};
-use crate::job_manager::{JobCompletion, JobKey, JobSnapshot};
+use crate::job_manager::{JobKey, JobSnapshot};
 use crate::local_tcp_probe::DesktopHostTcpConnector;
 use crate::localhost_quick_scan::{
     execute_managed_localhost_quick_scan, live_localhost_quick_scan_for_port,
@@ -2248,6 +2248,7 @@ fn emit<T: Serialize + Clone>(app: &AppHandle, event: &str, payload: &T) -> AppR
 mod tests {
     use super::*;
     use crate::case_service::LiveProviderDiscoveryOutcome;
+    use crate::job_manager::JobCompletion;
     use crate::scan_coordinator::tests::create_test_case;
     use crate::scan_coordinator::tests::{
         ready_aws_state, ready_repository_state, test_state, verified_aws_authorization_for_account,

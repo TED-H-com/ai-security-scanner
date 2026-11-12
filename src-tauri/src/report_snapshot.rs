@@ -281,7 +281,7 @@ impl RendererIdentity {
         Self {
             recipe: report_renderer::RENDERER_RECIPE_VERSION.into(),
             source_sha256: env!("AI_SECURITY_SCANNER_REPORT_CORE_SHA256").into(),
-            product_version: env!("CARGO_PKG_VERSION").into(),
+            product_version: crate::product_version::current().into(),
         }
     }
 }

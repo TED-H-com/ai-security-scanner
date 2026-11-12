@@ -143,16 +143,20 @@ jobs:
       - name: Test bootstrap cache and command ownership
         run: node --test tests/skill/*.test.mjs
       - name: Verify native source bootstrap and cache reuse
+        id: native-smoke
+        if: ${{ !cancelled() }}
         env:
           SKILL_SMOKE_RESULT: ${{ runner.temp }}/skill-bootstrap-native.json
         run: node scripts/ci/skill-bootstrap-smoke.mjs
       - name: Replay reports and round-trip archives without scanner runtime
+        if: ${{ !cancelled() }}
         run: >-
-          cargo test --locked --package ai-security-scanner --no-default-features
+          cargo test --locked --no-fail-fast --package ai-security-scanner --no-default-features
           --features cli --test cli_build_identity --test cli_report_snapshot --test cli_case_archive
           --test cli_runtime_prepare --test cli_cloudflare_provider --test report_fidelity_baseline
           --test cli_cloudflare_bundle --test cli_cloudflare_source_view --test cli_cloudflare_audit
       - name: Retain native bootstrap evidence
+        if: ${{ !cancelled() && steps.native-smoke.outcome == 'success' }}
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: skill-bootstrap-${{ matrix.os }}

@@ -647,7 +647,7 @@ fn build_archive(
     let manifest = BundleManifest {
         schema_version: BUNDLE_SCHEMA_VERSION.into(),
         product_name: "ai-security-scanner".into(),
-        product_version: env!("CARGO_PKG_VERSION").into(),
+        product_version: crate::product_version::current().into(),
         created_at,
         case_id: case.id.clone(),
         run_id: run_id.into(),
@@ -927,7 +927,7 @@ fn build_documents(
         &json!({
             "schema_version": BEGINNER_MASTER_REPORT_SCHEMA_VERSION,
             "product_name": "ai-security-scanner",
-            "product_version": env!("CARGO_PKG_VERSION"),
+            "product_version": crate::product_version::current(),
             "export_kind": "beginner_master_report",
             "selected_run_id": beginner_report.run_id.clone(),
             "redaction_profile": redaction.as_str(),
@@ -6729,6 +6729,7 @@ mod tests {
 
     #[test]
     fn legacy_bundle_bytes_match_pre_admission_support() {
+        let _version = crate::product_version::pin("0.6.0");
         // Fixed input, time, signing key and identity. Hashes were measured
         // through the native runner against the pre-slice bundle implementation.
         #[derive(Serialize)]

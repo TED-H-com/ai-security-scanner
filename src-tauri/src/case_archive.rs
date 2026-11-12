@@ -479,7 +479,7 @@ pub fn create_archive(
         schema_version: "ai-security-scanner.archive/v1".into(),
         archive_id: archive_id.clone(),
         created_at: Utc::now(),
-        producer_version: env!("CARGO_PKG_VERSION").into(),
+        producer_version: crate::product_version::current().into(),
         case_id: case.id.clone(),
         source_case_revision: saved.revision,
         case_document_sha256: digest(&case_bytes),

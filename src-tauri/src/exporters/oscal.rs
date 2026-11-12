@@ -99,7 +99,7 @@ pub fn export_oscal_assessment_results(case: &AssessmentCase, run_id: &str) -> A
             "metadata": {
                 "title": format!("{} — {}", case.title, if has_audit { "source audit observations" } else { "preliminary scanner observations" }),
                 "last-modified": last_durable_activity.to_rfc3339(),
-                "version": env!("CARGO_PKG_VERSION"),
+                "version": crate::product_version::current(),
                 "oscal-version": OSCAL_VERSION,
                 "remarks": OSCAL_EXPORT_NOTICE
             },

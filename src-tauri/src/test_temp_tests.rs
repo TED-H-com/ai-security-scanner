@@ -7,6 +7,23 @@ use std::os::unix::fs::{PermissionsExt, symlink};
 
 #[cfg(unix)]
 #[test]
+fn canonicalizes_temporary_roots_reached_through_symlinked_parents() {
+    let parent = tempdir().unwrap();
+    let real = parent.path().join("real");
+    let alias = parent.path().join("alias");
+    fs::create_dir(&real).unwrap();
+    symlink(&real, &alias).unwrap();
+    let root = TempDir::from(tempfile::tempdir_in(&alias).unwrap());
+    let path = root.path().to_owned();
+    assert_eq!(path, path.canonicalize().unwrap());
+    assert_eq!(path.parent(), Some(real.as_path()));
+    drop(root);
+    assert!(!path.exists());
+    assert!(alias.is_symlink());
+}
+
+#[cfg(unix)]
+#[test]
 fn removes_read_only_nested_directories_and_files() {
     let root = tempdir().unwrap();
     let path = root.path().to_path_buf();

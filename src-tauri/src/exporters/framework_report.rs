@@ -486,7 +486,7 @@ pub(crate) fn report_with_audits(
     Ok(MasterFrameworkReport {
         schema_version: MASTER_FRAMEWORK_REPORT_SCHEMA_VERSION.into(),
         product_name: "ai-security-scanner".into(),
-        product_version: env!("CARGO_PKG_VERSION").into(),
+        product_version: crate::product_version::current().into(),
         export_kind: "master_framework_relationship_report".into(),
         case_id: case.id.clone(),
         selected_run_id: run.id.clone(),

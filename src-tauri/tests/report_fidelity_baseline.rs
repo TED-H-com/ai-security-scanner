@@ -2,6 +2,9 @@
 //! The included harness uses FakeContainerRuntime and never contacts scan targets.
 include!("all_engine_report_audit.rs");
 
+#[path = "support/report_version.rs"]
+mod report_version;
+
 mod report_fidelity {
     use super::*;
     use ai_security_scanner_lib::export::{create_case_bundle_at, verify_case_bundle};
@@ -82,7 +85,15 @@ mod report_fidelity {
         case
     }
 
-    fn generate_documents(case: &AssessmentCase, destination: &Path) -> Value {
+    fn generate_documents(
+        case: &AssessmentCase,
+        destination: &Path,
+        comparison_version: Option<&str>,
+    ) -> Value {
+        let comparison_bytes = |name: &str, bytes: Vec<u8>| match comparison_version {
+            Some(version) => report_version::normalize(name, &bytes, version),
+            None => bytes,
+        };
         fs::create_dir_all(destination).unwrap();
         let run_id = &case.scan_runs.last().unwrap().id;
         let engines = EngineRegistry::load_builtin().unwrap();
@@ -100,7 +111,7 @@ mod report_fidelity {
                     let name = format!("{locale_name}-{disclosure}.{extension}");
                     // Each format sees the exact same case, before export history
                     // and storage touch timestamps change the live service state.
-                    let temp = tempfile::tempdir().unwrap();
+                    let temp = test_temp::tempdir().unwrap();
                     let storage = Storage::open(temp.path().join("case.db")).unwrap();
                     let mut saved: AssessmentCase =
                         serde_json::from_value(serde_json::to_value(case).unwrap()).unwrap();
@@ -127,7 +138,7 @@ mod report_fidelity {
                             },
                         )
                         .unwrap();
-                    let bytes = fs::read(destination.join(&name)).unwrap();
+                    let bytes = comparison_bytes(&name, fs::read(destination.join(&name)).unwrap());
                     if extension == "html" {
                         assert_paragraphs_are_well_formed(
                             std::str::from_utf8(&bytes).unwrap(),
@@ -146,7 +157,7 @@ mod report_fidelity {
             ("ocsf.json", CaseExportFormat::OcsfJson),
             ("oscal.json", CaseExportFormat::OscalJson),
         ] {
-            let temp = tempfile::tempdir().unwrap();
+            let temp = test_temp::tempdir().unwrap();
             let storage = Storage::open(temp.path().join("case.db")).unwrap();
             let mut saved: AssessmentCase =
                 serde_json::from_value(serde_json::to_value(case).unwrap()).unwrap();
@@ -169,21 +180,35 @@ mod report_fidelity {
                     ExportOptions::default(),
                 )
                 .unwrap();
-            let bytes = fs::read(destination.join(name)).unwrap();
+            let produced = fs::read(destination.join(name)).unwrap();
+            let bytes = comparison_bytes(name, produced.clone());
             documents.insert(
                 name.into(),
                 json!({"sha256": hash(&bytes), "byteLength": bytes.len()}),
             );
             if let Some(companion) = exported.coverage_manifest_path {
-                let bytes = fs::read(&companion).unwrap();
+                let mut companion_bytes = fs::read(&companion).unwrap();
+                // The companion binds the real export, including its current
+                // product version. Verify that binding before deriving the hash
+                // of the version-normalized document for the frozen comparison.
+                let value: Value = serde_json::from_slice(&companion_bytes).unwrap();
+                assert_eq!(value["companion"]["file_name"], name);
+                assert_eq!(value["companion"]["sha256"], hash(&produced));
+                if comparison_version.is_some() {
+                    let before = format!("\n    \"sha256\": {:?}\n", hash(&produced));
+                    let after = format!("\n    \"sha256\": {:?}\n", hash(&bytes));
+                    let text = std::str::from_utf8(&companion_bytes).unwrap();
+                    assert_eq!(text.matches(&before).count(), 1);
+                    companion_bytes = text.replacen(&before, &after, 1).into_bytes();
+                }
                 let name = Path::new(&companion).file_name().unwrap().to_str().unwrap();
                 documents.insert(
                     name.into(),
-                    json!({"sha256": hash(&bytes), "byteLength": bytes.len()}),
+                    json!({"sha256": hash(&companion_bytes), "byteLength": companion_bytes.len()}),
                 );
             }
         }
-        let temp = tempfile::tempdir().unwrap();
+        let temp = test_temp::tempdir().unwrap();
         let bundle = destination.join("report.case.tar.gz");
         create_case_bundle_at(
             case,
@@ -210,6 +235,7 @@ mod report_fidelity {
             }
             let mut bytes = Vec::new();
             entry.read_to_end(&mut bytes).unwrap();
+            let bytes = comparison_bytes(&name, bytes);
             entries.insert(
                 name,
                 json!({"sha256": hash(&bytes), "byteLength": bytes.len()}),
@@ -264,8 +290,8 @@ mod report_fidelity {
                     fs::create_dir_all(&directory).unwrap();
                     let input = serde_json::to_vec_pretty(&case).unwrap();
                     write_gzip(&directory.join("case.json.gz"), &input);
-                    let output = tempfile::tempdir().unwrap();
-                    let documents = generate_documents(&case, output.path());
+                    let output = test_temp::tempdir().unwrap();
+                    let documents = generate_documents(&case, output.path(), None);
                     // Freeze exact production output, without normalizing output IDs,
                     // timestamps, ordering, prose, or HTML after rendering.
                     for entry in fs::read_dir(output.path()).unwrap() {
@@ -320,7 +346,7 @@ mod report_fidelity {
         let receipt: Value =
             serde_json::from_slice(&fs::read(baseline.join("receipt.json")).unwrap()).unwrap();
         let output = std::env::var_os("AI_SCANNER_REPORT_BASELINE_OUTPUT").map(PathBuf::from);
-        let temp = tempfile::tempdir().unwrap();
+        let temp = test_temp::tempdir().unwrap();
         let output = output.as_deref().unwrap_or(temp.path());
         for scenario in receipt["scenarios"].as_array().unwrap() {
             let name = scenario["name"].as_str().unwrap();
@@ -331,7 +357,11 @@ mod report_fidelity {
                 "{name} frozen input changed"
             );
             let case: AssessmentCase = serde_json::from_slice(&input).unwrap();
-            let actual = generate_documents(&case, &output.join(name));
+            let actual = generate_documents(
+                &case,
+                &output.join(name),
+                Some(&report_version::baseline_version()),
+            );
             for (document, expected) in scenario["documents"].as_object().unwrap() {
                 assert_eq!(
                     &actual[document], expected,

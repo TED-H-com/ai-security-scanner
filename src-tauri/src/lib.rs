@@ -52,6 +52,7 @@ pub mod prioritization;
 pub mod priority_guidance;
 pub mod process_lease;
 pub mod product_uninstall;
+mod product_version;
 pub mod provider_report;
 pub mod publication_origins;
 pub mod registry;

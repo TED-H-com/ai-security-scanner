@@ -91,7 +91,7 @@ pub fn render_canonical_json(
     serde_json::to_vec_pretty(&serde_json::json!({
         "schema_version": BEGINNER_MASTER_REPORT_SCHEMA_VERSION,
         "product_name": "ai-security-scanner",
-        "product_version": env!("CARGO_PKG_VERSION"),
+        "product_version": crate::product_version::current(),
         "export_kind": "beginner_master_report",
         "selected_run_id": report.run_id.clone(),
         "redaction_profile": options.redaction.as_str(),

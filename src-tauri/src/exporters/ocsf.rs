@@ -203,7 +203,7 @@ fn to_event(
                 "product": {
                     "name": "ai-security-scanner",
                     "vendor_name": "ai-security-scanner",
-                    "version": env!("CARGO_PKG_VERSION")
+                    "version": crate::product_version::current()
                 },
                 "source": "Scanner service inventory observation"
             },
@@ -298,7 +298,7 @@ fn to_event(
             "product": {
                 "name": "ai-security-scanner",
                 "vendor_name": "ai-security-scanner",
-                "version": env!("CARGO_PKG_VERSION")
+                "version": crate::product_version::current()
             },
             "source": if is_source_audit { "Source audit observation" } else { "Canonical scanner observation" }
         },

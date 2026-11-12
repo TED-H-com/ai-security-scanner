@@ -70,7 +70,9 @@ complete case archive.
 
 When started through the development bootstrap, the parent uses a fixed private
 pipe to request cancellation for both `scan run` and `scan recover`. The core also
-settles owned work if the bootstrap exits unexpectedly. Repeated interruption
+settles owned work if the bootstrap exits unexpectedly. It runs detached on all
+platforms, including Windows, so parent exit closes the pipe without killing the
+core. Standard output and standard error remain inherited. Repeated interruption
 does not force termination. After losing the bootstrap connection, use
 `scan status` to read the saved result before requesting any new work. The pipe
 accepts only cancellation controls; it is not an input for targets or credentials.
