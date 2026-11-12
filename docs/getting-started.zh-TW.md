@@ -2,6 +2,8 @@
 
 [English](getting-started.md) · [文件](README.zh-TW.md)
 
+第一次掃描請使用已發布的 **v0.6.0 桌面版**；儲存庫中的操作 skill 可以協助你使用它。新的 skill 主流程仍在開發，詳見[可用內容與發布定義](release-model.zh-TW.md)。明確選擇開發 checkout 時，請使用[固定來源 bootstrap](skill-bootstrap.md)及其已記錄能力。
+
 ## 從開始新掃描到 HTML 報告
 
 在應用程式中依以下路徑操作：
@@ -46,7 +48,7 @@ AWS 或 Microsoft 365 的唯讀連線過期時，掃描結果會提供**重新�
 
 掃描在你自己電腦上的桌面應用程式中執行，**開始**是應用程式視窗裡的按鈕。在同一台電腦上的 Agent 可以安裝應用程式、確認這台電腦能否掃描、引導你操作應用程式、解讀結果，並透過應用程式的 CLI 保存 HTML 報告。它安裝的是上方的發布版本，不需要建置本儲存庫。
 
-在 **Claude Code** 或 **Codex** 開啟本儲存庫，使用其中的 `ai-security-scanner` skill：[Claude Code 指引](../.claude/skills/ai-security-scanner/SKILL.md) · [Codex 指引](../.codex/skills/ai-security-scanner/SKILL.md)。兩份內容相同。
+在 **Claude Code** 或 **Codex** 開啟本儲存庫，使用其中的 `ai-security-scanner` skill：[Claude Code 指引](../.claude/skills/ai-security-scanner/SKILL.md) · [Codex 指引](../.codex/skills/ai-security-scanner/SKILL.md)。兩份皆由[單一 skill 來源](../skills/ai-security-scanner/SKILL.md)產生。如果宿主未自動找到儲存庫中的 skill，請明確開啟連結的指引。保留 checkout，因為 skill 會引用其中的產品文件。公開這些指引、發布新的 skill 核心與 plugin 上架是不同的事。
 
 可以這樣要求 Agent：
 
@@ -56,7 +58,7 @@ Agent 必須和應用程式在同一台電腦上執行，並且能連網。沙�
 
 ### 從原始碼建置
 
-只有要修改產品時才需要建置。安裝 Node.js 24 或更新版本、Rust 1.98，以及 Tauri 的 Linux 開發相依套件後，用以下指令從本儲存庫建置並開啟應用程式：
+要從原始碼試用開發功能，請使用[固定來源 bootstrap](skill-bootstrap.md)。要修改或從原始碼執行桌面版，請使用下方的開發者建置方式。安裝 Node.js 24 或更新版本、Rust 1.98，以及 Tauri 的 Linux 開發相依套件後，用以下指令從本儲存庫建置並開啟應用程式：
 
 ```sh
 npm ci

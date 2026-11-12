@@ -61,3 +61,23 @@ test("imported evidence stays a result without becoming an executable verificati
     engineRuns: [importedTask, { taskKind: { kind: "catalog_engine" } }],
   }), true);
 });
+
+test("an admitted source audit is a result, and only a scanner sibling makes a verification baseline", () => {
+  const taskKind = { kind: "agent_audit" as const, providerId: "cloudflare", admissionId: "admitted" };
+  for (const status of ["completed", "partial"] as const) {
+    assert.equal(isTerminalResultRun({ status }), true);
+    assert.equal(isVerificationBaselineRun({ status, engineRuns: [{ taskKind }] }), false);
+    assert.equal(isVerificationBaselineRun({ status, engineRuns: [{ taskKind }, { taskKind: { kind: "catalog_engine" } }] }), true);
+  }
+});
+
+test("source audit progress never offers recovery or catalog next-step instructions", async () => {
+  const { build } = await import("esbuild");
+  const { auditRun } = await import("../support/sourceAudit.ts");
+  const output = await build({ entryPoints: ['src/scanPresentation.ts'], bundle: true, platform: 'node', format: 'esm', write: false });
+  const api = await import(`data:text/javascript;base64,${Buffer.from(output.outputFiles[0]!.text).toString('base64')}`);
+  const task = auditRun().engineRuns[0]!;
+  assert.equal(api.engineRecoveryModeFor({ ...task, resumable: true, recoveryAction: 'restart_check' }), undefined);
+  assert.equal(api.engineOutcomeFor(task).en, 'Cloudflare source audit');
+  assert.equal(api.engineNextStepFor(task).en, 'Read the source audit results.');
+});

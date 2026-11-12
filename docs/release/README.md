@@ -12,6 +12,8 @@ The current stable release is [v0.6.0](v0.6.0.md), updating eighteen managed sca
 
 This directory contains historical release records, exact delivery observations, artifact references, and schemas. It is not the product roadmap.
 
+See [publication and release definitions](../release-model.md) for the public operator skill and the unreleased skill-first path. These desktop records do not imply that newer source changes have shipped.
+
 ## Version records
 
 - [v0.6.0 upstream engines and runtime refresh](v0.6.0.md)

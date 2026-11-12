@@ -87,6 +87,14 @@ const nativeExportPreview = (locale: string) => ({
   coverage_manifest_included: false,
 });
 
+test("native export previews preserve separate audit counts without changing legacy shape", () => {
+  const legacy = adaptNativeExportPreview(nativeExportPreview("en"));
+  assert.equal(Object.hasOwn(legacy, "selectedSourceAuditCount"), false);
+  const audit = adaptNativeExportPreview({ ...nativeExportPreview("en"), selected_engine_run_count: 0, selected_source_audit_count: 1 });
+  assert.equal(audit.selectedEngineRunCount, 0);
+  assert.equal(audit.selectedSourceAuditCount, 1);
+});
+
 test("native export previews preserve only the closed report locale coordinate", () => {
   assert.equal(adaptNativeExportPreview(nativeExportPreview("en")).locale, "en");
   assert.equal(adaptNativeExportPreview(nativeExportPreview("zh-Hant")).locale, "zh-Hant");
@@ -5014,4 +5022,45 @@ test("imported Strix tasks retain file provenance without inventing scanner runt
   assert.equal(task.version, undefined);
   assert.equal(task.digest, undefined);
   assert.equal(workspace.runs[0]!.coveredAssetCount, 0);
+});
+
+test("admitted audit wire tasks, native reports, evidence, and technical execution survive the desktop snapshot", async () => {
+  const { nativeAuditReport, nativeAuditCase } = await import("../support/sourceAudit.ts");
+  const report = nativeAuditReport();
+  const nativeCase = nativeAuditCase();
+  nativeCase.assets.push({ id: "asset-status", kind: "repository", name: "Example project", provider: null, region: null,
+    identifiers: [], discovered_from: [], candidate: false, owner_confirmed: true });
+  nativeCase.findings.push({ id: "confirmed-one", case_id: "audit-case", fingerprint: "native-one", title: "Native title",
+    plain_language_summary: "Native summary", possible_impact: "Native impact", severity: "high", confidence: "medium", priority: 80,
+    asset_ids: ["asset-status"], recommendation: "Native remediation", recommended_expert_type: "Developer", status: "unreviewed", official_references: [], control_references: [],
+    evidence: [{ id: "evidence-one", engine_id: "cloudflare", engine_run_id: "audit-task", observed_at: "2026-11-12T00:01:00Z", summary: "Native evidence",
+      artifact_sha256: "artifact-digest", pointer: "/0", provider_record: report.findings[0]!.evidence_references[0]!.provider_record }],
+  });
+  const snapshot = {
+    product_name: "Synthetic", product_version: "test", storage_path: "synthetic", cases: [], selected_case: nativeCase,
+    runtime: { provider: "none", available: false, phase: "unavailable", version: null, prerequisite: null, detail: "Not needed for admitted work" },
+    artifact_cleanup_obligations: [], engine_count: 0, beginner_reports: [report],
+  } satisfies import("../../src/services/nativeAdapter.ts").NativeAppSnapshot;
+  const workspace = adaptNativeSnapshot(snapshot, []).workspace;
+  assert.ok(workspace);
+  assert.equal(workspace.assets[0].scanAttempted, true);
+  assert.equal(workspace.findings[0].sourceAudit, true);
+  assert.deepEqual(workspace.findings[0].evidence[0].providerRecord, nativeCase.findings[0]!.evidence[0]!.provider_record);
+  const adapted = workspace.beginnerReports[0];
+  assert.deepEqual(adapted.sourceAudits, report.source_audits);
+  assert.equal(adapted.findings[0].sourceAudit, true);
+  assert.deepEqual(adapted.findings[0].evidenceReferences[0].providerRecord, report.findings[0]!.evidence_references[0]!.provider_record);
+  assert.deepEqual(adapted.technicalDetails.tasks[0].execution, { kind: "agent_audit", providerId: "cloudflare", admissionId: "admission-one" });
+  const task = workspace.runs[0].engineRuns[0];
+  assert.deepEqual(task.taskKind, adapted.technicalDetails.tasks[0].execution);
+  assert.equal(task.status, "partial");
+  assert.equal(task.resumable, false);
+  assert.equal(task.recoveryAction, "none");
+  assert.equal(task.version, undefined);
+  assert.equal(workspace.runs[0].coveredAssetCount, 0);
+  // The report's actual check is authoritative even if the task lifecycle differs.
+  report.actual.checks[0]!.status = "tested_complete";
+  const complete = adaptNativeSnapshot(snapshot, []).workspace.runs[0];
+  assert.equal(complete.status, "completed");
+  assert.equal(complete.coveredAssetCount, 1);
 });

@@ -6,7 +6,9 @@
 
 Find security problems in your code, websites and company systems. Get one report that explains what needs attention, why it matters and what to do next.
 
-Choose what to check in the desktop app. It selects suitable security tools and brings their results together. You can start with one folder or website, or check several parts of your IT environment at once.
+The current v0.6.0 desktop app selects suitable security tools and brings their results together. You can start with one folder or website, or check several parts of your IT environment at once.
+
+**The latest release is desktop v0.6.0 for Linux, macOS and Windows.** It remains the default for beginners. Its public operator skill helps install the app, check readiness, guide scans in the app window and save reports.
 
 ## Run your first scan
 
@@ -20,6 +22,26 @@ The first scan may take longer while tools download. Later scans can use those t
 ## Languages
 
 Japanese UI support is included in v0.6.0. Choose **Settings → 日本語**; the choice is saved across restarts. Untranslated explanations fall back to English; HTML exports from the Japanese UI are in English. See the [Japanese README](README.ja.md) and [Japanese website](https://ted-h-com.github.io/ai-security-scanner/?lang=ja).
+
+## New in development
+
+These features are implemented in source on this branch and are not in any release:
+
+- [Skill-first execution](docs/skill-bootstrap.md): pinned source bootstrap and preparation of selected scanner engines.
+- [Foreground scans and recovery](docs/foreground-scans.md): run approved checks, read saved status and recover captured results.
+- [Cloudflare source audits](docs/cloudflare-provider.md): host-led preparation, recorded assignments and outputs, checkpoints, validation, sealing, case admission and shared reporting, with explicit termination when an audit will not continue.
+- [Unfinished audit checks](docs/results-and-exports.md#source-audits-that-did-not-finish): blocked preparation and terminated audits appear as not-started or failed check rows in the case and shared report.
+- [Saved reports and offline replay](docs/report-snapshots.md): preserve reports, retrieve their original files and replay them with an exactly compatible renderer.
+- [Complete private case archives](docs/case-archives.md): create, verify and restore cases, evidence, saved reports and recorded audit history into a new workspace; restored audits remain read-only.
+
+**Not finished**
+
+- Real-host acceptance of the complete skill-first path remains incomplete.
+- The default skill has not switched from the released desktop.
+- Automatic managed-bundle acquisition and verification across the declared platforms remain unfinished; native macOS and Windows execution of these development features is unverified.
+- Desktop presentation of failed and not-started source-audit rows is in progress.
+
+[Development status](docs/development-status.md)
 
 ## New in v0.6.0
 

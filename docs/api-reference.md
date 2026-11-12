@@ -2,10 +2,16 @@
 
 This document provides a reference for the core backend APIs exposed to the frontend via Tauri, and usage examples for interacting with the backend services.
 
+The development CLI shares the core but has a separate command contract: [bootstrap](skill-bootstrap.md), [foreground execution](foreground-scans.md), [report snapshots](report-snapshots.md), [case archives](case-archives.md), and [Cloudflare validation/retention](cloudflare-provider.md). These newer commands are not in the v0.6.0 installers; see [publication status](release-model.md). They are CLI commands, not new Tauri invoke names.
+
 ## Core Modules
 
 The backend logic is divided into several core modules:
 
+*   **`core_state` / `scan_coordinator`**: Shared headless state and foreground worker ownership, cancellation, receipts and captured-evidence recovery.
+*   **`report_renderer` / `report_snapshot`**: Shared rendering, saved report bytes and exact-compatible offline replay.
+*   **`case_archive`**: Private portable case preservation and restore into a new workspace.
+*   **`cloudflare_provider` / `provider_report`**: Pinned document/bundle validation, reported-only projections and private offline retention; no audit execution or case import yet.
 *   **`case_service`**: Manages the lifecycle of assessment cases, including creation, updates, and state transitions.
 *   **`orchestrator`**: Coordinates the execution of various scanning engines, handling dependencies and concurrency.
 *   **`managed_runtime`**: Responsible for the setup and teardown of isolated runtime environments for scanning engines (e.g., containers, dedicated network namespaces).

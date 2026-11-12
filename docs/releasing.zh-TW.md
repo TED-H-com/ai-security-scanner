@@ -4,6 +4,8 @@
 
 產品負責人選擇版本、channel、source commit、支援的安裝檔與發布時間。自動化流程會針對同一個決定完成建置、平台驗證、凍結、重新驗證、attestation 與發布。
 
+本頁說明**桌面安裝檔交付**。儲存庫 skill、skill 預覽／正式版及原始碼公開的區別，見[發布定義](release-model.zh-TW.md)。Skill 發布不以本頁的安裝檔流程為前提。
+
 ## 目前發布版本
 
 [v0.6.0](https://github.com/TED-H-com/ai-security-scanner/releases/tag/v0.6.0) 是目前的 **stable／latest** 桌面版本，於 2026-11-06 發布，涵蓋 **Linux、macOS、Windows**，更新十八個自建掃描器映像、KICS 官方映像、規則與離線資料、應用依賴及專用掃描環境。[候選 42201363511](https://github.com/TED-H-com/ai-security-scanner/actions/runs/42201363511) 建置精確來源 `991a5983763f9621d79487e6f87bca517ca0977c`；[發布流程 42210726214](https://github.com/TED-H-com/ai-security-scanner/actions/runs/42210726214) 經正常 `release-publication` 核准後發布凍結檔案。全部 49 個公開檔案符合凍結檢查碼，每個檔案的來源證明、更新簽章與舊更新網址轉址也驗證通過。見[交付紀錄](release/v0.6.0.md#繁體中文)。

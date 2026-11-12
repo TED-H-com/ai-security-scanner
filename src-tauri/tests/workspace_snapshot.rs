@@ -1,3 +1,7 @@
+#[allow(dead_code)]
+#[path = "../src/test_temp.rs"]
+mod test_temp;
+
 use ai_security_scanner_lib::domain::AssetKind;
 use ai_security_scanner_lib::mcp_armor_input::{
     MCP_CONFIGURATION_CANDIDATES_METADATA_KEY, MCP_CONFIGURATION_DISCOVERY_COMPLETE_METADATA_KEY,
@@ -25,8 +29,8 @@ use std::os::unix::ffi::OsStringExt;
 #[cfg(unix)]
 use std::os::unix::fs::{PermissionsExt, symlink};
 
-fn roots() -> (tempfile::TempDir, PathBuf, PathBuf) {
-    let temp = tempfile::tempdir().expect("temporary directory");
+fn roots() -> (test_temp::TempDir, PathBuf, PathBuf) {
+    let temp = test_temp::tempdir().expect("temporary directory");
     let artifact_root = temp.path().join("private-artifacts");
     let source = temp.path().join("TOP_SECRET_HOST_WORKTREE");
     fs::create_dir(&artifact_root).expect("artifact root");

@@ -190,6 +190,59 @@ pub enum TerminalReconciliationOutcome<T> {
     NotCurrent,
 }
 
+/// Process-local proof that one exact worker and its terminal callback have
+/// exited. The snapshot remains available even if the callback reconciled and
+/// removed the manager's retained entry. This is not a durable acknowledgement:
+/// the owner must separately confirm that its storage transition succeeded.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct OwnedJobCompletion {
+    pub snapshot: JobSnapshot,
+    /// A callback panic is contained without changing the worker's outcome or
+    /// exposing its panic payload. Durable reconciliation may still be needed.
+    pub callback_panicked: bool,
+}
+
+/// Ownership of one exact worker thread, including its terminal callback.
+/// Dropping this handle detaches the thread, just as [`JobManager::start_job`]
+/// does; foreground callers must explicitly join before releasing their lease.
+#[must_use = "foreground owners must join the job before releasing execution ownership"]
+pub struct OwnedJobHandle {
+    initial: JobSnapshot,
+    thread: thread::JoinHandle<OwnedJobCompletion>,
+}
+
+impl OwnedJobHandle {
+    pub fn initial_snapshot(&self) -> &JobSnapshot {
+        &self.initial
+    }
+
+    /// Nonblocking completion observation for foreground event loops. A
+    /// terminal manager snapshot alone is insufficient: its callback can still
+    /// be running. Call [`Self::join`] to obtain the exact completion receipt.
+    pub fn is_finished(&self) -> bool {
+        self.thread.is_finished()
+    }
+
+    /// Waits for the worker, its terminal callback, and thread teardown without
+    /// acquiring any manager or job-control lock. Uncaught internal panics are
+    /// sanitized; normal worker/callback panics are recorded in the receipt.
+    pub fn join(self) -> Result<OwnedJobCompletion, JobManagerError> {
+        self.thread
+            .join()
+            .map_err(|_| JobManagerError::ThreadPanicked)
+    }
+}
+
+impl fmt::Debug for OwnedJobHandle {
+    fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
+        formatter
+            .debug_struct("OwnedJobHandle")
+            .field("key", &self.initial.key)
+            .field("finished", &self.is_finished())
+            .finish()
+    }
+}
+
 #[derive(Debug, Error, Clone, PartialEq, Eq)]
 pub enum JobManagerError {
     #[error("invalid {field}")]
@@ -210,6 +263,8 @@ pub enum JobManagerError {
     EngineAlreadyTerminal { key: JobKey, engine_id: String },
     #[error("scan worker thread could not be started")]
     ThreadSpawnFailed,
+    #[error("scan worker thread stopped before its completion receipt was available")]
+    ThreadPanicked,
 }
 
 #[derive(Clone, Default)]
@@ -255,6 +310,28 @@ impl JobManager {
         I: IntoIterator<Item = S>,
         S: Into<String>,
     {
+        let owned = self.start_owned_job(key, engine_ids, worker, on_terminal)?;
+        // Preserve the desktop's detached-worker API. Foreground owners use
+        // start_owned_job and retain its handle through durable reconciliation.
+        Ok(owned.initial_snapshot().clone())
+    }
+
+    /// Starts the same lifecycle as [`Self::start_job`], retaining a handle that
+    /// joins the worker and terminal callback. Completion is independent of
+    /// whether another reconciler has removed the exact retained snapshot.
+    pub fn start_owned_job<W, C, I, S>(
+        &self,
+        key: JobKey,
+        engine_ids: I,
+        worker: W,
+        on_terminal: C,
+    ) -> Result<OwnedJobHandle, JobManagerError>
+    where
+        W: FnOnce(JobContext) -> JobCompletion + Send + 'static,
+        C: FnOnce(JobSnapshot) + Send + 'static,
+        I: IntoIterator<Item = S>,
+        S: Into<String>,
+    {
         validate_identity(&key.case_id, "case id")?;
         validate_identity(&key.scan_run_id, "scan run id")?;
         let engines = build_engine_records(engine_ids)?;
@@ -288,22 +365,28 @@ impl JobManager {
                 Err(_) => (JobCompletion::Failed, Some(JobFailureKind::WorkerPanicked)),
             };
             let terminal = manager.finalize_job(&thread_record, completion, forced_failure);
-            let _ = panic::catch_unwind(AssertUnwindSafe(|| on_terminal(terminal)));
+            let callback_panicked =
+                panic::catch_unwind(AssertUnwindSafe(|| on_terminal(terminal.clone()))).is_err();
+            OwnedJobCompletion {
+                snapshot: terminal,
+                callback_panicked,
+            }
         });
 
-        if spawn.is_err() {
-            let mut state = lock(&self.inner.state);
-            if state
-                .live
-                .get(&key)
-                .is_some_and(|candidate| candidate.generation == record.generation)
-            {
-                state.live.remove(&key);
+        match spawn {
+            Ok(thread) => Ok(OwnedJobHandle { initial, thread }),
+            Err(_) => {
+                let mut state = lock(&self.inner.state);
+                if state
+                    .live
+                    .get(&key)
+                    .is_some_and(|candidate| candidate.generation == record.generation)
+                {
+                    state.live.remove(&key);
+                }
+                Err(JobManagerError::ThreadSpawnFailed)
             }
-            return Err(JobManagerError::ThreadSpawnFailed);
         }
-
-        Ok(initial)
     }
 
     pub fn snapshot(&self, key: &JobKey) -> Option<JobSnapshot> {

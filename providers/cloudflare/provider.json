@@ -1,0 +1,84 @@
+{
+  "schema_version": "ai-security-scanner.provider/v1",
+  "id": "cloudflare-security-audit",
+  "upstream": {
+    "repository": "https://github.com/cloudflare/security-audit-skill",
+    "commit": "c1c8a8c1471069fb0e188eeaff69b8e8db6564a8",
+    "lock": "upstream.lock.json",
+    "license": "upstream/LICENSE"
+  },
+  "capabilities": {
+    "single_document_validation": true,
+    "audit_execution": false,
+    "bundle_admission": false,
+    "finding_import": false,
+    "reported_bundle_validation": true,
+    "reported_bundle_retention": true,
+    "offline_retained_retrieval": true,
+    "product_source_view_preparation": true,
+    "offline_source_view_inspection": true,
+    "source_view_status": true
+  },
+  "validation": {
+    "command": [
+      "provider",
+      "cloudflare",
+      "validate-document"
+    ],
+    "receipt_schema": "ai-security-scanner.cloudflare-document-validation/v1",
+    "documents": [
+      "findings",
+      "coverage-ledger"
+    ],
+    "input_bytes": 5242880,
+    "execution_timeout_seconds": 15,
+    "output_bytes_per_stream": 262144,
+    "maximum_validation_errors": 100,
+    "maximum_diagnostic_code_units": 2048,
+    "exit_codes": {
+      "valid": 0,
+      "invalid_document": 2,
+      "operational_error": 1
+    }
+  },
+  "files": {
+    "method": "upstream/skills/security-audit/SKILL.md",
+    "findings_schema": "upstream/skills/security-audit/report-schema.json",
+    "findings_validator": "upstream/skills/security-audit/validate-findings.cjs",
+    "coverage_validator": "upstream/skills/security-audit/validate-coverage-ledger.cjs",
+    "document_adapter": "validate-document.cjs"
+  },
+  "bundle_validation": {
+    "command": [
+      "provider",
+      "cloudflare",
+      "validate-bundle"
+    ],
+    "manifest_schema": "ai-security-scanner.cloudflare-bundle/v1",
+    "receipt_schema": "ai-security-scanner.cloudflare-bundle-validation/v1",
+    "projection_schema": "ai-security-scanner.provider-report/v1",
+    "provenance": "reported_only",
+    "manifest_bytes": 4194304,
+    "bundle_files": 4096,
+    "bundle_bytes": 67108864,
+    "source_files": 10000,
+    "source_bytes": 134217728,
+    "file_bytes": 8388608,
+    "verifier_assignments": 2000,
+    "maximum_reference_errors": 100
+  },
+  "retention": {
+    "schema": "ai-security-scanner.cloudflare-retained/v1",
+    "commands": [
+      "retain-bundle",
+      "inspect-retained",
+      "retrieve-retained"
+    ],
+    "expected_bundle_digest_required": true,
+    "retrieval_expected_retention_digest_required": true,
+    "retention_index_bytes": 8388608,
+    "saved_document_bytes": 67108864,
+    "indexed_payload_bytes": 343932928,
+    "coverage_reference_projection_bytes": 8388608
+  }
+}

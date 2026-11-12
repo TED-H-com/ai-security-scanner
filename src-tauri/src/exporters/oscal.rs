@@ -51,15 +51,27 @@ pub fn export_oscal_assessment_results(case: &AssessmentCase, run_id: &str) -> A
             let effective_status = canonical_finding
                 .map(|canonical| &canonical.status)
                 .unwrap_or(&finding.status);
-            Some(oscal_observation(finding, effective_status, observation))
+            Some(oscal_observation(
+                case,
+                finding,
+                effective_status,
+                observation,
+            ))
         })
         .collect::<Vec<_>>();
 
+    let has_audit = run.engine_runs.iter().any(|t| {
+        matches!(
+            t.task_kind,
+            crate::domain::EngineTaskKind::AgentAudit { .. }
+        )
+    });
+    let label = if has_audit { "Source audit" } else { "Scanner" };
     let end = run.completed_at.unwrap_or(last_durable_activity);
     let result = json!({
         "uuid": stable_uuid(&format!("assessment-result:{}:{}", case.id, run_id)),
-        "title": format!("Scanner run {} observations", run.sequence),
-        "description": "Read-only and explicitly authorized scanner observations normalized by ai-security-scanner.",
+        "title": format!("{label} run {} observations", run.sequence),
+        "description": if has_audit { "Source audit observations and any selected scanner observations normalized by ai-security-scanner." } else { "Read-only and explicitly authorized scanner observations normalized by ai-security-scanner." },
         "start": run.created_at.to_rfc3339(),
         "end": end.to_rfc3339(),
         "props": [
@@ -85,7 +97,7 @@ pub fn export_oscal_assessment_results(case: &AssessmentCase, run_id: &str) -> A
         "assessment-results": {
             "uuid": stable_uuid(&format!("assessment-results:{}:{}", case.id, run_id)),
             "metadata": {
-                "title": format!("{} — preliminary scanner observations", case.title),
+                "title": format!("{} — {}", case.title, if has_audit { "source audit observations" } else { "preliminary scanner observations" }),
                 "last-modified": last_durable_activity.to_rfc3339(),
                 "version": env!("CARGO_PKG_VERSION"),
                 "oscal-version": OSCAL_VERSION,
@@ -132,6 +144,7 @@ pub fn export_oscal_assessment_results_bytes(
 }
 
 fn oscal_observation(
+    case: &AssessmentCase,
     finding: &Finding,
     effective_status: &FindingStatus,
     observation: &FindingObservation,
@@ -156,6 +169,14 @@ fn oscal_observation(
             },
         ),
     ];
+    if let Some(identity) = finding
+        .evidence
+        .iter()
+        .find_map(|e| super::source_audit::identity(case, e))
+    {
+        props.extend(source_audit_props(&identity));
+        props.push(property("observation-source", "Source audit observation"));
+    }
     if exposure_observation {
         let observation_kind = serde_json::to_value(finding.severity_basis_code)
             .ok()
@@ -259,7 +280,10 @@ fn oscal_observation(
             })
             .collect()
     } else {
-        evidence.into_iter().map(oscal_evidence).collect()
+        evidence
+            .into_iter()
+            .map(|e| oscal_evidence(case, e))
+            .collect()
     };
 
     let (description, types, remarks) = if exposure_observation {
@@ -298,7 +322,7 @@ fn oscal_observation(
     })
 }
 
-fn oscal_evidence(evidence: &Evidence) -> Value {
+fn oscal_evidence(case: &AssessmentCase, evidence: &Evidence) -> Value {
     let mut props = vec![
         property("canonical-evidence-id", &evidence.id),
         property("evidence-kind", evidence_kind_name(&evidence.kind)),
@@ -308,6 +332,9 @@ fn oscal_evidence(evidence: &Evidence) -> Value {
         property("sha-256", &evidence.artifact_sha256),
         property("redacted", if evidence.redacted { "true" } else { "false" }),
     ];
+    if let Some(identity) = super::source_audit::identity(case, evidence) {
+        props.extend(source_audit_props(&identity));
+    }
     if let Some(engine_run_id) = &evidence.engine_run_id {
         props.push(property("canonical-engine-run-id", engine_run_id));
     } else {
@@ -396,6 +423,23 @@ fn oscal_evidence(evidence: &Evidence) -> Value {
         "description": evidence.summary,
         "props": props
     })
+}
+
+fn source_audit_props(identity: &Value) -> Vec<Value> {
+    identity
+        .as_object()
+        .into_iter()
+        .flatten()
+        .map(|(key, value)| {
+            property(
+                &format!("source-audit-{}", key.replace('_', "-")),
+                &value
+                    .as_str()
+                    .map(str::to_owned)
+                    .unwrap_or_else(|| value.to_string()),
+            )
+        })
+        .collect()
 }
 
 fn property(name: &str, value: &str) -> Value {
@@ -629,6 +673,7 @@ mod tests {
     fn preserves_generic_upstream_evidence_identity_and_location() {
         let mut case = fixture();
         let evidence = Evidence {
+            provider_record: None,
             id: "evidence-1".into(),
             finding_id: "finding-1".into(),
             run_id: "run-1".into(),
@@ -636,6 +681,7 @@ mod tests {
             kind: EvidenceKind::Configuration,
             engine_id: "cloudsplaining".into(),
             scanner_details: Some(ScannerFindingDetails {
+                remediation_code_changes: None,
                 description: Some("Upstream scanner explanation".into()),
                 remediation: Some("Upstream scanner remediation".into()),
                 installed_version: Some("1.2.3".into()),

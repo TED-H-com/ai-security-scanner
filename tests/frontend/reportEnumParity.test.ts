@@ -302,6 +302,8 @@ test("the extractor reads real variants, not whatever the regex allows", () => {
     "zh-Hant",
   ]);
   assert.deepEqual(rustTaggedVariants(beginnerReport, "TechnicalExecution"), [
+    "agent_audit_failure",
+    "agent_audit",
     "catalog_engine",
     "built_in_localhost_tcp",
     "external_report_import",

@@ -564,3 +564,25 @@ for (const [locale, masking, attachment] of [
     expect(toggle(container, attachment).disabled).toBe(true);
   });
 }
+
+for (const locale of ["en", "zh-TW"]) test(`${locale}: audit exports offer report and specialist formats and attachments`, async () => {
+  const { auditRun } = await import("../support/sourceAudit");
+  localStorage.setItem(localeStorageKey, locale);
+  const source = { ...auditRun(), id: CHOSEN };
+  const { container, onPreview } = renderExport({ workspaceValue: { ...workspace, runs: [source] } });
+  await waitFor(() => expect(onPreview).toHaveBeenCalled());
+  const values = [...container.querySelectorAll<HTMLInputElement>('input[name="export-format"]')].map((input) => input.value);
+  expect(values).toContain("html");
+  expect(values).toContain("json");
+  expect(values).toContain("case_bundle");
+  for (const value of ["framework_report", "ocsf", "oscal"]) expect(values).toContain(value);
+  const message = locale === "en" ? "Not available for source audits yet." : "原始碼稽核尚不支援此匯出格式。";
+  expect(container.textContent).not.toContain(message);
+  expect(container.textContent).toContain(locale === "en" ? "Attach original reports at the end" : "在報告最後附上原始報告");
+  expect(onPreview.mock.calls.every(([request]) => request.includeRawEvidence === false)).toBe(true);
+  fireEvent.click(toggle(container, locale === "en" ? "Hide sensitive identifiers (recommended)" : "遮罩敏感識別資訊（建議）"));
+  const attachment = toggle(container, locale === "en" ? "Attach original reports at the end" : "在報告最後附上原始報告");
+  expect(attachment.disabled).toBe(false);
+  fireEvent.click(attachment);
+  await waitFor(() => expect(onPreview).toHaveBeenLastCalledWith(expect.objectContaining({ includeRawEvidence: true, redactSensitiveValues: false })));
+});

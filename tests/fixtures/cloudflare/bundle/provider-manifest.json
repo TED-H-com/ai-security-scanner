@@ -1,0 +1,239 @@
+{
+  "schema_version": "ai-security-scanner.cloudflare-bundle/v1",
+  "provider_id": "cloudflare-security-audit",
+  "upstream_commit": "c1c8a8c1471069fb0e188eeaff69b8e8db6564a8",
+  "binding": {
+    "case_id": "case-fixture",
+    "asset_id": "asset-fixture",
+    "run_id": "run-fixture",
+    "task_id": "task-fixture",
+    "session_id": "session-fixture",
+    "attempt_id": "attempt-1"
+  },
+  "source": {
+    "canonical_snapshot_id": "canonical-fixture",
+    "canonical_snapshot_sha256": "79a762bca7d3fbdb2a749751a010a21aa5456d3ea9f97874ae246cd8e3b57774",
+    "view_id": "view-fixture",
+    "view_sha256": "83bc46e3c5ee0a6c325bab4b5fc2975b9ef8ca9657556c38303dbff699b38b6c",
+    "source_ref": "synthetic-source-ref",
+    "policy_id": "synthetic-source-view-v1",
+    "files": [
+      {
+        "path": "src/handler.c",
+        "sha256": "ab9ee678e1139b253b2ad75f97a187792ac3bbd29f1007d1ea9b38d36cec6e4f",
+        "byte_length": 2431
+      },
+      {
+        "path": "src/model.c",
+        "sha256": "ab9ee678e1139b253b2ad75f97a187792ac3bbd29f1007d1ea9b38d36cec6e4f",
+        "byte_length": 2431
+      },
+      {
+        "path": "src/store.c",
+        "sha256": "ab9ee678e1139b253b2ad75f97a187792ac3bbd29f1007d1ea9b38d36cec6e4f",
+        "byte_length": 2431
+      },
+      {
+        "path": "src/router.ts",
+        "sha256": "ab9ee678e1139b253b2ad75f97a187792ac3bbd29f1007d1ea9b38d36cec6e4f",
+        "byte_length": 2431
+      },
+      {
+        "path": "src/authz.ts",
+        "sha256": "ab9ee678e1139b253b2ad75f97a187792ac3bbd29f1007d1ea9b38d36cec6e4f",
+        "byte_length": 2431
+      }
+    ]
+  },
+  "files": [
+    {
+      "path": "run-metadata.json",
+      "sha256": "b230406d730c87eac069ccc84de961637e3904076095c27e286e45236b11ada0",
+      "byte_length": 423
+    },
+    {
+      "path": "architecture.md",
+      "sha256": "91e25d42a3896de3fc5a92566c215ffac9e700b23031f1f4cdf7e80a2a1c0e14",
+      "byte_length": 74
+    },
+    {
+      "path": "coverage-ledger.json",
+      "sha256": "41db43160df96a204d0f68ffece8f11d221ae2d28778907645b3ee4f8706516e",
+      "byte_length": 1587
+    },
+    {
+      "path": "findings.json",
+      "sha256": "186a6d9002a300a4a2e08d8e8cf4b91e44fc13bb41d3ddc0fe44923e4ff04ab2",
+      "byte_length": 3800
+    },
+    {
+      "path": "REPORT.md",
+      "sha256": "22db04e9528c24c62a2d324441979e5905846893be636cf9a0dea96eedd26207",
+      "byte_length": 111
+    },
+    {
+      "path": "FINDINGS-DETAIL.md",
+      "sha256": "e75c103282ccecb8c13093ce41e8ba31ea37172d38a061916ce46bef1db2d8b0",
+      "byte_length": 63
+    },
+    {
+      "path": "NEEDS-VALIDATION.md",
+      "sha256": "32550cb94659d94b8e55074dbb4d03d8ad1652fd06d9228b3773d133b3e05086",
+      "byte_length": 69
+    },
+    {
+      "path": "agents/candidate-1/artifacts/decision.json",
+      "sha256": "f9a8b1927b73e3881fea54f74567712d5c5acad7077c116fe492f0ab5b9156dc",
+      "byte_length": 2032
+    },
+    {
+      "path": "agents/final-1/artifacts/decision.json",
+      "sha256": "b4fc0f6af8895e08982664a724d7a2e4fd19ad1cf2344acb1a5a14c3912fab13",
+      "byte_length": 75
+    },
+    {
+      "path": "agents/candidate-2/artifacts/decision.json",
+      "sha256": "f1885299b1bdf02d4f2a0fb2c1b763a901378c98b8b140afa1a6d146b0bbeaf5",
+      "byte_length": 1097
+    },
+    {
+      "path": "agents/final-2/artifacts/decision.json",
+      "sha256": "aec985516cdb78902574834fdd37c2490c7b0f5f801980a8c571a08f8eb6d1f2",
+      "byte_length": 76
+    },
+    {
+      "path": "agents/candidate-3/artifacts/decision.json",
+      "sha256": "57428342cc271f6f35d47f970e543109b73ef948b44f477ae137ec69dbaa98dc",
+      "byte_length": 794
+    },
+    {
+      "path": "agents/final-3/artifacts/decision.json",
+      "sha256": "afd02df1004aaec2414596214877d51f170c9c50ad50cefb064ae44c3403c1b3",
+      "byte_length": 72
+    }
+  ],
+  "verifier_assignments": [
+    {
+      "assignment_id": "assignment-candidate-1",
+      "binding": {
+        "case_id": "case-fixture",
+        "asset_id": "asset-fixture",
+        "run_id": "run-fixture",
+        "task_id": "task-fixture",
+        "session_id": "session-fixture",
+        "attempt_id": "attempt-1"
+      },
+      "agent_id": "candidate-1",
+      "role": "candidate_verifier",
+      "fingerprint": "src-handler-missing-check",
+      "view_sha256": "83bc46e3c5ee0a6c325bab4b5fc2975b9ef8ca9657556c38303dbff699b38b6c",
+      "record_sha256": "5dd3b4878bd9ac4f02640f28a31fd8c3a4ac443316455e687f7704699eb3af3b",
+      "output_path": "agents/candidate-1/artifacts/decision.json",
+      "started_at": "2026-11-10T10:00:00Z",
+      "finished_at": "2026-11-10T10:01:00Z"
+    },
+    {
+      "assignment_id": "assignment-final-1",
+      "binding": {
+        "case_id": "case-fixture",
+        "asset_id": "asset-fixture",
+        "run_id": "run-fixture",
+        "task_id": "task-fixture",
+        "session_id": "session-fixture",
+        "attempt_id": "attempt-1"
+      },
+      "agent_id": "final-1",
+      "role": "final_verifier",
+      "fingerprint": "src-handler-missing-check",
+      "view_sha256": "83bc46e3c5ee0a6c325bab4b5fc2975b9ef8ca9657556c38303dbff699b38b6c",
+      "record_sha256": "5dd3b4878bd9ac4f02640f28a31fd8c3a4ac443316455e687f7704699eb3af3b",
+      "output_path": "agents/final-1/artifacts/decision.json",
+      "started_at": "2026-11-10T11:00:00Z",
+      "finished_at": "2026-11-10T11:01:00Z"
+    },
+    {
+      "assignment_id": "assignment-candidate-2",
+      "binding": {
+        "case_id": "case-fixture",
+        "asset_id": "asset-fixture",
+        "run_id": "run-fixture",
+        "task_id": "task-fixture",
+        "session_id": "session-fixture",
+        "attempt_id": "attempt-1"
+      },
+      "agent_id": "candidate-2",
+      "role": "candidate_verifier",
+      "fingerprint": "src-parser-size-hypothesis",
+      "view_sha256": "83bc46e3c5ee0a6c325bab4b5fc2975b9ef8ca9657556c38303dbff699b38b6c",
+      "record_sha256": "df961dd4a04c920d68658afdc0905ec598f0d598fa5cdff96c6f042e1db900a4",
+      "output_path": "agents/candidate-2/artifacts/decision.json",
+      "started_at": "2026-11-10T10:00:00Z",
+      "finished_at": "2026-11-10T10:01:00Z"
+    },
+    {
+      "assignment_id": "assignment-final-2",
+      "binding": {
+        "case_id": "case-fixture",
+        "asset_id": "asset-fixture",
+        "run_id": "run-fixture",
+        "task_id": "task-fixture",
+        "session_id": "session-fixture",
+        "attempt_id": "attempt-1"
+      },
+      "agent_id": "final-2",
+      "role": "final_verifier",
+      "fingerprint": "src-parser-size-hypothesis",
+      "view_sha256": "83bc46e3c5ee0a6c325bab4b5fc2975b9ef8ca9657556c38303dbff699b38b6c",
+      "record_sha256": "df961dd4a04c920d68658afdc0905ec598f0d598fa5cdff96c6f042e1db900a4",
+      "output_path": "agents/final-2/artifacts/decision.json",
+      "started_at": "2026-11-10T11:00:00Z",
+      "finished_at": "2026-11-10T11:01:00Z"
+    },
+    {
+      "assignment_id": "assignment-candidate-3",
+      "binding": {
+        "case_id": "case-fixture",
+        "asset_id": "asset-fixture",
+        "run_id": "run-fixture",
+        "task_id": "task-fixture",
+        "session_id": "session-fixture",
+        "attempt_id": "attempt-1"
+      },
+      "agent_id": "candidate-3",
+      "role": "candidate_verifier",
+      "fingerprint": "src-router-auth-bypass",
+      "view_sha256": "83bc46e3c5ee0a6c325bab4b5fc2975b9ef8ca9657556c38303dbff699b38b6c",
+      "record_sha256": "0002a9967c8b25e9e60d9547f5c7c993b3ee276f2cec7816461ba2f27deec0fe",
+      "output_path": "agents/candidate-3/artifacts/decision.json",
+      "started_at": "2026-11-10T10:00:00Z",
+      "finished_at": "2026-11-10T10:01:00Z"
+    },
+    {
+      "assignment_id": "assignment-final-3",
+      "binding": {
+        "case_id": "case-fixture",
+        "asset_id": "asset-fixture",
+        "run_id": "run-fixture",
+        "task_id": "task-fixture",
+        "session_id": "session-fixture",
+        "attempt_id": "attempt-1"
+      },
+      "agent_id": "final-3",
+      "role": "final_verifier",
+      "fingerprint": "src-router-auth-bypass",
+      "view_sha256": "83bc46e3c5ee0a6c325bab4b5fc2975b9ef8ca9657556c38303dbff699b38b6c",
+      "record_sha256": "0002a9967c8b25e9e60d9547f5c7c993b3ee276f2cec7816461ba2f27deec0fe",
+      "output_path": "agents/final-3/artifacts/decision.json",
+      "started_at": "2026-11-10T11:00:00Z",
+      "finished_at": "2026-11-10T11:01:00Z"
+    }
+  ],
+  "reported_counts": {
+    "confirmed": 1,
+    "needs_validation": 1,
+    "rejected": 1,
+    "reported_confirmed_by_severity": {
+      "medium": 1
+    }
+  }
+}

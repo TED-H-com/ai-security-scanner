@@ -752,6 +752,7 @@ mod tests {
             priority_reasons: vec![],
             asset_ids: vec!["asset-1".into()],
             evidence: vec![Evidence {
+                provider_record: None,
                 id: "evidence-1".into(),
                 finding_id: "finding-1".into(),
                 run_id: "run-1".into(),
@@ -992,6 +993,7 @@ mod tests {
         let artifact = artifact();
         let mut bad_finding = finding(&artifact);
         bad_finding.evidence[0].scanner_details = Some(crate::domain::ScannerFindingDetails {
+            remediation_code_changes: None,
             description: Some("rule text with\na control character".into()),
             remediation: None,
             installed_version: None,
@@ -1043,6 +1045,7 @@ mod tests {
         let mut bad_finding = finding(&artifact);
         bad_finding.evidence[0].engine_id = "cloudsplaining".into();
         bad_finding.evidence[0].scanner_details = Some(crate::domain::ScannerFindingDetails {
+            remediation_code_changes: None,
             description: None,
             remediation: None,
             installed_version: None,

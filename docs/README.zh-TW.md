@@ -2,10 +2,11 @@
 
 [專案網站](https://ted-h-com.github.io/ai-security-scanner/?lang=zh-TW) · [English](README.md)
 
-依照工作選擇最短的文件路徑。
+**最新發布版本仍是 Linux、macOS、Windows 的 v0.6.0 桌面版**，也是初學者的預設入口。公開的操作 skill 協助安裝應用程式、確認準備狀態、引導在視窗中掃描及保存報告。
 
 ## 使用產品
 
+- [發布內容與新版定義](release-model.zh-TW.md)：已發布桌面版與操作 skill、尚未發布的開發功能，以及 skill 預覽／正式版建議。
 - [開始使用](getting-started.zh-TW.md)：安裝 Linux、macOS 或 Windows 的 v0.6.0 桌面程式並完成第一次掃描。
 - [Agent Skills](getting-started.zh-TW.md#透過-agent-skill-使用)：在同一台電腦上透過 Claude Code 或 Codex 確認能否掃描、引導在應用程式中掃描，並保存最終報告。
 - [掃描範圍](scanning-scope.zh-TW.md)：精確目標界線、掃描設定與引擎行為。
@@ -16,9 +17,29 @@
 - [修正後再檢查一次](demos/check-fixes/README.zh-TW.md)：一個小型示範專案修正前後的兩次真實掃描，中英皆有。
 - [全部掃描器指南](scanner-guide.zh-TW.md)：詳細 SWOT、選用原因、情境、啟用功能與 2026-10-04 版本快照。
 
+## 開發中的新功能
+
+以下功能已在本分支原始碼實作，尚未包含於任何發布版本：
+
+- [Skill 主流程](skill-bootstrap.md)：固定來源 bootstrap 與所選掃描引擎的準備。
+- [前景掃描與復原](foreground-scans.md)：執行已核准的檢查、讀取保存狀態並復原已擷取的結果。
+- [Cloudflare 原始碼稽核](cloudflare-provider.md)：由宿主執行準備、記錄派工與輸出、檢查點、驗證、定稿、案件入案及共用報告整合；不再繼續的稽核可明示終止。
+- [未完成稽核檢查](results-and-exports.zh-TW.md#未開始或未完成的原始碼稽核)：準備受阻與已終止稽核，會在案件與共用報告中列為未開始或失敗的檢查。
+- [報告保存與離線重播](report-snapshots.md)：保存報告、取回原始檔案，並使用完全相容的報告產生器重播。
+- [完整私密案件封存](case-archives.md)：建立、驗證並將案件、證據、保存報告與已記錄稽核歷史還原至新工作區；還原的稽核維持唯讀。
+
+**尚未完成**
+
+- 完整 skill 主流程的真實宿主驗收尚未完成。
+- 預設 skill 仍使用已發布桌面版，尚未切換。
+- 受管理執行環境套件的自動取得與宣稱平台驗證尚未完成；這些開發功能尚未經 macOS、Windows 原生執行驗證。
+- 桌面版顯示失敗與未開始原始碼稽核檢查列的工作仍在進行。
+
 ## 理解產品
 
 - [產品規格](product-spec.md)：產品行為與驗收的唯一依據。
+- [Skill 主入口與 Cloudflare 遷移規格](plans/skill-first-cloudflare-migration.md)：已採納的下一階段方向、現況缺口、分批實作順序與待完成驗收。
+- [報告保真與封存契約](specs/report-fidelity-and-archive.md)：報告快照、provider 資料、離線重建、可攜案件還原與可追蹤驗收。
 - [目前產品檢視](product-audit.md)：已完成路徑與剩餘產品工作。
 - [架構](architecture.md)：元件、信任邊界、資料模型、執行與報告流程。
 - [引擎目錄](engine-catalog.md)：已整合的上游掃描器與能力用語。

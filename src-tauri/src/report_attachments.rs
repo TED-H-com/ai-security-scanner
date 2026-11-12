@@ -32,6 +32,25 @@ pub(crate) fn selected_artifacts<'a>(
     run_id: &str,
     options: &ExportOptions,
 ) -> AppResult<Vec<&'a RawArtifact>> {
+    select_artifacts(case, run_id, options, true)
+}
+
+pub(crate) fn selected_artifacts_unbounded<'a>(
+    case: &'a AssessmentCase,
+    run_id: &str,
+    options: &ExportOptions,
+) -> AppResult<Vec<&'a RawArtifact>> {
+    select_artifacts(case, run_id, options, false)
+}
+
+fn select_artifacts<'a>(
+    case: &'a AssessmentCase,
+    run_id: &str,
+    options: &ExportOptions,
+    enforce_limit: bool,
+) -> AppResult<Vec<&'a RawArtifact>> {
+    crate::exporters::terminal_run(case, run_id)?;
+    crate::agent_audit_admission::check_original_bindings(case, run_id)?;
     if !options.include_raw_artifacts {
         return Ok(Vec::new());
     }
@@ -77,7 +96,9 @@ pub(crate) fn selected_artifacts<'a>(
         total = total
             .checked_add(artifact.byte_length)
             .ok_or_else(too_large)?;
-        if total > MAX_HTML_ATTACHMENT_BYTES || artifacts.len() > MAX_HTML_ATTACHMENT_FILES {
+        if enforce_limit
+            && (total > MAX_HTML_ATTACHMENT_BYTES || artifacts.len() > MAX_HTML_ATTACHMENT_FILES)
+        {
             return Err(too_large());
         }
     }
@@ -183,19 +204,33 @@ pub(crate) fn build_attachments(
             }));
             file_names.push(path.to_owned());
         }
-        let manifest = serde_json::to_vec_pretty(&json!({
+        let mut manifest = json!({
             "schema_version": "1", "case_id": case.id, "run_id": run_id,
             "engine_id": engine.engine_id, "engine_run_id": engine.id,
             "engine_version": engine.engine_version, "status": engine.status,
             "started_at": engine.started_at, "finished_at": engine.finished_at,
             "files": records,
-        }))?;
+        });
+        let admission = crate::source_audit_report::admission(case, engine);
+        if let Some(admission) = admission {
+            manifest["source_audit"] = json!({
+                "provider_id": admission.provider_id, "admission_id": admission.admission_id,
+                "method": "Cloudflare source audit", "admission_sha256": admission.admission_sha256,
+                "original_digests": admission.digests,
+                "digest_scope": "Commitments to original material; file digests hash the exact original bytes in this ZIP.",
+            });
+        }
+        let manifest = serde_json::to_vec_pretty(&manifest)?;
         zip.start_file("manifest.json", zip_options)
             .map_err(zip_error)?;
         zip.write_all(&manifest)?;
         zip.start_file("README.txt", zip_options)
             .map_err(zip_error)?;
-        zip.write_all(b"Original scanner files from the selected scan run.\nExtract the entire ZIP before opening an HTML report under files/.\nFiles retain their original bytes and relative directories. Some scanners produce JSON, XML, or logs instead of HTML.\nSee manifest.json for scanner outcome, timestamps, file paths, and SHA-256 hashes. A retained file does not imply that its check completed.\nThese unredacted files may contain sensitive information.\n")?;
+        if admission.is_some() {
+            zip.write_all(b"Cloudflare source audit originals from the selected run.\nExtract the entire ZIP to preserve nested member names. Files retain their exact original bytes.\nSee manifest.json for provider and admission identity, original commitments and file SHA-256 hashes. These unredacted originals may contain sensitive information.\n")?;
+        } else {
+            zip.write_all(b"Original scanner files from the selected scan run.\nExtract the entire ZIP before opening an HTML report under files/.\nFiles retain their original bytes and relative directories. Some scanners produce JSON, XML, or logs instead of HTML.\nSee manifest.json for scanner outcome, timestamps, file paths, and SHA-256 hashes. A retained file does not imply that its check completed.\nThese unredacted files may contain sensitive information.\n")?;
+        }
         let bytes = zip.finish().map_err(zip_error)?.into_inner();
         let sha256 = hex::encode(Sha256::digest(&bytes));
         attachments.push(ReportAttachment {
@@ -211,4 +246,13 @@ pub(crate) fn build_attachments(
 
 fn zip_error(error: zip::result::ZipError) -> AppError {
     AppError::InvalidRequest(format!("original files could not be attached: {error}"))
+}
+
+/// Attribution for the admitted provider; scanner attachment labels stay unchanged.
+pub(crate) fn audit_label(engine_id: &str, zh: bool) -> Option<&'static str> {
+    (engine_id == "cloudflare-security-audit").then_some(if zh {
+        "Cloudflare 原始碼稽核"
+    } else {
+        "Cloudflare source audit"
+    })
 }
