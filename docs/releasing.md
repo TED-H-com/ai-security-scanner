@@ -2,6 +2,8 @@
 
 [Documentation](README.md)
 
+This page describes **desktop installer delivery**. For repository skills, skill preview/stable and source publication, see [Release definitions](release-model.md). A skill release does not require this installer pipeline.
+
 The product owner selects the version, channel, source commit, supported installer set, and publication time. Release automation builds, qualifies, freezes, verifies, attests, and publishes that exact decision.
 
 ## Current release

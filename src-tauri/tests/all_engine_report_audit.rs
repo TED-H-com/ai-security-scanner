@@ -1,3 +1,7 @@
+#[allow(dead_code)]
+#[path = "../src/test_temp.rs"]
+mod test_temp;
+
 use ai_security_scanner_lib::adapter::AdapterRegistry;
 use ai_security_scanner_lib::adapters::{BUILTIN_ENGINE_IDS, builtin_adapter_registry};
 use ai_security_scanner_lib::artifact_store::ArtifactStore;
@@ -692,7 +696,7 @@ fn all_engines_in_one_report<T>(
     outcomes: EngineOutcomes,
     audit: impl FnOnce(&AllEngineRun<'_>) -> T,
 ) -> T {
-    let temp = tempfile::tempdir().unwrap();
+    let temp = test_temp::tempdir().unwrap();
     let database = temp.path().join("casework.db");
     let artifact_root = temp.path().join("artifacts");
     let signing_key = temp.path().join("integrity-key");

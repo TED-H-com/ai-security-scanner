@@ -472,6 +472,11 @@ pub fn summary_zh_hant(
     let Some(engine) = engine_name_from(english) else {
         return english.to_owned();
     };
+    let engine = if engine == "Cloudflare source audit" {
+        "Cloudflare 原始碼稽核"
+    } else {
+        engine
+    };
     let summary = match (severity_basis_code, severity) {
         (Some(_), Severity::Unknown) => {
             format!("{engine} 回報了這項狀況，但未評定嚴重程度。嚴重程度為未知。")
@@ -764,6 +769,9 @@ pub fn coverage_dimension_zh_hant(dimension: &str) -> String {
 /// on it in debug builds for every tested dimension it writes, so the whole
 /// Rust suite is the census of that vocabulary.
 pub(crate) fn recognized_coverage_dimension_zh_hant(dimension: &str) -> Option<String> {
+    if dimension == "Source audit coverage" {
+        return Some("原始碼稽核涵蓋範圍".into());
+    }
     let lower = dimension.to_lowercase();
 
     if let Some((check, control)) = dimension
@@ -1006,6 +1014,15 @@ pub fn requested_limit_name_zh_hant(name: &str) -> String {
 /// `None` for a limit name this build does not author. `beginner_report.rs`
 /// asserts on it in debug builds for every limit it writes.
 pub(crate) fn recognized_requested_limit_name_zh_hant(name: &str) -> Option<String> {
+    if name == "declared invocation limit" {
+        return Some("宣告的呼叫次數上限".into());
+    }
+    if name == "remaining invocations" {
+        return Some("剩餘呼叫次數".into());
+    }
+    if name == "issued invocations" {
+        return Some("已發出的呼叫次數".into());
+    }
     // Three names are fixed strings rather than composed ones, so they reach
     // neither the suffix rules nor the fallback.
     match name {
@@ -1166,6 +1183,9 @@ const TESTED_OBSERVATION_PROSE: &[(&str, &str)] = &[
 /// A tested-dimension observation in Traditional Chinese, or `None` when this
 /// build did not author the stored sentence.
 pub fn tested_observation_zh_hant(english: &str) -> Option<String> {
+    if english == "Recorded source audit" {
+        return Some("已記錄的原始碼稽核".into());
+    }
     let trimmed = english.trim();
     TESTED_OBSERVATION_PROSE
         .iter()
@@ -1185,6 +1205,9 @@ pub fn tested_observation_zh_hant(english: &str) -> Option<String> {
 /// `None` for a row name this build does not author, which
 /// [`crate::beginner_report`] asserts on in debug builds.
 pub fn tested_value_zh_hant(dimension: &str, value: &str) -> Option<String> {
+    if dimension == "Source audit coverage" {
+        return Some(value.into());
+    }
     /// A slot this build fills with a number. Requiring the digits keeps a
     /// value composed by some other build from being read as this shape and
     /// rearranged into a sentence that says something it does not.
@@ -2127,6 +2150,10 @@ const COVERAGE_GAP_PROSE: &[(&str, &str)] = &[
         "重新執行掃描以建立完全凍結的結果。",
     ),
     (
+        "Continue the source audit from the listed paths.",
+        "請從列出的路徑繼續原始碼稽核。",
+    ),
+    (
         "Run this check again to get a usable record.",
         "重新執行這項檢查以取得可用的記錄。",
     ),
@@ -2282,6 +2309,31 @@ const COVERAGE_GAP_PROSE: &[(&str, &str)] = &[
 /// One sentence of a coverage row, in Traditional Chinese, or `None` when this
 /// product did not author it.
 pub fn coverage_gap_prose_zh_hant(english: &str) -> Option<String> {
+    if let Some(zh) = crate::agent_audit_failure::wording::translate(english) {
+        return Some(zh.into());
+    }
+    for (suffix, before, after) in [
+        (" unit remains.", "尚有 ", " 個單元未完成。"),
+        (" units remain.", "尚有 ", " 個單元未完成。"),
+        (
+            " unit is outside the audit scope.",
+            "有 ",
+            " 個單元不在稽核範圍內。",
+        ),
+        (
+            " units are outside the audit scope.",
+            "有 ",
+            " 個單元不在稽核範圍內。",
+        ),
+    ] {
+        if let Some(n) = english
+            .strip_suffix(suffix)
+            .and_then(|n| n.parse::<usize>().ok())
+        {
+            return Some(format!("{before}{n}{after}"));
+        }
+    }
+
     const REVIEW_BASE: &str =
         "Maester evaluated this control but did not return a pass or fail verdict.";
     let trimmed = english.trim();
@@ -3852,6 +3904,7 @@ mod tests {
         let producers = [
             include_str!("beginner_report.rs"),
             include_str!("case_service.rs"),
+            include_str!("report_renderer.rs"),
         ];
         // Rust continues a long literal with a backslash before the newline and
         // swallows the indentation that follows it.

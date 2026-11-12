@@ -2346,6 +2346,7 @@ fn with_weakness(mut record: SourceRecord, weakness: UpstreamWeakness) -> Source
     let details = record
         .scanner_details
         .get_or_insert_with(|| ScannerFindingDetails {
+            remediation_code_changes: None,
             description: None,
             remediation: None,
             installed_version: None,
@@ -2374,6 +2375,7 @@ fn with_scanner_details(
         .map(|details| details.advisory_aliases.clone())
         .unwrap_or_default();
     let details = ScannerFindingDetails {
+        remediation_code_changes: None,
         description: bounded_scanner_detail(description, MAX_LONG_TEXT),
         remediation: bounded_scanner_detail(remediation, MAX_LONG_TEXT),
         installed_version: bounded_scanner_detail(installed_version, MAX_SHORT_TEXT),
@@ -2404,6 +2406,7 @@ fn with_advisory_aliases(mut record: SourceRecord, aliases: Vec<String>) -> Sour
     let details = record
         .scanner_details
         .get_or_insert_with(|| ScannerFindingDetails {
+            remediation_code_changes: None,
             description: None,
             remediation: None,
             installed_version: None,
@@ -4290,6 +4293,7 @@ fn attach_scoutsuite_benchmarks(
     let details = record
         .scanner_details
         .get_or_insert_with(|| ScannerFindingDetails {
+            remediation_code_changes: None,
             description: None,
             remediation: None,
             installed_version: None,
@@ -4594,6 +4598,7 @@ fn with_aws_iam_policy_details(
         Some(scanner_details) => scanner_details.aws_iam_policy = Some(details),
         None => {
             record.scanner_details = Some(ScannerFindingDetails {
+                remediation_code_changes: None,
                 description: None,
                 remediation: None,
                 installed_version: None,
@@ -7992,6 +7997,7 @@ fn merge_finding(
         input.engine_run_id,
     );
     let evidence = Evidence {
+        provider_record: None,
         id: evidence_id,
         finding_id: finding_id.clone(),
         run_id: input.scan_run_id.to_owned(),
@@ -8654,7 +8660,7 @@ fn parse_confidence(value: &str) -> Confidence {
     }
 }
 
-fn priority_for(severity: &Severity) -> u8 {
+pub(crate) fn priority_for(severity: &Severity) -> u8 {
     match severity {
         Severity::Critical => 95,
         Severity::High => 80,

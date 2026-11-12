@@ -13,18 +13,15 @@ use std::collections::{BTreeMap, BTreeSet};
 use std::path::Path;
 
 const MAX_SOURCES: usize = 16;
-const MAX_DOCUMENT_BYTES: usize = 64 * 1024 * 1024;
+pub(crate) const MAX_DOCUMENT_BYTES: usize = 64 * 1024 * 1024;
 
-#[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Eq)]
-#[serde(rename_all = "snake_case")]
-pub enum SelectedRunReportFormat {
-    Html,
-    Json,
-}
+pub use crate::domain::{SelectedRunReportExport, SelectedRunReportFormat};
+pub const SELECTED_RUN_REPORT_SCHEMA: &str = "ai-security-scanner.selected-run-report/v1";
 
 #[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Eq)]
 #[serde(rename_all = "snake_case")]
 pub enum SelectedRunOrigin {
+    SourceAudit,
     RecordedChecks,
     ImportedReports,
     Mixed,
@@ -33,6 +30,8 @@ pub enum SelectedRunOrigin {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct SelectedRunReport {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub original_files: Option<crate::domain::CombinedOriginalFiles>,
     pub schema_version: String,
     pub case_id: String,
     pub project_title: String,
@@ -94,22 +93,12 @@ pub struct SelectedProblemObservation {
     pub asset_ids: Vec<String>,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct SelectedRunReportExport {
-    pub case_id: String,
-    pub selected_run_ids: Vec<String>,
-    pub format: SelectedRunReportFormat,
-    pub path: String,
-    pub sha256: String,
-    pub created_at: DateTime<Utc>,
-    pub redaction_profile: String,
-}
-
 pub fn preview_selected_run_report(
     case: &AssessmentCase,
     run_ids: &[String],
     options: &ExportOptions,
 ) -> AppResult<SelectedRunReport> {
+    crate::agent_audit_admission::check_format(case)?;
     if !(2..=MAX_SOURCES).contains(&run_ids.len()) {
         return Err(AppError::InvalidRequest(
             "Select between two and sixteen finished reports.".into(),
@@ -164,11 +153,20 @@ pub fn preview_selected_run_report(
             .iter()
             .filter(|task| matches!(task.task_kind, EngineTaskKind::ExternalReportImport { .. }))
             .count();
-        let origin = match (imports, run.engine_runs.len()) {
-            (_, 0) => SelectedRunOrigin::NoChecks,
-            (0, _) => SelectedRunOrigin::RecordedChecks,
-            (count, total) if count == total => SelectedRunOrigin::ImportedReports,
-            _ => SelectedRunOrigin::Mixed,
+        let origin = if run.engine_runs.iter().any(|t| {
+            matches!(
+                t.task_kind,
+                EngineTaskKind::AgentAudit { .. } | EngineTaskKind::AgentAuditFailure { .. }
+            )
+        }) {
+            SelectedRunOrigin::SourceAudit
+        } else {
+            match (imports, run.engine_runs.len()) {
+                (_, 0) => SelectedRunOrigin::NoChecks,
+                (0, _) => SelectedRunOrigin::RecordedChecks,
+                (count, total) if count == total => SelectedRunOrigin::ImportedReports,
+                _ => SelectedRunOrigin::Mixed,
+            }
         };
         let report = crate::export::beginner_report_for_export(case, run_id, options.redaction)?;
         sources.push(SelectedRunSource {
@@ -309,7 +307,8 @@ pub fn preview_selected_run_report(
             .count(),
     };
     Ok(SelectedRunReport {
-        schema_version: "ai-security-scanner.selected-run-report/v1".into(),
+        original_files: None,
+        schema_version: SELECTED_RUN_REPORT_SCHEMA.into(),
         case_id: case.id.clone(),
         project_title: sources[0].report.project_title.clone(),
         is_demo: case.is_demo,
@@ -351,18 +350,14 @@ pub fn export_selected_run_report(
     options: &ExportOptions,
 ) -> AppResult<SelectedRunReportExport> {
     let report = preview_selected_run_report(case, run_ids, options)?;
-    let bytes = match format {
-        SelectedRunReportFormat::Json => serde_json::to_vec_pretty(&report)?,
-        SelectedRunReportFormat::Html => render_html(&report, options.locale)?.into_bytes(),
-    };
-    if bytes.len() > MAX_DOCUMENT_BYTES {
-        return Err(AppError::InvalidRequest(
-            "The combined report exceeds 64 MiB; select fewer source reports.".into(),
-        ));
-    }
+    let bytes = render_selected_run_report(&report, format, options.locale)?;
     let path = crate::case_service::write_new_private_file(destination, &bytes)?;
     Ok(SelectedRunReportExport {
+        original_files: None,
+        attachment_archive: None,
+        id: crate::domain::new_id(),
         case_id: case.id.clone(),
+        report_snapshot: None,
         selected_run_ids: report.selected_run_ids,
         format,
         path: path.to_string_lossy().into_owned(),
@@ -370,6 +365,23 @@ pub fn export_selected_run_report(
         created_at: report.generated_at,
         redaction_profile: report.redaction_profile,
     })
+}
+
+pub(crate) fn render_selected_run_report(
+    report: &SelectedRunReport,
+    format: SelectedRunReportFormat,
+    locale: ReportLocale,
+) -> AppResult<Vec<u8>> {
+    let bytes = match format {
+        SelectedRunReportFormat::Json => serde_json::to_vec_pretty(report)?,
+        SelectedRunReportFormat::Html => render_html(report, locale)?.into_bytes(),
+    };
+    if bytes.len() > MAX_DOCUMENT_BYTES {
+        return Err(AppError::InvalidRequest(
+            "The combined report exceeds 64 MiB; select fewer source reports.".into(),
+        ));
+    }
+    Ok(bytes)
 }
 
 fn escape(value: &str) -> String {
@@ -391,6 +403,7 @@ fn text<'a>(locale: ReportLocale, english: &'a str, chinese: &'a str) -> &'a str
 
 fn origin_label(origin: SelectedRunOrigin, locale: ReportLocale) -> &'static str {
     match origin {
+        SelectedRunOrigin::SourceAudit => text(locale, "Source audit", "原始碼稽核"),
         SelectedRunOrigin::RecordedChecks => text(locale, "Recorded checks", "已記錄的檢查"),
         SelectedRunOrigin::ImportedReports => text(locale, "Imported findings", "匯入的發現事項"),
         SelectedRunOrigin::Mixed => text(
@@ -426,7 +439,7 @@ fn severity_label(severity: &Severity, locale: ReportLocale) -> &str {
     }
 }
 
-fn render_html(report: &SelectedRunReport, locale: ReportLocale) -> AppResult<String> {
+pub(crate) fn render_html(report: &SelectedRunReport, locale: ReportLocale) -> AppResult<String> {
     let t = |en, zh| text(locale, en, zh);
     let source_indices: BTreeMap<_, _> = report
         .sources
@@ -474,12 +487,18 @@ fn render_html(report: &SelectedRunReport, locale: ReportLocale) -> AppResult<St
             .find(|finding| finding.finding_id == problem.representative_finding_id)
             .expect("projection binds each representative");
         let group = source.report.problem_group(&finding.finding_id);
-        let title = match locale {
-            ReportLocale::En => {
-                crate::finding_narrative::finding_headline_english(&finding.title, finding.family)
-            }
-            ReportLocale::ZhHant => {
-                crate::finding_narrative::finding_headline_zh_hant(&finding.title, finding.family)
+        let title = if finding.source_audit {
+            finding.title.clone()
+        } else {
+            match locale {
+                ReportLocale::En => crate::finding_narrative::finding_headline_english(
+                    &finding.title,
+                    finding.family,
+                ),
+                ReportLocale::ZhHant => crate::finding_narrative::finding_headline_zh_hant(
+                    &finding.title,
+                    finding.family,
+                ),
             }
         };
         let policy = finding
@@ -489,47 +508,51 @@ fn render_html(report: &SelectedRunReport, locale: ReportLocale) -> AppResult<St
             .find_map(|details| details.aws_iam_policy.as_ref());
         let unconfirmed =
             crate::beginner_report::finding_unconfirmed_by_coverage(finding, &source.report.actual);
-        let (impact, action) = match locale {
-            ReportLocale::En => (
-                crate::finding_narrative::impact_english(
-                    &finding.possible_impact,
-                    finding.family,
-                    &finding.context_factors,
+        let (impact, action) = if crate::report_renderer::provider_native_narrative(finding) {
+            (finding.possible_impact.clone(), finding.next_step.clone())
+        } else {
+            match locale {
+                ReportLocale::En => (
+                    crate::finding_narrative::impact_english(
+                        &finding.possible_impact,
+                        finding.family,
+                        &finding.context_factors,
+                    ),
+                    group
+                        .and_then(|g| g.next_step_english())
+                        .map(str::to_owned)
+                        .unwrap_or_else(|| {
+                            crate::finding_narrative::finding_next_action_english(
+                                &finding.next_step,
+                                finding.family,
+                                policy,
+                                unconfirmed,
+                            )
+                        }),
                 ),
-                group
-                    .and_then(|g| g.next_step_english())
-                    .map(str::to_owned)
-                    .unwrap_or_else(|| {
-                        crate::finding_narrative::finding_next_action_english(
-                            &finding.next_step,
-                            finding.family,
-                            policy,
-                            unconfirmed,
-                        )
-                    }),
-            ),
-            ReportLocale::ZhHant => (
-                crate::finding_narrative::impact_zh_hant(
-                    &finding.possible_impact,
-                    &finding.severity,
-                    severity_label(&finding.severity, locale),
-                    finding.severity_basis_code,
-                    finding.family,
-                    &finding.context_factors,
+                ReportLocale::ZhHant => (
+                    crate::finding_narrative::impact_zh_hant(
+                        &finding.possible_impact,
+                        &finding.severity,
+                        severity_label(&finding.severity, locale),
+                        finding.severity_basis_code,
+                        finding.family,
+                        &finding.context_factors,
+                    ),
+                    group
+                        .and_then(|g| g.next_step_zh_hant())
+                        .map(str::to_owned)
+                        .unwrap_or_else(|| {
+                            crate::finding_narrative::finding_next_action_zh_hant(
+                                &finding.next_step,
+                                &finding.recommended_expert_type,
+                                finding.family,
+                                policy,
+                                unconfirmed,
+                            )
+                        }),
                 ),
-                group
-                    .and_then(|g| g.next_step_zh_hant())
-                    .map(str::to_owned)
-                    .unwrap_or_else(|| {
-                        crate::finding_narrative::finding_next_action_zh_hant(
-                            &finding.next_step,
-                            &finding.recommended_expert_type,
-                            finding.family,
-                            policy,
-                            unconfirmed,
-                        )
-                    }),
-            ),
+            }
         };
         let labels = problem
             .asset_ids
@@ -611,7 +634,11 @@ fn render_html(report: &SelectedRunReport, locale: ReportLocale) -> AppResult<St
         for check in &source.report.actual.checks {
             html.push_str(&format!(
                 "<tr><td>{}</td><td>{}</td><td>{}</td></tr>",
-                escape(&check.check_id),
+                escape(if check.check_id == "Cloudflare source audit" {
+                    t("Cloudflare source audit", "Cloudflare 原始碼稽核")
+                } else {
+                    &check.check_id
+                }),
                 status_label(check.status, locale),
                 escape(
                     &check
@@ -638,6 +665,10 @@ fn render_html(report: &SelectedRunReport, locale: ReportLocale) -> AppResult<St
             html.push_str(&format!("<li>{} {}</li>", escape(&reason), escape(&action)));
         }
         html.push_str("</ul></details>");
+        html.push_str(&crate::report_renderer::html_source_audits(
+            &source.report,
+            crate::report_renderer::HtmlReportCatalog::new(locale),
+        ));
         if let Some(campaign) = &source.report.incident_focus {
             use crate::incident_focus::IncidentCoverageStatus;
             let unresolved = campaign
@@ -695,6 +726,22 @@ fn render_html(report: &SelectedRunReport, locale: ReportLocale) -> AppResult<St
     html.push_str(&format!("</section><footer><details><summary>{}</summary><p>{}</p><pre>{}</pre></details></footer></main></body></html>",
         t("Terms and source records", "條款與來源紀錄"),
         t("This document combines the selected historical reports. It does not perform a new scan, establish current clean status, infer remediation, or change a source's findings and coverage. Original evidence retains its source run and time. No original files are attached.", "本文件整合所選的歷史報告，未執行新掃描、不判定目前無問題、不推論修復狀態，也不變更來源的發現與涵蓋範圍。原始證據保留來源輪次與時間；本文件未附加原始檔案。"),escape(&canonical)));
+    if locale == ReportLocale::ZhHant
+        && report
+            .sources
+            .iter()
+            .any(|s| !s.report.source_audits.is_empty())
+    {
+        html = crate::report_renderer::localize_report_markers(
+            &html,
+            &report
+                .sources
+                .iter()
+                .map(|s| s.report.clone())
+                .collect::<Vec<_>>(),
+            report.redaction_profile == "standard",
+        )?;
+    }
     Ok(html)
 }
 

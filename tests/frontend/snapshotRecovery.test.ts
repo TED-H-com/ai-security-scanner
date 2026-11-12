@@ -940,3 +940,34 @@ test("snapshot errors keep real state visible with persistent bilingual retry UI
     ]) assert.ok(source.includes(`\"${key}\"`), `${key} must be translated`);
   }
 });
+
+for (const ending of ["blocked", "terminated"] as const) test(`${ending} audit is counted separately in demo export preview`, async () => {
+  const { failureCase, failureRun } = await import("../support/auditFailure.ts");
+  const { build } = await import("esbuild");
+  const bundle = await build({ entryPoints: ["src/services/nativeAdapter.ts"], bundle: true, platform: "node", format: "esm", write: false });
+  const { adaptNativeCase } = await import(`data:text/javascript;base64,${Buffer.from(bundle.outputFiles[0]!.text).toString("base64")}`);
+  const workspace = adaptNativeCase(failureCase(ending), []);
+  const run = failureRun(ending);
+  run.engineRuns[0]!.rawArtifactCount = 9;
+  workspace.runs = [run];
+  setTestWindow({});
+  const preview = await scannerService.previewExport({ caseId: run.caseId, runId: run.id, locale: "en", format: "html", includeRawEvidence: false, redactSensitiveValues: true }, workspace);
+  assert.equal(preview.mode, "demo");
+  assert.equal(preview.data.selectedSourceAuditCount, 1);
+  for (const field of ["selectedEngineRunCount", "incompleteEngineRunCount", "notExecutedEngineRunCount", "rawArtifactCount"]) assert.equal(preview.data[field], 0, field);
+});
+
+test("failure run selections reach the existing native combined report command unchanged", async () => {
+  const { failureRun } = await import("../support/auditFailure.ts");
+  const calls: Array<{ command: string; args: unknown }> = [];
+  setTestWindow({ __TAURI_INTERNALS__: { invoke: async (command: string, args: unknown) => {
+    calls.push({ command, args });
+    if (command === "plugin:dialog|save") return "/reports/failures.html";
+    if (command === COMMANDS.exportSelectedRunReport) return null;
+    throw new Error(`Unexpected command: ${command}`);
+  } } });
+  const input = { caseId: "audit-case", runIds: [failureRun("blocked").id, failureRun("terminated").id], locale: "en", format: "html", redactSensitiveValues: true };
+  await scannerService.exportSelectedRunReport(input);
+  assert.deepEqual(calls.map((call) => call.command), ["plugin:dialog|save", COMMANDS.exportSelectedRunReport]);
+  assert.deepEqual(calls[1]!.args, { input: { ...input, destination: "/reports/failures.html" } });
+});

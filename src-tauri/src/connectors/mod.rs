@@ -19,9 +19,9 @@ use crate::discovery::{
 };
 use crate::domain::{AssetKind, DataSource, RelationKind, SourceKind};
 use artifact::{
-    ingest_provider_response, ingest_selected_source, inspect_snapshot_reference,
-    prepare_artifact_root, read_snapshot_reference, read_source_snapshot,
+    ingest_provider_response, ingest_selected_source, read_snapshot_reference, read_source_snapshot,
 };
+pub(crate) use artifact::{inspect_snapshot_reference, prepare_artifact_root};
 use chrono::{DateTime, Utc};
 use parser::{ParserProfile, parse_snapshot};
 use std::collections::BTreeSet;

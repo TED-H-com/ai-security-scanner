@@ -1,0 +1,4 @@
+interface:
+  display_name: "AI Security Scanner"
+  short_description: "Operate local security assessment cases safely"
+  default_prompt: "Use $ai-security-scanner to confirm this computer can scan, then guide the selected assessment task safely; stop with one next step if a check fails."

@@ -26,4 +26,10 @@ export const isVerificationBaselineRun = (
 ): boolean =>
   verificationBaselineStatuses.has(run.status)
   && (!run.engineRuns?.length
-    || run.engineRuns.some((task) => task.taskKind?.kind !== "external_report_import"));
+    || run.engineRuns.some((task) => task.taskKind?.kind !== "external_report_import"
+      && task.taskKind?.kind !== "agent_audit_failure"
+      && task.taskKind?.kind !== "agent_audit"));
+
+/** Source audit work can be read and exported; desktop scan controls cannot execute it. */
+export const hasSourceAudit = (run: Pick<ScanRun, "engineRuns"> | undefined): boolean =>
+  run?.engineRuns.some((task) => ["agent_audit", "agent_audit_failure"].includes(task.taskKind?.kind)) ?? false;

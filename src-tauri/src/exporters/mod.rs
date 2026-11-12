@@ -1,6 +1,7 @@
 pub mod framework_report;
 pub mod ocsf;
 pub mod oscal;
+pub(crate) mod source_audit;
 
 use crate::domain::{AssessmentCase, EngineRunStatus, ScanRun};
 use crate::error::{AppError, AppResult};
@@ -25,7 +26,8 @@ fn run_is_terminal(run: &ScanRun) -> bool {
             }))
 }
 
-fn terminal_run<'a>(case: &'a AssessmentCase, run_id: &str) -> AppResult<&'a ScanRun> {
+pub(crate) fn terminal_run<'a>(case: &'a AssessmentCase, run_id: &str) -> AppResult<&'a ScanRun> {
+    crate::agent_audit_admission::check_format(case)?;
     let run = case
         .scan_runs
         .iter()
@@ -39,5 +41,6 @@ fn terminal_run<'a>(case: &'a AssessmentCase, run_id: &str) -> AppResult<&'a Sca
     if !run_is_terminal(run) {
         return Err(AppError::NotAvailable("scan is in progress".into()));
     }
+    source_audit::validate(case, run)?;
     Ok(run)
 }

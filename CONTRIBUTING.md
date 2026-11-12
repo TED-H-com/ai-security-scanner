@@ -2,6 +2,10 @@
 
 Contributions should make the product faster to understand, easier to start, and more useful after the first scan. Read the [product specification](docs/product-spec.md) before changing user-visible behavior.
 
+## Current development entry
+
+The active work is the [skill-first migration](docs/plans/skill-first-cloudflare-migration.md). Use the [pinned development bootstrap](docs/skill-bootstrap.md) for CLI work; retain the desktop adapter and existing data. Edit `skills/ai-security-scanner/SKILL.md`, then run `node scripts/skill/sync-skill.mjs --write` to update both host copies. Follow [development status](docs/development-status.md) for verified capabilities and remaining work. Source publication, skill releases and desktop releases have [separate meanings](docs/release-model.md); a documentation or skill update does not require installer packaging.
+
 ## Product priorities
 
 Use these priorities when choosing and reviewing work:
@@ -89,6 +93,8 @@ then `node scripts/build-public-showcase.mjs` for the guide and sample index.
 Both commands accept `--check` to verify the generated markup. Keep scanner
 identifiers, versions and archived report evidence unchanged; Japanese pages link
 to the existing English reports with their language labeled explicitly.
+
+Tests that create product data use the shared temporary-root helper `src-tauri/src/test_temp.rs` (integration targets load it with `#[path]`) so read-only published data is cleaned up. Leaking a temporary directory fails the test on Unix.
 
 Run checks proportional to the changed boundary. Common commands include:
 

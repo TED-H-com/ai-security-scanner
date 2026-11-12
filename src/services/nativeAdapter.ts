@@ -1,3 +1,5 @@
+import { isAuditFailureOutcome, type AuditFailureTechnicalWire } from "../auditFailure";
+import { adaptSourceAudit, type SourceAuditReportWire, type ProviderRecordRefWire } from "../sourceAuditTypes";
 import type { IncidentCampaignReport } from "../incidentFocusProfile";
 import { translateBilingualText } from "../i18n/core";
 import { agenticRadarFramework } from "../agenticRadarProfile";
@@ -224,6 +226,9 @@ interface NativeEngineRun {
     port?: unknown;
     timeout_ms?: unknown;
     payload_bytes?: unknown;
+    provider_id?: string;
+    admission_id?: string;
+    outcome?: unknown;
     source_format?: unknown;
     source_sha256?: unknown;
   };
@@ -368,6 +373,8 @@ interface NativeBeginnerInventory {
 }
 
 type NativeBeginnerTechnicalExecution =
+  | AuditFailureTechnicalWire
+  | { kind: "agent_audit"; provider_id: string; admission_id: string }
   | { kind: "external_report_import"; engine_id: string; source_format: string; source_sha256: string; contract: string }
   | {
       kind: "catalog_engine";
@@ -404,6 +411,7 @@ type NativeBeginnerTechnicalExecution =
     };
 
 export interface NativeBeginnerMasterReport {
+  source_audits?: SourceAuditReportWire[];
   incident_focus?: IncidentCampaignReport | null;
   schema_version: string;
   case_id: string;
@@ -448,6 +456,7 @@ export interface NativeBeginnerMasterReport {
     observed_from: string | null;
     observed_until: string | null;
     checks: Array<{
+      outcome?: { summary: string; reason: string; next_action: string };
       task_id: string;
       check_id: string;
       result_kind?: string | null;
@@ -507,6 +516,7 @@ export interface NativeBeginnerMasterReport {
   };
   inventory?: NativeBeginnerInventory | null;
   findings: Array<{
+    source_audit?: boolean;
     finding_id: string;
     fingerprint: string;
     snapshot_source: BeginnerMasterReport["findings"][number]["snapshotSource"];
@@ -530,6 +540,7 @@ export interface NativeBeginnerMasterReport {
     rollback_considerations?: string | null;
     verification_guidance?: string | null;
     evidence_references: Array<{
+      provider_record?: ProviderRecordRefWire | null;
       evidence_id: string;
       engine_id: string;
       details_frozen?: boolean;
@@ -646,6 +657,7 @@ export interface NativeBeginnerMasterReport {
 }
 
 interface NativeEvidence {
+  provider_record?: ProviderRecordRefWire | null;
   id: string;
   finding_id?: string;
   run_id?: string;
@@ -775,6 +787,7 @@ export interface NativeExportPreview {
   selected_run_evidence_count: number;
   scan_run_count: number;
   selected_engine_run_count: number;
+  selected_source_audit_count?: number;
   external_scope_grant_count: number;
   incomplete_engine_run_count: number;
   not_executed_engine_run_count: number;
@@ -1935,6 +1948,13 @@ const mapEngineKnowledgeInput = (
 
 const mapEngineTaskKind = (taskKind: NativeEngineRun["task_kind"]): EngineTaskKind => {
   if (!taskKind || taskKind.kind === "catalog_engine") return { kind: "catalog_engine" };
+  if (taskKind.kind === "agent_audit_failure") return taskKind.provider_id === "cloudflare-security-audit"
+    && isAuditFailureOutcome(taskKind.outcome)
+    ? { kind: "agent_audit_failure", providerId: taskKind.provider_id, outcome: structuredClone(taskKind.outcome) }
+    : { kind: "invalid_task" };
+  if (taskKind.kind === "agent_audit") return {
+    kind: "agent_audit", providerId: taskKind.provider_id!, admissionId: taskKind.admission_id!,
+  };
   if (taskKind.kind === "external_report_import") {
     return typeof taskKind.source_format === "string" && taskKind.source_format === "strix-vulnerabilities-json/v1"
       && typeof taskKind.source_sha256 === "string" && /^[0-9a-f]{64}$/u.test(taskKind.source_sha256)
@@ -2257,6 +2277,7 @@ export const adaptNativeExportPreview = (item: NativeExportPreview): ExportPrevi
   selectedRunEvidenceCount: item.selected_run_evidence_count,
   scanRunCount: item.scan_run_count,
   selectedEngineRunCount: item.selected_engine_run_count,
+  ...(item.selected_source_audit_count ? { selectedSourceAuditCount: item.selected_source_audit_count } : {}),
   externalScopeGrantCount: item.external_scope_grant_count,
   incompleteEngineRunCount: item.incomplete_engine_run_count,
   notExecutedEngineRunCount: item.not_executed_engine_run_count,
@@ -2443,6 +2464,7 @@ const adaptSummary = (summary: NativeCaseSummary): AssessmentCase => {
 export const adaptNativeCase = (
   nativeCase: NativeAssessmentCase,
   manifests: EngineManifest[] = [],
+  reports: NativeBeginnerMasterReport[] = [],
 ): CaseWorkspace => {
   const sources: ConnectedSource[] = nativeCase.data_sources.map((source) => {
     const kind = mapSourceKind(source.kind);
@@ -2458,16 +2480,19 @@ export const adaptNativeCase = (
     };
   });
   const scanAttemptedAssetIds = new Set(
-    nativeCase.scan_runs.flatMap((run) => run.engine_runs.flatMap((engineRun) => {
+    [...nativeCase.scan_runs.flatMap((run) => run.engine_runs.flatMap((engineRun) => {
       const status = mapEngineStatus(engineRun.status);
       const startedAt = typeof engineRun.started_at === "string" && Number.isFinite(Date.parse(engineRun.started_at));
       // A planned target is not attempted until a valid task has entered execution.
-      return mapEngineTaskKind(engineRun.task_kind).kind !== "invalid_task"
+      return !["invalid_task", "agent_audit", "agent_audit_failure"].includes(mapEngineTaskKind(engineRun.task_kind).kind)
         && !["pending", "not_executed"].includes(status)
         && startedAt
         ? engineRun.asset_ids
         : [];
-    })),
+    })), ...reports.flatMap((report) => report.actual.checks
+      .filter((check) => (check.status === "tested_complete" || check.status === "tested_partial")
+        && report.source_audits?.some((audit) => audit.task_id === check.task_id && audit.outcome.audit_performed))
+      .flatMap((check) => check.target_asset_ids))],
   );
   const coverage: CoverageRecord[] = nativeCase.coverage.flatMap((entry) => {
     const platform = platformFromSource(entry.source_kind);
@@ -2556,6 +2581,7 @@ export const adaptNativeCase = (
     const assetNames = finding.asset_ids.map((id) => assetById.get(id)?.name).filter((name): name is string => Boolean(name));
     const severityBasisCode = mapSeverityBasisCode(finding.severity_basis_code);
     return {
+      ...(finding.evidence.some((evidence) => evidence.provider_record) ? { sourceAudit: true } : {}),
       id: finding.id,
       caseId: finding.case_id,
       fingerprint: finding.fingerprint,
@@ -2587,6 +2613,7 @@ export const adaptNativeCase = (
       priorityReasons: finding.priority_reasons ?? [],
       workflowState: mapWorkflow(finding.status),
       evidence: finding.evidence.map((evidence) => ({
+        ...(evidence.provider_record ? { providerRecord: evidence.provider_record } : {}),
         id: evidence.id,
         sourceEngine: evidence.engine_id,
         sourceRule: evidence.source_rule ?? undefined,
@@ -2661,6 +2688,7 @@ export const adaptNativeCase = (
       run.completed_at,
       run.engine_runs.length,
     );
+    const report = reports.find((item) => item.run_id === run.id);
     const engineRuns: EngineRun[] = run.engine_runs.map((engineRun) => {
       const taskKind = mapEngineTaskKind(engineRun.task_kind);
       const builtInLocalhostTask = isExactBuiltInLocalhostQuickScanEngine({
@@ -2668,9 +2696,14 @@ export const adaptNativeCase = (
         taskKind,
       }) && taskKind.kind === "built_in_localhost_tcp" ? taskKind : undefined;
       const isBuiltInLocalhostTcp = Boolean(builtInLocalhostTask);
-      const nonCatalogTask = isBuiltInLocalhostTcp || taskKind.kind === "external_report_import";
+      const audit = taskKind.kind === "agent_audit";
+      const auditFailure = taskKind.kind === "agent_audit_failure";
+      const auditCheck = audit ? report?.actual.checks.find((check) => check.task_id === engineRun.id) : undefined;
+      const nonCatalogTask = isBuiltInLocalhostTcp || taskKind.kind === "external_report_import" || audit || auditFailure;
       const manifest = nonCatalogTask ? undefined : manifestById.get(engineRun.engine_id);
-      const status = taskKind.kind === "invalid_task"
+      const status = audit
+        ? auditCheck?.status === "tested_complete" ? "completed" : "partial"
+        : taskKind.kind === "invalid_task"
         ? "not_executed"
         : mapEngineStatus(engineRun.status);
       const checkpoint = parseCheckpoint(engineRun.resume_token, engineRun);
@@ -2689,7 +2722,7 @@ export const adaptNativeCase = (
       const publicCheckpoint = (failureKind === "gateway_preparation_failed" || staticFailure) && checkpoint
         ? { ...checkpoint, lastError: undefined }
         : checkpoint;
-      const recoveryAction = staticFailure
+      const recoveryAction = audit || auditFailure || staticFailure
         ? "none"
         : engineRecoveryAction(
           status,
@@ -2716,7 +2749,7 @@ export const adaptNativeCase = (
       return {
         id: engineRun.id,
         engineId: engineRun.engine_id,
-        engineName: isBuiltInLocalhostTcp
+        engineName: audit || auditFailure ? adapterText("Cloudflare source audit", "Cloudflare 原始碼稽核") : isBuiltInLocalhostTcp
           ? `127.0.0.1:${builtInLocalhostTask!.port} TCP`
           : manifest?.name ?? engineRun.engine_id,
         category: isBuiltInLocalhostTcp ? "built_in_localhost_tcp" : manifest?.category ?? "unknown",
@@ -2807,7 +2840,10 @@ export const adaptNativeCase = (
         .filter((engineRun) => engineRun.assetIds.includes(assetId))
         .filter((engineRun) => !isSettledSkippedCheck(engineRun));
       return applicableRuns.length > 0 && applicableRuns.every((engineRun) =>
-        engineRun.taskKind.kind === "built_in_localhost_tcp"
+        engineRun.taskKind.kind === "agent_audit"
+          ? report?.actual.checks.some((check) => check.task_id === engineRun.id
+            && check.target_asset_ids.includes(assetId) && check.status === "tested_complete") === true
+          : engineRun.taskKind.kind === "built_in_localhost_tcp"
           ? exactCompletedLocalhostBinding(engineRun, assetId, nativeCase.assets)
           : engineRun.taskKind.kind === "catalog_engine"
             && engineRun.status === "completed"
@@ -2993,7 +3029,7 @@ export const adaptNativeSnapshot = (
   nativeManifests: NativeEngineManifest[],
 ): AppSnapshot => {
   const engineManifests = nativeManifests.map(adaptNativeManifest);
-  const workspace = snapshot.selected_case ? adaptNativeCase(snapshot.selected_case, engineManifests) : undefined;
+  const workspace = snapshot.selected_case ? adaptNativeCase(snapshot.selected_case, engineManifests, snapshot.beginner_reports ?? []) : undefined;
   if (workspace) {
     workspace.beginnerReports = (snapshot.beginner_reports ?? []).map(adaptBeginnerMasterReport);
   }
@@ -3123,6 +3159,13 @@ const adaptBeginnerInventoryCounts = (counts: NativeBeginnerInventory["counts"])
 const adaptBeginnerTechnicalExecution = (
   execution: NativeBeginnerTechnicalExecution,
 ): BeginnerTechnicalExecution => {
+  if (execution.kind === "agent_audit_failure") return {
+    kind: execution.kind, runId: execution.run_id, receiptSha256: execution.receipt_sha256,
+    terminalSha256: execution.terminal_sha256, occurredAt: execution.occurred_at, ending: structuredClone(execution.ending),
+  };
+  if (execution.kind === "agent_audit") return {
+    kind: execution.kind, providerId: execution.provider_id, admissionId: execution.admission_id,
+  };
   if (execution.kind === "external_report_import") return {
     kind: execution.kind, engineId: execution.engine_id, sourceFormat: execution.source_format,
     sourceSha256: execution.source_sha256, contract: execution.contract,
@@ -3227,6 +3270,7 @@ const mapBeginnerReportDataAvailability = (
 export const adaptBeginnerMasterReport = (
   report: NativeBeginnerMasterReport,
 ): BeginnerMasterReport => ({
+  sourceAudits: (report.source_audits ?? []).map(adaptSourceAudit),
   incidentFocus: report.incident_focus ?? undefined,
   schemaVersion: report.schema_version,
   caseId: report.case_id,
@@ -3262,6 +3306,7 @@ export const adaptBeginnerMasterReport = (
     observedFrom: report.actual.observed_from ?? undefined,
     observedUntil: report.actual.observed_until ?? undefined,
     checks: report.actual.checks.map((check) => ({
+      outcome: check.outcome ? { summary: check.outcome.summary, reason: check.outcome.reason, nextAction: check.outcome.next_action } : undefined,
       taskId: check.task_id,
       checkId: check.check_id,
       resultKind: mapBeginnerCheckResultKind(check.result_kind),
@@ -3333,6 +3378,7 @@ export const adaptBeginnerMasterReport = (
     })),
   } : undefined,
   findings: report.findings.map((finding) => ({
+    sourceAudit: finding.source_audit ?? false,
     findingId: finding.finding_id,
     fingerprint: finding.fingerprint,
     snapshotSource: finding.snapshot_source,
@@ -3361,6 +3407,7 @@ export const adaptBeginnerMasterReport = (
     nextStep: finding.next_step,
     recommendedExpertType: finding.recommended_expert_type,
     evidenceReferences: finding.evidence_references.map((evidence) => ({
+      ...(evidence.provider_record ? { providerRecord: evidence.provider_record } : {}),
       evidenceId: evidence.evidence_id,
       engineId: evidence.engine_id,
       detailsFrozen: evidence.details_frozen ?? false,

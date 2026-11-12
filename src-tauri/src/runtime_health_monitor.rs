@@ -1,5 +1,4 @@
 use crate::domain::RuntimeHealth;
-#[cfg(any(feature = "desktop", test))]
 use crate::managed_runtime::{ManagedRuntimePhase, ManagedRuntimeStatus};
 use std::panic::{AssertUnwindSafe, catch_unwind};
 use std::sync::{Arc, Mutex, MutexGuard};
@@ -42,14 +41,12 @@ pub enum RuntimeHealthObservation {
     Reconciling(RuntimeHealth),
 }
 
-#[cfg(any(feature = "desktop", test))]
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 enum RuntimeHealthConfidence {
     Settled,
     Reconciling,
 }
 
-#[cfg(any(feature = "desktop", test))]
 impl RuntimeHealthConfidence {
     fn observe(self, health: RuntimeHealth) -> RuntimeHealthObservation {
         match self {
@@ -59,7 +56,6 @@ impl RuntimeHealthConfidence {
     }
 }
 
-#[cfg(any(feature = "desktop", test))]
 fn managed_runtime_health_confidence(phase: ManagedRuntimePhase) -> RuntimeHealthConfidence {
     match phase {
         ManagedRuntimePhase::Running
@@ -72,7 +68,6 @@ fn managed_runtime_health_confidence(phase: ManagedRuntimePhase) -> RuntimeHealt
     }
 }
 
-#[cfg(any(feature = "desktop", test))]
 pub(crate) fn managed_runtime_health_observation(
     status: &ManagedRuntimeStatus,
 ) -> RuntimeHealthObservation {
@@ -86,7 +81,6 @@ pub(crate) fn managed_runtime_health_observation(
     })
 }
 
-#[cfg(any(feature = "desktop", test))]
 pub(crate) fn managed_runtime_health_precludes_fallback(
     observation: &RuntimeHealthObservation,
 ) -> bool {
@@ -96,7 +90,6 @@ pub(crate) fn managed_runtime_health_precludes_fallback(
     }
 }
 
-#[cfg(any(feature = "desktop", test))]
 pub(crate) fn select_runtime_health(
     managed: Option<RuntimeHealthObservation>,
     compatibility: RuntimeHealthObservation,
@@ -121,7 +114,6 @@ pub(crate) fn select_runtime_health(
     }
 }
 
-#[cfg(any(feature = "desktop", test))]
 fn describe_reconciling_compatibility_fallback(mut health: RuntimeHealth) -> RuntimeHealth {
     health.detail = format!(
         "advanced isolated runtime has not reported its state yet and is not in use; scans will run with the {} compatibility runtime",
@@ -130,7 +122,6 @@ fn describe_reconciling_compatibility_fallback(mut health: RuntimeHealth) -> Run
     health
 }
 
-#[cfg(any(feature = "desktop", test))]
 fn describe_compatibility_fallback(
     observation: RuntimeHealthObservation,
 ) -> RuntimeHealthObservation {
@@ -153,12 +144,10 @@ fn describe_compatibility_fallback(
     }
 }
 
-#[cfg(any(feature = "desktop", test))]
 pub(crate) fn is_available_compatibility_runtime(health: &RuntimeHealth) -> bool {
     health.available && matches!(health.provider.as_str(), "docker" | "podman")
 }
 
-#[cfg(any(feature = "desktop", test))]
 pub(crate) fn select_recorded_managed_runtime_health(
     managed: RuntimeHealthObservation,
     cached: RuntimeHealth,

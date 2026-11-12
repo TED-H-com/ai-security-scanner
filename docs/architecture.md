@@ -2,11 +2,11 @@
 
 Status: current technical architecture
 
-Last updated: 2026-09-10
+Last updated: 2026-11-10 (shared core, foreground execution and preservation boundaries).
 
 Product behavior: [Product specification](product-spec.md)
 
-This document defines the component, data, execution, and trust boundaries used to implement the desktop product. Current capability and activation status are recorded in the [product review](product-audit.md) and machine-readable [engine catalog](../engines/catalog.json).
+This document defines the component, data, execution, and trust boundaries of the shared core and desktop adapter. [Development status](development-status.md) records the new source capabilities; [publication status](release-model.md) distinguishes them from the released desktop. Existing scanner capability and activation status remain in the machine-readable [engine catalog](../engines/catalog.json).
 
 ## 1. Architectural goals
 
@@ -25,6 +25,15 @@ The architecture must support one IT user combining multiple repositories, inter
 ```mermaid
 flowchart LR
     UI[Tauri + React UI] -->|typed commands| CORE[Case service]
+    SKILL[Selected development skill] --> BOOT[Pinned source bootstrap]
+    BOOT --> CLI[Foreground CLI]
+    CLI --> CORE
+    CLI --> COORD[Shared scan coordinator]
+    UI --> COORD
+    COORD --> ORCH
+    CLI --> SNAP[Report snapshots and case archives]
+    SNAP --> DB
+    SNAP --> BLOBS
     CORE --> DB[(SQLite case store)]
     CORE --> BLOBS[(Content-addressed evidence store)]
     CORE --> DISC[Discovery + coverage ledger]
@@ -102,11 +111,18 @@ src-tauri/                   Rust backend and typed IPC (the only workspace memb
 engines/                     declarative manifests and adapter fixtures
 mappings/                    versioned NIST/ISO/AIDEFEND relationships
 bootstrap/                   read-only provider bootstrap templates
-.codex/skills/, .claude/skills/  Codex/Claude setup and operations guidance
+skills/ai-security-scanner/   canonical operator skill
+scripts/skill/               pinned bootstrap, input manifest and skill sync
+.codex/skills/, .claude/skills/  generated host copies
+providers/cloudflare/        pinned upstream method and validator resources
 ```
 
 | Boundary | Owning module |
 | --- | --- |
+| shared headless state and foreground ownership | `src-tauri/src/core_state.rs`, `scan_coordinator.rs`, `process_lease.rs` |
+| report rendering and durable snapshots | `src-tauri/src/report_renderer.rs`, `report_snapshot.rs`, `combined_attachments.rs` |
+| portable case archive/restore | `src-tauri/src/case_archive.rs`, `case_archive_io.rs` |
+| reported Cloudflare validation and private retention | `src-tauri/src/cloudflare_provider/`, `cloudflare_provider.rs`, `provider_report.rs` |
 | domain types and state transitions | `src-tauri/src/domain.rs`, `case_service.rs` |
 | SQLite and evidence blob storage | `src-tauri/src/storage.rs`, `artifact_store.rs` |
 | capability handles and provider auth | `src-tauri/src/credential_vault.rs`, `source_authorization/` |
@@ -466,6 +482,8 @@ The initial command surface is:
 
 Frontend controls call these typed backend commands and reload the persisted case. They must not simulate a successful finding, grouping, scope, or source mutation in browser-only state.
 
+Cloudflare admission publishes verified originals at stable case/run/task paths, then one immediate SQLite transaction uses the shared case-save implementation for revision compare-and-set, format/update checks and outcome normalization, saving the whole case with one immutable `cloudflare_audit.admitted` receipt event. Replay verifies that receipt and the copied originals without changing triage or the sealed provider chain; terminal report snapshots are retained after the transaction, with same-request replay retrying a failed retention.
+
 ### 7.1 Events
 
 Long-running work emits versioned events:
@@ -743,6 +761,10 @@ distributed platforms and channel.
 Synthetic cases are permitted for development and onboarding only. `seed_demo_case` must set `provenance: demo`, use obviously synthetic assets and evidence, and display a persistent Demo badge. Demo data must not be exportable without a conspicuous synthetic-data marker and must never be counted as proof that an engine integration works.
 
 ## 18. Repository skills boundary
+
+The canonical skill generates both host copies. The released operator route still uses the desktop; the selected development route uses the [pinned bootstrap](skill-bootstrap.md) and [foreground coordinator](foreground-scans.md). Read-only scan status and saved report/retention reads avoid writable initialization. Case mutation and foreground execution retain the data-directory writer lease. [Report snapshots](report-snapshots.md) preserve exported bytes; [case archives](case-archives.md) restore existing case data without granting scan authorization.
+
+[Cloudflare validation/retention](cloudflare-provider.md) keeps supplied bundle claims `reported_only`. The admission domain now represents verified sealed audits with an explicit `AgentAudit` task, an immutable admission record and the unchanged retained provider projection. Its pure planner produces terminal runs, frozen assets, findings and observations only for confirmed native records, and copy plans for non-source originals. Evidence references native records without duplicating them. Cases declare `cloudflare_audit_admission/v1` in their format requirements; unknown requirements block writes, reports, snapshots and archives while listing and viewing remain available. The shared HTML/JSON reports and snapshots include admitted audits; other provider exports, attachments and complete archives remain gated, and a retained provider directory alone is not a complete case archive.
 
 Claude/Codex skills call documented application or maintenance commands. They may inspect manifests, runtime health, job state, and cleanup state. They do not receive secret values, fabricate or bypass the user's scope assertion, connect directly to the runtime socket, execute remediation, or turn a demo result into a real result.
 
