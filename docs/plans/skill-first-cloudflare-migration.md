@@ -594,11 +594,11 @@ Skill 預設使用穩定的使用者資料目錄，與程式 build cache 分開�
 
 ### 12.2 Schema 演進
 
-2026-11-12 D7 B1：Rust 已新增嚴格 `agent_audit_failure` 與 `cloudflare_audit_terminal/v1`；受阻／終止保管與單一失敗列同交易保存，重播僅修復 pending 報告快照。共用報告、匯出與 failure-only provider 封存／唯讀還原已接線；資料庫 migration 仍為 [1, 2]，B2 桌面 parity 待完成。
+2026-11-12 D7 B1：Rust 已新增嚴格 `agent_audit_failure` 與 `cloudflare_audit_terminal/v1`；受阻／終止保管與單一失敗列同交易保存，重播僅修復 pending 報告快照。共用報告、匯出與 failure-only provider 封存／唯讀還原已接線；資料庫 migration 仍為 [1, 2]，D7 B2 桌面與共用報告已對齊：未開始／未完成列、原因及下一步、資產缺口、技術明細、控制排除與整合報告選取均已接線。
 
 2026-11-12 封存 B 切片已完成入案稽核的完整清單、create／verify 與兩個必要能力欄位；
 舊案固定輸入 SHA-256 保持不變。來源省略只限已索引 body，歷史定稿包與擷取原件不改寫。
-C 切片已接 provider preview／restore、staged 驗證、唯讀事件邊界、contextual 省略驗證、再次封存及整合附件超限私密封存；舊案 bytes 不變，migrations 仍為 [1, 2]。比較仍拒絕。D7 A 已加入宿主明示 terminate、全寫入終態防護、狀態與未定稿封存 custody；D7 B 的案件／報告失敗列尚未實作。
+C 切片已接 provider preview／restore、staged 驗證、唯讀事件邊界、contextual 省略驗證、再次封存及整合附件超限私密封存；舊案 bytes 不變，migrations 仍為 [1, 2]。比較仍拒絕。D7 A 已加入宿主明示 terminate、全寫入終態防護、狀態與未定稿封存 custody；D7 B 的案件／共用報告失敗列及桌面對齊已完成。
 
 - 11 月 12 日封存 A 切片：新增不依賴資料庫或檔案系統的 captured-history reader，從驗證事件列出所有文件修訂、已接受輸出與僅含中繼資料的已捨棄輸出；`retrieve-captured` 以單一唯讀快照、容量界限、精確摘要及安全目的檔發布恢復遺失宿主副本，不新增授權或事件。現有 status 已有目前修訂／摘要與派工身分／角色／摘要，語義不變。完整封存建立／驗證及惰性還原分別留給 B／C 切片，入案稽核比較仍拒絕。
 
@@ -738,8 +738,8 @@ BOOT-01 已有固定輸入、並行鎖、失敗保留、快取竄改及 prompt-o
 | Baseline semantic outputs、固定 HTML bytes 與 screenshots | 已由原 core 生成並保存 [baseline corpus](../../tests/fixtures/report-fidelity/README.md) | 保持原件，使用固定 inputs 比較目前 exporter；不可更新 expected outputs 掩蓋 extraction 差異 |
 | 共用 Renderer／單 run ReportSnapshot | 已實作 HTML／canonical JSON 共用 renderer、完成與單 run／combined 匯出自動快照、手動快照、inspect／retrieve／replay，完整 archive 自動保存已記錄原件 | combined 原始附件與超限 fallback 已接線；桌面選項已接線；補齊跨平台原生執行證據 |
 | 唯讀 scan status | 已實作提早分流，不初始化 runtime 或 writer lease；可查已保存 command receipts | 保持與 live owner 共存 |
-| Cloudflare captured history／宿主副本恢復 | 封存 A 切片已加入純事件清單與唯讀 `retrieve-captured`，涵蓋過往修訂、所有已接受輸出及已捨棄輸出的不可用標記；共用技能指引已同步 | B／C 切片已接完整封存建立／驗證、唯讀還原及繼承來源省略；比較仍拒絕；D7 B1 已加入 Rust 案件／報告失敗列，B2 桌面 parity 待完成 |
-| D7 A 明示終止 | 已實作嚴格 terminate request、精確重播、滿額紀錄的單筆終態保留、所有後續寫入拒絕、狀態及帶 capability 的未定稿封存／唯讀還原；宿主技能指引已更新 | D7 B1 已加入 blocked／terminated 單一案件／報告列、快照、匯出及完整封存；B2 桌面 parity 待完成 |
+| Cloudflare captured history／宿主副本恢復 | 封存 A 切片已加入純事件清單與唯讀 `retrieve-captured`，涵蓋過往修訂、所有已接受輸出及已捨棄輸出的不可用標記；共用技能指引已同步 | B／C 切片已接完整封存建立／驗證、唯讀還原及繼承來源省略；比較仍拒絕；D7 B1 已加入 Rust 案件／報告失敗列，D7 B2 桌面與共用報告已對齊：未開始／未完成列、原因及下一步、資產缺口、技術明細、控制排除與整合報告選取均已接線 |
+| D7 A 明示終止 | 已實作嚴格 terminate request、精確重播、滿額紀錄的單筆終態保留、所有後續寫入拒絕、狀態及帶 capability 的未定稿封存／唯讀還原；宿主技能指引已更新 | D7 B1 已加入 blocked／terminated 單一案件／報告列、快照、匯出及完整封存；D7 B2 桌面與共用報告已對齊：未開始／未完成列、原因及下一步、資產缺口、技術明細、控制排除與整合報告選取均已接線 |
 | 完整案件 archive／restore | 已實作既有 domain 的 DTO／事件／raw／報告保存、選配來源與原匯出、verify／preview／原子還原 | 入案 provider 完整封存 create／verify 與 C 切片唯讀還原、繼承來源省略及再次封存已接入；三平台原生驗收仍待補齊 |
 | Headless coordinator／前景 CLI | 已實作共用 worker、exact generation join／reconcile、訊號／輸出中斷與 captured-only recovery；bootstrap 已共用固定取消管道，Linux 驗證父程序結束後的清理與保存；已執行真正 pinned Gitleaks 至封存還原 | 桌面對照、Windows／macOS 前景取消的原生證據及三平台驗收 |
 | 固定來源 bootstrap／canonical skill／CI 解耦 | 已實作 doctor／prepare／run、受控輸入快照、驗證快取與編譯身分、skill 同步及三 OS CI lanes；指定引擎 prepare 重用核心快取並保存逐項 runtime 收據 | 自動取得 managed bundle；完成 Windows／macOS native 執行證據 |

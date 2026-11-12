@@ -13,7 +13,7 @@
 - [Skill 主流程](skill-bootstrap.md)：固定來源 bootstrap 與所選掃描引擎的準備。
 - [前景掃描與復原](foreground-scans.md)：執行已核准的檢查、讀取保存狀態並復原已擷取的結果。
 - [Cloudflare 原始碼稽核](cloudflare-provider.md)：由宿主執行準備、記錄派工與輸出、檢查點、驗證、定稿、案件入案及共用報告整合；不再繼續的稽核可明示終止。
-- [未完成稽核檢查](results-and-exports.zh-TW.md#未開始或未完成的原始碼稽核)：準備受阻與已終止稽核，會在案件與共用報告中列為未開始或失敗的檢查。
+- [未完成稽核檢查](results-and-exports.zh-TW.md#未開始或未完成的原始碼稽核)：準備受阻與已終止稽核，會在案件、桌面結果與共用報告中列為未開始或失敗的檢查。
 - [報告保存與離線重播](report-snapshots.md)：保存報告、取回原始檔案，並使用完全相容的報告產生器重播。
 - [完整私密案件封存](case-archives.md)：建立、驗證並將案件、證據、保存報告與已記錄稽核歷史還原至新工作區；還原的稽核維持唯讀。
 
@@ -22,11 +22,31 @@
 - 完整 skill 主流程的真實宿主驗收尚未完成。
 - 預設 skill 仍使用已發布桌面版，尚未切換。
 - 受管理執行環境套件的自動取得與宣稱平台驗證尚未完成；這些開發功能尚未經 macOS、Windows 原生執行驗證。
-- 桌面版顯示失敗與未開始原始碼稽核檢查列的工作仍在進行。
 
 以下日期章節保留各階段當時的觀察。[產品規格](product-spec.md)定義產品行為；[遷移計畫](plans/skill-first-cloudflare-migration.md)與[報告及封存契約](specs/report-fidelity-and-archive.md)說明已採納的工作。可用內容請見[發布狀態](release-model.zh-TW.md)。
 
 CI 文件與契約測試目前共 113 項。
+
+## 11 月 12 日未完成稽核的桌面結果 — B2
+
+桌面「掃描結果」現在將受阻原始碼稽核顯示為「Cloudflare 原始碼稽核未開始。」，終止稽核顯示為「Cloudflare 原始碼稽核未完成即結束。」每列在英文與繁體中文均包含與共用報告一致的原因、下一步及資產缺口。可展開的技術明細以「原始碼稽核」結果為首列，再列出代碼、時間、摘要及終止計數。僅有失敗稽核的結果不再顯示一般掃描重試提示；已入案稽核與掃描工具的相鄰結果維持原有呈現。
+
+保留原生工作狀態，不提供恢復，也不計為掃描工具已嘗試工作或完成涵蓋。進度控制、複驗基準與確認修復均排除這些工作；匯出預覽與掃描工具工作分開計數。兩種失敗標籤均可選入整合報告，沿用既有原生命令。
+
+合成測試涵蓋合法與不合法 wire outcome、恢復與控制排除、嘗試／完成涵蓋、複驗基準、雙語結果與技術明細順序、已入案稽核／掃描工具相鄰結果、整合選取與命令傳遞、展示預覽計數，以及 Rust／TypeScript 欄位、代碼與句子對齊。本次續作新增 **71 項前端測試及 10 項元件測試**。Production 僅修改 `AuditFailureDetails.tsx` 與 `FindingsPage.tsx`，**新增 6 行、移除 1 行**，保留先前 B2 實作。
+
+以下最終 Linux 原生請求在最後一次編輯後依序執行，全部回傳零，暫存殘留皆為零。前端保留 33 項環境限定 skipped。未啟動桌面應用程式；macOS／Windows 原生執行仍未驗證。
+
+| Suite | Native request | Total tests | Passed | Failed | Ignored or skipped | Temporary entries left |
+| --- | --- | ---: | ---: | ---: | ---: | ---: |
+| Typecheck | b2c-final-01 | — | Check passed | 0 | — | 0 |
+| Node frontend | b2c-final-02 | 1066 | 1033 | 0 | 33 | 0 |
+| Components | b2c-final-03 | 622 | 622 | 0 | 0 | 0 |
+| Node CI | b2c-final-04 | 113 | 113 | 0 | 0 | 0 |
+| Repository checks | b2c-final-05 | — | Check passed | 0 | — | 0 |
+| Formatting | b2c-final-06 | — | Check passed | 0 | — | 0 |
+| Clippy | b2c-final-07 | — | Check passed | 0 | — | 0 |
+| Rust A | b2c-final-08 | 2009 | 2009 | 0 | 0 | 0 |
 
 ## 11 月 12 日稽核終態檢查列 — Rust B1
 

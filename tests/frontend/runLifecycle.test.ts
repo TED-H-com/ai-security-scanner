@@ -81,3 +81,28 @@ test("source audit progress never offers recovery or catalog next-step instructi
   assert.equal(api.engineOutcomeFor(task).en, 'Cloudflare source audit');
   assert.equal(api.engineNextStepFor(task).en, 'Read the source audit results.');
 });
+
+for (const ending of ["blocked", "terminated"] as const) test(`${ending} source audit is readable, never a scanner baseline or recovery task`, async () => {
+  const { failureRun, failureOutcome } = await import("../support/auditFailure.ts");
+  const { failureDescription } = await import("../../src/auditFailure.ts");
+  const { hasSourceAudit } = await import("../../src/runLifecycle.ts");
+  const { build } = await import("esbuild");
+  const output = await build({ entryPoints: ["src/scanPresentation.ts"], bundle: true, platform: "node", format: "esm", write: false });
+  const api = await import(`data:text/javascript;base64,${Buffer.from(output.outputFiles[0]!.text).toString("base64")}`);
+  const run = failureRun(ending);
+  const task = run.engineRuns[0]!;
+  assert.equal(isTerminalResultRun(run), true);
+  assert.equal(isVerificationBaselineRun(run), false);
+  assert.equal(hasSourceAudit(run), true);
+  assert.equal(hasSourceAudit(undefined), false);
+  assert.equal(hasSourceAudit({ engineRuns: [] }), false);
+  assert.equal(api.engineOutcomeFor(task).en, "Cloudflare source audit");
+  assert.deepEqual(api.engineNextStepFor(task), failureDescription(failureOutcome(ending)).nextAction);
+  for (const recoveryAction of ["continue_saved_results", "restart_check", "finish_cleanup"]) {
+    assert.equal(api.engineRecoveryModeFor({ ...task, resumable: true, recoveryAction }), undefined);
+  }
+  const scanner = { ...task, taskKind: { kind: "catalog_engine" as const } };
+  assert.equal(hasSourceAudit({ engineRuns: [scanner] }), false);
+  assert.equal(hasSourceAudit({ engineRuns: [scanner, task] }), true);
+  assert.equal(isVerificationBaselineRun({ status: "partial", engineRuns: [task, scanner] }), true);
+});

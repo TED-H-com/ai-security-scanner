@@ -99,3 +99,24 @@ for (const locale of ["en", "zh-TW"]) test(`${locale}: admitted audit selection 
   expect(exportReport.mock.calls[0]![0]).toHaveProperty('includeRawArtifacts', true);
   localStorage.clear();
 });
+
+for (const locale of ["en", "zh-TW"]) test(`${locale}: both failure endings are selectable source runs in the existing combined export`, async () => {
+  const { localeStorageKey } = await import("../../src/i18n");
+  const { failureRun } = await import("../support/auditFailure");
+  localStorage.setItem(localeStorageKey, locale);
+  const sources = [failureRun("blocked"), failureRun("terminated")];
+  const exportReport = vi.spyOn(scannerService, "exportSelectedRunReport").mockResolvedValue({ mode: "native", data: null });
+  const { container, getByRole } = render(<I18nProvider><CombinedReportExport caseId="audit-case" runs={sources} nativeMode /></I18nProvider>);
+  fireEvent.click(container.querySelector('summary')!);
+  const labels = locale === "en" ? ["Cloudflare source audit — did not start", "Cloudflare source audit — ended before completion"]
+    : ["Cloudflare 原始碼稽核 — 未開始", "Cloudflare 原始碼稽核 — 未完成即結束"];
+  for (const label of labels) {
+    const checkbox = getByRole('checkbox', { name: new RegExp(label) }) as HTMLInputElement;
+    expect(checkbox.disabled).toBe(false);
+    fireEvent.click(checkbox);
+  }
+  fireEvent.click(getByRole('button'));
+  await waitFor(() => expect(exportReport).toHaveBeenCalledWith({ caseId: "audit-case", runIds: sources.map((run) => run.id),
+    locale: locale === "en" ? "en" : "zh-Hant", format: "html", redactSensitiveValues: true }));
+  localStorage.clear();
+});

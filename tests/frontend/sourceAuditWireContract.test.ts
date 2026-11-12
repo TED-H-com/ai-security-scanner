@@ -91,10 +91,30 @@ test("failure EN and zh-TW sentences and every code-to-sentence mapping equal Ru
     for (const code of Object.keys(table)) {
       const description = failureDescription(prefix === "B" ? { ending: "blocked", reasons: [code as keyof typeof blockerWording] }
         : { ending: "terminated", reason: code as keyof typeof terminationWording, assignment_count: 0, capture_count: 0 });
-      assert.equal(description.summary.en, pairs[prefix === "B" ? 0 : 1]![0]);
-      assert.equal(description.gap.zhTW, pairs[prefix === "B" ? 2 : 3]![1]);
-      assert.equal(description.reason.en, pairs[mapped[code]![0]!]![0]);
-      assert.equal(description.nextAction.zhTW, pairs[mapped[code]![1]!]![1]);
+      for (const [locale, index] of [["en", 0], ["zhTW", 1]] as const) {
+        assert.equal(description.summary[locale], pairs[prefix === "B" ? 0 : 1]![index]);
+        assert.equal(description.gap[locale], pairs[prefix === "B" ? 2 : 3]![index]);
+        assert.equal(description.reason[locale], pairs[mapped[code]![0]!]![index]);
+        assert.equal(description.nextAction[locale], pairs[mapped[code]![1]!]![index]);
+      }
     }
+  }
+});
+
+
+test("technical failure outcomes and labels match the HTML renderer in both locales", () => {
+  const renderer = read("../../src-tauri/src/report_renderer.rs");
+  const arm = renderer.slice(renderer.indexOf("TechnicalExecution::AgentAuditFailure {"), renderer.indexOf("TechnicalExecution::AgentAudit {"));
+  const details = read("../../src/components/AuditFailureDetails.tsx");
+  for (const pair of [
+    ["Source audit did not start", "原始碼稽核未開始"],
+    ["Source audit ended before completion", "原始碼稽核未完成即結束"],
+    ["reason codes", "原因代碼"], ["recorded time", "記錄時間"],
+    ["preparation receipt SHA-256", "準備收據 SHA-256"],
+    ["terminal record entry SHA-256", "終態紀錄項目 SHA-256"],
+    ["assignment count", "派工筆數"], ["capture count", "擷取筆數"],
+  ]) for (const sentence of pair) {
+    assert.ok(arm.includes(`"${sentence}"`), sentence);
+    assert.ok(details.includes(`"${sentence}"`), sentence);
   }
 });

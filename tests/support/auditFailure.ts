@@ -12,6 +12,8 @@ export const failureCase = (ending: "blocked" | "terminated") => {
   const value = nativeAuditCase();
   value.assets.push({ id: "asset-status", kind: "repository", name: "Example project", provider: null, region: null,
     identifiers: [], discovered_from: [], candidate: false, owner_confirmed: true });
+  value.coverage.push({ id: "failure-coverage", label: "Example project", source_kind: "file_system",
+    asset_id: "asset-status", status: "not_tested", explanation: "Audit did not finish", observed_at: null });
   Object.assign(value.scan_runs[0]!.engine_runs[0]!, {
     engine_id: "private-provider-string", task_kind: { kind: "agent_audit_failure", provider_id: "cloudflare-security-audit", outcome: failureOutcome(ending) },
     status: ending === "blocked" ? "not_executed" : "failed", started_at: "2026-11-12T00:00:00Z",
@@ -24,6 +26,15 @@ export const nativeFailureReport = (ending: "blocked" | "terminated") => {
   const outcome = failureOutcome(ending);
   const words = failureDescription(outcome);
   report.source_audits = []; report.findings = [];
+  report.state.summary = "no_checks_completed";
+  report.coverage_counts.tested_partial = 0;
+  report.coverage_counts.excluded = 0;
+  report.coverage_counts.failed = ending === "terminated" ? 1 : 0;
+  report.coverage_counts.not_tested = ending === "blocked" ? 1 : 0;
+  report.coverage_gaps = [{ kind: ending === "blocked" ? "not_tested" : "failed", class: "coverage_loss",
+    task_id: "audit-task", target_asset_ids: ["asset-status"], dimension: "Source audit coverage",
+    reason: words.gap.en, next_action_code: "preserve_visible_limitation", next_action: words.nextAction.en }];
+  report.technical_details.tasks[0]!.status = ending === "blocked" ? "not_executed" : "failed";
   const check = report.actual.checks[0]!;
   check.status = ending === "blocked" ? "not_tested" : "failed";
   check.outcome = { summary: words.summary.en, reason: words.reason.en, next_action: words.nextAction.en };
@@ -39,6 +50,7 @@ export const failureRun = (ending: "blocked" | "terminated"): ScanRun => {
   run.id = `failure-${ending}`;
   run.status = ending === "blocked" ? "no_checks_completed" : "failed";
   Object.assign(run.engineRuns[0]!, { taskKind: { kind: "agent_audit_failure", providerId: "cloudflare-security-audit", outcome: failureOutcome(ending) },
+    phase: "terminal", startedAt: ending === "terminated" ? "2026-11-12T00:00:00Z" : undefined, finishedAt: "2026-11-12T00:01:00Z",
     status: ending === "blocked" ? "not_executed" : "failed", rawArtifactCount: 0, savedResultArtifactCount: 0 });
   return run;
 };
@@ -53,9 +65,11 @@ export const failureReport = (ending: "blocked" | "terminated"): BeginnerMasterR
   Object.assign(report.actual.checks[0]!, { status: ending === "blocked" ? "not_tested" : "failed", testedDimensions: [],
     outcome: { summary: words.summary.en, reason: words.reason.en, nextAction: words.nextAction.en } });
   Object.assign(report.coverageGaps[0]!, { kind: ending === "blocked" ? "not_tested" : "failed", reason: words.gap.en,
-    nextActionCode: "preserve_visible_limitation", nextAction: `${words.reason.en} ${words.nextAction.en}` });
+    nextActionCode: "preserve_visible_limitation", nextAction: words.nextAction.en });
   report.coverageCounts.testedPartial = 0;
   report.coverageCounts.excluded = 0;
+  report.coverageCounts.failed = ending === "terminated" ? 1 : 0;
+  report.coverageCounts.notTested = ending === "blocked" ? 1 : 0;
   const task = report.technicalDetails.tasks[0]!;
   task.status = run.engineRuns[0]!.status;
   task.execution = { kind: "agent_audit_failure", runId: run.id, receiptSha256: outcome.preparation_receipt_sha256,

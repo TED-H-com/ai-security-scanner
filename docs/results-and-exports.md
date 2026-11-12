@@ -100,4 +100,4 @@ verdicts or findings. OCSF and OSCAL create no observations for them; their requ
 coverage companions carry the shared report rows. Case bundles retain their runs
 and tasks, and export previews do not count them as scanner engine jobs. Scanner
 resume, recovery, rescan, cleanup and check-fix work exclude these tasks; comparisons
-involving them remain unavailable. Desktop parity is the next slice.
+involving them remain unavailable. Desktop Results show the same outcome, reason, next action and asset gap, with outcome-first technical details under “Source audit”. Both endings are selectable in combined reports, without scanner recovery or Check fixes controls.

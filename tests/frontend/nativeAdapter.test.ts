@@ -5064,3 +5064,75 @@ test("admitted audit wire tasks, native reports, evidence, and technical executi
   assert.equal(complete.status, "completed");
   assert.equal(complete.coveredAssetCount, 1);
 });
+
+for (const ending of ["blocked", "terminated"] as const) {
+  test(`${ending} audit maps typed outcome, preserves native status, and grants no recovery or coverage`, async () => {
+    const { failureCase, nativeFailureReport, failureOutcome } = await import("../support/auditFailure.ts");
+    const nativeCase = failureCase(ending);
+    const report = nativeFailureReport(ending);
+    // Even a contradictory completed report must not invoke admitted-audit status mapping.
+    report.actual.checks[0]!.status = "tested_complete";
+    const workspace = adaptNativeCase(nativeCase, [], [report]);
+    const run = workspace.runs[0];
+    const task = run.engineRuns[0];
+    assert.deepEqual(task.taskKind, { kind: "agent_audit_failure", providerId: "cloudflare-security-audit", outcome: failureOutcome(ending) });
+    assert.notEqual(task.taskKind.outcome, nativeCase.scan_runs[0]!.engine_runs[0]!.task_kind!.outcome);
+    assert.equal(task.status, ending === "blocked" ? "not_executed" : "failed");
+    assert.equal(task.recoveryAction, "none");
+    assert.equal(task.resumable, false);
+    assert.equal(run.coveredAssetCount, 0);
+    assert.notEqual(run.status, "completed");
+    assert.equal(workspace.assets[0].scanAttempted, false);
+    assert.equal(workspace.coverage[0].scanAttempted, false);
+    assert.equal(task.version, undefined);
+    const adapted = adaptBeginnerMasterReport(nativeFailureReport(ending));
+    assert.deepEqual(adapted.sourceAudits, []);
+    assert.deepEqual(adapted.actual.checks[0].outcome, {
+      summary: report.actual.checks[0]!.outcome!.summary,
+      reason: report.actual.checks[0]!.outcome!.reason,
+      nextAction: report.actual.checks[0]!.outcome!.next_action,
+    });
+    const execution = report.technical_details.tasks[0]!.execution;
+    assert.equal(execution.kind, "agent_audit_failure");
+    if (execution.kind !== "agent_audit_failure") return;
+    assert.deepEqual(adapted.technicalDetails.tasks[0].execution, {
+      kind: execution.kind, runId: execution.run_id, receiptSha256: execution.receipt_sha256,
+      terminalSha256: execution.terminal_sha256, occurredAt: execution.occurred_at, ending: execution.ending,
+    });
+  });
+
+  const malformed: Array<[string, Record<string, unknown>]> = [
+    ["missing outcome", { outcome: undefined }], ["null outcome", { outcome: null }],
+    ["array outcome", { outcome: [] }], ["wrong provider", { provider_id: "untrusted-host" }],
+    ["missing provider", { provider_id: undefined }],
+    ...["preparation_receipt_sha256", "terminal_sha256"].flatMap((key) =>
+      ["A".repeat(64), "a".repeat(63), "g".repeat(64), undefined, 42].map((value, i) =>
+        [`${key} variant ${i}`, { [key]: value }] as [string, Record<string, unknown>])),
+    ["unknown ending", { ending: "complete" }], ["missing ending", { ending: undefined }],
+    ["empty preparation id", { preparation_request_id: "" }], ["empty asset", { asset_id: "" }],
+    ["invalid time", { occurred_at: "not a time" }], ["empty time", { occurred_at: "" }],
+    ["invalid optional id", { session_id: 123 }],
+    ...(ending === "blocked" ? [
+      ["unknown blocker", { reasons: ["unknown"] }], ["inherited blocker", { reasons: ["toString"] }],
+      ["empty blockers", { reasons: [] }], ["missing blockers", { reasons: undefined }],
+      ["one unknown among known blockers", { reasons: ["delegation_unavailable", "unknown"] }],
+      ["non-array blockers", { reasons: "delegation_unavailable" }],
+    ] : [
+      ["unknown reason", { reason: "unknown" }], ["inherited reason", { reason: "toString" }],
+      ["missing reason", { reason: undefined }],
+      ...["assignment_count", "capture_count"].flatMap((key) => [-1, 0.5, "1", undefined, Number.MAX_SAFE_INTEGER + 1].map((value, i) =>
+        [`${key} variant ${i}`, { [key]: value }])),
+    ]) as Array<[string, Record<string, unknown>]>,
+  ];
+  for (const [label, patch] of malformed) test(`${ending} audit rejects ${label} as invalid_task`, async () => {
+    const { failureCase } = await import("../support/auditFailure.ts");
+    const nativeCase = failureCase(ending);
+    const task = nativeCase.scan_runs[0]!.engine_runs[0]!;
+    const kind = task.task_kind!;
+    if ("provider_id" in patch || "outcome" in patch) Object.assign(kind, patch);
+    else Object.assign(kind.outcome!, patch);
+    const run = adaptNativeCase(nativeCase, []).runs[0];
+    assert.deepEqual(run.engineRuns[0].taskKind, { kind: "invalid_task" });
+    assert.equal(run.coveredAssetCount, 0);
+  });
+}

@@ -3008,6 +3008,8 @@ export function FindingsPage({
   ) : null;
 
   if (findings.length === 0) {
+    const onlyAuditFailures = Boolean(report?.actual.checks.length
+      && report.actual.checks.every((check) => check.outcome));
     const incompleteRun = latestRun && latestRun.status !== "completed";
     const localhostSummary = latestRun && isExactBuiltInLocalhostQuickScanRun(latestRun)
       ? localhostTcpBeginnerSummary(latestRun.engineRuns[0]!)
@@ -3142,7 +3144,7 @@ export function FindingsPage({
             onOpenCoverage={onOpenCoverage}
           />
         )}
-        {!cleanCompletedOutcome && !partialSecurityOutcome && (
+        {!cleanCompletedOutcome && !partialSecurityOutcome && !onlyAuditFailures && (
           <EmptyState
             icon={incompleteRun
               || Boolean(requestOutcomeSummary)

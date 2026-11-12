@@ -13,7 +13,7 @@ These features are implemented in source on this branch and are not in any relea
 - [Skill-first execution](skill-bootstrap.md): pinned source bootstrap and preparation of selected scanner engines.
 - [Foreground scans and recovery](foreground-scans.md): run approved checks, read saved status and recover captured results.
 - [Cloudflare source audits](cloudflare-provider.md): host-led preparation, recorded assignments and outputs, checkpoints, validation, sealing, case admission and shared reporting, with explicit termination when an audit will not continue.
-- [Unfinished audit checks](results-and-exports.md#source-audits-that-did-not-finish): blocked preparation and terminated audits appear as not-started or failed check rows in the case and shared report.
+- [Unfinished audit checks](results-and-exports.md#source-audits-that-did-not-finish): blocked preparation and terminated audits appear as not-started or failed check rows in the case, desktop Results and shared report.
 - [Saved reports and offline replay](report-snapshots.md): preserve reports, retrieve their original files and replay them with an exactly compatible renderer.
 - [Complete private case archives](case-archives.md): create, verify and restore cases, evidence, saved reports and recorded audit history into a new workspace; restored audits remain read-only.
 
@@ -22,11 +22,31 @@ These features are implemented in source on this branch and are not in any relea
 - Real-host acceptance of the complete skill-first path remains incomplete.
 - The default skill has not switched from the released desktop.
 - Automatic managed-bundle acquisition and verification across the declared platforms remain unfinished; native macOS and Windows execution of these development features is unverified.
-- Desktop presentation of failed and not-started source-audit rows is in progress.
 
 The dated sections below preserve observations at each milestone. [The product specification](product-spec.md) defines product behavior; [the migration plan](plans/skill-first-cloudflare-migration.md) and [report and archive contract](specs/report-fidelity-and-archive.md) describe the accepted work. See [publication status](release-model.md) for availability.
 
 CI document and contract tests: 113 tests cover the current source boundaries.
+
+## November 12 desktop results for unfinished audits — B2
+
+Desktop Results now show blocked source audits as “The Cloudflare source audit did not start.” and terminated audits as “The Cloudflare source audit ended before completion.” Each includes the shared report's reason, next action and asset gap in English and Traditional Chinese. Collapsed technical details begin with the outcome under “Source audit”, followed by codes, time, digests and termination counts. Failure-only results omit generic scanner retry guidance; admitted audits and scanner siblings retain their existing presentation.
+
+Native task status is preserved, recovery is unavailable, and these tasks grant neither attempted scanner work nor completed coverage. Progress controls, verification baselines and Check fixes exclude them; export previews count them separately from scanner jobs. Both failure labels remain selectable in combined reports through the existing native export command.
+
+Synthetic tests cover valid and malformed wire outcomes, recovery and control guards, attempted/completed coverage, verification baselines, bilingual rendered Results and technical detail order, unchanged admitted/scanner siblings, combined selection and command forwarding, demo preview counts, and Rust/TypeScript field, code and sentence parity. This continuation adds **71 frontend tests and 10 component tests**. Production changes are limited to `AuditFailureDetails.tsx` and `FindingsPage.tsx`: **6 added lines and 1 removed line**, retaining the earlier B2 implementation.
+
+The final native Linux requests below ran in order after the last edit, all returned zero and left zero temporary entries. Frontend tests retain 33 environment-dependent skips. The desktop application itself was not launched; native macOS/Windows execution remains unverified.
+
+| Suite | Native request | Total tests | Passed | Failed | Ignored or skipped | Temporary entries left |
+| --- | --- | ---: | ---: | ---: | ---: | ---: |
+| Typecheck | b2c-final-01 | — | Check passed | 0 | — | 0 |
+| Node frontend | b2c-final-02 | 1066 | 1033 | 0 | 33 | 0 |
+| Components | b2c-final-03 | 622 | 622 | 0 | 0 | 0 |
+| Node CI | b2c-final-04 | 113 | 113 | 0 | 0 | 0 |
+| Repository checks | b2c-final-05 | — | Check passed | 0 | — | 0 |
+| Formatting | b2c-final-06 | — | Check passed | 0 | — | 0 |
+| Clippy | b2c-final-07 | — | Check passed | 0 | — | 0 |
+| Rust A | b2c-final-08 | 2009 | 2009 | 0 | 0 | 0 |
 
 ## November 12 terminal audit check rows — Rust B1
 
