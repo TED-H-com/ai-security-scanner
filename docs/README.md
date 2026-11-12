@@ -32,7 +32,7 @@ These features are implemented in source on this branch and are not in any relea
 
 - Real-host acceptance of the complete skill-first path remains incomplete.
 - The default skill has not switched from the released desktop.
-- Automatic managed-bundle acquisition and verification across the declared platforms remain unfinished; native macOS and Windows execution of these development features is unverified.
+- Automatic managed-bundle acquisition and verification across the declared platforms remain unfinished. On macOS and Windows, CI covers the bootstrap, Cloudflare audits, saved reports and archives; foreground scans and engine preparation are not yet fully covered there.
 
 ## Understand the product
 

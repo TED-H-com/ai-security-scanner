@@ -21,11 +21,23 @@ These features are implemented in source on this branch and are not in any relea
 
 - Real-host acceptance of the complete skill-first path remains incomplete.
 - The default skill has not switched from the released desktop.
-- Automatic managed-bundle acquisition and verification across the declared platforms remain unfinished; native macOS and Windows execution of these development features is unverified.
+- Automatic managed-bundle acquisition and verification across the declared platforms remain unfinished. On macOS and Windows, CI covers the bootstrap, Cloudflare audits, saved reports and archives; foreground scans and engine preparation are not yet fully covered there.
 
 The dated sections below preserve observations at each milestone. [The product specification](product-spec.md) defines product behavior; [the migration plan](plans/skill-first-cloudflare-migration.md) and [report and archive contract](specs/report-fidelity-and-archive.md) describe the accepted work. See [publication status](release-model.md) for availability.
 
 CI document and contract tests: 114 tests cover the current source boundaries.
+
+## November 12 native macOS and Windows CI
+
+The source bootstrap, Cloudflare audit, saved-report and case-archive tests now pass natively in CI on macOS 15 and Windows Server 2025 as well as Linux. These development features had run only on Linux before. Foreground scans are still tested on Linux only, and selected-engine preparation on Linux and macOS.
+
+- **Read-only publication.** Source views and audit packages make their contents read-only, move to their final name, then make the root read-only, because macOS refuses to rename a directory its owner cannot write. Readers refuse a publication that stopped before its root was protected, and the next attempt replaces or completes it. The product applies the same rule on Linux, so Linux tests catch a wrong order.
+- **Windows paths.** Product-internal paths keep the ordinary `C:\…` form, so internal destinations pass the same checks as user-supplied ones and the Node.js validator starts. Direct Windows calls use the extended-length form only for paths past the legacy length limit.
+- **Windows file rules.** Restore closes the staged database, then flushes it through a writable handle. Archives with connector sources resolve the connector root before checking containment.
+- **ZAP report directory.** It is validated as the container path it is, so the ZAP passive website check can be planned on a Windows host.
+- **Bootstrap and bundling.** The bootstrap staging directory has a short name, which keeps the Windows build inside the linker's path limit. Every entry in the binary source directory is a declared binary, so desktop bundling no longer takes a module directory for a program.
+
+Native Linux verification passed **2,727 Rust tests**, **114 CI contract tests** and **67 skill tests**; three Rust tests remain ignored and one platform-specific skill test remains skipped. Formatting, Clippy and the release tooling self-test passed.
 
 ## November 12 desktop results for unfinished audits — B2
 
