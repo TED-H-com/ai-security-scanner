@@ -38,13 +38,57 @@ decisions.
 The lead gives this context to a real host with native delegation and the
 [shared skill reference](../../../skills/ai-security-scanner/references/cloudflare-source-audit.md),
 then asks it to audit that ready synthetic source view using a chosen profile and
-sufficient invocation budget. Only `tree/` is target source for agents. Keep this
+sufficient invocation budget, deliver the shared HTML report, and keep a complete
+private archive including source bodies. Provide new private report and archive
+destinations outside the data directory and source view. To exercise composition,
+also request applicable existing scanner checks of the copied repository; the host
+runs those before audit preparation or after admission and saves one combined report. Only `tree/` is target source for agents. Keep this
 README and [EXPECTED.md](EXPECTED.md) out of their prompts and the view. The lead
 uses EXPECTED afterward to assess method compliance and native outcomes, including
-unchanged outputs, sealed status, incomplete coverage and trust wording.
+unchanged outputs, verified sealing, automatic admission, shared reporting,
+requested archive creation/verification, incomplete coverage and trust wording.
 
 Native verification uses the runner's `acceptance-setup` suite: CLI build, setup in
 two fresh private directories, then refusal of the first non-empty directory.
 The no-CLI refusal test is included in `node --test tests/skill/*.test.mjs`.
 A successful setup test does not establish a successful real host audit. Real host
 acceptance is a separate next step; this kit does not launch it automatically.
+
+## Verify the host's archive (lead only)
+
+After the host has finished and released the data-directory writer lease, run:
+
+```sh
+node tests/acceptance/cloudflare-host/verify-restore.mjs \
+  --cli "$CLI" --context "$OUTPUT/host-context.json" \
+  --archive "$HOST_ARCHIVE" --output "$VERIFY_OUTPUT"
+```
+
+`HOST_ARCHIVE` must be the host-created archive **with source bodies included**.
+`VERIFY_OUTPUT` follows setup's canonical, new-or-empty directory rules and must
+be separate from the original data, source view and host run directory. Both tools
+share path validation and the private process environment. No CLI is needed for
+the argument/output refusal tests in `tests/skill/`.
+
+The verifier derives sessions, admitted/scanner runs and all recorded terminal,
+single-run export and combined snapshots from public CLI JSON. It refuses a case
+without an admitted audit. It verifies the host archive, creates and verifies a
+second archive without source bodies, then previews and restores each into a new
+private workspace. On each restore it checks the same admission identity/digest,
+read-only status, full or included payload verification and the exact source
+omission sentence. For every recorded snapshot, HTML and JSON retrieval and replay
+must match the original retrieval's SHA-256 and length. Accepted captured output
+must also match. A fresh admission must return exit 2 `restored_session_inert`
+and leave the case unchanged.
+
+`VERIFY_OUTPUT/verify-restore.json` records every command, exit code, returned JSON,
+compared digests and each check's pass/fail. It is private acceptance evidence.
+Failures return nonzero and leave the output for inspection; retry in a new
+output directory. The verifier never executes a model, scanner or target, reads a
+database directly, or repairs saved data. The second archive only reads saved data.
+The CLI exposes no current case revision outside foreground scan responses, so
+"unchanged" means every public read of the case (`case show`, `scan status` and each
+audit's `provider cloudflare status`) is identical before and after; this brackets
+the whole verification on the original data and each refused admission on a restore.
+Snapshot references read from different commands are matched by their identifying
+fields (ID, path, SHA-256, length and source revision), not by key order.

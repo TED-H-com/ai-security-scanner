@@ -2,7 +2,7 @@
 
 [繁體中文](development-status.zh-TW.md) · [Documentation](README.md)
 
-_Updated 2026-11-12._
+_Updated 2026-11-13._
 
 **The latest release is desktop v0.6.2 for Linux, macOS and Windows.** It remains the default for beginners. Its public operator skill helps install the app, check readiness, guide scans in the app window and save reports.
 
@@ -19,13 +19,27 @@ These features are implemented in source on this branch and are not in any relea
 
 **Not finished**
 
-- Real-host acceptance of the complete skill-first path remains incomplete.
+- Real-host acceptance has covered one Linux host through restore on a synthetic repository; a second host, several assets and macOS/Windows hosts remain.
 - The default skill has not switched from the released desktop.
 - Automatic managed-bundle acquisition and verification across the declared platforms remain unfinished. On macOS and Windows, CI covers the bootstrap, Cloudflare audits, saved reports and archives; foreground scans and engine preparation are not yet fully covered there.
 
 The dated sections below preserve observations at each milestone. [The product specification](product-spec.md) defines product behavior; [the migration plan](plans/skill-first-cloudflare-migration.md) and [report and archive contract](specs/report-fidelity-and-archive.md) describe the accepted work. See [publication status](release-model.md) for availability.
 
 CI document and contract tests: 114 tests cover the current source boundaries.
+
+## November 13 real-host journey — 25b
+
+One request to a Linux host (synthetic repository, quick profile, budget seven) ran the development skill journey end to end: the Gitleaks secret scan first, then the Cloudflare source audit through sealing, automatic admission with the three verified digests, one combined Traditional Chinese report of both runs, and a complete private archive with source snapshots that the host verified. All 33 approved commands succeeded with no refusals, and the scan never overlapped audit custody or admission. All seven assignments were issued before delegation, and each captured output equals the sub-agent's final message; no agent read data outside the source view or executed the target. Gitleaks found no secrets; the audit has no confirmed findings and one To validate lead without severity (concurrent redemption can issue two vouchers for one credit).
+
+The lead's restore verifier then passed 78 checks over 68 public CLI commands. The host archive and a second, source-excluded archive verify and restore into fresh workspaces with `full_payload` and `included_payload` scope. All three saved reports (scan, admitted audit and combined) retrieve and replay byte-identically from both restores, and the combined one equals the HTML the host saved. The captured output matches, a fresh admission of a restored audit is refused because restored audits are read-only, and public reads of the original and restored cases are unchanged. The first verifier attempt stopped because it compared snapshot references by key order; it now compares their identifying fields, with a unit test. The published v0.6.2 CLI lists no cases in a copy of the restored workspace and refuses to open, export, compare, archive or plan deletion of the case; every data file is unchanged.
+
+Native Linux evidence for the verifier fix: `b25b-lead-07` passed repository checks (2 frozen cases, 26 document snapshots, 36 payload hashes, 20 screenshots); `b25b-lead-08` ran 75 skill tests (74 passed, 1 platform skip); `b25b-lead-09` passed all 114 CI tests. All returned zero with no temporary entries left.
+
+## November 13 host journey — Brief 25a
+
+The development host skill now automatically admits a verified seal, explains and saves the shared report, combines requested scanner checks without interleaving them with the audit, and creates/verifies a complete private archive on request. The released desktop remains the default. The lead-only restore verifier checks both source selections, saved HTML/JSON retrieval and replay, captured outputs and inert restored admissions through public CLI commands. Because the CLI exposes no current case revision outside foreground scan responses, the verifier treats a case as unchanged when every public read of it is identical. Its first real-host use is recorded in the 25b entry above.
+
+Native Linux evidence on the reviewed tree: `b25a-lead-01` synchronized and checked 6 skill files; `b25a-lead-02` passed repository checks (2 frozen cases, 26 document snapshots, 36 payload hashes, 20 screenshots); `b25a-lead-03` ran 74 skill tests (73 passed, 1 platform skip); `b25a-lead-04` passed all 114 CI tests; `b25a-lead-05` passed two setup scenarios and the non-empty-output refusal. All returned zero; the runner removed the two setup entries the last request left. These checks do not execute the new verifier's full restore journey.
 
 ## November 12 native macOS and Windows CI
 

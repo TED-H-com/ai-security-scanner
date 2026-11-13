@@ -488,7 +488,10 @@ has not been verified.
 For an explicitly requested Cloudflare source audit in a development checkout,
 use the [shared host protocol](../skills/ai-security-scanner/references/cloudflare-source-audit.md).
 It maps all six pinned method phases to preparation, assignment/output and shared
-document checkpoints, terminal validation and sealing. It requires an already
+document checkpoints, terminal validation, sealing and automatic case admission.
+After a verified seal, the host inspects its full payload, admits it and delivers
+the shared report; requested scanner checks produce one combined report, and a
+request to keep the case produces a verified private archive. It requires an already
 approved repository and native independent delegation; the human confirms exact
 model-processing scope. Agents read only the ready source tree, and target
 execution remains forbidden. The [synthetic acceptance kit](../tests/acceptance/cloudflare-host/README.md)
@@ -1262,8 +1265,10 @@ neither repairs nor removes damaged data. Admission uses this verifier as descri
 ## Admitting a sealed audit
 
 The development command admits one product-recorded sealed audit into its existing
-open case. Obtain the three verified digests from `inspect-sealed`, then save this
-strict request as a private JSON file:
+open case. The development host skill does this automatically after `finalize`
+commits the seal and `status` reports `next_operation: "admit"`. Obtain the three
+verified digests from `inspect-sealed`, then save this strict request with a new
+request ID as a private JSON file:
 
 ```json
 {
