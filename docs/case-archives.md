@@ -4,7 +4,7 @@
 
 The development source can preserve a saved case and restore it into a new
 workspace without the original machine, a scanner runtime, or a model service.
-These commands are not in the published v0.6.1 installers. The released desktop
+These commands are not in the published v0.6.2 installers. The released desktop
 and its operator skill remain the default scan entry.
 
 Prefer the CLI from the [pinned development bootstrap](skill-bootstrap.md), forwarding arguments after `run ... --`. Direct contributor builds use the existing `cli` feature; see [source prerequisites](getting-started.md#build-from-source) and [delivery status](release-model.md). Examples use

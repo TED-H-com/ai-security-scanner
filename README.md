@@ -6,13 +6,13 @@
 
 Find security problems in your code, websites and company systems. Get one report that explains what needs attention, why it matters and what to do next.
 
-The current v0.6.1 desktop app selects suitable security tools and brings their results together. You can start with one folder or website, or check several parts of your IT environment at once.
+The current v0.6.2 desktop app selects suitable security tools and brings their results together. You can start with one folder or website, or check several parts of your IT environment at once.
 
-**The latest release is desktop v0.6.1 for Linux, macOS and Windows.** It remains the default for beginners. Its public operator skill helps install the app, check readiness, guide scans in the app window and save reports.
+**The latest release is desktop v0.6.2 for Linux, macOS and Windows.** It remains the default for beginners. Its public operator skill helps install the app, check readiness, guide scans in the app window and save reports.
 
 ## Run your first scan
 
-1. [Download v0.6.1](https://github.com/TED-H-com/ai-security-scanner/releases/tag/v0.6.1) for Windows, macOS or Linux and [follow the install steps](docs/getting-started.md#install). The app prepares its scanning tools; you do not need to install Docker.
+1. [Download v0.6.2](https://github.com/TED-H-com/ai-security-scanner/releases/tag/v0.6.2) for Windows, macOS or Linux and [follow the install steps](docs/getting-started.md#install). The app prepares its scanning tools; you do not need to install Docker.
 2. Open the app and choose **Scan my environment**, **Check a website**, or **Check code or an AI project**. Add the folders, URLs or internal systems you want to check.
 3. Review the listed targets and checks. Confirm that you may scan any network targets, then start the scan in the app window.
 4. When the scan ends, open **Results**. Choose **Save or share report**, then **Save HTML report** to save a report you can open in a browser.
@@ -21,7 +21,7 @@ The first scan may take longer while tools download. Later scans can use those t
 
 ## Languages
 
-Japanese UI support is included in v0.6.1. Choose **Settings → 日本語**; the choice is saved across restarts. Untranslated explanations fall back to English; HTML exports from the Japanese UI are in English. See the [Japanese README](README.ja.md) and [Japanese website](https://ted-h-com.github.io/ai-security-scanner/?lang=ja).
+Japanese UI support is included in v0.6.2. Choose **Settings → 日本語**; the choice is saved across restarts. Untranslated explanations fall back to English; HTML exports from the Japanese UI are in English. See the [Japanese README](README.ja.md) and [Japanese website](https://ted-h-com.github.io/ai-security-scanner/?lang=ja).
 
 ## New in development
 
@@ -41,6 +41,10 @@ These features are implemented in source on this branch and are not in any relea
 - Automatic managed-bundle acquisition and verification across the declared platforms remain unfinished. On macOS and Windows, CI covers the bootstrap, Cloudflare audits, saved reports and archives; foreground scans and engine preparation are not yet fully covered there.
 
 [Development status](docs/development-status.md)
+
+## New in v0.6.2
+
+Windows users can now start **Page response checks (ZAP)** for website scans. This release also includes the v0.6.1 security update. See the [v0.6.2 release record](docs/release/v0.6.2.md).
 
 ## New in v0.6.1
 

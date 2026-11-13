@@ -5,7 +5,7 @@
 The current development source automatically preserves snapshots after terminal scans and when
 exporting single-run or selected-run combined HTML/JSON reports. It also supports manual snapshots, inspection,
 original-file retrieval, exact-compatible replay, and read-only scan status.
-These additions are not part of the published v0.6.1 installers. The released
+These additions are not part of the published v0.6.2 installers. The released
 desktop and its operator skill remain the default way to complete a scan.
 
 Prefer the [pinned development bootstrap](skill-bootstrap.md) and pass these CLI arguments after its `run ... --` separator. The direct-binary examples use `./target/debug/ai-security-scanner-cli` from a contributor build with the existing `cli` feature; see [source prerequisites](getting-started.md#build-from-source). See [delivery status](release-model.md) for the distinction from the public operator skill. On Windows, use the corresponding `.exe` path.

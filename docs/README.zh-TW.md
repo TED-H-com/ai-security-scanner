@@ -2,16 +2,16 @@
 
 [專案網站](https://ted-h-com.github.io/ai-security-scanner/?lang=zh-TW) · [English](README.md)
 
-**最新發布版本仍是 Linux、macOS、Windows 的 v0.6.1 桌面版**，也是初學者的預設入口。公開的操作 skill 協助安裝應用程式、確認準備狀態、引導在視窗中掃描及保存報告。
+**最新發布版本仍是 Linux、macOS、Windows 的 v0.6.2 桌面版**，也是初學者的預設入口。公開的操作 skill 協助安裝應用程式、確認準備狀態、引導在視窗中掃描及保存報告。
 
 ## 使用產品
 
 - [發布內容與新版定義](release-model.zh-TW.md)：已發布桌面版與操作 skill、尚未發布的開發功能，以及 skill 預覽／正式版建議。
-- [開始使用](getting-started.zh-TW.md)：安裝 Linux、macOS 或 Windows 的 v0.6.1 桌面程式並完成第一次掃描。
+- [開始使用](getting-started.zh-TW.md)：安裝 Linux、macOS 或 Windows 的 v0.6.2 桌面程式並完成第一次掃描。
 - [Agent Skills](getting-started.zh-TW.md#透過-agent-skill-使用)：在同一台電腦上透過 Claude Code 或 Codex 確認能否掃描、引導在應用程式中掃描，並保存最終報告。
 - [掃描範圍](scanning-scope.zh-TW.md)：精確目標界線、掃描設定與引擎行為。
 - [結果與匯出](results-and-exports.zh-TW.md)：閱讀優先順序、涵蓋範圍、證據與保存報告。
-- [v0.6.1 發布紀錄](release/v0.6.1.md#繁體中文)：本版更新、實際交付證據與尚未觀察的平台項目。
+- [v0.6.2 發布紀錄](release/v0.6.2.md#繁體中文)：本版更新、實際交付證據與尚未觀察的平台項目。
 
 - [標準報告範例](samples/v0.4.0/README.zh-TW.md)：遮蔽／完整揭露版，中英皆有；25 個 adapter、真實格式、模擬資料。
 - [修正後再檢查一次](demos/check-fixes/README.zh-TW.md)：一個小型示範專案修正前後的兩次真實掃描，中英皆有。

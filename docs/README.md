@@ -2,16 +2,16 @@
 
 [Project website](https://ted-h-com.github.io/ai-security-scanner/) · [繁體中文](README.zh-TW.md)
 
-**The latest release is desktop v0.6.1 for Linux, macOS and Windows.** It remains the default for beginners. Its public operator skill helps install the app, check readiness, guide scans in the app window and save reports.
+**The latest release is desktop v0.6.2 for Linux, macOS and Windows.** It remains the default for beginners. Its public operator skill helps install the app, check readiness, guide scans in the app window and save reports.
 
 ## Use the product
 
 - [Publication and release definitions](release-model.md): published desktop and operator skill, unreleased development work, and the proposed skill preview/stable distinction.
-- [Getting started](getting-started.md): install the v0.6.1 desktop app for Linux, macOS, or Windows and complete the first scan.
+- [Getting started](getting-started.md): install the v0.6.2 desktop app for Linux, macOS, or Windows and complete the first scan.
 - [Agent Skills](getting-started.md#use-with-an-agent-skill): use Claude Code or Codex on the same computer to check readiness, guide a scan in the app, and save the final report.
 - [Scanning scope](scanning-scope.md): exact target boundaries, profiles, and scanner behavior.
 - [Results and exports](results-and-exports.md): interpret priorities, coverage, evidence, and saved reports.
-- [v0.6.1 release record](release/v0.6.1.md): current changes, exact delivery evidence, and remaining platform observations.
+- [v0.6.2 release record](release/v0.6.2.md): current changes, exact delivery evidence, and remaining platform observations.
 
 - [Standard report examples](samples/v0.4.0/README.md): redacted and fully disclosed, in both languages; 25 adapters, real formats, simulated data.
 - [Fix and check again](demos/check-fixes/README.md): two real scans of a small demo project, before and after a fix, in both languages.

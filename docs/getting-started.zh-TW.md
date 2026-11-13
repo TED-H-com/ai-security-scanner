@@ -2,7 +2,7 @@
 
 [English](getting-started.md) · [文件](README.zh-TW.md)
 
-第一次掃描請使用已發布的 **v0.6.1 桌面版**；儲存庫中的操作 skill 可以協助你使用它。新的 skill 主流程仍在開發，詳見[可用內容與發布定義](release-model.zh-TW.md)。明確選擇開發 checkout 時，請使用[固定來源 bootstrap](skill-bootstrap.md)及其已記錄能力。
+第一次掃描請使用已發布的 **v0.6.2 桌面版**；儲存庫中的操作 skill 可以協助你使用它。新的 skill 主流程仍在開發，詳見[可用內容與發布定義](release-model.zh-TW.md)。明確選擇開發 checkout 時，請使用[固定來源 bootstrap](skill-bootstrap.md)及其已記錄能力。
 
 ## 從開始新掃描到 HTML 報告
 
@@ -34,13 +34,13 @@ AWS 或 Microsoft 365 的唯讀連線過期時，掃描結果會提供**重新�
 
 ## 安裝
 
-從[發布頁](https://github.com/TED-H-com/ai-security-scanner/releases/tag/v0.6.1)下載適合你電腦的 **v0.6.1 正式版**：
+從[發布頁](https://github.com/TED-H-com/ai-security-scanner/releases/tag/v0.6.2)下載適合你電腦的 **v0.6.2 正式版**：
 
 | 電腦 | 安裝檔 | 第一次開啟前 |
 | --- | --- | --- |
-| macOS（Apple 晶片或 Intel） | [ai-security-scanner_0.6.1_universal.dmg](https://github.com/TED-H-com/ai-security-scanner/releases/download/v0.6.1/ai-security-scanner_0.6.1_universal.dmg) | 把應用程式拖進**應用程式**資料夾。此版本未經 Apple 公證，開啟前先在「終端機」執行一次 `xattr -dr com.apple.quarantine /Applications/ai-security-scanner.app`。 |
-| Windows x86-64 | [MSI](https://github.com/TED-H-com/ai-security-scanner/releases/download/v0.6.1/ai-security-scanner_0.6.1_x64_en-US.msi) | 安裝檔未簽章。SmartScreen 警告時，選**其他資訊 → 仍要執行**。Windows 要求安裝或更新 WSL 時請允許。 |
-| Debian 或 Ubuntu x86-64 | [ai-security-scanner_0.6.1_amd64.deb](https://github.com/TED-H-com/ai-security-scanner/releases/download/v0.6.1/ai-security-scanner_0.6.1_amd64.deb) | 以 `sudo apt install ./ai-security-scanner_0.6.1_amd64.deb` 安裝。 |
+| macOS（Apple 晶片或 Intel） | [ai-security-scanner_0.6.2_universal.dmg](https://github.com/TED-H-com/ai-security-scanner/releases/download/v0.6.2/ai-security-scanner_0.6.2_universal.dmg) | 把應用程式拖進**應用程式**資料夾。此版本未經 Apple 公證，開啟前先在「終端機」執行一次 `xattr -dr com.apple.quarantine /Applications/ai-security-scanner.app`。 |
+| Windows x86-64 | [MSI](https://github.com/TED-H-com/ai-security-scanner/releases/download/v0.6.2/ai-security-scanner_0.6.2_x64_en-US.msi) | 安裝檔未簽章。SmartScreen 警告時，選**其他資訊 → 仍要執行**。Windows 要求安裝或更新 WSL 時請允許。 |
+| Debian 或 Ubuntu x86-64 | [ai-security-scanner_0.6.2_amd64.deb](https://github.com/TED-H-com/ai-security-scanner/releases/download/v0.6.2/ai-security-scanner_0.6.2_amd64.deb) | 以 `sudo apt install ./ai-security-scanner_0.6.2_amd64.deb` 安裝。 |
 
 安裝完成後啟動 **ai-security-scanner**。第一次需要掃描時，應用程式會自行準備掃描環境，不需要另外安裝 Docker。
 
@@ -102,7 +102,7 @@ npm run tauri dev
 
 應用程式會掃描有界的唯讀副本，不會改動原始資料夾。
 
-### v0.6.1 的可選檢查
+### v0.6.2 的可選檢查
 
 本版提供以下明確選項：
 

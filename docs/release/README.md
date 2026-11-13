@@ -6,7 +6,7 @@ Current operations are documented in [Release operations](../releasing.md). The 
 
 The [2026-10-03 desktop delivery record](desktop-readiness-2026-10-03.md) records the owner decision, exact candidate verification, publication and remaining follow-ups.
 
-The current stable release is [v0.6.1](v0.6.1.md), a security update for local project scans on macOS and Linux, with installers for Mac, Windows and Linux. The exact installers, public verification and platform observations are recorded with the release.
+The current stable release is [v0.6.2](v0.6.2.md), a fix for starting Page response checks (ZAP) on Windows that includes the v0.6.1 security update, with installers for Mac, Windows and Linux. The exact installers, public verification and platform observations are recorded with the release.
 
 [v0.5.0 consolidated stable release](v0.5.0.md) ([繁體中文](v0.5.0.zh-TW.md)) collects all completed updates since v0.4.1, Linux build fixes and two dependency security updates. Windows, macOS and Linux installers are published with verified public bytes and source provenance.
 
@@ -16,6 +16,7 @@ See [publication and release definitions](../release-model.md) for the public op
 
 ## Version records
 
+- [v0.6.2 Windows website scan fix](v0.6.2.md)
 - [v0.6.1 security update](v0.6.1.md)
 - [v0.6.0 upstream engines and runtime refresh](v0.6.0.md)
 - [v0.5.3 October 21 incident scan pack](v0.5.3.md)
