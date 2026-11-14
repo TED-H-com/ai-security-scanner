@@ -553,6 +553,18 @@ fn limit_holder_and_subject(name: &str, labels: &BTreeMap<Id, String>) -> Option
         .map(|label| (label.clone(), rest.to_owned()))
 }
 
+fn starts_with_cjk(value: &str) -> bool {
+    matches!(
+        value.chars().next(),
+        Some(
+            '\u{3400}'..='\u{4DBF}'
+            | '\u{4E00}'..='\u{9FFF}'
+            | '\u{F900}'..='\u{FAFF}'
+            | '\u{3000}'..='\u{303F}',
+        )
+    )
+}
+
 /// The coverage name one gap row leads with, as the reader sees it.
 ///
 /// Chinese keeps the stored text as composed; English names the engine and
@@ -5634,7 +5646,14 @@ pub fn render_html(
                         true => String::new(),
                         false => format!(
                             "{}{}",
-                            catalog.text(" \u{2014} ", "；適用於 "),
+                            catalog.text(
+                                " \u{2014} ",
+                                if starts_with_cjk(&holders[0]) {
+                                    "；適用於"
+                                } else {
+                                    "；適用於 "
+                                },
+                            ),
                             holders.join(catalog.text(", ", "、")),
                         ),
                     };
@@ -8460,8 +8479,31 @@ pub(crate) fn html_source_audits(
 
 #[cfg(test)]
 mod tests {
-    use super::HtmlReportAttachment;
+    use super::{HtmlReportAttachment, starts_with_cjk};
     use sha2::Digest;
+
+    #[test]
+    fn starts_with_cjk_checks_only_the_first_character_in_each_range() {
+        for value in [
+            "\u{3400}x",
+            "\u{4DBF}x",
+            "\u{4E00}x",
+            "\u{9FFF}x",
+            "\u{F900}x",
+            "\u{FAFF}x",
+            "\u{3000}x",
+            "\u{303F}x",
+            "資產 1",
+        ] {
+            assert!(starts_with_cjk(value), "{value:?}");
+        }
+        for value in [
+            "", "Gitleaks", "A資產", "\u{33FF}", "\u{4DC0}", "\u{A000}", "\u{F8FF}", "\u{FB00}",
+            "\u{2FFF}", "\u{3040}",
+        ] {
+            assert!(!starts_with_cjk(value), "{value:?}");
+        }
+    }
 
     #[test]
     fn frozen_attachment_serialization_preserves_every_byte_in_base64() {
