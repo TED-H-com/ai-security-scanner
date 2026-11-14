@@ -43,6 +43,15 @@ test('recognized desktop runtime manifests match the published installer assets'
       assert.ok(location.environment === 'LOCALAPPDATA' || location.environment === 'ProgramFiles', entry.platform);
     }
   }
+  const deb = publication.publication.assets.find(asset => asset.name === 'ai-security-scanner_0.6.2_amd64.deb');
+  const linux = entries.find(entry => entry.platform === 'linux');
+  assert.ok(Object.isFrozen(linux.release_source));
+  assert.deepEqual(linux.release_source, {
+    kind: 'deb', url: deb.url, bytes: deb.bytes, sha256: deb.sha256,
+    inner_path: linux.installed_paths[0].slice(1), extracted_bytes: 423333863,
+  });
+  assert.equal(entries.find(entry => entry.platform === 'darwin').release_source, null);
+  assert.equal(entries.find(entry => entry.platform === 'win32').release_source, null);
   const tauriConf = JSON.parse(await readFile(new URL('../../src-tauri/tauri.conf.json', import.meta.url), 'utf8'));
   const installerNsi = await readFile(new URL('../../src-tauri/windows/nsis/installer.nsi', import.meta.url), 'utf8');
   assert.ok(installerNsi.includes('StrCpy $INSTDIR "$LOCALAPPDATA\\${PRODUCTNAME}"'));

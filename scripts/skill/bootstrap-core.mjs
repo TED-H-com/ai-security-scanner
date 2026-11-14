@@ -2,13 +2,14 @@ import { createHash, randomBytes, randomUUID } from 'node:crypto';
 import { spawn } from 'node:child_process';
 import { constants } from 'node:fs';
 import {
-  access, lstat, mkdir, open, readdir, realpath, rename, rm, rmdir, stat, unlink, writeFile,
+  access, lstat, mkdir, open, readdir, realpath, rename, rm, rmdir, stat, statfs, unlink, writeFile,
 } from 'node:fs/promises';
 import { dirname, isAbsolute, join, parse, relative, resolve, sep, win32 } from 'node:path';
 import { homedir, hostname } from 'node:os';
 import { fileURLToPath } from 'node:url';
 import { collectInputManifest, stageInputSnapshot } from './input-manifest.mjs';
 import { RECOGNIZED_MANAGED_RUNTIME_BUNDLES } from './managed-runtime-bundles.mjs';
+import { downloadReleaseBundle, extractReleaseBundle, verifyReleaseBundle } from './release-bundle.mjs';
 
 export const RECIPE = 'skill-bootstrap-v1';
 export const RUST_VERSION = '1.98.0';
@@ -225,6 +226,8 @@ function dependencies(overrides) {
     build: buildSnapshot,
     readIdentity: readBuildIdentity,
     prepareRuntime: invokeRuntimePreparation,
+    fetch: globalThis.fetch,
+    statfs,
     recognizedManagedRuntimeBundles: RECOGNIZED_MANAGED_RUNTIME_BUNDLES,
     stderr: process.stderr,
     platform: process.platform,
@@ -453,6 +456,108 @@ async function acquireLock(root, key) {
   };
 }
 
+function releaseBundleEntry(deps) {
+  return deps.recognizedManagedRuntimeBundles.find(item => item.platform === deps.platform && item.arch.includes(deps.arch) && item.release_source?.kind === 'deb');
+}
+
+async function releaseBundleState(cacheDir, entry, sourceRoot) {
+  if (!entry) return 'unsupported';
+  try {
+    const root = validateCacheLocation(cacheDir, sourceRoot);
+    if (!(await privateDirectory(root)) || (await readJson(join(root, MARKER))).schema_version !== MARKER_SCHEMA) return 'downloadable';
+    const bundles = join(root, 'managed-bundles');
+    const final = join(bundles, entry.manifest_sha256);
+    if (!(await privateDirectory(bundles)) || !(await privateDirectory(final))) return 'downloadable';
+    if (hash(await regularBytes(join(final, 'manifest.json'), 262144)) === entry.manifest_sha256) return 'cached';
+  } catch { /* Doctor only reports a safe, readable cache hit. */ }
+  return 'downloadable';
+}
+
+async function obtainReleaseBundle(root, entry, deps) {
+  const source = entry.release_source;
+  const controller = new AbortController();
+  const handlers = new Map([['SIGINT', 130], ['SIGTERM', 143], ['SIGHUP', 129]].map(([signal, exitCode]) => [signal, () => controller.abort({ signal, exitCode })]));
+  for (const [signal, handler] of handlers) process.on(signal, handler);
+  let release; let staging;
+  try {
+    const bundles = join(root, 'managed-bundles');
+    await privateDirectory(bundles, true);
+    release = await acquireLock(root, `managed-bundle-${entry.manifest_sha256}`);
+    const stagingPrefix = `.staging-${entry.manifest_sha256}-`;
+    for (const name of await readdir(bundles)) {
+      if (!name.startsWith(stagingPrefix)) continue;
+      const path = join(bundles, name);
+      const stat = await safeStat(path);
+      if (stat?.isDirectory() && !stat.isSymbolicLink()) await rm(path, { recursive: true, force: true, maxRetries: 10, retryDelay: 200 });
+    }
+    if (controller.signal.aborted) throw controller.signal.reason;
+    const final = join(bundles, entry.manifest_sha256);
+    if (await safeStat(final)) {
+      try {
+        await verifyReleaseBundle(final, entry.manifest_sha256, controller.signal);
+        if (controller.signal.aborted) throw controller.signal.reason;
+        deps.stderr.write('No Docker or Podman found. Using the scan runtime downloaded earlier; its first start downloads a machine image and can take several minutes.\n');
+        return { path: final, downloaded: false };
+      } catch (error) {
+        if (controller.signal.aborted) throw error;
+        const discarded = join(bundles, `${stagingPrefix}${randomBytes(16).toString('hex')}`);
+        await rename(final, discarded);
+        await rm(discarded, { recursive: true, force: true, maxRetries: 10, retryDelay: 200 });
+      }
+    }
+    if (typeof deps.statfs === 'function') {
+      let space;
+      try { space = await deps.statfs(root); }
+      catch (error) { if (!['ENOSYS', 'ENOTSUP', 'EOPNOTSUPP'].includes(error.code)) throw error; }
+      if (space && Number(space.bavail) * Number(space.bsize) < source.bytes + source.extracted_bytes + 64 * 1024 * 1024) {
+        const error = new Error('not enough disk space'); error.code = 'ENOSPC'; throw error;
+      }
+    }
+    if (controller.signal.aborted) throw controller.signal.reason;
+    staging = join(bundles, `${stagingPrefix}${randomBytes(16).toString('hex')}`);
+    await mkdir(staging, { mode: 0o700 });
+    const packageFile = join(staging, 'package');
+    const bundle = join(staging, 'bundle');
+    await mkdir(bundle, { mode: 0o700 });
+    deps.stderr.write(`No Docker, Podman or installed desktop app found. Downloading the scan runtime from the published desktop package (${Math.round(source.bytes / 1e6)} MB, once); its first start also downloads a machine image and can take several minutes.\n`);
+    await downloadReleaseBundle(source, packageFile, { fetch: deps.fetch, signal: controller.signal });
+    await extractReleaseBundle(packageFile, source.inner_path, bundle, controller.signal);
+    await unlink(packageFile);
+    await verifyReleaseBundle(bundle, entry.manifest_sha256, controller.signal);
+    if (controller.signal.aborted) throw controller.signal.reason;
+    await rename(bundle, final);
+    return { path: final, downloaded: true };
+  } catch (error) {
+    if (controller.signal.aborted) throw new BootstrapError('interrupted', 'Runtime download was interrupted.', controller.signal.reason.exitCode);
+    throw error;
+  } finally {
+    try {
+      if (staging) await rm(staging, { recursive: true, force: true, maxRetries: 10, retryDelay: 200 });
+    } finally {
+      try { if (release) await release(); } finally { for (const [signal, handler] of handlers) process.off(signal, handler); }
+    }
+  }
+}
+
+function releaseBundleFailure(error, source) {
+  if (error.code === 'ENOSPC' || error.code === 'EDQUOT') return {
+    cause: 'not enough disk space',
+    nextStep: `There is not enough free disk space for the scan runtime (about ${Math.round((source.bytes + source.extracted_bytes) / 1e6)} MB). Free some space, or start Docker or Podman, then run prepare again.`,
+  };
+  if (error.code === 'size' || error.code === 'digest') return {
+    cause: 'checksum or size mismatch',
+    nextStep: 'The downloaded scan runtime did not match its pinned checksum and was discarded. Run prepare again, or start Docker or Podman.',
+  };
+  if (error.code === 'archive' || error.code === 'bundle') return {
+    cause: 'unsafe archive or bundle',
+    nextStep: 'The downloaded scan runtime could not be unpacked safely and was discarded. Start Docker or Podman, then run prepare again.',
+  };
+  return {
+    cause: 'download did not finish',
+    nextStep: 'The scan runtime download did not finish. Check the internet connection, or start Docker or Podman, then run prepare again.',
+  };
+}
+
 async function runCommand(program, args, { cwd, env, capture = true, timeout = 30_000, input, signal } = {}) {
   return await new Promise((resolvePromise, reject) => {
     // A command that can be interrupted leads its own process group on Unix, so
@@ -503,7 +608,7 @@ async function inspectSource(sourceRoot, revision) {
 
 async function validatePinnedInputs(sourceRoot, revision, manifest) {
   const files = new Map([...manifest.files, ...(manifest.metadataFiles ?? [])].map(file => [file.path, file]));
-  for (const path of ['scripts/skill/bootstrap.mjs', 'scripts/skill/bootstrap-core.mjs', 'scripts/skill/input-manifest.mjs', 'scripts/skill/managed-runtime-bundles.mjs']) {
+  for (const path of ['scripts/skill/bootstrap.mjs', 'scripts/skill/bootstrap-core.mjs', 'scripts/skill/input-manifest.mjs', 'scripts/skill/managed-runtime-bundles.mjs', 'scripts/skill/release-bundle.mjs']) {
     if (!files.has(path)) files.set(path, { path });
   }
   const gitEnvironment = Object.fromEntries(Object.entries(process.env).filter(([key]) => !key.startsWith('GIT_')));
@@ -635,7 +740,7 @@ function buildConfiguration(options) {
 
 async function recipeDigest(sourceRoot) {
   const inputs = [];
-  for (const path of ['scripts/skill/bootstrap.mjs', 'scripts/skill/bootstrap-core.mjs', 'scripts/skill/input-manifest.mjs', 'scripts/skill/managed-runtime-bundles.mjs']) {
+  for (const path of ['scripts/skill/bootstrap.mjs', 'scripts/skill/bootstrap-core.mjs', 'scripts/skill/input-manifest.mjs', 'scripts/skill/managed-runtime-bundles.mjs', 'scripts/skill/release-bundle.mjs']) {
     inputs.push({ path, sha256: hash(await regularBytes(join(sourceRoot, path), 2 * 1024 * 1024)) });
   }
   return hash(canonical({ version: RECIPE, inputs }));
@@ -912,6 +1017,29 @@ export async function prepareBootstrap(options, overrides = {}) {
           bundleSource = 'installed_desktop';
           failed = false;
         } catch (error) { failure = error; }
+      } else {
+        const releaseEntry = releaseBundleEntry(deps);
+        if (releaseEntry) {
+          let downloaded;
+          try { downloaded = await obtainReleaseBundle(root, releaseEntry, deps); }
+          catch (error) {
+            if (error instanceof BootstrapError && error.code === 'interrupted') throw error;
+            const { cause, nextStep } = releaseBundleFailure(error, releaseEntry.release_source);
+            deps.stderr.write(`Scan runtime download failed: ${cause}.\n`);
+            failure.nextStep = nextStep;
+            throw failure;
+          }
+          try {
+            result.runtime_preparation = await prepareSelectedRuntime({ ...options, managedRuntimeBundle: downloaded.path, expectedManagedRuntimeManifestSha256: releaseEntry.manifest_sha256 });
+            bundleSource = 'downloaded_release';
+            result.runtime_bundle = {
+              path: downloaded.path, manifest_sha256: releaseEntry.manifest_sha256, product_version: releaseEntry.product_version,
+              source: { url: releaseEntry.release_source.url, bytes: releaseEntry.release_source.bytes, sha256: releaseEntry.release_source.sha256 },
+              downloaded: downloaded.downloaded,
+            };
+            failed = false;
+          } catch (error) { failure = error; }
+        }
       }
     }
     if (failed) {
@@ -992,6 +1120,7 @@ export async function doctorBootstrap(options, overrides = {}) {
     ...(options.capability === 'scan' ? { runtime_sources: {
       compatibility_commands_on_path: await compatibilityCommandsOnPath(deps),
       installed_desktop_bundle: (await locateInstalledManagedRuntimeBundle(deps)).state,
+      release_bundle: await releaseBundleState(options.cacheDir, releaseBundleEntry(deps), await realpath(deps.sourceRoot)),
     } } : {}),
   };
 }

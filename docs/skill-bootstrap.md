@@ -66,7 +66,7 @@ prepared core matches, `run` stops with `core_not_prepared`; run `prepare` with
 the same `--revision`, `--cache-dir` and `--profile` first. CLI output stays on
 stdout; bootstrap diagnostics go to stderr.
 
-Scan preparation reports `runtime_bundle_source` as `explicit`, `installed_desktop` or `none`; an installed bundle also includes its path, manifest digest and desktop version in `runtime_bundle`.
+Scan preparation reports `runtime_bundle_source` as `explicit`, `installed_desktop`, `downloaded_release` or `none`. An installed or downloaded bundle includes its path, manifest digest and desktop version in `runtime_bundle`; a downloaded bundle also records the source and whether this run downloaded it.
 
 The default profile is `release`. Contributors may select `--profile dev` for a
 separate development cache. A changed checkout is rejected unless the caller
@@ -146,13 +146,17 @@ scan, passing the same explicit data directory and any selected runtime bundle.
 `run --capability scan` is rejected: preparation is its own operation.
 `doctor --capability scan` reports preparation as still needed; it does not build,
 start a runtime, or treat a previous receipt as current readiness.
-Its `runtime_sources` reports compatibility commands on `PATH` and the installed desktop bundle's recognition state.
+Its `runtime_sources` reports compatibility commands on `PATH`, the installed desktop bundle's recognition state, and whether `release_bundle` is cached, downloadable or unsupported.
 
 When the host has no Docker, no Podman and no prepared managed runtime,
 `prepare --capability scan` reuses an installed desktop app's scan runtime if this
 revision recognizes its manifest (Linux x86_64, macOS, and Windows x64 in the
-default per-user or all-users install folder), checks it again in the core, and
-otherwise stops with a `next_step`. It never downloads or installs a runtime.
+default per-user or all-users install folder) and checks it again in the core.
+On Linux x86_64, if no recognized desktop runtime is present, it downloads the
+published desktop package once over HTTPS, checks its pinned checksum before
+reading it, and keeps only the scan runtime under the cache's `managed-bundles/`
+directory; nothing is installed system-wide. `--offline` never downloads; other
+platforms stop with a `next_step` when no usable runtime is found.
 Development bundles are produced by the existing versioned
 [`runtime/vendor-managed-runtime.mjs`](../runtime/vendor-managed-runtime.mjs)
 procedure; its Linux helper build requires an existing Docker builder. Windows
