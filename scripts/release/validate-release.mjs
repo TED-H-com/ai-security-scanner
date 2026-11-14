@@ -996,7 +996,7 @@ function validatePromotionPublication(publish) {
     },
     {
       name: "Set up Node.js",
-      uses: "actions/setup-node@820762786026740c76f36085b0efc47a31fe5020",
+      uses: "actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1",
       with: { "node-version": "24.15.0" },
     },
     {
@@ -1010,7 +1010,7 @@ function validatePromotionPublication(publish) {
     },
     {
       name: "Download exact same-run finalized release by artifact ID",
-      uses: "actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c",
+      uses: "actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333",
       with: {
         "artifact-ids": "${{ needs.assemble.outputs.finalized_artifact_id }}",
         path: "release-assets",
