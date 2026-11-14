@@ -187,7 +187,7 @@ a final decision: do not report a material replacement until independently check
 If budget or separation is unavailable, remove the disputed record, leave its
 fingerprint unresolved in the ledger and record an exact incomplete reason.
 
-## Validate, seal and explain
+## Validate, seal and admit
 
 Use `provider cloudflare validate` against the captured record and current head.
 Exit 0 means validation completed; inspect `sealable`, `record_errors` and the
@@ -200,15 +200,99 @@ and require the committed terminal entry and reported sealed state. A directory
 alone is not a committed seal. Status checks three recorded files, not the entire
 payload; `provider cloudflare inspect-retained` is the full retained-payload check.
 
-Explain what was audited (scope, profile, budget and actual assignments spent),
-the native complete/incomplete outcome, confirmed/needs-validation/rejected counts,
-what matters first and the next bounded step. Do not give severity to validation
-leads or present rejections as findings. Call verification review by a separate
-verifier role, not independent review. Say what was not tested: no target
-execution, excluded paths, unresolved candidates and partial quick/scoped coverage.
-The sealed record preserves custody of the run; it does not verify a finding and
-is not yet part of the case report. Keep active work in Progress and give a concise
-terminal explanation, with evidence available as detail.
+When status reports `next_operation: "admit"`, automatically run:
+
+```sh
+ai-security-scanner-cli --json --data-dir DATA provider cloudflare inspect-sealed --case-id CASE --session-id SESSION
+ai-security-scanner-cli --json --data-dir DATA provider cloudflare admit --request NEW_PRIVATE_REQUEST.json
+```
+
+Require `verification.state: "verified"` with `full_payload` scope from inspection.
+Write the strict `ai-security-scanner.cloudflare-audit-admit-request/v1` from the
+[admission contract](../../../../docs/cloudflare-provider.md#admitting-a-sealed-audit):
+a new `request_id`, the same `case_id` and `session_id`, and
+`expected_sealed_entry_sha256`, `expected_bundle_sha256`,
+`expected_projection_sha256` from inspection's verified sealed-entry, bundle and
+workflow-projection digests (`result.digests.sealed_entry_sha256`,
+`result.digests.bundle_sha256`, `result.digests.projection_sha256`). Never edit the
+seal or admit to another case.
+
+Handle admission separately from the custody retry rules below:
+
+- Exit 0 means committed or verified replay. If `report_snapshot_state: "pending"`,
+  replay the identical request using `report_snapshot_retry_command` until retained
+  or an actionable refusal; preserve its request ID and exact bytes.
+- `active_scan`, writer contention (`data_directory_busy` / `conflict`) and
+  `case_changed`: wait, read status, then replay the same request ID and bytes.
+- Exit 4 or a lost response: read status first, then use the same request for
+  recovery as the guide's exit table permits. `artifact_conflict` and
+  `engine_registry_failed` are non-retryable; stop with the product's reason.
+- `session_already_admitted`: read status and continue with that admission. If its
+  snapshot is pending, use the original admission request's identical bytes for
+  replay; recover that saved request rather than creating another admission.
+- Every other exit-2 refusal: stop and tell the user the product's reason and next
+  step. Conflicting request/identity exits are not retryable unchanged; never
+  substitute digests or identities to bypass them.
+
+Use the admitted run ID from the admit result or `status.admission`, never the
+provider run ID. Admission does not verify finding truth.
+
+## Deliver the shared report and preserve the case
+
+Explain the admitted run from the shared case report: confirmed findings, the
+separate **To validate** list, remaining units, what matters first, the next step
+and what was not tested. Preserve scope, profile, actual budget spent and the
+native complete/incomplete outcome. Do not give validation leads severity or
+present rejections as findings. Call verification review by a separate verifier
+role, not independent review. Keep active work in Progress and evidence in detail.
+For an audit-only request, save the report to a new private file chosen by the
+user, outside product data and the source view. If scanner checks were also
+requested, use the combined export below instead:
+
+```sh
+ai-security-scanner-cli --json --data-dir DATA export create --case-id CASE --run-id ADMITTED_RUN --format html --redaction standard --destination NEW_PRIVATE_HTML
+```
+
+Add `--locale zh-Hant` for a Traditional Chinese reader. Open the saved HTML and
+check its findings and coverage against the selected run; return its path and
+concise outcome. Disclose excluded paths, unresolved candidates, no target
+execution and partial quick/scoped coverage in the report's appropriate sections.
+
+When the same request also includes existing scanner checks of this repository,
+select only applicable, requested engines. Run them **before audit preparation or
+after admission**, never interleaved: foreground scans hold the writer lease and
+admission refuses an active scan. Follow [foreground execution](../../../../docs/foreground-scans.md):
+
+```sh
+ai-security-scanner-cli --json --data-dir DATA runtime prepare --engine IDS
+ai-security-scanner-cli --json --data-dir DATA scan run --case-id CASE --engine IDS --wait
+ai-security-scanner-cli --json --data-dir DATA export combine --case-id CASE --run-id SCAN_RUN,ADMITTED_RUN --format html --redaction standard --destination NEW_PRIVATE_HTML
+```
+
+Keep the foreground owner alive until completion; inspect the saved outcome before
+exporting. Save **one combined report** for the request, adding `--locale zh-Hant`
+when appropriate, and explain it by asset. Each source keeps its own time,
+findings and gaps; composition neither merges nor resolves observations. See
+[preserving combined reports](../../../../docs/report-snapshots.md#preserve-a-combined-report).
+
+When asked to keep, back up or move the case, say once that the archive is private
+and source exclusion is not redaction, then create and verify it:
+
+```sh
+ai-security-scanner-cli --json --data-dir DATA archive create --case-id CASE --destination NEW_FILE --acknowledge-sensitive-data
+ai-security-scanner-cli --json archive verify --archive NEW_FILE
+```
+
+Add `--include-source-snapshots` only when the user wants source bodies kept.
+On a separate restore request at the destination, follow [complete archives](../../../../docs/case-archives.md):
+
+```sh
+ai-security-scanner-cli --json archive restore-preview --archive FILE --destination NEW_DATA_DIR
+ai-security-scanner-cli --json archive restore --archive FILE --destination NEW_DATA_DIR --acknowledge-sensitive-data
+```
+
+The destination is a new data directory. A restored audit is read-only history;
+never continue, seal or admit it again.
 
 Place formal limits at the end. When explaining trust flags, use at most one
 sentence per flag from the guide's [sealing table](../../../../docs/cloudflare-provider.md#sealing-the-audit-record):
@@ -216,7 +300,7 @@ sentence per flag from the guide's [sealing table](../../../../docs/cloudflare-p
 sealed package; canonical binding verifies full source-view/snapshot bytes at
 sealing; authorization verifies the recorded grant at preparation, each entry and
 sealing; `audit_performed` means at least one issued hunter assignment is closed;
-`admission_ready: false` means case/report integration has not admitted the run;
+`admission_ready: false` is a frozen seal-time statement; admission is recorded separately;
 `target_execution_allowed: false` grants no permission to execute target code.
 These statements do not establish that an agent ran, a model was independent or
 a finding is true. The retained reported-only bundle keeps its own false flags.

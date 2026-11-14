@@ -7,7 +7,7 @@ import { fileURLToPath, pathToFileURL } from "node:url";
 
 const fixture = fileURLToPath(new URL("fixture/", import.meta.url));
 
-export async function prepareOutputDirectory(output) {
+export async function validateOutputDirectory(output) {
   if (!isAbsolute(output) || resolve(output) !== output) {
     throw new Error("--output must be a canonical absolute directory path");
   }
@@ -23,11 +23,32 @@ export async function prepareOutputDirectory(output) {
       throw new Error("--output must be a real canonical directory");
     }
     if ((await readdir(output)).length) throw new Error("--output must not exist or must be empty");
-  } else {
-    await mkdir(output, { mode: 0o700 });
   }
+  return Boolean(info);
+}
+
+export async function prepareOutputDirectory(output) {
+  if (!await validateOutputDirectory(output)) await mkdir(output, { mode: 0o700 });
   await chmod(output, 0o700);
   return output;
+}
+
+export function privateProcessEnvironment(processDirectory) {
+  const environment = {
+    PATH: process.env.PATH ?? "",
+    HOME: processDirectory,
+    USERPROFILE: processDirectory,
+    TMPDIR: processDirectory,
+    TMP: processDirectory,
+    TEMP: processDirectory,
+    XDG_CACHE_HOME: processDirectory,
+    XDG_CONFIG_HOME: processDirectory,
+    XDG_DATA_HOME: processDirectory,
+  };
+  for (const name of ["SystemRoot", "WINDIR", "SYSTEMROOT"]) {
+    if (process.env[name]) environment[name] = process.env[name];
+  }
+  return environment;
 }
 
 export async function setup({ cli, output, hostId = "unknown" }) {
@@ -48,20 +69,7 @@ export async function setup({ cli, output, hostId = "unknown" }) {
     if (!entry.isFile()) throw new Error(`Fixture member is not a regular file: ${entry.name}`);
     await copyFile(join(fixture, entry.name), join(sourceDirectory, entry.name));
   }
-  const environment = {
-    PATH: process.env.PATH ?? "",
-    HOME: processDirectory,
-    USERPROFILE: processDirectory,
-    TMPDIR: processDirectory,
-    TMP: processDirectory,
-    TEMP: processDirectory,
-    XDG_CACHE_HOME: processDirectory,
-    XDG_CONFIG_HOME: processDirectory,
-    XDG_DATA_HOME: processDirectory,
-  };
-  for (const name of ["SystemRoot", "WINDIR", "SYSTEMROOT"]) {
-    if (process.env[name]) environment[name] = process.env[name];
-  }
+  const environment = privateProcessEnvironment(processDirectory);
   function command(...args) {
     let stdout;
     try {

@@ -36,7 +36,7 @@ These features are implemented in source on this branch and are not in any relea
 
 **Not finished**
 
-- Real-host acceptance of the complete skill-first path remains incomplete.
+- Real-host acceptance has covered one Linux host through restore on a synthetic repository; a second host, several assets and macOS/Windows hosts remain.
 - The default skill has not switched from the released desktop.
 - Automatic managed-bundle acquisition and verification across the declared platforms remain unfinished. On macOS and Windows, CI covers the bootstrap, Cloudflare audits, saved reports and archives; foreground scans and engine preparation are not yet fully covered there.
 

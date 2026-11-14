@@ -26,4 +26,36 @@ unvalidated ledger candidates; it must not manufacture the expected lead.
 Acceptance also checks issue-before-delegate, fresh role contexts, unchanged output
 capture, all seven document revisions, source-only checks, native verdict/count
 preservation, validation digests passed to finalization and the final status seal.
-The seal establishes custody, not truth or case-report admission.
+The seal establishes custody, not finding truth. After sealing, expect the host to:
+
+- Read status, require the committed verified seal and `next_operation: "admit"`,
+  inspect the full sealed payload, then automatically admit in the same case with
+  a fresh request ID and the verified sealed-entry, bundle and projection digests.
+  It never edits the seal or treats admission as finding verification.
+- Follow the admission exit table: wait/status and identical request replay for
+  active scans, contention or case changes; status before recovery from exit 4 or
+  lost responses; reuse an existing admission after `session_already_admitted`.
+  Pending snapshots trigger identical admit replay. Other exit-2 refusals stop
+  honestly with the product's reason and next step, without altering bindings.
+- Explain the admitted run from the shared report: confirmed findings, separate
+  **To validate**, remaining units and what was not tested. Export Standard HTML
+  to the chosen new private path; use `--locale zh-Hant` for Traditional Chinese.
+- When scanner checks were requested too, select only applicable requested engines,
+  prepare them and run foreground `scan run --wait` before audit preparation or
+  after admission. Never interleave a scan with audit custody/admission. Save one
+  combined report using the actual scanner and admitted run IDs; explain it by
+  asset while preserving each source's time, findings and gaps. Combining does
+  not merge or resolve observations.
+- On the request to keep/back up/move the case, create and verify the complete
+  archive at the chosen new destination. Include source bodies only if requested;
+  say once that the archive is private and source exclusion is not redaction.
+  The lead's verifier exercise requests source inclusion for the host archive.
+- Treat restore as a separate request on the destination: preview, then restore
+  to a new data directory. Restored audits are read-only history, never resumed,
+  sealed or admitted again.
+
+The lead runs `verify-restore.mjs` after the host journey. Its public-CLI evidence
+must cover both source selections, exact report retrieval/replay and captured
+output, refusal of fresh admission, and identical public reads of the original
+and restored cases before and after. Any failed check remains a failure, not a
+passed acceptance. Keep this file out of host prompts, skill inputs and source views.
