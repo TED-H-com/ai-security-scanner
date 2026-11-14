@@ -284,6 +284,66 @@ fn one_failed_pin_preserves_prepared_siblings_and_exact_retrieval_scope() {
     fixture.assert_receipt(&value);
 }
 
+#[cfg(unix)]
+fn assert_receipt_failure_preserves_prepared_images(signal: Option<i32>) {
+    let fixture = Fixture::new("block-nuclei");
+    let mut running = Running::spawn(fixture.prepare("gitleaks,nuclei", true));
+    let blocked = running.await_blocked(&fixture);
+    let receipt_dir = fixture.data.join("runtime-preparations");
+    fs::rename(&receipt_dir, fixture.data.join("displaced-preparations")).unwrap();
+    fs::write(&receipt_dir, b"cannot create a receipt here").unwrap();
+    if let Some(signal) = signal {
+        let pid = running.child.as_ref().unwrap().id();
+        assert_eq!(unsafe { libc::kill(pid as libc::pid_t, signal) }, 0);
+        thread::sleep(Duration::from_millis(100));
+    }
+    fs::write(fixture.bin.join("release"), "finish fixture operation").unwrap();
+    let output = running.wait();
+    let expected_exit = match signal {
+        Some(libc::SIGINT) => 130,
+        Some(libc::SIGTERM) => 143,
+        _ => 4,
+    };
+    let value = result(&output, expected_exit);
+    assert!(
+        value["images"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .any(|image| { image["image"] == image_for("gitleaks") && image["status"] == "ready" })
+    );
+    assert!(value["runtime"].is_object());
+    assert_eq!(value["receipt_path"], Value::Null);
+    assert!(
+        value["receipt_error"]
+            .as_str()
+            .is_some_and(|error| !error.is_empty() && error.chars().count() <= 2000)
+    );
+    assert_eq!(value["error_code"], "receipt_persistence_failed");
+    assert_eq!(value["command_outcome"], "failed");
+    assert!(fixture_runtime::process_is_gone(
+        blocked["pid"].as_u64().unwrap() as u32
+    ));
+}
+
+#[cfg(unix)]
+#[test]
+fn receipt_failure_preserves_prepared_images() {
+    assert_receipt_failure_preserves_prepared_images(None);
+}
+
+#[cfg(unix)]
+#[test]
+fn receipt_failure_preserves_prepared_images_and_interrupt_exit() {
+    assert_receipt_failure_preserves_prepared_images(Some(libc::SIGINT));
+}
+
+#[cfg(unix)]
+#[test]
+fn receipt_failure_preserves_prepared_images_and_termination_exit() {
+    assert_receipt_failure_preserves_prepared_images(Some(libc::SIGTERM));
+}
+
 #[test]
 fn malformed_engine_selection_and_missing_data_directory_fail_before_runtime_or_data_mutation() {
     for selection in [

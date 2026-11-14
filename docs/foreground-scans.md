@@ -29,7 +29,8 @@ authority; retrieval creates no scan, event or permission.
 
 Before scanning, `runtime prepare --engine semgrep,gitleaks` can prepare those
 exact pinned images with the same explicit `--data-dir` and optional
-`--managed-runtime-bundle`. It records readiness without creating a case or scan.
+`--managed-runtime-bundle`. It reports per-image readiness without creating a case
+or scan and saves a receipt when possible.
 Its `--offline` mode uses only running runtimes and existing or verified local
 images; it does not change the later scan's scope or network behavior.
 
@@ -64,8 +65,8 @@ checks. A report-save failure keeps the findings and returns
 `terminal_report_snapshot_failed`; `result.report_snapshot_retry_command` selects the
 same run for recovery without a fresh scanner execution.
 
-Once `scan run` has saved a run, `retryable` is false: repeating that command
-would create another scan. Use `result.recovery.status_command` to inspect it;
+Once `scan run` has saved or may have saved a run, `retryable` is false: repeating
+that command could create another scan. Use `scan status` to inspect saved runs;
 `result.recovery.next_command` is present only for supported captured-result or
 cleanup recovery. A failed `scan recover` is retryable only while that same
 recovery remains supported.

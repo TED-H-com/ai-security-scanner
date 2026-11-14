@@ -244,6 +244,181 @@ fn complete_and_incomplete_admit_without_node_preserve_custody_and_status() {
         assert_eq!(inspected["result"]["next_operation"], "retrieve_report");
     }
 }
+
+#[test]
+fn scan_receipt_preserves_admitted_audit_record_and_sealed_bytes() {
+    fn files(
+        root: &Path,
+        directory: &Path,
+        output: &mut std::collections::BTreeMap<PathBuf, Vec<u8>>,
+    ) {
+        for entry in fs::read_dir(directory).unwrap() {
+            let entry = entry.unwrap();
+            let path = entry.path();
+            if entry.file_type().unwrap().is_dir() {
+                files(root, &path, output);
+            } else {
+                output.insert(
+                    path.strip_prefix(root).unwrap().to_path_buf(),
+                    fs::read(&path).unwrap(),
+                );
+            }
+        }
+    }
+    for profile in ["standard", "quick"] {
+        let (run, request) = sealed(profile);
+        let admitted = admit(&run, &request, 0);
+        let run_id = admitted["run_id"].as_str().unwrap();
+        let session_id = request["session_id"].as_str().unwrap();
+        let db = rusqlite::Connection::open(run.f.data.join("casework.db")).unwrap();
+        let stored = || -> (String, Vec<(i64, String, String)>) {
+            let document = db
+                .query_row(
+                    "SELECT document_json FROM cases WHERE id = ?1",
+                    [&run.f.case_id],
+                    |row| row.get(0),
+                )
+                .unwrap();
+            let mut query = db.prepare(
+                "SELECT sequence, event_type, payload_json FROM case_events WHERE case_id = ?1 AND (event_type LIKE 'cloudflare_audit.%' OR event_type = ?2) ORDER BY sequence"
+            ).unwrap();
+            let records = query
+                .query_map(rusqlite::params![run.f.case_id, ADMITTED_EVENT], |row| {
+                    Ok((row.get(0)?, row.get(1)?, row.get(2)?))
+                })
+                .unwrap()
+                .collect::<Result<Vec<_>, _>>()
+                .unwrap();
+            (document, records)
+        };
+        let seal_path = finalize::path(&run, &request);
+        let mut before_files = std::collections::BTreeMap::new();
+        files(&seal_path, &seal_path, &mut before_files);
+        assert!(!before_files.is_empty());
+        let before_stored = stored();
+        let storage = run.f.storage();
+        verify(&run.f.data, &storage, &run.f.case_id, session_id).unwrap();
+        storage
+            .record_scan_command_receipt(
+                &run.f.case_id,
+                run_id,
+                "fixture-recover-receipt",
+                &json!({"operation": "scan.recover"}),
+            )
+            .unwrap();
+        let mut after_files = std::collections::BTreeMap::new();
+        files(&seal_path, &seal_path, &mut after_files);
+        assert_eq!(before_files, after_files);
+        assert_eq!(before_stored, stored());
+        verify(&run.f.data, &storage, &run.f.case_id, session_id).unwrap();
+        let inspected = terminal(
+            run.f
+                .command()
+                .args([
+                    "provider",
+                    "cloudflare",
+                    "inspect-sealed",
+                    "--case-id",
+                    &run.f.case_id,
+                    "--session-id",
+                    session_id,
+                ])
+                .output()
+                .unwrap(),
+            0,
+        );
+        assert_eq!(
+            inspected["result"]["admission"]["admission_id"],
+            admitted["result"]["admission_id"]
+        );
+    }
+}
+
+#[test]
+fn scan_recover_admitted_audit_saves_a_command_receipt() {
+    for profile in ["standard", "quick"] {
+        let (run, request) = sealed(profile);
+        let admitted = admit(&run, &request, 0);
+        let run_id = admitted["run_id"].as_str().unwrap();
+        let recovered = terminal(
+            run.f
+                .command()
+                .args([
+                    "scan",
+                    "recover",
+                    "--case-id",
+                    &run.f.case_id,
+                    "--run-id",
+                    run_id,
+                    "--wait",
+                ])
+                .output()
+                .unwrap(),
+            0,
+        );
+        assert_eq!(recovered["receipt"]["request_id"], recovered["request_id"]);
+        assert_eq!(recovered["receipt"]["run_id"], run_id);
+        let output = run
+            .f
+            .command()
+            .args([
+                "scan",
+                "status",
+                "--case-id",
+                &run.f.case_id,
+                "--run-id",
+                run_id,
+            ])
+            .output()
+            .unwrap();
+        assert!(output.status.success());
+        let status: Value = serde_json::from_slice(&output.stdout).unwrap();
+        assert_eq!(status["command_receipts"], json!([recovered["receipt"]]));
+    }
+}
+
+#[test]
+fn scan_recover_admitted_audit_reports_receipt_write_failure() {
+    let (run, request) = sealed("quick");
+    let admitted = admit(&run, &request, 0);
+    let run_id = admitted["run_id"].as_str().unwrap();
+    let db = rusqlite::Connection::open(run.f.data.join("casework.db")).unwrap();
+    db.execute_batch(
+        "CREATE TRIGGER fixture_reject_receipt BEFORE INSERT ON case_events
+         WHEN NEW.event_type = 'scan.foreground_terminal' BEGIN
+           SELECT RAISE(ABORT, 'fixture receipt failure');
+         END;",
+    )
+    .unwrap();
+    let recovered = terminal(
+        run.f
+            .command()
+            .args([
+                "scan",
+                "recover",
+                "--case-id",
+                &run.f.case_id,
+                "--run-id",
+                run_id,
+                "--wait",
+            ])
+            .output()
+            .unwrap(),
+        4,
+    );
+    assert_eq!(recovered["error_code"], "receipt_persistence_failed");
+    assert_eq!(recovered["command_outcome"], "failed");
+    assert_eq!(recovered["run_id"], run_id);
+    assert!(recovered["receipt"].is_null());
+    assert_eq!(recovered["result"]["report_snapshot_state"], "retained");
+    verify(
+        &run.f.data,
+        &run.f.storage(),
+        &run.f.case_id,
+        request["session_id"].as_str().unwrap(),
+    )
+    .unwrap();
+}
 #[test]
 fn replay_preserves_human_triage_and_original_receipt_after_asset_removal() {
     let (run, request) = sealed("standard");

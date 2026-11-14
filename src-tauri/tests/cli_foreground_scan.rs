@@ -611,6 +611,58 @@ fn foreground_persists_real_adapter_finding_and_failed_sibling_before_returning(
     assert!(!fixture.calls().iter().any(|call| call[0] == "pull"));
 }
 
+fn assert_saved_run_read_failure(event: &str, admitted_worker: bool) {
+    let fixture = Fixture::new(true, if admitted_worker { "block" } else { "complete" });
+    let connection = rusqlite::Connection::open(fixture.data.join("casework.db")).unwrap();
+    connection.execute_batch(&format!(
+            "CREATE TABLE fixture_saved_document (document TEXT NOT NULL);
+             CREATE TRIGGER fixture_fail_case_read AFTER INSERT ON case_events
+             WHEN NEW.event_type = '{event}' BEGIN
+               INSERT INTO fixture_saved_document SELECT document_json FROM cases WHERE id = NEW.case_id;
+               UPDATE cases SET document_json = 'unreadable fixture' WHERE id = NEW.case_id;
+             END;"
+        )).unwrap();
+    let mut process = Running::spawn(fixture.run_command(true, "gitleaks"), true);
+    let known_run = if admitted_worker {
+        process.await_runtime(&fixture);
+        let id = fixture.case().scan_runs.last().unwrap().id.clone();
+        fs::write(fixture.binary_directory.join("release"), b"release").unwrap();
+        Some(id)
+    } else {
+        None
+    };
+    let output = process.wait();
+    let result = terminal(&output, 4);
+    let document: String = connection
+        .query_row("SELECT document FROM fixture_saved_document", [], |row| {
+            row.get(0)
+        })
+        .unwrap();
+    let saved: Value = serde_json::from_str(&document).unwrap();
+    let saved_run = saved["scan_runs"].as_array().unwrap().last().unwrap()["id"]
+        .as_str()
+        .unwrap();
+    if let Some(id) = known_run {
+        assert_eq!(id, saved_run);
+        assert_eq!(result["run_id"], saved_run);
+    }
+    assert_eq!(result["retryable"], false, "{event}: {result}");
+    assert!(
+        result["receipt"].is_object() || result["error_code"] == "receipt_persistence_failed",
+        "{event}: {result}"
+    );
+}
+
+#[test]
+fn saved_run_read_failure_after_worker_does_not_invite_a_second_scan() {
+    assert_saved_run_read_failure("report.terminal_snapshot_saved", true);
+}
+
+#[test]
+fn saved_run_read_failure_after_admission_does_not_invite_a_second_scan() {
+    assert_saved_run_read_failure("scan.requested", false);
+}
+
 fn assert_cancelled_owner(fixture: &Fixture, runtime: &Value, result: &Value) {
     fixture.assert_saved_terminal(result);
     assert_eq!(result["command_outcome"], "interrupted");

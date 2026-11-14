@@ -125,7 +125,7 @@ fn run() -> Result<i32, String> {
                     return Err("missing image inspect image".into());
                 }
                 let image = last()?;
-                if mode == "block" {
+                if mode == "block" || (mode == "block-nuclei" && image.contains("engine-nuclei@")) {
                     atomic(
                         "blocked.json",
                         &format!(

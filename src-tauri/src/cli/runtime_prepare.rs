@@ -214,18 +214,34 @@ fn owned_prepare(
     result["started_at"] = json!(started_at);
     result["completed_at"] = json!(chrono::Utc::now());
     result["receipt_path"] = json!(receipt_path);
-    result["receipt_sha256"] = json!(hex::encode(Sha256::digest(serde_json::to_vec(&result)?)));
     // A final stdout failure cannot erase the already committed observation.
     // Preparation receipts are observations, never permission to start a scan.
-    let bytes = serde_json::to_vec_pretty(&result)?;
-    let mut temporary = tempfile::NamedTempFile::new_in(&receipt_dir)?;
-    temporary.write_all(&bytes)?;
-    temporary.as_file().sync_all()?;
-    temporary
-        .persist_noclobber(&receipt_path)
-        .map_err(|error| error.error)?;
-    #[cfg(unix)]
-    fs::File::open(&receipt_dir)?.sync_all()?;
+    let persisted = (|| -> AppResult<()> {
+        result["receipt_sha256"] = json!(hex::encode(Sha256::digest(serde_json::to_vec(&result)?)));
+        let bytes = serde_json::to_vec_pretty(&result)?;
+        let mut temporary = tempfile::NamedTempFile::new_in(&receipt_dir)?;
+        temporary.write_all(&bytes)?;
+        temporary.as_file().sync_all()?;
+        temporary
+            .persist_noclobber(&receipt_path)
+            .map_err(|error| error.error)?;
+        #[cfg(unix)]
+        fs::File::open(&receipt_dir)?.sync_all()?;
+        Ok(())
+    })();
+    if let Err(error) = persisted {
+        result["receipt_path"] = Value::Null;
+        result["receipt_sha256"] = Value::Null;
+        result["receipt_error"] = json!(error.to_string().chars().take(2_000).collect::<String>());
+        result["error_code"] = json!("receipt_persistence_failed");
+        result["command_outcome"] = json!("failed");
+        let signal = exit_signal.load(Ordering::Acquire);
+        result["exit_code"] = json!(if matches!(signal, 130 | 143) {
+            signal
+        } else {
+            4
+        });
+    }
     Ok(result)
 }
 

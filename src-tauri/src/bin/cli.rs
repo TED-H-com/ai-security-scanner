@@ -1574,6 +1574,25 @@ fn foreground_terminal(
     })
 }
 
+/// Terminal record for an owner that stopped without returning one. What it saved
+/// is unknown, so `scan run` is never offered for an automatic repeat; repeating
+/// `scan recover` selects the same run and cannot start another scan.
+fn foreground_owner_failed(
+    request: &ForegroundRequest,
+    known_run: Option<&str>,
+    detail: String,
+) -> Value {
+    foreground_terminal(
+        request,
+        known_run,
+        4,
+        "failed",
+        Some("owner_failed"),
+        request.operation != "scan.run",
+        json!({"detail": detail}),
+    )
+}
+
 fn foreground_rejected(request: &ForegroundRequest, error: AppError) -> Value {
     let (code, name, retryable) = foreground_error_class(&error);
     eprintln!("error: {error}");
@@ -1677,13 +1696,14 @@ async fn execute_foreground_scan(cli: &Cli) -> u8 {
     let mut owner = tokio::task::spawn_blocking(move || {
         foreground_owned_operation(&worker_request, &worker_output).unwrap_or_else(|error| {
             let mut terminal = foreground_rejected(&worker_request, error);
-            terminal["run_id"] = json!(
-                worker_output
-                    .run_id
-                    .lock()
-                    .unwrap_or_else(std::sync::PoisonError::into_inner)
-                    .as_deref()
-            );
+            let run_id = worker_output
+                .run_id
+                .lock()
+                .unwrap_or_else(std::sync::PoisonError::into_inner);
+            terminal["run_id"] = json!(run_id.as_deref());
+            if worker_request.operation == "scan.run" && run_id.is_some() {
+                terminal["retryable"] = json!(false);
+            }
             terminal
         })
     });
@@ -1707,15 +1727,14 @@ async fn execute_foreground_scan(cli: &Cli) -> u8 {
     };
     let terminal = match joined {
         Ok(terminal) => terminal,
-        Err(error) => foreground_terminal(
-            &request,
-            request.run_id.as_deref(),
-            4,
-            "failed",
-            Some("owner_failed"),
-            true,
-            json!({"detail": error.to_string()}),
-        ),
+        Err(error) => {
+            let saved_run = output
+                .run_id
+                .lock()
+                .unwrap_or_else(std::sync::PoisonError::into_inner)
+                .clone();
+            foreground_owner_failed(&request, saved_run.as_deref(), error.to_string())
+        }
     };
     let exit_code = terminal["exit_code"].as_u64().unwrap_or(4) as u8;
     if let Err(error) = output.finish(&terminal) {
@@ -1780,11 +1799,32 @@ fn foreground_owned_operation(
                 &request.case_id,
                 run_id,
             );
-        return Ok(match retained {
+        let (terminal, retryable, case_revision) = match retained {
             Ok(case) => {
-                let (mut result, _) = foreground_result(&case, run_id)?;
-                result["report_snapshot_state"] = json!("retained");
-                foreground_terminal(request, Some(run_id), 0, "completed", None, false, result)
+                let revision = Some(case.storage_revision());
+                match foreground_result(&case, run_id) {
+                    Ok((mut result, _)) => {
+                        result["report_snapshot_state"] = json!("retained");
+                        (
+                            foreground_terminal(
+                                request,
+                                Some(run_id),
+                                0,
+                                "completed",
+                                None,
+                                false,
+                                result,
+                            ),
+                            false,
+                            revision,
+                        )
+                    }
+                    Err(error) => {
+                        let terminal = foreground_rejected(request, error);
+                        let retryable = terminal["retryable"].as_bool().unwrap_or(false);
+                        (terminal, retryable, revision)
+                    }
+                }
             }
             Err(error) => {
                 let (exit_code, code, retryable) = foreground_error_class(&error);
@@ -1793,7 +1833,7 @@ fn foreground_owned_operation(
                     &mut result,
                     &error,
                 );
-                foreground_terminal(
+                let terminal = foreground_terminal(
                     request,
                     Some(run_id),
                     exit_code,
@@ -1801,9 +1841,18 @@ fn foreground_owned_operation(
                     Some(code),
                     retryable,
                     result,
-                )
+                );
+                (terminal, retryable, Some(before.storage_revision()))
             }
-        });
+        };
+        return Ok(foreground_record_receipt(
+            &storage,
+            request,
+            run_id,
+            terminal,
+            retryable,
+            case_revision,
+        ));
     }
     let before_runs = before
         .scan_runs
@@ -1882,7 +1931,26 @@ fn foreground_owned_operation(
             // Admission may have persisted a run before a later local failure.
             // Preserve that exact run instead of confusing it with an older run.
             let _ = coordinator.join_preparers();
-            let after = state.storage.get_case(&request.case_id)?;
+            let after = match state.storage.get_case(&request.case_id) {
+                Ok(after) => after,
+                Err(read_error) if request.operation == "scan.run" => {
+                    // A failed admission can follow a committed scan. Retry the
+                    // read once to identify it; never suggest starting another
+                    // scan while that identity remains unknown.
+                    match state.storage.get_case(&request.case_id) {
+                        Ok(after) => after,
+                        Err(_) => {
+                            let mut terminal = foreground_rejected(request, read_error);
+                            terminal["retryable"] = json!(false);
+                            terminal["exit_code"] = json!(4);
+                            terminal["command_outcome"] = json!("failed");
+                            terminal["error_code"] = json!("receipt_persistence_failed");
+                            return Ok(terminal);
+                        }
+                    }
+                }
+                Err(read_error) => return Err(read_error),
+            };
             let created = after
                 .scan_runs
                 .iter()
@@ -1895,9 +1963,17 @@ fn foreground_owned_operation(
             (created, None)
         }
     };
-    let run_id = run_id.ok_or_else(|| {
-        AppError::Internal("foreground admission returned no exact run identity".into())
-    })?;
+    let Some(run_id) = run_id else {
+        let mut terminal = foreground_rejected(
+            request,
+            AppError::Internal("foreground admission returned no exact run identity".into()),
+        );
+        if request.operation == "scan.run" {
+            terminal["retryable"] = json!(false);
+            terminal["error_code"] = json!("receipt_persistence_failed");
+        }
+        return Ok(terminal);
+    };
     *output
         .run_id
         .lock()
@@ -1983,39 +2059,72 @@ fn foreground_owned_operation(
     {
         failure = Some(("terminal_report_snapshot_failed", error.to_string()));
     }
-    let case = state.storage.get_case(&request.case_id)?;
-    let (result, recovery_required) = foreground_result(&case, &run_id)?;
-    let stop = output.stop.load(Ordering::Acquire);
-    let recovery_retryable = request.operation == "scan.recover"
-        && (result["recovery"]["available_without_target_contact"]
-            .as_bool()
-            .unwrap_or(false)
-            || result["report_snapshot_retry_command"].is_array());
-    let (exit_code, outcome, error_code, retryable) = if matches!(stop, 130 | 143) {
-        (stop, "interrupted", Some("interrupted"), true)
-    } else if output.failed.load(Ordering::Acquire) {
-        (4, "failed", Some("output_failed"), true)
-    } else if stop == 4 {
-        (4, "failed", Some("cancellation_control_failed"), true)
-    } else if recovery_required {
-        (4, "recovery_required", Some("recovery_required"), true)
-    } else if let Some((code, _)) = &failure {
-        (4, "failed", Some(*code), true)
-    } else {
-        (0, "completed", None, false)
+    let computed = (|| -> AppResult<_> {
+        let case = state.storage.get_case(&request.case_id)?;
+        let (result, recovery_required) = foreground_result(&case, &run_id)?;
+        let stop = output.stop.load(Ordering::Acquire);
+        let recovery_retryable = request.operation == "scan.recover"
+            && (result["recovery"]["available_without_target_contact"]
+                .as_bool()
+                .unwrap_or(false)
+                || result["report_snapshot_retry_command"].is_array());
+        let (exit_code, outcome, error_code, retryable) = if matches!(stop, 130 | 143) {
+            (stop, "interrupted", Some("interrupted"), true)
+        } else if output.failed.load(Ordering::Acquire) {
+            (4, "failed", Some("output_failed"), true)
+        } else if stop == 4 {
+            (4, "failed", Some("cancellation_control_failed"), true)
+        } else if recovery_required {
+            (4, "recovery_required", Some("recovery_required"), true)
+        } else if let Some((code, _)) = &failure {
+            (4, "failed", Some(*code), true)
+        } else {
+            (0, "completed", None, false)
+        };
+        if let Some((_, detail)) = failure {
+            eprintln!("foreground scan: {detail}");
+        }
+        let terminal = foreground_terminal(
+            request,
+            Some(&run_id),
+            exit_code,
+            outcome,
+            error_code,
+            retryable && recovery_retryable,
+            result,
+        );
+        Ok((terminal, recovery_retryable, Some(case.storage_revision())))
+    })();
+    let (terminal, recovery_retryable, case_revision) = match computed {
+        Ok(computed) => computed,
+        Err(error) => {
+            let mut terminal = foreground_rejected(request, error);
+            terminal["run_id"] = json!(run_id);
+            if request.operation == "scan.run" {
+                terminal["retryable"] = json!(false);
+            }
+            let retryable = terminal["retryable"].as_bool().unwrap_or(false);
+            (terminal, retryable, None)
+        }
     };
-    if let Some((_, detail)) = failure {
-        eprintln!("foreground scan: {detail}");
-    }
-    let mut terminal = foreground_terminal(
+    Ok(foreground_record_receipt(
+        &state.storage,
         request,
-        Some(&run_id),
-        exit_code,
-        outcome,
-        error_code,
-        retryable && recovery_retryable,
-        result,
-    );
+        &run_id,
+        terminal,
+        recovery_retryable,
+        case_revision,
+    ))
+}
+
+fn foreground_record_receipt(
+    storage: &Storage,
+    request: &ForegroundRequest,
+    run_id: &str,
+    mut terminal: Value,
+    recovery_retryable: bool,
+    case_revision: Option<i64>,
+) -> Value {
     let mut payload = terminal.clone();
     payload
         .as_object_mut()
@@ -2025,15 +2134,15 @@ fn foreground_owned_operation(
         .as_object_mut()
         .expect("terminal object")
         .remove("case_revision");
-    match state.storage.record_scan_command_receipt(
+    match storage.record_scan_command_receipt(
         &request.case_id,
-        &run_id,
+        run_id,
         &request.request_id,
         &payload,
     ) {
         Ok(receipt) => {
             terminal["case_revision"] = json!(receipt.case_revision);
-            terminal["receipt"] = serde_json::to_value(receipt)?;
+            terminal["receipt"] = json!(receipt);
         }
         Err(error) => {
             eprintln!("foreground command receipt could not be saved: {error}");
@@ -2041,10 +2150,10 @@ fn foreground_owned_operation(
             terminal["command_outcome"] = json!("failed");
             terminal["error_code"] = json!("receipt_persistence_failed");
             terminal["retryable"] = json!(recovery_retryable);
-            terminal["case_revision"] = json!(case.storage_revision());
+            terminal["case_revision"] = json!(case_revision);
         }
     }
-    Ok(terminal)
+    terminal
 }
 
 fn foreground_result(case: &AssessmentCase, run_id: &str) -> AppResult<(Value, bool)> {
@@ -7605,6 +7714,38 @@ mod tests {
             foreground_error_class(&AppError::Storage("busy".into())),
             (4, "storage_failed", true)
         );
+    }
+
+    #[test]
+    fn foreground_owner_failure_never_invites_a_second_scan_run() {
+        let mut request = ForegroundRequest {
+            operation: "scan.run",
+            request_id: "request-1".into(),
+            case_id: "case-1".into(),
+            run_id: None,
+            plan: ScanPlanRequest::default(),
+            data_dir: None,
+            managed_runtime_bundle: None,
+            release_approved_local_image_directory: None,
+        };
+        let unknown = foreground_owner_failed(&request, None, "owner stopped".into());
+        assert_eq!(unknown["retryable"], false);
+        assert_eq!(unknown["run_id"], Value::Null);
+        assert_eq!(unknown["error_code"], "owner_failed");
+        assert_eq!(unknown["command_outcome"], "failed");
+        assert_eq!(unknown["exit_code"], 4);
+        assert_eq!(unknown["result"]["detail"], "owner stopped");
+
+        let saved = foreground_owner_failed(&request, Some("run-1"), "owner stopped".into());
+        assert_eq!(saved["retryable"], false);
+        assert_eq!(saved["run_id"], "run-1");
+
+        request.operation = "scan.recover";
+        request.run_id = Some("run-1".into());
+        let recover = foreground_owner_failed(&request, Some("run-1"), "owner stopped".into());
+        assert_eq!(recover["retryable"], true);
+        assert_eq!(recover["run_id"], "run-1");
+        assert_eq!(recover["exit_code"], 4);
     }
 
     #[test]
