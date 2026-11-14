@@ -302,8 +302,9 @@ cargo test --locked --no-default-features --features cli --lib cloudflare_provid
 ```
 
 Linux execution is recorded in [development status](development-status.md).
-Native Windows/macOS results remain pending; the native CI matrix includes the
-document, reported-bundle and retention commands. The source-view core below does
+The native CI matrix runs the document, bundle, source-view and audit tests on
+Linux, macOS and Windows; real-host journeys on macOS and Windows have not been
+run yet. The source-view core below does
 not promote external bundle trust. Audit custody through finalization and host
 instructions are available in development, and one supported host has completed a
 synthetic acceptance run; durable case admission is implemented below, with shared report integration now available,
@@ -478,10 +479,9 @@ preparation receipts as historical events and explicitly omit live product sourc
 even with `--include-source-snapshots`. Restore does not renew authorization;
 re-approve the source and use a new request ID to prepare it again. Case deletion
 removes sealed and set-aside views. No database migration or archive-format change
-is required. Complete source-view transport and report integration remain pending; sealed audit
-admission is available below. Native Linux results are recorded in
-[development status](development-status.md); native macOS and Windows execution
-has not been verified.
+is required. Sealed audits are admitted and reported as described below. Native
+results are recorded in [development status](development-status.md); real-host
+runs on macOS and Windows have not been done yet.
 
 ## Running an audit from a host
 

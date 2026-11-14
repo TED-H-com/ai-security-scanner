@@ -22,6 +22,10 @@ continuation paths and unresolved candidates. An incomplete audit can still have
 confirmed findings. The first layer names the method “Cloudflare source audit” (“Cloudflare 原始碼稽核” in Traditional Chinese); each audit has one aggregated remaining-units gap without an extra Not tested count, and one excluded gap when units are outside scope. Remaining units share one next step: "Continue the source audit from the listed paths." Standard keeps this product sentence; paths remain under **What was not tested** and in technical detail, with location markers in Standard. Provider text remains unchanged under English or Traditional
 Chinese labels; technical details keep method, issued invocation budget, role/state
 counts, native attempts, lineage, custody digests and copied-original identities.
+When an audit has To validate records, the first layer names them as a next step:
+first when nothing else was found, otherwise after the main action. An asset with
+no problems in its completed checks but with such records shows the next action
+“validate the listed source-audit items first”.
 
 Admission automatically retains its terminal report after the case transaction.
 The admit result includes `report_snapshot_state: "retained"` and `report_snapshot`
@@ -36,8 +40,58 @@ Replay uses the frozen admission and case without source files, current grants,
 provider workspace or catalog manifests. Standard redaction applies the shared masking policy to provider prose, trace and evidence descriptions, remediation, ledger text and incomplete reasons, with separate withheld-text and withheld-code counts. Provider files, paths, source scope and source references use the location marker; titles replace known private literals. Standard replaces provider coverage identifiers with `unit-` and provider fingerprints with `fp-`, followed by the first twelve lowercase hexadecimal characters of the original value’s SHA-256; product-generated identities, timestamps, enums, scores and digests remain unchanged. Confirmed findings use the localized SourceCode family summary, impact and action in Standard. The `none` profile preserves native text and code verbatim.
 Private snapshot inputs retain their full context as described below.
 
-Framework reports include the profile-redacted shared `source_audits` extension. OCSF and OSCAL export confirmed findings with provider identity and retain the full shared audit report in their mandatory hash-bound companion; provider identity is not a control conclusion. See [export details](results-and-exports.md#development-preservation-and-restore). Single-run and combined HTML attachments now accept admitted source audits. Only `none` plus the raw-artifact option includes their exact original bytes and nested names, with provider/admission/method attribution and original digests in each ZIP manifest. Standard omits provider originals without reading them and records sensitive omissions. A frozen snapshot retains selected ZIP bytes: retrieval and exact-compatible replay continue after source originals disappear; creating a new unmasked attachment export then refuses. Signed case bundles now carry the profile-aware case-wide admission document. Combined attachment overflow uses the explicitly acknowledged private archive fallback for all cases. Complete archives support read-only audit restore; run comparisons involving an audit remain unavailable. Unknown case format requirements still block report
+Framework reports include the profile-redacted shared `source_audits` extension. OCSF and OSCAL export confirmed findings with provider identity and retain the full shared audit report in their mandatory hash-bound companion; provider identity is not a control conclusion. See [export formats for admitted audits](#export-formats-for-admitted-audits) below. Single-run and combined HTML attachments now accept admitted source audits. Only `none` plus the raw-artifact option includes their exact original bytes and nested names, with provider/admission/method attribution and original digests in each ZIP manifest. Standard omits provider originals without reading them and records sensitive omissions. A frozen snapshot retains selected ZIP bytes: retrieval and exact-compatible replay continue after source originals disappear; creating a new unmasked attachment export then refuses. Signed case bundles now carry the profile-aware case-wide admission document. Combined attachment overflow uses the explicitly acknowledged private archive fallback for all cases. Complete archives support read-only audit restore; run comparisons involving an audit remain unavailable. Unknown case format requirements still block report
 creation and replay; intact original snapshot documents remain retrievable.
+
+### Export formats for admitted audits
+
+Framework reports carry the profile-redacted shared `source_audits` extension:
+identity, method, outcome, counts, To validate records, gaps and technical
+provenance. Audit tasks are excluded from scanner counts and engine-state lists.
+Confirmed audit observations use `source_audit_not_mapped`: source audit findings
+are intentionally not mapped to framework controls.
+
+OCSF exports confirmed audit findings as Detection Finding events; OSCAL exports
+them as observations with `EXAMINE`. OCSF adds provider identity under
+`unmapped.ai_security_scanner.source_audit`; OSCAL adds namespaced
+`source-audit-*` properties on the observation and its evidence. These carry
+provider/admission IDs, native fingerprint, record digest/index, the admitted
+confirmed verdict, method label and upstream commit. This identity is not human
+confirmation, a compliance result or a control conclusion, and human workflow
+status is unchanged. Needs-validation, rejected and candidate records never become
+events or observations. The mandatory hash-bound OCSF/OSCAL companion keeps the
+shared audit report, including leads, gaps, method and outcome when there are zero
+confirmed findings; keep the companion with the main file.
+
+Both redaction profiles preserve IDs, enums and digests. Standard uses identical
+`fp-` pseudonyms for unresolved fingerprint lists. Derived gap labels and
+identifier masks do not increase withheld-text counts; those counts cover only
+provider prose or code actually withheld. `none` retains native values. Missing or
+mismatched admission/task/artifact bindings refuse export before files are written.
+
+Signed case bundles include a case-wide `source-audit-admissions.json` when the case
+has admissions, even when the selected report is a scanner run. It preserves
+retained projections, artifact bindings and explicit provider task provenance.
+Standard withholds provider prose/code with counts, uses location markers and
+`unit-`/`fp-` pseudonyms, and retains identities and digests; `none` retains native
+values. Admission and native digests commit to the original material; the signed
+manifest separately hashes the exported document. The bundle's framework
+`source_audits` equals its shared report's extension, including withheld counts.
+Provider tasks appear separately from catalog engine versions and product-owned
+built-in tasks. The document and its schema entry are absent from bundles of cases
+without admissions.
+
+Audit ZIP manifests in HTML attachments name the provider, admission and
+“Cloudflare source audit” method, with original digests and per-file hashes; each
+ZIP also has its own hash. Combined downloads retain run/task namespaces. Standard
+always omits every provider original, even when raw artifacts are requested, counts
+them as sensitive omissions and generates no sanitized copies. Missing, changed or
+mismatched originals refuse unmasked attachment or bundle exports. Export preview
+counts source audit tasks separately from scanner engine jobs. Attachments keep the
+64 MiB / 10,000-file limits; combined reports apply them across the selection and
+also bound the encoded HTML/JSON documents. Above the limits, an explicitly
+acknowledged private complete archive preserves originals for both admitted and
+scanner-only cases.
 
 ## Read current scan status
 
@@ -317,7 +371,7 @@ and selected-run HTML/JSON composition retain their separate behavior.
 Complete case preservation uses the separate [archive commands](case-archives.md),
 which include saved snapshots and restore into a new workspace.
 
-Admitted source audits use the shared report surfaces listed above; other provider outputs and complete archives remain pending. The [pinned bootstrap](skill-bootstrap.md)
+Admitted source audits use the shared report surfaces listed above and are kept in [complete archives](case-archives.md); reported-only provider bundles stay outside the case report. The [pinned bootstrap](skill-bootstrap.md)
 and [foreground scan execution](foreground-scans.md) are available in development.
 The accepted [migration specification](plans/skill-first-cloudflare-migration.md)
 and [report fidelity/archive contract](specs/report-fidelity-and-archive.md)

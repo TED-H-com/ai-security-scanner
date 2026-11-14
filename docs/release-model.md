@@ -56,9 +56,9 @@ scanners, all asset types or all operating systems.
 
 Current source includes foreground execution/recovery, selected scanner image
 preparation, shared report snapshots, combined original attachments, and complete
-archive/restore for the existing case domain. Cloudflare can validate documents
-and reported bundles, retain originals privately and retrieve them offline. It
-does not yet execute an audit or admit findings to a case/report. Details and
+archive/restore for the existing case domain. Cloudflare source audits run
+through the host procedure from preparation to sealing, case admission and the
+shared report, and admitted audits are kept in complete archives. Details and
 verification are in [Development status](development-status.md).
 
 Before calling the complete new skill path stable:

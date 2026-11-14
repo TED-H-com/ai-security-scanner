@@ -7,6 +7,8 @@ Use [`docs/product-spec.md`](docs/product-spec.md) as the product source of trut
 3. Combine scanner output in one professional report layer using the product team's decisions.
 4. Leave versioning, release timing, packaging, signing, and compliance posture to the product owner.
 
+For app UI changes, reuse the existing tokens and components documented in [`DESIGN.md`](DESIGN.md).
+
 ## What this means
 
 - A meaningful scan performs a real security, vulnerability, secret, dependency, configuration, or exposure check. Process completion, setup checks, and a single TCP connection do not count.

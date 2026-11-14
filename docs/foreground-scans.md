@@ -4,13 +4,22 @@ This source checkout adds foreground execution through the same coordinator and
 scanner adapters as the desktop. The published desktop remains the default
 operator entry. The [pinned development bootstrap](skill-bootstrap.md) now builds
 the core and prepares selected scanner images through the same runtime resolver.
-Cloudflare orchestration and automatic managed-bundle acquisition remain pending. See [publication status](release-model.md); the repository operator skill being public does not release these newer commands.
+Automatic managed-bundle acquisition remains pending; Cloudflare source audits follow the [host procedure](cloudflare-provider.md). See [publication status](release-model.md); the repository operator skill being public does not release these newer commands.
 
 Use an existing case with reviewed assets and effective scope grants. A run does
 not create or widen authorization. Provider and model credentials remain bound
 to their supported local authorization flows; do not put credentials in command
 arguments. Select the intended data directory explicitly when working alongside
 an installed desktop.
+
+To set up a case in a new skill data directory, the user runs
+`case create --title TITLE`, then
+`source attach-workspace --case-id CASE_ID --label LABEL --path ABSOLUTE_DIR --profile repository-working-tree`,
+reviews the asset in `case show CASE_ID` and records their own decision with
+`scope approve --case-id CASE_ID --asset-id ASSET_ID --permission local-artifact-read --confirmed-by NAME`
+(network permissions also need `--external-scope FILE`). `scope list CASE_ID`
+shows the result. An agent may prepare these commands but never confirms scope
+for the user.
 
 For lost Cloudflare host copies, use `provider cloudflare status`, then the read-only
 `provider cloudflare retrieve-captured` command with a recorded document revision
@@ -122,10 +131,10 @@ Run/recover use these exit codes; older command conventions remain unchanged:
 Findings alone never select an error exit code. Reopen status after a lost output
 acknowledgement instead of immediately repeating `scan run`.
 
-Use the existing [report snapshot commands](report-snapshots.md) to preserve a
-terminal report and [private archives](case-archives.md) to restore a complete
-case elsewhere. Foreground execution does not yet automatically create report
-snapshots or archives. Platform and end-to-end acceptance are tracked in the
+A finished run saves its report automatically (see `result.report_snapshot`
+above); use the [report snapshot commands](report-snapshots.md) to retrieve or
+replay it. Create a [private archive](case-archives.md) when the case must be
+restored elsewhere; archives are never created automatically. Platform and end-to-end acceptance are tracked in the
 [development status](development-status.md) and [migration specification](plans/skill-first-cloudflare-migration.md).
 
 For an audit that cannot be sealed and will not continue, use

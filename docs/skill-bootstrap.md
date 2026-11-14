@@ -84,7 +84,7 @@ node scripts/skill/bootstrap.mjs run \
   scan status --case-id CASE_ID --run-id RUN_ID
 ```
 
-Use the same forwarding form for the implemented [foreground scan](foreground-scans.md),
+Use the same forwarding form for the implemented [case setup and foreground scan](foreground-scans.md),
 [report snapshot](report-snapshots.md) and [archive/restore](case-archives.md)
 commands. Scope grants, target selection and private export acknowledgements
 retain their existing meanings. `build-identity` does not need a data directory.
@@ -146,8 +146,9 @@ Cold-machine acquisition of a managed bundle is not automatic yet. Development
 bundles are produced by the existing versioned
 [`runtime/vendor-managed-runtime.mjs`](../runtime/vendor-managed-runtime.mjs)
 procedure; its Linux helper build requires an existing Docker builder. Windows
-and macOS execution, Cloudflare delegation and dynamic sandbox readiness remain
-separate verification work. The released desktop remains the normal first-run
+and macOS host execution and dynamic sandbox readiness remain separate
+verification work; Cloudflare delegation has completed on one Linux host (see
+below). The released desktop remains the normal first-run
 route while that full skill journey is completed.
 
 The bootstrap uses a fixed cancellation pipe for selected preparation and for

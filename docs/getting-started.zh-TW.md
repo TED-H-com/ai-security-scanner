@@ -48,7 +48,7 @@ AWS 或 Microsoft 365 的唯讀連線過期時，掃描結果會提供**重新�
 
 掃描在你自己電腦上的桌面應用程式中執行，**開始**是應用程式視窗裡的按鈕。在同一台電腦上的 Agent 可以安裝應用程式、確認這台電腦能否掃描、引導你操作應用程式、解讀結果，並透過應用程式的 CLI 保存 HTML 報告。它安裝的是上方的發布版本，不需要建置本儲存庫。
 
-在 **Claude Code** 或 **Codex** 開啟本儲存庫，使用其中的 `ai-security-scanner` skill：[Claude Code 指引](../.claude/skills/ai-security-scanner/SKILL.md) · [Codex 指引](../.codex/skills/ai-security-scanner/SKILL.md)。兩份皆由[單一 skill 來源](../skills/ai-security-scanner/SKILL.md)產生。如果宿主未自動找到儲存庫中的 skill，請明確開啟連結的指引。保留 checkout，因為 skill 會引用其中的產品文件。公開這些指引、發布新的 skill 核心與 plugin 上架是不同的事。
+在 **Claude Code** 或 **Codex** 開啟本儲存庫，使用其中的 `ai-security-scanner` skill：[Claude Code 指引](../.claude/skills/ai-security-scanner/SKILL.md) · [Codex 指引](../.codex/skills/ai-security-scanner/SKILL.md)。兩份皆由[單一 skill 來源](../skills/ai-security-scanner/SKILL.md)產生。如果宿主未自動找到儲存庫中的 skill，請明確開啟連結的指引。保留 checkout，因為 skill 會引用其中的產品文件。
 
 可以這樣要求 Agent：
 
@@ -69,7 +69,7 @@ npm run tauri dev
 
 這些指令已在 Linux 實測。
 
-目前 Grype 映像固定為 `0.117.0-4`（`sha256:56b0d675…`），已有本機專案弱點掃描結果。詳見[完整釘選與實測紀錄](engine-catalog.md#grype-repository-support)。
+目前 Grype 映像固定為 `0.121.2-1`（`sha256:80b8f128…`）。詳見[完整釘選與驗證紀錄](engine-catalog.md#grype-repository-support)。
 
 ## 選擇第一次掃描
 
