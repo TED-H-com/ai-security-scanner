@@ -202,15 +202,20 @@ async function ensureParents(destination, parts) {
   }
 }
 
-export async function extractReleaseBundle(debFile, innerPath, destination, signal) {
+export async function extractReleaseBundle(packageFile, kind, innerPath, destination, signal) {
   let source; let gunzip;
   try {
+    if (kind !== 'deb' && kind !== 'tar.gz') reject('archive', 'unsupported package kind');
     safePath(innerPath, false);
     const root = await lstat(destination);
     if (!root.isDirectory() || root.isSymbolicLink()) reject('archive', 'unsafe destination');
     if (process.platform !== 'win32') await chmod(destination, 0o700);
-    const member = await dataMember(debFile, signal);
-    source = createReadStream(debFile, { start: member.start, end: member.start + member.size - 1 });
+    if (kind === 'deb') {
+      const member = await dataMember(packageFile, signal);
+      source = createReadStream(packageFile, { start: member.start, end: member.start + member.size - 1 });
+    } else {
+      source = createReadStream(packageFile);
+    }
     gunzip = createGunzip();
     source.on('error', error => gunzip.destroy(error));
     const abort = () => { source.destroy(); gunzip.destroy(signal.reason ?? new Error('Aborted')); };

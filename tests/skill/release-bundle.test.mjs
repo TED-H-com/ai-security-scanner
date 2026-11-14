@@ -3,9 +3,10 @@ import { mkdtemp, mkdir, readFile, readdir, rm, writeFile, chmod, symlink } from
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import test from 'node:test';
+import { gunzipSync } from 'node:zlib';
 import { downloadReleaseBundle, extractReleaseBundle, verifyReleaseBundle } from '../../scripts/skill/release-bundle.mjs';
 import { RECOGNIZED_MANAGED_RUNTIME_BUNDLES } from '../../scripts/skill/managed-runtime-bundles.mjs';
-import { chunkedResponse, debFromTar, innerPath, packageFixture, tarEntry } from './release-bundle-fixture.mjs';
+import { appPackageFixture, chunkedResponse, debFromTar, innerPath, macInnerPath, packageFixture, tarEntry } from './release-bundle-fixture.mjs';
 
 async function fixture(t) {
   const root = await mkdtemp(join(tmpdir(), 'release-bundle-'));
@@ -15,7 +16,7 @@ async function fixture(t) {
 async function extract(f, bytes) {
   await writeFile(f.file, bytes);
   await mkdir(f.bundle);
-  return extractReleaseBundle(f.file, innerPath, f.bundle);
+  return extractReleaseBundle(f.file, 'deb', innerPath, f.bundle);
 }
 
 test('download follows HTTPS redirects without credentials, streams and verifies before extraction', async t => {
@@ -31,9 +32,64 @@ test('download follows HTTPS redirects without credentials, streams and verifies
   for (const [, options] of calls) { assert.equal(options.redirect, 'manual'); assert.equal(options.credentials, 'omit'); assert.equal(options.headers, undefined); }
   assert.deepEqual(await readFile(f.file), p.bytes);
   await mkdir(f.bundle);
-  await extractReleaseBundle(f.file, innerPath, f.bundle);
+  await extractReleaseBundle(f.file, 'deb', innerPath, f.bundle);
   await verifyReleaseBundle(f.bundle, p.manifestSha);
   assert.deepEqual((await readdir(f.bundle)).sort(), ['bin', 'manifest.json', 'notes.txt']);
+});
+
+test('macOS app archive extracts and verifies only its GNU runtime files and modes', async t => {
+  const f = await fixture(t); const p = appPackageFixture();
+  const tar = gunzipSync(p.bytes);
+  const modes = new Map();
+  for (let pos = 0; tar[pos] !== 0;) {
+    const header = tar.subarray(pos, pos + 512);
+    assert.equal(header.subarray(257, 265).toString('binary'), 'ustar  \0');
+    assert.ok(header.subarray(345, 500).every(byte => byte === 0));
+    const name = header.subarray(0, 100).toString('utf8').replace(/\0.*$/s, '');
+    const size = Number.parseInt(header.subarray(124, 136).toString('ascii'), 8);
+    modes.set(name, Number.parseInt(header.subarray(100, 108).toString('ascii'), 8));
+    pos += 512 + Math.ceil(size / 512) * 512;
+  }
+  assert.equal(modes.get(`${macInnerPath}/manifest.json`), 0o100600);
+  for (const file of p.files) assert.equal(modes.get(`${macInnerPath}/${file.path}`), 0o100700);
+  await writeFile(f.file, p.bytes);
+  await mkdir(f.bundle);
+  await extractReleaseBundle(f.file, 'tar.gz', macInnerPath, f.bundle);
+  await verifyReleaseBundle(f.bundle, p.manifestSha);
+  assert.deepEqual((await readdir(f.bundle)).sort(), ['bin', 'manifest.json']);
+  assert.deepEqual((await readdir(join(f.bundle, 'bin'))).sort(), ['gvproxy', 'podman', 'vfkit']);
+  if (process.platform !== 'win32') {
+    const { lstat } = await import('node:fs/promises');
+    assert.equal((await lstat(join(f.bundle, 'manifest.json'))).mode & 0o777, 0o600);
+    for (const file of p.files) assert.equal((await lstat(join(f.bundle, file.path))).mode & 0o777, 0o700);
+  }
+});
+
+test('archive kind mismatches and unknown kinds are refused', async t => {
+  for (const [pkg, kind, message] of [
+    [packageFixture(), 'tar.gz', 'invalid archive'],
+    [appPackageFixture(), 'deb', 'invalid package header'],
+  ]) {
+    const f = await fixture(t);
+    await writeFile(f.file, pkg.bytes);
+    await mkdir(f.bundle);
+    await assert.rejects(extractReleaseBundle(f.file, kind, pkg.source.inner_path, f.bundle), { code: 'archive', message });
+  }
+  const missing = await fixture(t);
+  await assert.rejects(extractReleaseBundle(missing.file, 'zip', innerPath, missing.bundle), { code: 'archive', message: 'unsupported package kind' });
+});
+
+test('macOS archive applies the same tar safety checks outside and inside the runtime', async t => {
+  for (const [entry, message] of [
+    [tarEntry('other/link', '', { format: 'gnu', type: '2' }), 'unsupported tar entry'],
+    [tarEntry(`${macInnerPath}/../escape`, '', { format: 'gnu' }), 'unsafe path'],
+    [tarEntry(`${macInnerPath}/bin/gvproxy`, '', { format: 'gnu' }), 'runtime entry limit or duplicate'],
+  ]) {
+    const f = await fixture(t); const p = appPackageFixture({ extra: [entry] });
+    await writeFile(f.file, p.bytes);
+    await mkdir(f.bundle);
+    await assert.rejects(extractReleaseBundle(f.file, 'tar.gz', macInnerPath, f.bundle), { code: 'archive', message });
+  }
 });
 
 test('download rejects size, checksum, HTTP, redirect and stalled transfers, removing partial files', async t => {
@@ -89,14 +145,19 @@ test('bundle verification rejects extra files, wrong manifest, links and executa
   }
 });
 
-test('real published release bundle downloads and verifies', { skip: process.env.AI_SCANNER_REAL_RELEASE_BUNDLE !== '1', timeout: 900_000 }, async t => {
-  const f = await fixture(t);
-  const entry = RECOGNIZED_MANAGED_RUNTIME_BUNDLES.find(item => item.platform === 'linux');
-  await downloadReleaseBundle(entry.release_source, f.file, { fetch: globalThis.fetch });
-  await mkdir(f.bundle);
-  await extractReleaseBundle(f.file, entry.release_source.inner_path, f.bundle);
-  await verifyReleaseBundle(f.bundle, entry.manifest_sha256);
-  assert.equal(JSON.parse(await readFile(join(f.bundle, 'manifest.json'), 'utf8')).files.length, 114);
+test('real published release bundles download and verify', { skip: process.env.AI_SCANNER_REAL_RELEASE_BUNDLE !== '1', timeout: 900_000 }, async t => {
+  for (const entry of RECOGNIZED_MANAGED_RUNTIME_BUNDLES.filter(item => item.release_source)) {
+    await t.test(entry.platform, async t => {
+      const f = await fixture(t);
+      await downloadReleaseBundle(entry.release_source, f.file, { fetch: globalThis.fetch });
+      await mkdir(f.bundle);
+      await extractReleaseBundle(f.file, entry.release_source.kind, entry.release_source.inner_path, f.bundle);
+      await verifyReleaseBundle(f.bundle, entry.manifest_sha256);
+      const manifest = JSON.parse(await readFile(join(f.bundle, 'manifest.json'), 'utf8'));
+      if (entry.platform === 'linux') assert.equal(manifest.files.length, 114);
+      if (entry.platform === 'darwin') assert.equal(manifest.files.length, 3);
+    });
+  }
 });
 
 test('oversize body is cancelled before the remaining chunks are read', async t => {
@@ -240,7 +301,7 @@ test('extraction and verification honor cancellation', async t => {
   await mkdir(f.bundle);
   const extraction = new AbortController();
   setImmediate(() => extraction.abort(new Error('cancel extraction')));
-  await assert.rejects(extractReleaseBundle(f.file, innerPath, f.bundle, extraction.signal), /cancel extraction/);
+  await assert.rejects(extractReleaseBundle(f.file, 'deb', innerPath, f.bundle, extraction.signal), /cancel extraction/);
   const g = await fixture(t); const normal = packageFixture();
   await extract(g, normal.bytes);
   const verification = new AbortController();

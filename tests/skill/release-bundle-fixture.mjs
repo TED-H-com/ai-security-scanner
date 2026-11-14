@@ -3,6 +3,7 @@ import { gzipSync } from 'node:zlib';
 
 export const sha256 = value => createHash('sha256').update(value).digest('hex');
 export const innerPath = 'usr/lib/ai-security-scanner/managed-runtime';
+export const macInnerPath = 'ai-security-scanner.app/Contents/Resources/managed-runtime';
 
 function octal(buffer, offset, length, number) {
   buffer.write(number.toString(8).padStart(length - 1, '0') + '\0', offset, length, 'ascii');
@@ -20,8 +21,8 @@ export function tarEntry(name, content = '', { type = '0', mode = 0o644, corrupt
   header.write(type, 156, 1, 'ascii');
   if (format === 'gnu') {
     header.write('ustar  \0', 257, 8, 'ascii');
-    octal(header, 345, 12, atime);
-    octal(header, 357, 12, ctime);
+    if (atime) octal(header, 345, 12, atime);
+    if (ctime) octal(header, 357, 12, ctime);
   } else {
     header.write('ustar\0', 257, 6, 'ascii');
     header.write('00', 263, 2, 'ascii');
@@ -56,6 +57,25 @@ export function packageFixture({ extra = [], removeEnd = false, manifestOverride
   const tar = Buffer.concat([...entries, ...(removeEnd ? [] : [Buffer.alloc(1024)])]);
   const bytes = debFromTar(tar);
   return { bytes, manifest, files, manifestSha: sha256(manifest), source: { kind: 'deb', url: 'https://example.test/runtime.deb', bytes: bytes.length, sha256: sha256(bytes), inner_path: innerPath, extracted_bytes: manifest.length + files.reduce((sum, file) => sum + file.data.length, 0) } };
+}
+export function appPackageFixture({ extra = [] } = {}) {
+  const files = ['gvproxy', 'vfkit', 'podman'].map(name => ({ path: `bin/${name}`, data: Buffer.from(`${name} executable\n`), executable: true }));
+  const manifest = Buffer.from(JSON.stringify({ files: files.map(file => ({ path: file.path, sha256: sha256(file.data), size_bytes: file.data.length, executable: true })) }));
+  const directory = name => tarEntry(name, '', { format: 'gnu', type: '5', mode: 0o40700 });
+  const entries = [
+    directory('ai-security-scanner.app/'),
+    directory('ai-security-scanner.app/Contents/'),
+    directory('ai-security-scanner.app/Contents/MacOS/'),
+    tarEntry('ai-security-scanner.app/Contents/MacOS/ai-security-scanner', 'not part of the runtime', { format: 'gnu', mode: 0o100700 }),
+    directory('ai-security-scanner.app/Contents/Resources/'),
+    directory(`${macInnerPath}/`),
+    directory(`${macInnerPath}/bin/`),
+    tarEntry(`${macInnerPath}/manifest.json`, manifest, { format: 'gnu', mode: 0o100600 }),
+    ...files.map(file => tarEntry(`${macInnerPath}/${file.path}`, file.data, { format: 'gnu', mode: 0o100700 })),
+    ...extra,
+  ];
+  const bytes = gzipSync(Buffer.concat([...entries, Buffer.alloc(1024)]));
+  return { bytes, manifest, files, manifestSha: sha256(manifest), source: { kind: 'tar.gz', url: 'https://example.test/runtime.app.tar.gz', bytes: bytes.length, sha256: sha256(bytes), inner_path: macInnerPath, extracted_bytes: manifest.length + files.reduce((sum, file) => sum + file.data.length, 0) } };
 }
 export function chunkedResponse(bytes, options = {}) {
   let offset = 0;

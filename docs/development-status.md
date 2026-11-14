@@ -22,7 +22,7 @@ These features are implemented in source on this branch and are not in any relea
 
 - Real-host acceptance has covered one Linux host on a synthetic repository, from an empty pinned-bootstrap cache through restore; a second host, several assets and macOS/Windows hosts remain.
 - The default skill has not switched from the released desktop.
-- On Linux x86_64, the scan runtime downloads from the published desktop package when no other runtime is available; on one Linux host this started the managed runtime and prepared the Gitleaks image. Automatic acquisition on macOS and Windows remains unfinished. CI on macOS and Windows now also runs the library tests and the foreground-scan and engine-preparation fixture suites, but real scanner execution on those hosts has not yet been verified.
+- On Linux x86_64 and macOS, the scan runtime downloads from the published desktop package when no other runtime is available; on one Linux host this started the managed runtime and prepared the Gitleaks image. A start from the macOS download has not been verified, and automatic acquisition on Windows remains unfinished. CI on macOS and Windows now also runs the library tests and the foreground-scan and engine-preparation fixture suites, but real scanner execution on those hosts has not yet been verified.
 
 The dated sections below preserve observations at each milestone. [The product specification](product-spec.md) defines product behavior; [the migration plan](plans/skill-first-cloudflare-migration.md) and [report and archive contract](specs/report-fidelity-and-archive.md) describe the accepted work. See [publication status](release-model.md) for availability.
 

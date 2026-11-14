@@ -15,7 +15,7 @@ import {
   invokeRuntimePreparation, runtimePreparationArguments,
 } from '../../scripts/skill/bootstrap-core.mjs';
 import { RECOGNIZED_MANAGED_RUNTIME_BUNDLES } from '../../scripts/skill/managed-runtime-bundles.mjs';
-import { chunkedResponse, packageFixture } from './release-bundle-fixture.mjs';
+import { appPackageFixture, chunkedResponse, packageFixture } from './release-bundle-fixture.mjs';
 
 const digest = value => createHash('sha256').update(value).digest('hex');
 const revision = 'a'.repeat(40);
@@ -1124,9 +1124,8 @@ test('scan doctor records this host runtime sources without executing commands',
   t.diagnostic(`host runtime_sources: ${JSON.stringify(result.runtime_sources)}`);
 });
 
-async function releaseFixture(t) {
+async function releaseFixture(t, pkg = packageFixture()) {
   const f = await installedBundleFixture(t);
-  const pkg = packageFixture();
   const entry = { ...f.entry, manifest_sha256: pkg.manifestSha, installed_paths: [join(f.root, 'absent')], release_source: pkg.source };
   const calls = []; let fetches = 0; let output = '';
   const failed = runtimeResult(f.options, { ready: false, runtime_unavailable_reason: 'no_runtime' });
@@ -1164,6 +1163,42 @@ test('release runtime is promoted, retried with a pinned manifest, reused, and r
   assert.equal(third.runtime_bundle.downloaded, true);
   assert.equal(f.fetches(), 2);
   assert.deepEqual(await readdir(join(f.options.cacheDir, 'managed-bundles')), [f.pkg.manifestSha]);
+});
+
+test('macOS release runtime is selected for both supported architectures', async t => {
+  for (const arch of ['arm64', 'x64']) {
+    await t.test(arch, async t => {
+      const f = await releaseFixture(t, appPackageFixture());
+      const published = RECOGNIZED_MANAGED_RUNTIME_BUNDLES.find(entry => entry.platform === 'darwin');
+      const entry = { ...published, manifest_sha256: f.pkg.manifestSha, installed_paths: [join(f.root, 'absent')], release_source: f.pkg.source };
+      const deps = {
+        ...f.deps, platform: 'darwin', arch,
+        recognizedManagedRuntimeBundles: [RECOGNIZED_MANAGED_RUNTIME_BUNDLES[0], entry],
+      };
+      assert.equal((await doctorBootstrap(f.options, deps)).runtime_sources.release_bundle, 'downloadable');
+      // A simulated darwin prepare expects a POSIX core artifact with an executable bit, which a
+      // Windows host cannot produce; the download flow below runs on the Linux and macOS lanes.
+      if (process.platform === 'win32') return;
+      if (arch === 'arm64') {
+        const publishedDeps = { ...deps, recognizedManagedRuntimeBundles: [{ ...entry, release_source: published.release_source }], fetch: async () => new Response(null, { status: 404 }) };
+        await assert.rejects(prepareBootstrap(f.options, publishedDeps), { code: 'runtime_preparation_failed' });
+        assert.match(f.output(), /Downloading the scan runtime from the published desktop package \(144 MB, once\)/);
+      }
+      const result = await prepareBootstrap(f.options, deps);
+      const final = join(f.options.cacheDir, 'managed-bundles', f.pkg.manifestSha);
+      assert.equal(f.fetches(), 1);
+      assert.equal(result.runtime_bundle_source, 'downloaded_release');
+      assert.deepEqual(result.runtime_bundle, { path: final, manifest_sha256: f.pkg.manifestSha, product_version: published.product_version, source: { url: f.pkg.source.url, bytes: f.pkg.source.bytes, sha256: f.pkg.source.sha256 }, downloaded: true });
+      assert.deepEqual(f.calls.at(-1), { ...f.options, managedRuntimeBundle: final, expectedManagedRuntimeManifestSha256: f.pkg.manifestSha });
+      assert.deepEqual((await readdir(final)).sort(), ['bin', 'manifest.json']);
+      assert.equal((await doctorBootstrap(f.options, deps)).runtime_sources.release_bundle, 'cached');
+      const reused = await prepareBootstrap(f.options, deps);
+      assert.equal(reused.runtime_bundle_source, 'downloaded_release');
+      assert.equal(reused.runtime_bundle.downloaded, false);
+      assert.equal(reused.runtime_bundle.path, final);
+      assert.equal(f.fetches(), 1);
+    });
+  }
 });
 
 test('release acquisition failure preserves original core details and maps useful next steps', async t => {
