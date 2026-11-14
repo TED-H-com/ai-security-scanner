@@ -25,7 +25,7 @@ These features are implemented in source on this branch and are not in any relea
 
 The dated sections below preserve observations at each milestone. [The product specification](product-spec.md) defines product behavior; [the migration plan](plans/skill-first-cloudflare-migration.md) and [report and archive contract](specs/report-fidelity-and-archive.md) describe the accepted work. See [publication status](release-model.md) for availability.
 
-CI document and contract tests: 114 tests cover the current source boundaries.
+CI document and contract tests: 123 tests cover the current source boundaries.
 
 ## November 13 report and archive gates — 27
 
