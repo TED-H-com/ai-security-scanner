@@ -11,7 +11,7 @@
 以下功能已在本分支原始碼實作，尚未包含於任何發布版本：
 
 - [Skill 主流程](skill-bootstrap.md)：固定來源 bootstrap 與所選掃描引擎的準備。
-- [重用已安裝的桌面執行環境](skill-bootstrap.md)：在 Linux x86_64 與 macOS 重用可辨識的桌面執行環境，不需 Docker 或 Podman 即可準備掃描。
+- [重用已安裝的桌面執行環境](skill-bootstrap.md)：在 Linux x86_64、macOS 與 Windows x64 重用可辨識的桌面執行環境，不需 Docker 或 Podman 即可準備掃描。
 - [前景掃描與復原](foreground-scans.md)：執行已核准的檢查、讀取保存狀態並復原已擷取的結果。
 - [Cloudflare 原始碼稽核](cloudflare-provider.md)：由宿主執行準備、記錄派工與輸出、檢查點、驗證、定稿、案件入案及共用報告整合；不再繼續的稽核可明示終止。
 - [未完成稽核檢查](results-and-exports.zh-TW.md#未開始或未完成的原始碼稽核)：準備受阻與已終止稽核，會在案件、桌面結果與共用報告中列為未開始或失敗的檢查。
@@ -30,7 +30,7 @@ CI 文件與契約測試目前共 124 項。
 
 ## 11 月 14 日跨平台檢查與執行環境重用 — 30
 
-沒有 Docker 或 Podman 時，`prepare --capability scan` 可在 Linux x86_64 與 macOS 重用已安裝桌面程式的掃描執行環境，前提是此原始碼版本認得其套件清單；Windows 尚未實作偵測。核心會再次核對清單摘要。若無法準備可用的執行環境，程序會停止並提供一則 `next_step` 供操作人員轉達；不會下載或安裝執行環境。`doctor --capability scan` 會列出可見的執行環境來源，但不會執行它們。
+沒有 Docker 或 Podman 時，`prepare --capability scan` 可在 Linux x86_64、macOS 與 Windows x64（預設安裝資料夾）重用已安裝桌面程式的掃描執行環境，前提是此原始碼版本認得其套件清單。核心會再次核對清單摘要。若無法準備可用的執行環境，程序會停止並提供一則 `next_step` 供操作人員轉達；不會下載或安裝執行環境。`doctor --capability scan` 會列出可見的執行環境來源，但不會執行它們。
 
 沒有將 Docker 或 Podman 放在 `PATH` 的 Linux 主機已完成這條準備流程的端對端驗證；該主機未安裝套件，因此重用本身目前僅由測試涵蓋。前景命令會據實回報已保存的內容；取消會停止進行中的受管理執行環境啟動，每次主控台中斷也都會在工作收束後回報結果。
 

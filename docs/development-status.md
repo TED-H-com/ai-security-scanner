@@ -11,7 +11,7 @@ _Updated 2026-11-14._
 These features are implemented in source on this branch and are not in any release:
 
 - [Skill-first execution](skill-bootstrap.md): pinned source bootstrap and preparation of selected scanner engines.
-- [Installed desktop runtime reuse](skill-bootstrap.md): prepare scans without Docker or Podman using a recognized desktop runtime on Linux x86_64 and macOS.
+- [Installed desktop runtime reuse](skill-bootstrap.md): prepare scans without Docker or Podman using a recognized desktop runtime on Linux x86_64, macOS and Windows x64.
 - [Foreground scans and recovery](foreground-scans.md): run approved checks, read saved status and recover captured results.
 - [Cloudflare source audits](cloudflare-provider.md): host-led preparation, recorded assignments and outputs, checkpoints, validation, sealing, case admission and shared reporting, with explicit termination when an audit will not continue.
 - [Unfinished audit checks](results-and-exports.md#source-audits-that-did-not-finish): blocked preparation and terminated audits appear as not-started or failed check rows in the case, desktop Results and shared report.
@@ -30,7 +30,7 @@ CI document and contract tests: 124 tests cover the current source boundaries.
 
 ## November 14 cross-platform checks and runtime reuse — 30
 
-Without Docker or Podman, `prepare --capability scan` can reuse an installed desktop app's scan runtime on Linux x86_64 and macOS when this source revision recognizes its manifest; detection on Windows is not implemented. The core checks the manifest digest again. If preparation cannot find a usable runtime, it stops with one `next_step` for the operator to relay; it never downloads or installs a runtime. `doctor --capability scan` lists the runtime sources it can see without running them.
+Without Docker or Podman, `prepare --capability scan` can reuse an installed desktop app's scan runtime on Linux x86_64, macOS and Windows x64 (default install folders) when this source revision recognizes its manifest. The core checks the manifest digest again. If preparation cannot find a usable runtime, it stops with one `next_step` for the operator to relay; it never downloads or installs a runtime. `doctor --capability scan` lists the runtime sources it can see without running them.
 
 The preparation flow was verified end to end on a Linux host without Docker or Podman on `PATH`; no bundle was installed there, so reuse itself is covered by tests only. Foreground commands report what was actually saved, cancellation stops a managed-runtime start, and every console interruption ends with a settled outcome.
 
