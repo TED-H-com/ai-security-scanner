@@ -317,6 +317,10 @@ test("frozen report inputs schedule Rust replay and the corpus verifier is alway
 
   let result = run();
   assert.equal(result.status, 0, result.stderr);
+  delete receipt.replaces;
+  writeFileSync(receiptPath, JSON.stringify(receipt));
+  result = run();
+  assert.equal(result.status, 0, result.stderr);
   assert.doesNotMatch(result.stdout, /Replaced revision/);
   receipt.replaces = replacement();
   writeFileSync(receiptPath, JSON.stringify(receipt));
