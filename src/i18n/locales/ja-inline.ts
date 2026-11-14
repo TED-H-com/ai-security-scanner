@@ -2040,7 +2040,7 @@ export const jaInline: Readonly<Record<string, string>> = {
   "Start the expected service, then run this check again.": "想定されるサービスを起動してから、この確認を再実行してください。",
   "The port refused the bounded TCP connection at the recorded time; this is not a security pass or failure.": "記録された時刻にポートが制限付き TCP 接続を拒否しました。これはセキュリティの合否を示すものではありません。",
   "Review what was tested before deciding whether you need a broader scan.": "より広いスキャンが必要か判断する前に、テスト済みの内容を確認してください。",
-  "Actionable findings in completed checks: 0.": "完了した確認のうち対応が必要な検出結果：0 件。",
+  "Actionable findings in completed checks: 0.": "完了した確認では問題は見つかりませんでした。",
   "No checks ran because this scan has no active permission for a selected target.": "選択した対象への有効な許可がこのスキャンにないため、確認は実行されませんでした。",
   "No checks ran because none of the selected targets is confirmed as yours to scan.": "選択した対象のいずれについてもスキャンする権限を確認できなかったため、確認は実行されませんでした。",
   "No installed check applies to the selected target and permission.": "選択した対象と許可に適用できる確認がインストールされていません。",

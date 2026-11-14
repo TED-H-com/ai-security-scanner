@@ -1770,7 +1770,7 @@ const COVERAGE_GAP_PROSE: ReadonlyArray<readonly [string, string]> = [
   ],
   [
     "Actionable findings in completed checks: 0.",
-    "已完成檢查中的可處理問題：0。",
+    "已完成的檢查沒有發現問題。",
   ],
   [
     "No checks ran because this scan has no active permission for a selected target.",

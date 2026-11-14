@@ -1,7 +1,10 @@
 # Report fidelity baseline
 
-This is the RF-01 compatibility corpus, freshly generated from production core
-`6e259b497b87fb8aa2ece1f3b512cc29c9ea5af7` on 2026-11-08. It is not a copy of the
+This is the RF-01 compatibility corpus. Its input was generated from production
+core `6e259b497b87fb8aa2ece1f3b512cc29c9ea5af7` on 2026-11-08; its expected
+outputs were last replaced from production core
+`cc2ef089584594b2908177550da65bb18ae26361` on 2026-11-14 (see
+[Replacement history](#replacement-history)). It is not a copy of the
 older public sample reports, a live security scan, or evidence that the planned
 snapshot/archive/restore features exist.
 
@@ -83,6 +86,20 @@ Capture refuses a nonempty destination and changes to the named baseline core.
 Do not update expected outputs to make a renderer extraction pass. Intentional
 product changes need a separately reviewed replacement corpus and receipt.
 
+To prepare a reviewed replacement from a clean committed production core:
+
+```sh
+AI_SCANNER_REPORT_BASELINE_REPLACE=/tmp/ai-scanner-report-fidelity-replacement \
+AI_SCANNER_REPORT_BASELINE_REPLACE_REASON='Describe the reviewed product change' \
+  cargo test --locked --manifest-path src-tauri/Cargo.toml --no-default-features \
+  --test report_fidelity_baseline report_fidelity::replace_report_fidelity_outputs \
+  -- --exact --ignored --nocapture
+```
+
+Input files are carried over byte-identical. Output snapshots are the exact
+bytes of the exporters at the named revision. The receipt's `replaces` object
+names the replaced revision, the reason, and the changed documents.
+
 ## Rendered evidence
 
 `visual/` contains 20 fresh Chromium screenshots: both scenarios and locales at
@@ -107,3 +124,30 @@ The script opens local files and blocks HTTP(S) page requests. It preserves the
 report HTML, opens one existing evidence disclosure for the expanded view, and
 uses Chromium print media for the print view. Screenshots do not imply that a
 new scanner, provider, or restore workflow has been executed.
+
+## Replacement history
+
+### 2026-11-14: reviewed report wording
+
+Replaces the outputs of core `6e259b497b87fb8aa2ece1f3b512cc29c9ea5af7` with
+those of core `cc2ef089584594b2908177550da65bb18ae26361`. Both `case.json.gz`
+inputs are carried over byte-identical. Every output document changed because
+the embedded product version moved from 0.6.0 to 0.6.2. JSON, framework, OCSF
+and OSCAL documents changed only in that version token, and the OCSF and OSCAL
+coverage sidecars only in the hash of the document they describe. Visible HTML
+changes:
+
+- The summary counts unfinished checks and coverage gaps separately: "5 coverage
+  gaps and 1 check without a verdict remain." (`all-detectors`) and "5 checks
+  did not complete; 6 coverage gaps and 1 check without a verdict remain."
+  (`mixed-terminal`), with the same split in Traditional Chinese.
+- `mixed-terminal` shows a separate "Cancelled" count.
+- The footer no longer repeats that framework sources appear in the framework
+  section.
+- Traditional Chinese Standard reports show asset aliases as `資產 N` instead of
+  `Asset N` and redacted locations as `（已遮蔽位置）`.
+
+All 20 screenshots in `visual/` were recaptured with Chromium 158; all have
+loaded fonts and no horizontal overflow. The English 390px cover, the
+Traditional Chinese 1440px cover and the Traditional Chinese expanded evidence
+were visually inspected.

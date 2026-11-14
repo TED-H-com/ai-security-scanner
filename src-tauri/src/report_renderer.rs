@@ -109,11 +109,20 @@ pub(crate) fn readable_report_time(value: &DateTime<Utc>) -> String {
 #[derive(Clone, Copy)]
 pub(crate) struct HtmlReportCatalog {
     pub(crate) locale: crate::export::ReportLocale,
+    standard_redaction: bool,
 }
 
 impl HtmlReportCatalog {
     pub(crate) fn new(locale: crate::export::ReportLocale) -> Self {
-        Self { locale }
+        Self {
+            locale,
+            standard_redaction: false,
+        }
+    }
+
+    fn with_standard_redaction(mut self, standard_redaction: bool) -> Self {
+        self.standard_redaction = standard_redaction;
+        self
     }
 
     pub(crate) fn text<'a>(&self, en: &'a str, zh_hant: &'a str) -> &'a str {
@@ -562,6 +571,25 @@ fn displayed_dimension(
     }
 }
 
+fn asset_alias_number(label: &str) -> Option<&str> {
+    let number = label.strip_prefix("Asset ")?;
+    (!number.is_empty() && number.bytes().all(|byte| byte.is_ascii_digit())).then_some(number)
+}
+
+pub(crate) fn localized_asset_label(
+    label: &str,
+    locale: ReportLocale,
+    standard_redaction: bool,
+) -> String {
+    if standard_redaction
+        && locale == ReportLocale::ZhHant
+        && let Some(number) = asset_alias_number(label)
+    {
+        return format!("資產 {number}");
+    }
+    label.to_owned()
+}
+
 pub(crate) fn readable_target_labels(
     report: &BeginnerMasterReport,
     catalog: HtmlReportCatalog,
@@ -573,7 +601,7 @@ pub(crate) fn readable_target_labels(
             .label
             .as_deref()
             .filter(|label| !label.trim().is_empty())
-            .map(str::to_owned)
+            .map(|label| localized_asset_label(label, catalog.locale, catalog.standard_redaction))
             .unwrap_or_else(|| format!("{} {next_number}", catalog.text("Target", "目標")));
         labels.entry(target.asset_id.clone()).or_insert(label);
         next_number += 1;
@@ -842,6 +870,58 @@ fn html_completed_asset_check_count(report: &BeginnerMasterReport) -> usize {
     scoped.max(report.coverage_counts.tested_complete)
 }
 
+/// One count per check and requested asset it ended with `status` on; a check
+/// bound to no requested asset counts once, by its own status.
+fn html_check_unfinished_count(
+    report: &BeginnerMasterReport,
+    check: &ActualCheck,
+    status: CoverageDimensionStatus,
+) -> usize {
+    let bound: Vec<&String> = report
+        .requested
+        .targets
+        .iter()
+        .map(|target| &target.asset_id)
+        .filter(|asset_id| check.target_asset_ids.contains(*asset_id))
+        .collect();
+    if bound.is_empty() {
+        usize::from(check.status == status)
+    } else {
+        bound
+            .into_iter()
+            .filter(|asset_id| html_check_status_on_asset(report, check, asset_id) == status)
+            .count()
+    }
+}
+
+fn html_unfinished_asset_check_count(
+    report: &BeginnerMasterReport,
+    status: CoverageDimensionStatus,
+) -> usize {
+    report
+        .actual
+        .checks
+        .iter()
+        .map(|check| html_check_unfinished_count(report, check, status))
+        .sum()
+}
+
+/// Whether any security check produced a result, fully or in part. Only such
+/// a run can be said to have found no problems.
+fn html_security_check_completed(report: &BeginnerMasterReport) -> bool {
+    report.actual.checks.iter().any(|check| {
+        check.effective_result_kind() == CheckResultKind::SecurityCheck
+            && (matches!(
+                check.status,
+                CoverageDimensionStatus::TestedComplete | CoverageDimensionStatus::TestedPartial
+            ) || report.requested.targets.iter().any(|target| {
+                check.target_asset_ids.contains(&target.asset_id)
+                    && html_check_status_on_asset(report, check, &target.asset_id)
+                        == CoverageDimensionStatus::TestedComplete
+            }))
+    })
+}
+
 /// These native rows describe dimensions outside the selected bounded
 /// profile. A partial shared task must not make them look like unfinished
 /// work on an asset with its own completed coordinate.
@@ -963,8 +1043,8 @@ fn html_asset_state_steps(
                 HtmlAssetResultStatus::NoProblemsInCompletedChecks => (
                     catalog.text("No problems in completed checks", "已完成檢查未發現問題"),
                     catalog.text(
-                        "open the completed-check scope and any missing checks",
-                        "查看已完成檢查的範圍與缺少的檢查",
+                        "check that the scan covered everything you meant to include",
+                        "確認掃描範圍已涵蓋你要檢查的所有內容",
                     ),
                 ),
                 HtmlAssetResultStatus::IncompleteOrFailed => (
@@ -1041,18 +1121,37 @@ pub(crate) fn named_coverage_items(
     catalog: HtmlReportCatalog,
 ) -> String {
     let counted = catalog.format_number(gaps);
-    let only_no_verdict = no_verdict > 0 && no_verdict == gaps;
+    let only_no_verdict = no_verdict > 0 && no_verdict >= gaps;
+    // A list that mixes checks without a verdict with other gaps names both
+    // parts, so neither reads as the other.
+    let others = gaps.saturating_sub(no_verdict);
+    let mixed = no_verdict > 0 && others > 0;
     match catalog.locale {
         crate::export::ReportLocale::ZhHant if only_no_verdict => {
             format!("{counted} 項未回傳判定的檢查")
         }
-        crate::export::ReportLocale::ZhHant if no_verdict > 0 => {
-            format!("{counted} 項未完成的檢查與待判讀結果")
-        }
-        crate::export::ReportLocale::ZhHant => format!("{counted} 項覆蓋缺口"),
+        crate::export::ReportLocale::ZhHant if mixed => format!(
+            "{} 項涵蓋缺口與 {} 項未回傳判定的檢查",
+            catalog.format_number(others),
+            catalog.format_number(no_verdict)
+        ),
+        crate::export::ReportLocale::ZhHant => format!("{counted} 項涵蓋缺口"),
         _ if only_no_verdict && gaps == 1 => "1 check without a verdict".to_owned(),
         _ if only_no_verdict => format!("{counted} checks without verdicts"),
-        _ if no_verdict > 0 => format!("{counted} unfinished checks and results to review"),
+        _ if mixed => format!(
+            "{} and {}",
+            match others {
+                1 => "1 coverage gap".to_owned(),
+                _ => format!("{} coverage gaps", catalog.format_number(others)),
+            },
+            match no_verdict {
+                1 => "1 check without a verdict".to_owned(),
+                _ => format!(
+                    "{} checks without verdicts",
+                    catalog.format_number(no_verdict)
+                ),
+            }
+        ),
         _ if gaps == 1 => "1 coverage gap".to_owned(),
         _ => format!("{counted} coverage gaps"),
     }
@@ -1344,15 +1443,14 @@ pub(crate) fn html_executive_summary(
         }
     });
 
-    // Every state this report counts as short of a completed check. Two of
-    // them were tracked and then left off the cover: the run cancelled two
-    // checks and could not reach two dimensions at all, and the sentence that
-    // says what was not covered counted neither.
-    let untested = counts.failed
-        + counts.timed_out
-        + counts.cancelled
-        + counts.not_tested
-        + counts.unavailable;
+    let untested = [
+        CoverageDimensionStatus::Failed,
+        CoverageDimensionStatus::TimedOut,
+        CoverageDimensionStatus::Cancelled,
+    ]
+    .into_iter()
+    .map(|status| html_unfinished_asset_check_count(report, status))
+    .sum::<usize>();
     // The cover tile over this sentence counts the same list and, where any
     // of it is a check that ran and returned no verdict, says so in its label.
     // The sentence called all of them coverage gaps and then said the areas
@@ -1362,7 +1460,32 @@ pub(crate) fn html_executive_summary(
     // first, so a reader could add five and ten and get fifteen out of ten.
     // The second clause names what the first did not already cover.
     let (coverage_items, record_notes) = classified_coverage_item_counts(report);
-    let remainder = coverage_items.saturating_sub(untested);
+    let unfinished_gap_rows = report
+        .coverage_gaps
+        .iter()
+        .filter(|gap| {
+            gap.class == CoverageGapClass::CoverageLoss
+                && matches!(
+                    gap.kind,
+                    CoverageGapKind::Failed
+                        | CoverageGapKind::TimedOut
+                        | CoverageGapKind::Cancelled
+                )
+                && gap.task_id.as_ref().is_some_and(|task_id| {
+                    report.actual.checks.iter().any(|check| {
+                        &check.task_id == task_id
+                            && [
+                                CoverageDimensionStatus::Failed,
+                                CoverageDimensionStatus::TimedOut,
+                                CoverageDimensionStatus::Cancelled,
+                            ]
+                            .into_iter()
+                            .any(|status| html_check_unfinished_count(report, check, status) > 0)
+                    })
+                })
+        })
+        .count();
+    let remainder = coverage_items.saturating_sub(unfinished_gap_rows);
     let named_gaps = named_coverage_items(remainder, counts.manual_review, catalog);
     let named_checks = match catalog.locale {
         crate::export::ReportLocale::ZhHant => {
@@ -1398,6 +1521,10 @@ pub(crate) fn html_executive_summary(
         }
         (_, 0, _) => Some(format!("{named_gaps} {remains}. {closing}")),
         (_, _, 0) => Some(format!("{named_checks}. {closing}")),
+        // Both parts of a mixed remainder are already joined with "and".
+        (_, _, _) if counts.manual_review > 0 && remainder > counts.manual_review => {
+            Some(format!("{named_checks}; {named_gaps} {remains}. {closing}"))
+        }
         (_, _, _) => Some(format!(
             "{named_checks} and {named_gaps} {remains}. {closing}"
         )),
@@ -1807,7 +1934,10 @@ fn framework_state_text(state: &str, catalog: HtmlReportCatalog) -> String {
             )
             .to_owned(),
         "unknown_due_to_incomplete_coverage" => catalog
-            .text("Unknown — coverage is incomplete", "未知——覆蓋並不完整")
+            .text(
+                "Unknown — this run's checks do not cover this framework",
+                "未知——本輪檢查未涵蓋此框架",
+            )
             .to_owned(),
         "no_relationship_observed" => catalog
             .text("No relationship observed", "未觀察到關聯")
@@ -1849,8 +1979,8 @@ pub(crate) fn framework_explanation_text(
             "已凍結的回答明確指出這不是 AI 評估、產出也不是 AI 生成，因此不會推導只描述 AI 系統的框架參考。",
         ),
         "unknown_due_to_unanswered_context" => catalog.text(
-            "No reference to this AI-specific framework was inferred because at least one required AI-context answer is legacy or unanswered. This remains unknown, not not-applicable.",
-            "因為至少有一項必要的 AI 情境問題屬於舊版或尚未作答，所以沒有推導這個 AI 專用框架的任何參考。這屬於未知，不是不適用。",
+            "No reference to this AI-specific framework was inferred because at least one required AI-context answer is legacy or unanswered. It is not marked as not applicable.",
+            "因為至少有一項必要的 AI 情境問題屬於舊版或尚未作答，所以沒有推導這個 AI 專用框架的任何參考。並非標示為不適用。",
         ),
         "unknown_due_to_incomplete_coverage" => catalog.text(
             "No related reference was observed, but coverage is incomplete or unknown. This cannot be interpreted as a passed or implemented control.",
@@ -2003,16 +2133,47 @@ fn control_title_text(title: &str, catalog: HtmlReportCatalog) -> String {
 pub(crate) fn html_framework_section(
     case: &AssessmentCase,
     run_id: &str,
+    security_check_completed: bool,
     catalog: HtmlReportCatalog,
-) -> String {
+) -> (String, String) {
     let Ok(framework_report) = export_master_framework_report(case, run_id) else {
         // The framework overlay never gates the report. A case whose mapping
         // cannot be consolidated still reports its findings; it just does not
         // get this section.
-        return String::new();
+        return (String::new(), String::new());
     };
     if framework_report.frameworks.is_empty() {
-        return String::new();
+        return (String::new(), String::new());
+    }
+    let coverage = &framework_report.coverage;
+    if coverage.selected_run_findings_with_framework_relationship == 0 {
+        // "No problems" is only true of a run whose security checks produced
+        // results and found nothing; findings the mapping catalog does not
+        // place are still findings.
+        let sentence = if coverage.selected_run_findings_without_framework_relationship > 0 {
+            catalog.text(
+                "None of the findings in this run map to a security framework.",
+                "本輪的發現都沒有對應到資安框架。",
+            )
+        } else if security_check_completed {
+            catalog.text(
+                "No problems were found, so there is nothing to map to security frameworks.",
+                "未發現問題，因此沒有可對應到資安框架的項目。",
+            )
+        } else {
+            catalog.text(
+                "No security check completed, so there is nothing to map to security frameworks.",
+                "沒有完成的資安檢查，因此沒有可對應到資安框架的項目。",
+            )
+        };
+        return (
+            format!(
+                "<section class=\"framework-coverage\"><h2>{}</h2><p>{}</p></section>",
+                catalog.text("Where this lands in each framework", "對應到各框架的位置"),
+                sentence,
+            ),
+            String::new(),
+        );
     }
 
     let mut overview = String::new();
@@ -2185,15 +2346,17 @@ pub(crate) fn html_framework_section(
             )
         })
         .collect::<String>();
-    if !sources.is_empty() {
-        blocks.push_str(&format!(
+    let sources = if !sources.is_empty() {
+        format!(
             "<article class=\"framework-block framework-sources\"><h3>{}</h3>{}</article>",
             catalog.text("Framework sources and attribution", "框架來源與出處聲明"),
             sources,
-        ));
-    }
+        )
+    } else {
+        String::new()
+    };
 
-    format!(
+    let section = format!(
         concat!(
             "<section class=\"framework-coverage\"><h2>{}</h2><p>{}</p>",
             "<table class=\"framework-overview\">",
@@ -2219,7 +2382,8 @@ pub(crate) fn html_framework_section(
         overview,
         not_applicable,
         blocks,
-    )
+    );
+    (section, sources)
 }
 
 /// One next step's action sentence, composed for the report's language.
@@ -2756,14 +2920,16 @@ pub(crate) fn html_asset_result_section(
             || (status == HtmlAssetResultStatus::ProblemsFound && has_incomplete_evidence)
         {
             let other_incomplete = checks.iter().any(|c| {
-                !audit_task(&c.task_id) && c.status != CoverageDimensionStatus::TestedComplete
-            }) || gaps.iter().any(|g| {
-                g.task_id.as_deref().is_none_or(|id| !audit_task(id))
-                    && g.class != CoverageGapClass::RecordNote
-                    && !matches!(
-                        g.kind,
-                        CoverageGapKind::Excluded | CoverageGapKind::ManualReview
+                !audit_task(&c.task_id)
+                    && matches!(
+                        c.status,
+                        CoverageDimensionStatus::TestedPartial
+                            | CoverageDimensionStatus::Failed
+                            | CoverageDimensionStatus::TimedOut
+                            | CoverageDimensionStatus::Cancelled
                     )
+                    && !(c.status == CoverageDimensionStatus::TestedPartial
+                        && html_check_completed_on_asset(c, &target.asset_id))
             });
             let continuation = catalog.text(
                 "Continue the source audit from the listed paths.",
@@ -2775,7 +2941,7 @@ pub(crate) fn html_asset_result_section(
                 }
                 action.push_str(continuation);
             }
-            if !audit_incomplete || other_incomplete {
+            if (!audit_incomplete && has_incomplete_check) || other_incomplete {
                 if !action.is_empty() {
                     action.push(' ');
                 }
@@ -2902,6 +3068,14 @@ pub(crate) fn html_asset_result_section(
 }
 
 pub(crate) fn replace_target_ids(value: &str, labels: &BTreeMap<Id, String>) -> String {
+    replace_target_ids_in_context(value, labels, false)
+}
+
+fn replace_target_ids_in_context(
+    value: &str,
+    labels: &BTreeMap<Id, String>,
+    asset_noun_already_present: bool,
+) -> String {
     let mut identities = labels
         .iter()
         .filter(|(id, _)| !id.is_empty())
@@ -2921,7 +3095,11 @@ pub(crate) fn replace_target_ids(value: &str, labels: &BTreeMap<Id, String>) -> 
             .iter()
             .find(|(id, _)| remaining.starts_with(id.as_str()))
         {
-            display.push_str(label);
+            if asset_noun_already_present && display.ends_with("資產 ") {
+                display.push_str(label.strip_prefix("資產 ").unwrap_or(label));
+            } else {
+                display.push_str(label);
+            }
             cursor += id.len();
             continue;
         }
@@ -5242,7 +5420,8 @@ pub fn render_html(
 ) -> AppResult<Vec<u8>> {
     let exported = case_for_document_export(case, options)?;
     let report = beginner_report_for_export(case, run_id, options.redaction)?;
-    let catalog = HtmlReportCatalog::new(options.locale);
+    let catalog = HtmlReportCatalog::new(options.locale)
+        .with_standard_redaction(options.redaction == crate::export::RedactionProfile::Standard);
     let display_time = |value: Option<&DateTime<Utc>>| {
         value
             .map(|value| catalog.format_time(value))
@@ -5261,21 +5440,37 @@ pub fn render_html(
             .checks
             .iter()
             .all(|check| check.effective_result_kind() != CheckResultKind::SecurityCheck);
-    let report_summary = if connection_diagnostic {
-        catalog.text("Connection test only", "僅連線測試")
-    } else if non_security_only {
-        catalog.text("Inventory or connectivity only", "僅完成盤點或連線工作")
-    } else {
-        match report.state.summary {
-            BeginnerReportSummary::Complete => catalog.text("Complete", "完整"),
-            BeginnerReportSummary::Partial => {
-                catalog.text("Some checks are incomplete", "部分檢查未完成")
+    let report_summary =
+        if connection_diagnostic {
+            catalog.text("Connection test only", "僅連線測試")
+        } else if non_security_only {
+            catalog.text("Inventory or connectivity only", "僅完成盤點或連線工作")
+        } else {
+            match report.state.summary {
+                BeginnerReportSummary::Complete => catalog.text("Complete", "完整"),
+                BeginnerReportSummary::Partial
+                    if !report.actual.checks.is_empty()
+                        && report.actual.checks.iter().all(|check| {
+                            check.status == CoverageDimensionStatus::TestedComplete
+                        })
+                        && report.coverage_gaps.iter().any(|gap| {
+                            gap.class == CoverageGapClass::CoverageLoss
+                                && gap.kind != CoverageGapKind::ManualReview
+                        }) =>
+                {
+                    catalog.text(
+                        "Complete, with areas not tested",
+                        "已完成，但有未測試的範圍",
+                    )
+                }
+                BeginnerReportSummary::Partial => {
+                    catalog.text("Some checks are incomplete", "部分檢查未完成")
+                }
+                BeginnerReportSummary::NoChecksCompleted => {
+                    catalog.text("No checks completed", "沒有已完成的檢查")
+                }
             }
-            BeginnerReportSummary::NoChecksCompleted => {
-                catalog.text("No checks completed", "沒有已完成的檢查")
-            }
-        }
-    };
+        };
     let requested_stage = report
         .requested
         .stage
@@ -5325,6 +5520,26 @@ pub fn render_html(
             "<li>已保存的掃描未保留精確的要求目標說明。</li>",
         ));
     }
+    let target_number_note = if options.redaction == crate::export::RedactionProfile::Standard {
+        let mut numbers = report
+            .requested
+            .targets
+            .iter()
+            .filter_map(|target| target.label.as_deref().and_then(asset_alias_number))
+            .filter_map(|number| number.parse::<usize>().ok())
+            .collect::<Vec<_>>();
+        numbers.sort_unstable();
+        if !numbers.is_empty() && numbers.iter().copied().ne(1..=numbers.len()) {
+            catalog.text(
+                "<p>Numbers follow the project's asset list.</p>",
+                "<p>編號依專案的資產清單排列。</p>",
+            )
+        } else {
+            ""
+        }
+    } else {
+        ""
+    };
     // A limit is a policy and the assets it covers. Written one line per
     // holder, twenty-one engines sharing one execution timeout printed that
     // timeout twenty-one times and two targets sharing a port list printed it
@@ -5490,6 +5705,29 @@ pub fn render_html(
                     !header_says_it || dimension.dimension != COMPLETED_COORDINATE_DIMENSION
                 })
                 .map(|dimension| {
+                    let dimension_name = engine_named(&dimension.dimension);
+                    let translated_value = if catalog.locale == ReportLocale::ZhHant {
+                        crate::finding_narrative::tested_value_zh_hant(
+                            &dimension_name,
+                            &dimension.value,
+                        )
+                    } else {
+                        None
+                    };
+                    // These translated, product-authored values put the word
+                    // 資產 before the target ID. An alias already contains it.
+                    // The two passthrough dimensions retain target text as-is.
+                    let asset_noun_already_present = catalog.standard_redaction
+                        && translated_value.is_some()
+                        && !matches!(
+                            dimension_name.as_str(),
+                            "Source audit coverage" | "TCP reachability"
+                        );
+                    let value = replace_target_ids_in_context(
+                        translated_value.as_deref().unwrap_or(&dimension.value),
+                        &target_labels,
+                        asset_noun_already_present,
+                    );
                     format!(
                         concat!("<li>{}{} — {}", "<br><small>{}{}</small></li>"),
                         catalog.strong_label(&html_escape(&match catalog.locale {
@@ -5500,19 +5738,7 @@ pub fn render_html(
                             }
                             _ => readable_dimension(&dimension.dimension),
                         })),
-                        html_escape(&replace_target_ids(
-                            &match catalog.locale {
-                                crate::export::ReportLocale::ZhHant => {
-                                    crate::finding_narrative::tested_value_zh_hant(
-                                        &engine_named(&dimension.dimension),
-                                        &dimension.value,
-                                    )
-                                    .unwrap_or_else(|| dimension.value.clone())
-                                }
-                                _ => dimension.value.clone(),
-                            },
-                            &target_labels,
-                        )),
+                        html_escape(&value),
                         html_escape(&match catalog.locale {
                             crate::export::ReportLocale::ZhHant => {
                                 crate::finding_narrative::tested_observation_zh_hant(
@@ -5824,6 +6050,11 @@ pub fn render_html(
                         crate::finding_narrative::coverage_gap_prose_zh_hant(&step.reason)
                             .unwrap_or_else(|| step.reason.clone())
                     }
+                    (crate::export::ReportLocale::En, None)
+                        if step.reason == "Actionable findings in completed checks: 0." =>
+                    {
+                        "No problems were found in the completed checks.".to_owned()
+                    }
                     _ => step.reason.clone(),
                 }
             };
@@ -6016,12 +6247,17 @@ pub fn render_html(
         &display_time(report.actual.observed_until.as_ref()),
     );
 
-    let framework_section = if report.source_audits.is_empty() {
-        html_framework_section(&exported, run_id, catalog)
+    let (framework_section, framework_sources) = if report.source_audits.is_empty() {
+        html_framework_section(
+            &exported,
+            run_id,
+            html_security_check_completed(&report),
+            catalog,
+        )
     } else {
-        String::new()
+        (String::new(), String::new())
     };
-    let has_framework_section = !framework_section.is_empty();
+    let has_framework_section = !framework_sources.is_empty();
 
     // A hundred and forty-nine copies of one sentence. Every coordinate in a
     // run comes from the same embedded catalog, so the version and digest
@@ -7491,6 +7727,46 @@ pub fn render_html(
         "th,td{border-bottom:.5pt solid #98a2b3}",
         "a{text-decoration:none;color:#000}}</style></head><body>"
     ));
+    let mut cover_kpis = vec![
+        (
+            catalog.text("Problems found", "發現的問題"),
+            problem_count,
+            "problems",
+        ),
+        (
+            catalog.text("Checks completed", "已完成檢查"),
+            html_completed_asset_check_count(&report),
+            "complete",
+        ),
+        (
+            catalog.text("Partly completed", "部分完成"),
+            report_counts.tested_partial,
+            "partial",
+        ),
+        (
+            catalog.text("Failed", "失敗"),
+            html_unfinished_asset_check_count(&report, CoverageDimensionStatus::Failed),
+            "failed",
+        ),
+        (
+            catalog.text("Timed out", "逾時"),
+            html_unfinished_asset_check_count(&report, CoverageDimensionStatus::TimedOut),
+            "partial",
+        ),
+    ];
+    let cancelled = html_unfinished_asset_check_count(&report, CoverageDimensionStatus::Cancelled);
+    if cancelled > 0 {
+        cover_kpis.push((catalog.text("Cancelled", "已取消"), cancelled, "partial"));
+    }
+    cover_kpis.extend([
+        (
+            catalog.text("Not tested", "未測試"),
+            report_counts.not_tested,
+            "quiet",
+        ),
+        coverage_kpis[0],
+        coverage_kpis[1],
+    ]);
     document.push_str(&format!(
         concat!(
             "<header class=\"cover\"><p class=\"cover__product\">{}</p><h1>{}</h1>",
@@ -7512,43 +7788,7 @@ pub fn render_html(
         html_escape(&catalog.format_time(&report.state.last_durable_update)),
         catalog.text("Run state", "本輪狀態"),
         report_summary,
-        html_kpi_tiles(
-            &[
-                (
-                    catalog.text("Problems found", "發現的問題"),
-                    problem_count,
-                    "problems",
-                ),
-                (
-                    catalog.text("Checks completed", "已完成檢查"),
-                    html_completed_asset_check_count(&report),
-                    "complete",
-                ),
-                (
-                    catalog.text("Partly completed", "部分完成"),
-                    report_counts.tested_partial,
-                    "partial",
-                ),
-                (
-                    catalog.text("Failed", "失敗"),
-                    report_counts.failed,
-                    "failed"
-                ),
-                (
-                    catalog.text("Timed out", "逾時"),
-                    report_counts.timed_out,
-                    "partial",
-                ),
-                (
-                    catalog.text("Not tested", "未測試"),
-                    report_counts.not_tested,
-                    "quiet",
-                ),
-                coverage_kpis[0],
-                coverage_kpis[1],
-            ],
-            catalog,
-        ),
+        html_kpi_tiles(&cover_kpis, catalog),
     ));
     // Before the asset list: a reader who stops after one screen should still
     // have the run's outcome, its shape, and what was left uncovered.
@@ -7588,7 +7828,7 @@ pub fn render_html(
         concat!(
             "<section class=\"report-grid\"><div class=\"report-card\">",
             "<h2>{}</h2>{}",
-            "<h3>{}</h3><ul>{}</ul><h3>{}</h3><ul>{}</ul>",
+            "<h3>{}</h3><ul>{}</ul>{}<h3>{}</h3><ul>{}</ul>",
             "<h3>{}</h3><ul>{}</ul></div>",
             "<div class=\"report-card\"><h2>{}</h2>",
             "<p>{}{}</p>",
@@ -7606,6 +7846,7 @@ pub fn render_html(
         scan_depth_paragraph,
         catalog.text("Targets", "目標"),
         requested_targets,
+        target_number_note,
         catalog.text("Requested checks", "要求的檢查"),
         requested_checks,
         catalog.text("Limits", "限制"),
@@ -7731,7 +7972,7 @@ pub fn render_html(
     };
     document.push_str(&format!(
         concat!(
-            "<footer><h2>{}</h2><p>{}</p><p>{}{}{}{}{}{}{}{}{}{}</p></footer>",
+            "<footer><h2>{}</h2><p>{}</p><p>{}{}{}{}{}{}{}{}{}{}</p>{}</footer>",
             "</body></html>"
         ),
         catalog.text("Report terms", "報告條款"),
@@ -7780,12 +8021,13 @@ pub fn render_html(
         // The inventory prints regardless of its disclosure state; the
         // technical record prints only if a reader opened it.
         if has_framework_section { catalog.text(
-            "Framework sources and attribution are shown in the framework section. The complete asset inventory is collapsed on screen and printed in full. Per-finding evidence, source rules, framework references and the run's task records stay collapsed technical detail; a printed copy carries those only where a reader opened them before printing.",
-            "框架來源與出處聲明顯示於框架區塊。完整資產清單在畫面上收合，列印時會完整輸出。各問題的證據、來源規則、框架參考與本輪工作紀錄仍屬收合的技術細節；列印出來的版本只會包含列印前已展開的部分。",
+            "The complete asset inventory is collapsed on screen and printed in full. Per-finding evidence, source rules, framework references and the run's task records stay collapsed technical detail; a printed copy carries those only where a reader opened them before printing.",
+            "完整資產清單在畫面上收合，列印時會完整輸出。各問題的證據、來源規則、框架參考與本輪工作紀錄仍屬收合的技術細節；列印出來的版本只會包含列印前已展開的部分。",
         ) } else { catalog.text(
             "The complete asset inventory is collapsed on screen and printed in full. Per-finding evidence, source rules and the run's task records stay collapsed technical detail; a printed copy carries those only where a reader opened them before printing.",
             "完整資產清單在畫面上收合，列印時會完整輸出。各問題的證據、來源規則與本輪工作紀錄仍屬收合的技術細節；列印出來的版本只會包含列印前已展開的部分。",
         ) },
+        framework_sources,
     ));
     if catalog.locale == crate::export::ReportLocale::ZhHant {
         document = localize_report_markers(
@@ -7854,7 +8096,12 @@ pub(crate) fn localize_report_markers(
     standard: bool,
 ) -> AppResult<String> {
     if reports.iter().all(|r| r.source_audits.is_empty()) {
-        let localized = localize_redaction_markers(document);
+        let prepared = if standard {
+            document.replace("[redacted location]", "（已遮蔽位置）")
+        } else {
+            document.to_owned()
+        };
+        let localized = localize_redaction_markers(&prepared);
         return Ok(if standard {
             localized.replace("[redacted]", "（已遮蔽）")
         } else {

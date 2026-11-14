@@ -29,6 +29,8 @@ Look at **What was actually tested** and **What was not tested**. A report can c
 
 For unfinished checks, follow the next step shown in the app. Some need a new sign-in or different input before they can run.
 
+In an HTML report, **Complete, with areas not tested** means the checks finished but some areas remain outside their coverage. A no-problem result invites you to check that the scan covered everything you meant to include.
+
 ## Return later and compare
 
 Open **My scans** to return to a project. Its targets, findings, evidence and report history stay available. Select the scan you want before reading or exporting the report.
@@ -40,6 +42,10 @@ When two scans can be compared, the app shows which problems are new, still pres
 From **Results**, choose **Save or share report**, then **HTML report (recommended)**. Keep sensitive identifiers hidden unless the recipient needs them. Save the file and open it in a browser to check it before sharing.
 
 The report uses the app language, English or Traditional Chinese. It follows the same order as the screen. Technical evidence is available in expandable sections, with formal terms at the end. Saving the report creates a local file; it does not send it to anyone.
+
+When findings have framework mappings, their references follow the actionable results and their sources appear with the report terms. If no findings are mapped, the framework section is a single sentence.
+
+With sensitive identifiers hidden, asset numbers follow the project's asset list, so a run that includes only some assets may have gaps. Traditional Chinese HTML shows an alias such as `Asset 1` as `資產 1`; JSON keeps `Asset 1`. A combined report uses the same alias for an asset across its selected reports.
 
 To keep the original reports in that same HTML file, turn off **Hide sensitive identifiers** and select **Attach original reports at the end**. The final section offers one ZIP per scanner check. Download and extract the entire ZIP to open its original reports with their images and other supporting files. Tools that did not produce an HTML report may have JSON, XML or logs instead; unfinished checks keep their recorded status. Original files may contain sensitive information.
 

@@ -3905,9 +3905,9 @@ fn every_integrated_engine_lands_in_one_terminal_report() {
                     parts.len() >= 2,
                     "the summary stopped saying what the uncovered list holds"
                 );
-                // Cancelled and genuinely unavailable coverage remain in the
-                // unfinished count. Record-only unavailable rows are counted
-                // separately and never enter this sentence.
+                // Only checks that ran and did not finish belong in the first
+                // count. Untested and unavailable dimensions stay in the
+                // coverage-gap remainder; record notes stay separate.
                 let counts = &report.coverage_counts;
                 assert!(counts.cancelled > 0);
                 assert!(
@@ -3917,14 +3917,27 @@ fn every_integrated_engine_lands_in_one_terminal_report() {
                         .any(|gap| gap.class == CoverageGapClass::RecordNote),
                     "the audit lost its separately counted record notes"
                 );
+                let tile_value = |labels: &[&str]| {
+                    let (at, _) = row
+                        .match_indices(label_marker)
+                        .find(|(at, _)| {
+                            let label = &row[at + label_marker.len()..];
+                            labels
+                                .iter()
+                                .any(|candidate| label.starts_with(&format!("{candidate}</span>")))
+                        })
+                        .expect("an unfinished-check tile");
+                    let value = row[..at].rsplit_once("class=\"kpi__value\">").unwrap().1;
+                    value[..value.find("</span>").unwrap()]
+                        .parse::<usize>()
+                        .unwrap()
+                };
                 assert_eq!(
                     parts[0],
-                    counts.failed
-                        + counts.timed_out
-                        + counts.cancelled
-                        + counts.not_tested
-                        + counts.unavailable,
-                    "the summary drops a state that is short of a completed check"
+                    tile_value(&["Failed", "失敗"])
+                        + tile_value(&["Timed out", "逾時"])
+                        + tile_value(&["Cancelled", "已取消"]),
+                    "the summary must count the same unfinished checks as the cover"
                 );
                 assert!(
                     !summary.contains("Those areas were not tested")
@@ -4197,7 +4210,10 @@ fn every_integrated_engine_lands_in_one_terminal_report() {
             // Named, not merely removed: a withheld value still says which
             // kind of value it was, on the page as much as in the JSON.
             for (english, chinese) in [
-                ("[redacted location]", "\u{ff08}\u{4f4d}\u{7f6e}\u{ff09}"),
+                (
+                    "[redacted location]",
+                    "\u{ff08}\u{5df2}\u{906e}\u{853d}\u{4f4d}\u{7f6e}\u{ff09}",
+                ),
                 (
                     "[redacted result pointer]",
                     "\u{ff08}\u{7d50}\u{679c}\u{6307}\u{6a19}\u{ff09}",

@@ -403,7 +403,7 @@ fn legacy_archive_fixed_bytes() {
     );
     assert_eq!(
         hash_file(&archive).unwrap(),
-        "3af717bdfe35a3515315f326ebf466b86a607380b3a7412da67d0c1a626fb4a0"
+        "b7103416864b857ed25a7a4a12a79aa2e2449beb43242df1e619f76bf6a0ebad"
     );
 }
 

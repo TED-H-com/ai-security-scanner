@@ -465,6 +465,13 @@ fn severity_label(severity: &Severity, locale: ReportLocale) -> &str {
 
 pub(crate) fn render_html(report: &SelectedRunReport, locale: ReportLocale) -> AppResult<String> {
     let t = |en, zh| text(locale, en, zh);
+    let asset_label = |label: &str| {
+        crate::report_renderer::localized_asset_label(
+            label,
+            locale,
+            report.redaction_profile == "standard",
+        )
+    };
     let title = crate::report_renderer::localized_case_title(
         &report.project_title,
         crate::report_renderer::HtmlReportCatalog::new(locale),
@@ -608,7 +615,8 @@ pub(crate) fn render_html(report: &SelectedRunReport, locale: ReportLocale) -> A
                     .iter()
                     .find(|target| &target.asset_id == id)
                     .and_then(|target| target.label.as_deref())
-                    .unwrap_or(id)
+                    .map(&asset_label)
+                    .unwrap_or_else(|| id.clone())
             })
             .collect::<Vec<_>>()
             .join(", ");
@@ -670,8 +678,13 @@ pub(crate) fn render_html(report: &SelectedRunReport, locale: ReportLocale) -> A
         for occurrence in &asset.sources {
             let index = source_indices[occurrence.run_id.as_str()];
             let source = &report.sources[index];
+            let label = occurrence
+                .label
+                .as_deref()
+                .map(&asset_label)
+                .unwrap_or_else(|| asset.asset_id.clone());
             html.push_str(&format!("<tr><td>{}</td><td><a href=\"#source-{}\">#{}</a> · {}</td><td>{}</td><td>{}</td><td>{}</td></tr>",
-            escape(occurrence.label.as_deref().unwrap_or(&asset.asset_id)),index+1,source.sequence,escape(&source_check_names(source, locale)),html_time(&source.completed_at),occurrence.problem_observation_count,occurrence.coverage_gap_count));
+            escape(&label),index+1,source.sequence,escape(&source_check_names(source, locale)),html_time(&source.completed_at),occurrence.problem_observation_count,occurrence.coverage_gap_count));
         }
     }
     html.push_str("</tbody></table></div></section>");
@@ -827,7 +840,8 @@ pub(crate) fn render_html(report: &SelectedRunReport, locale: ReportLocale) -> A
                             .find(|target| &target.asset_id == id)
                     })
                     .and_then(|target| target.label.as_deref())
-                    .unwrap_or(t("Incident context", "事件資訊"));
+                    .map(&asset_label)
+                    .unwrap_or_else(|| t("Incident context", "事件資訊").to_owned());
                 let (reason, action) = crate::incident_focus::incident_issue_guidance(
                     issue,
                     locale == ReportLocale::ZhHant,
@@ -835,7 +849,7 @@ pub(crate) fn render_html(report: &SelectedRunReport, locale: ReportLocale) -> A
                 html.push_str(&format!(
                     "<li><strong>{}</strong> · {} · {}<p>{}</p><p><strong>{}</strong> {}</p></li>",
                     escape(&issue.title),
-                    escape(target),
+                    escape(&target),
                     status,
                     escape(reason),
                     t("Next action", "下一步"),
@@ -930,6 +944,66 @@ mod tests {
 
     fn ids(case: &AssessmentCase) -> Vec<String> {
         case.scan_runs.iter().map(|run| run.id.clone()).collect()
+    }
+
+    #[test]
+    fn rpt30_combined_chinese_localizes_only_standard_asset_labels() {
+        let (_temp, _storage, case, _request) = fixture();
+        let options = ExportOptions {
+            locale: ReportLocale::ZhHant,
+            ..ExportOptions::default()
+        };
+        let mut report = preview_selected_run_report(&case, &ids(&case), &options).unwrap();
+        let problem = report.problems.first().unwrap();
+        let source = report
+            .sources
+            .iter_mut()
+            .find(|source| source.run_id == problem.source_run_id)
+            .unwrap();
+        let finding = source
+            .report
+            .findings
+            .iter_mut()
+            .find(|finding| finding.finding_id == problem.original_finding_ids[0])
+            .unwrap();
+        finding.evidence_references[0].scanner_details =
+            Some(crate::domain::ScannerFindingDetails {
+                description: Some("Evidence quoted Asset 1 from the target".into()),
+                ..Default::default()
+            });
+        let html = render_html(&report, options.locale).unwrap();
+        assert!(html.contains("Evidence quoted Asset 1 from the target"));
+        assert!(!html.contains("Evidence quoted 資產 1 from the target"));
+        let json = String::from_utf8(
+            render_selected_run_report(&report, SelectedRunReportFormat::Json, options.locale)
+                .unwrap(),
+        )
+        .unwrap();
+        for label in report
+            .assets
+            .iter()
+            .flat_map(|asset| &asset.sources)
+            .filter_map(|source| source.label.as_deref())
+        {
+            let number = label.strip_prefix("Asset ").expect("standard alias");
+            assert!(html.contains(&format!("<td>資產 {number}</td>")));
+            assert!(!html.contains(&format!("<td>{label}</td>")));
+            assert!(json.contains(label));
+        }
+
+        let mut plain = preview_selected_run_report(
+            &case,
+            &ids(&case),
+            &ExportOptions {
+                redaction: RedactionProfile::None,
+                ..options
+            },
+        )
+        .unwrap();
+        plain.assets[0].sources[0].label = Some("Asset 7".into());
+        let html = render_html(&plain, ReportLocale::ZhHant).unwrap();
+        assert!(html.contains("<td>Asset 7</td>"));
+        assert!(!html.contains("<td>資產 7</td>"));
     }
 
     #[test]

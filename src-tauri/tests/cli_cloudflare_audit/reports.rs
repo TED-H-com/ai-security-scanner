@@ -1318,6 +1318,59 @@ fn ledger_statuses_incomplete_framing_and_empty_sections_follow_saved_projection
     }
 }
 
+#[test]
+fn complete_audit_with_deferred_units_labels_untested_areas_not_incomplete_checks() {
+    use ai_security_scanner_lib::cloudflare_provider::audit::sealed::TerminalState;
+    let (run, request) = admit::sealed("standard");
+    let saved = admit::admit(&run, &request, 0);
+    let mut case = admit::case(&run);
+    let run_id = saved["run_id"].as_str().unwrap();
+    let ledger = &mut case.agent_audit_admissions[0].retained_projection["native_coverage_ledger"];
+    for index in 0..2 {
+        let mut unit = ledger[0].clone();
+        unit["coverage_id"] = json!(format!("deferred-unit-{index}"));
+        unit["status"] = json!("deferred");
+        unit["result_fingerprints"] = json!([]);
+        unit["unresolved"] = json!(["Review remains"]);
+        ledger.as_array_mut().unwrap().push(unit);
+    }
+    let report = build_beginner_master_report(&case, run_id).unwrap();
+    assert_eq!(report.coverage_counts.tested_complete, 1);
+    assert_eq!(report.coverage_counts.tested_partial, 0);
+    assert!(
+        report
+            .coverage_gaps
+            .iter()
+            .any(|gap| gap.reason.contains("2 units remain"))
+    );
+    for (locale, complete, incomplete) in [
+        (
+            ReportLocale::En,
+            "Complete, with areas not tested",
+            "Some checks are incomplete",
+        ),
+        (
+            ReportLocale::ZhHant,
+            "已完成，但有未測試的範圍",
+            "部分檢查未完成",
+        ),
+    ] {
+        let (html, doc) = render(&case, run_id, &options(locale, RedactionProfile::None));
+        let first = first_layer(&html);
+        assert_eq!(doc["report"]["state"]["summary"], "partial");
+        assert!(first.contains(complete), "{first}");
+        assert!(!first.contains(incomplete), "{first}");
+    }
+    case.agent_audit_admissions[0].outcome.state = TerminalState::Incomplete;
+    for (locale, incomplete) in [
+        (ReportLocale::En, "Some checks are incomplete"),
+        (ReportLocale::ZhHant, "部分檢查未完成"),
+    ] {
+        let (html, _) = render(&case, run_id, &options(locale, RedactionProfile::None));
+        assert!(first_layer(&html).contains(incomplete));
+    }
+}
+
 fn first_layer(html: &str) -> String {
     let mut output = String::new();
     let mut depth = 0usize;

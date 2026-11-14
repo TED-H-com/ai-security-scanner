@@ -2055,7 +2055,7 @@ const COVERAGE_GAP_PROSE: &[(&str, &str)] = &[
     ),
     (
         "Actionable findings in completed checks: 0.",
-        "已完成檢查中的可處理問題：0。",
+        "已完成的檢查沒有發現問題。",
     ),
     // The three explanations this build stores on a request that contacted
     // nothing. The field is durable free text, so an unrecognized one falls
