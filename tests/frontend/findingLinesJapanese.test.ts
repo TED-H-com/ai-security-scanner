@@ -4,17 +4,30 @@ import test from "node:test";
 
 import { parseSync } from "vite";
 import {
+  ENGLISH_EVIDENCE_REASON,
+  ENGLISH_EXPOSURE_OBSERVATION_REASON,
   ENGLISH_ROLLBACK,
   EXPOSED_CREDENTIAL_NEXT_STEP_ENGLISH,
   EXPOSED_CREDENTIAL_NEXT_STEP_ZH_HANT,
+  INCOMPLETE_CHECK_CONFIRM_ACTION,
+  INCOMPLETE_CHECK_CONFIRM_ACTION_ZH_HANT,
+  PASSWORD_COMPOSITION_ORDER_REASON,
+  PASSWORD_EXPIRY_ORDER_REASON,
   awsIamPolicyAction,
   awsIamPolicySourceLabel,
+  beginnerStepAction,
+  benchmarkLine,
   exposedCredentialNextStep,
+  findingActionSentence,
   findingConfidencePresentation,
   findingHeadline,
   findingImpactSentence,
+  findingLineText,
+  findingLocationText,
+  findingPriorityReason,
   findingRollbackSentence,
   findingSummarySentence,
+  findingUnattributedGap,
   findingVerificationSentence,
   iamPrincipalLabels,
   iamPrincipalSummary,
@@ -25,11 +38,28 @@ import {
 import { jaInline } from "../../src/i18n/locales/ja-inline.ts";
 import type {
   AwsIamPolicyFindingDetails,
+  BenchmarkReference,
   ConfidenceBasisCode,
   ContextFactor,
   FindingFamily,
   SeverityBasisCode,
+  UnattributedResults,
 } from "../../src/types.ts";
+
+const resolveStringValue = (node: any): string => {
+  if (node?.type === "Literal" && typeof node.value === "string") return node.value;
+  if (
+    node?.type === "CallExpression"
+    && node.callee?.type === "MemberExpression"
+    && node.callee.object?.type === "Identifier"
+    && node.callee.object.name === "EXPOSED_CREDENTIAL_NEXT_STEP_ENGLISH"
+    && node.callee.property?.name === "slice"
+    && node.arguments?.length === 2
+  ) {
+    return EXPOSED_CREDENTIAL_NEXT_STEP_ENGLISH.slice(0, -1);
+  }
+  assert.fail(`Unexpected object entry value node: ${String(node?.type)}`);
+};
 
 const objectEntries = (name: string): Array<[string, string]> => {
   const path = "../../src/findingNarrative.ts";
@@ -51,9 +81,7 @@ const objectEntries = (name: string): Array<[string, string]> => {
   return properties.map((prop: any) => {
     assert.equal(prop.type, "Property");
     const key = prop.key?.type === "Literal" ? String(prop.key.value) : String(prop.key?.name);
-    assert.equal(prop.value?.type, "Literal");
-    assert.equal(typeof prop.value?.value, "string");
-    return [key, prop.value.value as string];
+    return [key, resolveStringValue(prop.value)];
   });
 };
 
@@ -95,6 +123,27 @@ const templatesAndFixed = [
   "{count} related problems call for this kind of change; each needs its own fix. The first is {reason}",
   "Rerun the same scan after the changes and confirm these problems are no longer reported.",
   "Rerun the same scan after the change and confirm this problem is no longer reported.",
+  PASSWORD_COMPOSITION_ORDER_REASON,
+  PASSWORD_EXPIRY_ORDER_REASON,
+  ENGLISH_EVIDENCE_REASON,
+  ENGLISH_EXPOSURE_OBSERVATION_REASON,
+  "The affected asset is internet-accessible.",
+  "The affected asset contains sensitive data, increasing the potential impact.",
+  "Source severity: {value}",
+  "Severity is Unknown because {engine} did not provide a rating.",
+  "Source confidence: {value}",
+  "Confidence derived from {basis}; {engine} reports no confidence of its own.",
+  "Severity derived from {basis}; {engine} reports no severity of its own.",
+  "{name} {versions} item {reference}",
+  " and {hidden} more",
+  " (reported by {engine})",
+  "{engineId}: results for {provider} {identifier}",
+  "{engineId} reported {discardedResults} results for {provider} identifier {identifier}. None of your authorized assets carry this identifier, so those results were not attributed and are absent from this report.",
+  "Add {provider} identifier {identifier} to your authorized asset and scan again.",
+  INCOMPLETE_CHECK_CONFIRM_ACTION,
+  "line {line}, column {column}",
+  "line {line}",
+  "column {column}",
 ] as const;
 
 test("finding line tables and templates have complete Japanese entries with matching placeholders", () => {
@@ -103,6 +152,7 @@ test("finding line tables and templates have complete Japanese entries with matc
   const consequenceValues = objectEntries("CONSEQUENCE_ENGLISH").map(([, value]) => value);
   const contextValues = objectEntries("CONTEXT_ENGLISH").map(([, value]) => value);
   const expertKeys = objectEntries("EXPERT").map(([key]) => key);
+  const remedyValues = objectEntries("REMEDY_ENGLISH").map(([, value]) => value);
 
   const english = new Set([
     ...confidenceBasisValues,
@@ -110,6 +160,7 @@ test("finding line tables and templates have complete Japanese entries with matc
     ...consequenceValues,
     ...contextValues,
     ...expertKeys,
+    ...remedyValues,
     ...templatesAndFixed,
   ]);
 
@@ -595,5 +646,367 @@ test("findingRollbackSentence, findingVerificationSentence, findingHeadline, ste
   );
   for (const locale of ["en", "zh-TW", "ja"] as const) {
     assert.equal(stepConfirmation(locale, "Custom verification guidance.", title, 1), "Custom verification guidance.");
+  }
+});
+
+test("findingPriorityReason covers every sentence shape and fallback in en, zh-TW, and ja", () => {
+  assert.equal(findingPriorityReason("en", PASSWORD_COMPOSITION_ORDER_REASON), PASSWORD_COMPOSITION_ORDER_REASON);
+  assert.equal(
+    findingPriorityReason("zh-TW", PASSWORD_COMPOSITION_ORDER_REASON),
+    "處理順序比嚴重程度所示更後面。CIS AWS Foundations Benchmark v1.2.0 要求這項字元規則，但之後的 CIS 版本已移除，NIST SP 800-63B-4 也要求不要強制混合字元類型。請先確認密碼長度與 MFA；只有在必須通過的稽核仍要求這項規則時，才需要變更。",
+  );
+  assert.equal(findingPriorityReason("ja", PASSWORD_COMPOSITION_ORDER_REASON), jaInline[PASSWORD_COMPOSITION_ORDER_REASON]);
+
+  assert.equal(findingPriorityReason("en", PASSWORD_EXPIRY_ORDER_REASON), PASSWORD_EXPIRY_ORDER_REASON);
+  assert.equal(
+    findingPriorityReason("zh-TW", PASSWORD_EXPIRY_ORDER_REASON),
+    "處理順序比嚴重程度所示更後面。CIS AWS Foundations Benchmark v1.2.0 要求密碼定期到期，但之後的 CIS 版本已移除，NIST SP 800-63B-4 也規定只有在有證據顯示密碼已外洩時，才強制更換。只有在必須通過的稽核仍要求這項規則時，才需要變更。",
+  );
+  assert.equal(findingPriorityReason("ja", PASSWORD_EXPIRY_ORDER_REASON), jaInline[PASSWORD_EXPIRY_ORDER_REASON]);
+
+  assert.equal(findingPriorityReason("en", ENGLISH_EVIDENCE_REASON), ENGLISH_EVIDENCE_REASON);
+  assert.equal(findingPriorityReason("zh-TW", ENGLISH_EVIDENCE_REASON), "已附上掃描工具的直接證據。");
+  assert.equal(findingPriorityReason("ja", ENGLISH_EVIDENCE_REASON), jaInline[ENGLISH_EVIDENCE_REASON]);
+
+  assert.equal(findingPriorityReason("en", ENGLISH_EXPOSURE_OBSERVATION_REASON), ENGLISH_EXPOSURE_OBSERVATION_REASON);
+  assert.equal(
+    findingPriorityReason("zh-TW", ENGLISH_EXPOSURE_OBSERVATION_REASON),
+    "這是可連線服務的盤點觀察，不是漏洞。",
+  );
+  assert.equal(
+    findingPriorityReason("ja", ENGLISH_EXPOSURE_OBSERVATION_REASON),
+    jaInline[ENGLISH_EXPOSURE_OBSERVATION_REASON],
+  );
+
+  const legacyInternet =
+    "An affected asset is marked internet-exposed, and all retained source attribution for that asset is non-questionnaire.";
+  assert.equal(findingPriorityReason("en", legacyInternet), "The affected asset is internet-accessible.");
+  assert.equal(findingPriorityReason("zh-TW", legacyInternet), "受影響的資產可從網際網路存取。");
+  assert.equal(findingPriorityReason("ja", legacyInternet), jaInline["The affected asset is internet-accessible."]);
+
+  const legacySensitive =
+    "An affected asset is marked sensitive, all retained source attribution for that asset is non-questionnaire, and the case questionnaire separately records sensitive-data context.";
+  assert.equal(
+    findingPriorityReason("en", legacySensitive),
+    "The affected asset contains sensitive data, increasing the potential impact.",
+  );
+  assert.equal(findingPriorityReason("zh-TW", legacySensitive), "受影響的資產含有敏感資料，因此問題造成的影響可能更高。");
+  assert.equal(
+    findingPriorityReason("ja", legacySensitive),
+    jaInline["The affected asset contains sensitive data, increasing the potential impact."],
+  );
+
+  assert.equal(findingPriorityReason("en", "Source severity: HIGH"), "Source severity: HIGH");
+  assert.equal(findingPriorityReason("zh-TW", "Source severity: HIGH"), "來源工具評定的嚴重程度：HIGH");
+  const jaSourceSeverity = findingPriorityReason("ja", "Source severity: HIGH");
+  assert.equal(jaSourceSeverity, jaInline["Source severity: {value}"]!.replace("{value}", "HIGH"));
+  assert.ok(jaSourceSeverity.includes("HIGH"));
+
+  const legacyUnrated = "Severity remains Unknown because Checkov did not assign one; human review is required.";
+  assert.equal(
+    findingPriorityReason("en", legacyUnrated),
+    "Severity is Unknown because Checkov did not provide a rating.",
+  );
+  assert.equal(findingPriorityReason("zh-TW", legacyUnrated), "嚴重程度為未知，因為 Checkov 未提供評級。");
+  assert.equal(
+    findingPriorityReason("ja", legacyUnrated),
+    jaInline["Severity is Unknown because {engine} did not provide a rating."]!.replace("{engine}", "Checkov"),
+  );
+
+  assert.equal(findingPriorityReason("en", "Source confidence: medium"), "Source confidence: medium");
+  assert.equal(findingPriorityReason("zh-TW", "Source confidence: medium"), "來源工具評定的信心：medium");
+  const jaSourceConfidence = findingPriorityReason("ja", "Source confidence: medium");
+  assert.equal(jaSourceConfidence, jaInline["Source confidence: {value}"]!.replace("{value}", "medium"));
+  assert.ok(jaSourceConfidence.includes("medium"));
+
+  const confidenceDerived =
+    "Confidence derived from a deterministic policy or configuration evaluation; Checkov reports no confidence of its own.";
+  assert.equal(findingPriorityReason("en", confidenceDerived), confidenceDerived);
+  assert.equal(
+    findingPriorityReason("zh-TW", confidenceDerived),
+    "信心是由確定性的政策或設定評估結果推導而來；Checkov 本身不提供信心評定。",
+  );
+  assert.equal(
+    findingPriorityReason("ja", confidenceDerived),
+    jaInline["Confidence derived from {basis}; {engine} reports no confidence of its own."]!
+      .replace("{basis}", jaInline["a deterministic policy or configuration evaluation"]!)
+      .replace("{engine}", "Checkov"),
+  );
+
+  const severityDerived =
+    "Severity derived from an unverified credential detector match; Gitleaks reports no severity of its own.";
+  assert.equal(
+    findingPriorityReason("en", severityDerived),
+    "Severity derived from a credential detector match; Gitleaks reports no severity of its own.",
+  );
+  assert.equal(
+    findingPriorityReason("zh-TW", severityDerived),
+    "嚴重程度是由憑證偵測器的比對結果推導而來；Gitleaks 本身不提供嚴重程度。",
+  );
+  assert.equal(
+    findingPriorityReason("ja", severityDerived),
+    jaInline["Severity derived from {basis}; {engine} reports no severity of its own."]!
+      .replace("{basis}", jaInline["a credential detector match"]!)
+      .replace("{engine}", "Gitleaks"),
+  );
+
+  for (const fallback of [
+    "Custom untranslated priority reason.",
+    "Confidence derived from unknown basis; Checkov reports no confidence of its own.",
+    "Severity derived from unknown basis; Checkov reports no severity of its own.",
+  ]) {
+    assert.equal(findingPriorityReason("en", fallback), fallback);
+    assert.equal(findingPriorityReason("zh-TW", fallback), fallback);
+    assert.equal(findingPriorityReason("ja", fallback), fallback);
+  }
+});
+
+test("benchmarkLine formats items, separators, overflow, and engine verbatim in en, zh-TW, and ja", () => {
+  assert.equal(benchmarkLine("en", "Checkov", []), undefined);
+  assert.equal(benchmarkLine("zh-TW", "Checkov", []), undefined);
+  assert.equal(benchmarkLine("ja", "Checkov", []), undefined);
+
+  const benchmarks: BenchmarkReference[] = [
+    { name: "CIS AWS", version: "1.2.0", reference: "1.1" },
+    { name: "CIS AWS", version: "1.4.0", reference: "1.1" },
+    { name: "NIST 800-53", version: "rev5", reference: "AC-2" },
+    { name: "ISO 27001", version: "2022", reference: "A.8.2" },
+    { name: "PCI DSS", version: "4.0", reference: "3.5" },
+  ];
+
+  assert.equal(
+    benchmarkLine("en", "Checkov", benchmarks),
+    "CIS AWS 1.2.0/1.4.0 item 1.1; NIST 800-53 rev5 item AC-2; ISO 27001 2022 item A.8.2 and 1 more (reported by Checkov)",
+  );
+  assert.equal(
+    benchmarkLine("zh-TW", "Checkov", benchmarks),
+    "CIS AWS 1.2.0/1.4.0 第 1.1 項；NIST 800-53 rev5 第 AC-2 項；ISO 27001 2022 第 A.8.2 項，另有 1 項（Checkov 回報）",
+  );
+  const item = (name: string, versions: string, reference: string) =>
+    jaInline["{name} {versions} item {reference}"]!
+      .replace("{name}", name)
+      .replace("{versions}", versions)
+      .replace("{reference}", reference);
+  assert.equal(
+    benchmarkLine("ja", "Checkov", benchmarks),
+    `${[
+      item("CIS AWS", "1.2.0/1.4.0", "1.1"),
+      item("NIST 800-53", "rev5", "AC-2"),
+      item("ISO 27001", "2022", "A.8.2"),
+    ].join("；")}${jaInline[" and {hidden} more"]!.replace("{hidden}", "1")}${jaInline[" (reported by {engine})"]!.replace("{engine}", "Checkov")}`,
+  );
+});
+
+test("findingUnattributedGap formats dimension, reason, and nextAction in en, zh-TW, and ja", () => {
+  const unattributed: UnattributedResults = {
+    provider: "aws_account",
+    identifier: "123456789012",
+    discardedResults: 4,
+  };
+  const english = {
+    dimension: "prowler: results for aws_account 123456789012",
+    reason:
+      "prowler reported 4 results for aws_account identifier 123456789012. None of your authorized assets carry this identifier, so those results were not attributed and are absent from this report.",
+    nextAction: "Add aws_account identifier 123456789012 to your authorized asset and scan again.",
+  };
+  assert.deepEqual(findingUnattributedGap("en", "prowler", unattributed, english), english);
+  assert.deepEqual(findingUnattributedGap("zh-TW", "prowler", unattributed, english), {
+    dimension: "prowler：針對 aws_account 123456789012 的結果",
+    reason:
+      "prowler 回報了 4 筆針對 aws_account 識別碼 123456789012 的結果。你已授權的資產都沒有登記這個識別碼，因此這些結果都沒有被歸屬，也不會出現在這份報告中。",
+    nextAction: "請在你已授權的資產上，新增 aws_account 識別碼 123456789012，然後重新掃描。",
+  });
+  assert.deepEqual(findingUnattributedGap("ja", "prowler", unattributed, english), {
+    dimension: jaInline["{engineId}: results for {provider} {identifier}"]!
+      .replace("{engineId}", "prowler")
+      .replace("{provider}", "aws_account")
+      .replace("{identifier}", "123456789012"),
+    reason: jaInline[
+      "{engineId} reported {discardedResults} results for {provider} identifier {identifier}. None of your authorized assets carry this identifier, so those results were not attributed and are absent from this report."
+    ]!
+      .replace("{engineId}", "prowler")
+      .replace("{discardedResults}", "4")
+      .replace("{provider}", "aws_account")
+      .replace("{identifier}", "123456789012"),
+    nextAction: jaInline["Add {provider} identifier {identifier} to your authorized asset and scan again."]!
+      .replace("{provider}", "aws_account")
+      .replace("{identifier}", "123456789012"),
+  });
+});
+
+test("findingActionSentence covers sourceAudit, unconfirmed, IAM, families, and fallback in en, zh-TW, and ja", () => {
+  assert.equal(
+    findingActionSentence("ja", { sourceAudit: true, englishFallback: "Native remediation.", family: "source_code" }),
+    "Native remediation.",
+  );
+
+  assert.equal(
+    findingActionSentence("en", { englishFallback: "Fallback.", unconfirmedByCoverage: true }),
+    INCOMPLETE_CHECK_CONFIRM_ACTION,
+  );
+  assert.equal(
+    findingActionSentence("zh-TW", { englishFallback: "Fallback.", unconfirmedByCoverage: true }),
+    INCOMPLETE_CHECK_CONFIRM_ACTION_ZH_HANT,
+  );
+  assert.equal(
+    findingActionSentence("ja", { englishFallback: "Fallback.", unconfirmedByCoverage: true }),
+    jaInline[INCOMPLETE_CHECK_CONFIRM_ACTION],
+  );
+
+  const iam: AwsIamPolicyFindingDetails = {
+    policySource: "inline",
+    policyName: "InlineAdmin",
+    findingIdentity: "iam-1",
+    actions: ["*"],
+    actionsComplete: true,
+    attachedTo: { roles: ["app-role"], groups: [], users: [], complete: true },
+  };
+  for (const locale of ["en", "zh-TW", "ja"] as const) {
+    assert.equal(
+      findingActionSentence(locale, { englishFallback: "Fallback.", family: "cloud_identity", awsIamPolicy: iam }),
+      awsIamPolicyAction(iam, locale),
+    );
+  }
+
+  const remedyByFamily = Object.fromEntries(objectEntries("REMEDY_ENGLISH")) as Record<FindingFamily, string>;
+  for (const [family, remedyEnglish] of Object.entries(remedyByFamily) as Array<[FindingFamily, string]>) {
+    assert.equal(findingActionSentence("en", { englishFallback: "Fallback.", family }), `${remedyEnglish}.`);
+    assert.equal(findingActionSentence("ja", { englishFallback: "Fallback.", family }), `${jaInline[remedyEnglish]}。`);
+    assert.ok(!findingActionSentence("ja", { englishFallback: "Fallback.", family }).endsWith("。。"));
+  }
+  assert.equal(
+    findingActionSentence("zh-TW", { englishFallback: "Fallback.", family: "infrastructure_as_code" }),
+    "修改基礎架構即程式碼的範本，讓重新部署不會再還原這個設定。",
+  );
+  assert.equal(
+    findingActionSentence("zh-TW", { englishFallback: "Fallback.", family: "secret" }),
+    EXPOSED_CREDENTIAL_NEXT_STEP_ZH_HANT,
+  );
+
+  for (const locale of ["en", "zh-TW", "ja"] as const) {
+    assert.equal(
+      findingActionSentence(locale, { englishFallback: "Review details, then plan and approve rotating the token." }),
+      "Rotating the token.",
+    );
+    assert.equal(
+      findingActionSentence(locale, { englishFallback: "Custom untranslated action." }),
+      "Custom untranslated action.",
+    );
+  }
+});
+
+test("beginnerStepAction covers finding-derived, unattributed, gap-derived, and fallback in en, zh-TW, and ja", () => {
+  const findings = [
+    {
+      findingId: "f-iac",
+      evidenceReferences: [{ engineId: "checkov", engineRunId: "task-1" }],
+    },
+    {
+      findingId: "f-audit",
+      sourceAudit: true,
+      evidenceReferences: [{ engineId: "cloudflare", engineRunId: "task-audit" }],
+    },
+  ];
+  const incompleteChecks = [{ taskId: "task-1", status: "failed" as const }];
+  const completeChecks = [{ taskId: "task-1", status: "tested_complete" as const }];
+
+  assert.equal(
+    beginnerStepAction("ja", { action: "Native step action.", findingId: "f-audit", family: "source_code", reason: "audit" }, findings),
+    "Native step action.",
+  );
+
+  const unattributedStep = {
+    action: "Add aws_account identifier 123456789012 to your authorized asset and scan again.",
+    unattributed: { provider: "aws_account", identifier: "123456789012", discardedResults: 2 },
+    reason: "prowler reported unattributed results",
+  };
+  assert.equal(beginnerStepAction("en", unattributedStep, findings), unattributedStep.action);
+  assert.equal(
+    beginnerStepAction("zh-TW", unattributedStep, findings),
+    "請在你已授權的資產上，新增 aws_account 識別碼 123456789012，然後重新掃描。",
+  );
+  assert.equal(
+    beginnerStepAction("ja", unattributedStep, findings),
+    jaInline["Add {provider} identifier {identifier} to your authorized asset and scan again."]!
+      .replace("{provider}", "aws_account")
+      .replace("{identifier}", "123456789012"),
+  );
+
+  const iacStep = {
+    action: "Correct the infrastructure-as-code template so redeployment does not restore the insecure setting.",
+    family: "infrastructure_as_code" as const,
+    findingId: "f-iac",
+    reason: "S3 ACL",
+  };
+  assert.equal(beginnerStepAction("en", iacStep, findings, completeChecks), iacStep.action);
+  assert.equal(
+    beginnerStepAction("zh-TW", iacStep, findings, completeChecks),
+    "修改基礎架構即程式碼的範本，讓重新部署不會再還原這個設定。",
+  );
+  assert.equal(
+    beginnerStepAction("ja", iacStep, findings, completeChecks),
+    `${jaInline["Correct the infrastructure-as-code template so redeployment does not restore the insecure setting"]}。`,
+  );
+
+  assert.equal(beginnerStepAction("en", iacStep, findings, incompleteChecks), INCOMPLETE_CHECK_CONFIRM_ACTION);
+  assert.equal(beginnerStepAction("zh-TW", iacStep, findings, incompleteChecks), INCOMPLETE_CHECK_CONFIRM_ACTION_ZH_HANT);
+  assert.equal(beginnerStepAction("ja", iacStep, findings, incompleteChecks), jaInline[INCOMPLETE_CHECK_CONFIRM_ACTION]);
+
+  const gapKnown = {
+    action: "Retry this check; scan-tool setup is automatic.",
+    reason: "Check did not run.",
+  };
+  assert.equal(beginnerStepAction("en", gapKnown, findings), gapKnown.action);
+  assert.equal(beginnerStepAction("zh-TW", gapKnown, findings), "重試這項檢查；掃描工具會自動準備。");
+  assert.equal(beginnerStepAction("ja", gapKnown, findings), jaInline[gapKnown.action]);
+
+  const gapPlanAndApprove = {
+    action: "Wait for setup, then plan and approve retry this check; scan-tool setup is automatic.",
+    reason: "Check did not run.",
+  };
+  assert.equal(beginnerStepAction("en", gapPlanAndApprove, findings), gapPlanAndApprove.action);
+  assert.equal(beginnerStepAction("zh-TW", gapPlanAndApprove, findings), "重試這項檢查；掃描工具會自動準備。");
+  assert.equal(beginnerStepAction("ja", gapPlanAndApprove, findings), jaInline[gapKnown.action]);
+
+  const gapUnknown = { action: "Custom untranslated gap step.", reason: "Unknown." };
+  for (const locale of ["en", "zh-TW", "ja"] as const) {
+    assert.equal(beginnerStepAction(locale, gapUnknown, findings), gapUnknown.action);
+  }
+});
+
+test("findingLocationText and findingLineText format coordinates and preserve raw non-path locations", () => {
+  const full = "infra/main.tf:line=12:column=4:resource=aws_s3_bucket.example,similarity:deadbeef";
+  assert.equal(findingLocationText("en", full), "infra/main.tf · line 12, column 4 · aws_s3_bucket.example");
+  assert.equal(findingLocationText("zh-TW", full), "infra/main.tf · 第 12 行第 4 欄 · aws_s3_bucket.example");
+  assert.equal(
+    findingLocationText("ja", full),
+    `infra/main.tf · ${jaInline["line {line}, column {column}"]!.replace("{line}", "12").replace("{column}", "4")} · aws_s3_bucket.example`,
+  );
+
+  assert.equal(findingLocationText("en", "./src\\app.ts:line=8:resource=n/a"), "src/app.ts · line 8");
+  assert.equal(findingLocationText("zh-TW", "./src\\app.ts:line=8:resource=n/a"), "src/app.ts · 第 8 行");
+  assert.equal(
+    findingLocationText("ja", "./src\\app.ts:line=8:resource=n/a"),
+    `src/app.ts · ${jaInline["line {line}"]!.replace("{line}", "8")}`,
+  );
+
+  assert.equal(findingLocationText("en", "/Dockerfile:column=3:resource=/Dockerfile.EXPOSE"), "Dockerfile · column 3 · EXPOSE");
+  assert.equal(findingLocationText("zh-TW", "/Dockerfile:column=3:resource=/Dockerfile.EXPOSE"), "Dockerfile · 第 3 欄 · EXPOSE");
+  assert.equal(
+    findingLocationText("ja", "/Dockerfile:column=3:resource=/Dockerfile.EXPOSE"),
+    `Dockerfile · ${jaInline["column {column}"]!.replace("{column}", "3")} · EXPOSE`,
+  );
+
+  assert.equal(findingLineText("en", full), "infra/main.tf · line 12");
+  assert.equal(findingLineText("zh-TW", full), "infra/main.tf · 第 12 行");
+  assert.equal(
+    findingLineText("ja", full),
+    `infra/main.tf · ${jaInline["line {line}"]!.replace("{line}", "12")}`,
+  );
+
+  for (const locale of ["en", "zh-TW", "ja"] as const) {
+    assert.equal(findingLocationText(locale, "./src\\index.ts"), "src/index.ts");
+    assert.equal(findingLocationText(locale, "https://example.com:8443/login"), "https://example.com:8443/login");
+    assert.equal(findingLocationText(locale, "pkg:npm/lodash@4.17.20"), "pkg:npm/lodash@4.17.20");
   }
 });

@@ -1,8 +1,12 @@
 import { cleanup, fireEvent, render } from "@testing-library/react";
 import { afterEach, expect, test, vi } from "vitest";
 
-import { ENGLISH_ROLLBACK } from "../../src/findingNarrative";
+import {
+  ENGLISH_ROLLBACK,
+  PASSWORD_COMPOSITION_ORDER_REASON,
+} from "../../src/findingNarrative";
 import { I18nProvider, localeStorageKey } from "../../src/i18n";
+import { jaInline } from "../../src/i18n/locales/ja-inline";
 import { FindingsPage } from "../../src/pages/FindingsPage";
 import { auditFinding, auditReport, auditRun } from "../support/sourceAudit";
 
@@ -120,4 +124,92 @@ test("Japanese findings page translates summary, impact, verification, grouped n
   expect(firstLayerScope).not.toContain("依頼： ");
   expect(firstLayerScope).not.toContain("実際にテスト:");
   expect(firstLayerScope).not.toContain("実際にテスト： ");
+});
+
+test("Japanese findings page translates priority reason, next-step action, and location", () => {
+  localStorage.setItem(localeStorageKey, "ja");
+  const report = auditReport();
+  report.sourceAudits = [];
+  report.actual.checks[0]!.status = "tested_complete";
+
+  const base = auditFinding();
+  const englishAction =
+    "Correct the infrastructure-as-code template so redeployment does not restore the insecure setting.";
+  report.findings = [{
+    ...base,
+    sourceAudit: false,
+    findingId: "finding-1",
+    fingerprint: "fp-1",
+    title: "S3 Bucket ACL Allows Read Or Write to All Users",
+    plainLanguageRisk:
+      "Checkov reported this condition on the assessed asset without rating it. This product rated it high from a failed infrastructure-as-code policy check, rated flat because Checkov publishes no per-check severity offline.",
+    possibleImpact:
+      "If the scanner result is confirmed, deployed infrastructure may inherit the reported insecure configuration.",
+    nextStep: englishAction,
+    severity: "high",
+    confidence: "high",
+    priorityReasons: [PASSWORD_COMPOSITION_ORDER_REASON, "Source severity: high"],
+    family: "infrastructure_as_code",
+    severityBasisCode: "iac_policy_check",
+    confidenceBasisCode: "deterministic_policy_evaluation",
+    recommendedExpertType: "Infrastructure-as-code engineer",
+    rollbackConsiderations: ENGLISH_ROLLBACK,
+    verificationGuidance:
+      "Rerun Checkov with the same scope after the change and confirm that source rule CKV_AWS_20 is no longer reported.",
+    evidenceReferences: [{
+      ...base.evidenceReferences[0]!,
+      engineId: "checkov",
+      location: "infra/main.tf:line=12:column=4:resource=aws_s3_bucket.example",
+    }],
+  }];
+  report.nextSteps = [{
+    priority: 1,
+    code: "remediate_finding",
+    findingId: "finding-1",
+    sharedFix: true,
+    family: "infrastructure_as_code",
+    action: englishAction,
+    reason: "S3 Bucket ACL Allows Read Or Write to All Users",
+    recommendedExpertType: "Infrastructure-as-code engineer",
+  }];
+
+  const { container } = render(
+    <I18nProvider>
+      <FindingsPage
+        report={report}
+        selectedRunId={report.runId}
+        findings={[]}
+        findingGroups={[]}
+        findingGroupEvents={[]}
+        runs={[auditRun()]}
+        workflowEvents={[]}
+        busy={false}
+        onUpdateWorkflow={async () => true}
+        onGroupFindings={async () => true}
+        onUngroupFindings={async () => {}}
+        onOpenCoverage={vi.fn()}
+        onOpenProgress={vi.fn()}
+        onOpenExport={vi.fn()}
+      />
+    </I18nProvider>,
+  );
+
+  const row = container.querySelector<HTMLButtonElement>(".finding-row");
+  expect(row).not.toBeNull();
+  fireEvent.click(row!);
+
+  const text = container.textContent ?? "";
+  expect(text).toContain(jaInline[PASSWORD_COMPOSITION_ORDER_REASON]!);
+  expect(text).toContain(jaInline["Source severity: {value}"]!.replace("{value}", "high"));
+  expect(text).toContain(
+    `${jaInline["Correct the infrastructure-as-code template so redeployment does not restore the insecure setting"]}。`,
+  );
+  expect(text).toContain(
+    `infra/main.tf · ${jaInline["line {line}, column {column}"]!.replace("{line}", "12").replace("{column}", "4")} · aws_s3_bucket.example`,
+  );
+
+  expect(text).not.toContain(PASSWORD_COMPOSITION_ORDER_REASON);
+  expect(text).not.toContain("Source severity: high");
+  expect(text).not.toContain(englishAction);
+  expect(text).not.toContain("line 12, column 4");
 });

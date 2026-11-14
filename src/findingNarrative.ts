@@ -985,25 +985,43 @@ export const findingPriorityReason = (
           .replace("an unverified credential detector match", "a credential detector match")
           .replace("an unverified pattern or detector match", "a pattern or detector match");
   const trimmed = normalized.trim();
-  if (locale !== "zh-TW") return normalized;
-  if (trimmed === PASSWORD_COMPOSITION_ORDER_REASON)
-    return "處理順序比嚴重程度所示更後面。CIS AWS Foundations Benchmark v1.2.0 要求這項字元規則，但之後的 CIS 版本已移除，NIST SP 800-63B-4 也要求不要強制混合字元類型。請先確認密碼長度與 MFA；只有在必須通過的稽核仍要求這項規則時，才需要變更。";
-  if (trimmed === PASSWORD_EXPIRY_ORDER_REASON)
-    return "處理順序比嚴重程度所示更後面。CIS AWS Foundations Benchmark v1.2.0 要求密碼定期到期，但之後的 CIS 版本已移除，NIST SP 800-63B-4 也規定只有在有證據顯示密碼已外洩時，才強制更換。只有在必須通過的稽核仍要求這項規則時，才需要變更。";
-  if (trimmed === ENGLISH_EVIDENCE_REASON)
-    return "已附上掃描工具的直接證據。";
-  if (trimmed === ENGLISH_EXPOSURE_OBSERVATION_REASON)
-    return "這是可連線服務的盤點觀察，不是漏洞。";
-  if (trimmed === ENGLISH_INTERNET_REASON || trimmed === LEGACY_ENGLISH_INTERNET_REASON)
-    return "受影響的資產可從網際網路存取。";
-  if (trimmed === ENGLISH_SENSITIVE_REASON || trimmed === LEGACY_ENGLISH_SENSITIVE_REASON)
-    return "受影響的資產含有敏感資料，因此問題造成的影響可能更高。";
+  if (locale !== "zh-TW" && locale !== "ja") return normalized;
+  if (trimmed === PASSWORD_COMPOSITION_ORDER_REASON) {
+    return locale === "zh-TW"
+      ? "處理順序比嚴重程度所示更後面。CIS AWS Foundations Benchmark v1.2.0 要求這項字元規則，但之後的 CIS 版本已移除，NIST SP 800-63B-4 也要求不要強制混合字元類型。請先確認密碼長度與 MFA；只有在必須通過的稽核仍要求這項規則時，才需要變更。"
+      : japaneseText(PASSWORD_COMPOSITION_ORDER_REASON);
+  }
+  if (trimmed === PASSWORD_EXPIRY_ORDER_REASON) {
+    return locale === "zh-TW"
+      ? "處理順序比嚴重程度所示更後面。CIS AWS Foundations Benchmark v1.2.0 要求密碼定期到期，但之後的 CIS 版本已移除，NIST SP 800-63B-4 也規定只有在有證據顯示密碼已外洩時，才強制更換。只有在必須通過的稽核仍要求這項規則時，才需要變更。"
+      : japaneseText(PASSWORD_EXPIRY_ORDER_REASON);
+  }
+  if (trimmed === ENGLISH_EVIDENCE_REASON) {
+    return locale === "zh-TW" ? "已附上掃描工具的直接證據。" : japaneseText(ENGLISH_EVIDENCE_REASON);
+  }
+  if (trimmed === ENGLISH_EXPOSURE_OBSERVATION_REASON) {
+    return locale === "zh-TW"
+      ? "這是可連線服務的盤點觀察，不是漏洞。"
+      : japaneseText(ENGLISH_EXPOSURE_OBSERVATION_REASON);
+  }
+  if (trimmed === ENGLISH_INTERNET_REASON || trimmed === LEGACY_ENGLISH_INTERNET_REASON) {
+    return locale === "zh-TW" ? "受影響的資產可從網際網路存取。" : japaneseText(ENGLISH_INTERNET_REASON);
+  }
+  if (trimmed === ENGLISH_SENSITIVE_REASON || trimmed === LEGACY_ENGLISH_SENSITIVE_REASON) {
+    return locale === "zh-TW"
+      ? "受影響的資產含有敏感資料，因此問題造成的影響可能更高。"
+      : japaneseText(ENGLISH_SENSITIVE_REASON);
+  }
   // The engine's own raw severity word, kept verbatim. Restating "high" as 高
   // would stop it matching what the reader sees in the engine's own output.
   const SOURCE = "Source severity: ";
   if (trimmed.startsWith(SOURCE)) {
     const value = trimmed.slice(SOURCE.length);
-    if (value) return `來源工具評定的嚴重程度：${value}`;
+    if (value) {
+      if (locale === "zh-TW") return `來源工具評定的嚴重程度：${value}`;
+      const template = "Source severity: {value}";
+      return translateBilingualText("ja", { en: template, zhTW: template }, { value });
+    }
   }
   if (
     legacyEngine
@@ -1013,12 +1031,20 @@ export const findingPriorityReason = (
       CURRENT_UNRATED_PREFIX.length,
       trimmed.length - CURRENT_UNRATED_TAIL.length,
     );
-    if (engine) return `嚴重程度為未知，因為 ${engine} 未提供評級。`;
+    if (engine) {
+      if (locale === "zh-TW") return `嚴重程度為未知，因為 ${engine} 未提供評級。`;
+      const template = "Severity is Unknown because {engine} did not provide a rating.";
+      return translateBilingualText("ja", { en: template, zhTW: template }, { engine });
+    }
   }
   const SOURCE_CONFIDENCE = "Source confidence: ";
   if (trimmed.startsWith(SOURCE_CONFIDENCE)) {
     const value = trimmed.slice(SOURCE_CONFIDENCE.length);
-    if (value) return `來源工具評定的信心：${value}`;
+    if (value) {
+      if (locale === "zh-TW") return `來源工具評定的信心：${value}`;
+      const template = "Source confidence: {value}";
+      return translateBilingualText("ja", { en: template, zhTW: template }, { value });
+    }
   }
   const CONFIDENCE_DERIVED = "Confidence derived from ";
   const CONFIDENCE_TAIL = " reports no confidence of its own.";
@@ -1038,7 +1064,12 @@ export const findingPriorityReason = (
       Object.keys(CONFIDENCE_BASIS_ENGLISH) as ConfidenceBasisCode[]
     ).find((key) => CONFIDENCE_BASIS_ENGLISH[key] === basisText);
     if (!code || !engine) return english;
-    return `信心是由${CONFIDENCE_BASIS[code]}推導而來；${engine} 本身不提供信心評定。`;
+    if (locale === "zh-TW") return `信心是由${CONFIDENCE_BASIS[code]}推導而來；${engine} 本身不提供信心評定。`;
+    const template = "Confidence derived from {basis}; {engine} reports no confidence of its own.";
+    return translateBilingualText("ja", { en: template, zhTW: template }, {
+      basis: japaneseText(CONFIDENCE_BASIS_ENGLISH[code]),
+      engine,
+    });
   }
   const DERIVED = "Severity derived from ";
   const TAIL = " reports no severity of its own.";
@@ -1053,7 +1084,12 @@ export const findingPriorityReason = (
     (key) => BASIS_ENGLISH[key] === basisText,
   );
   if (!code || !engine) return english;
-  return `嚴重程度是由${BASIS[code]}推導而來；${engine} 本身不提供嚴重程度。`;
+  if (locale === "zh-TW") return `嚴重程度是由${BASIS[code]}推導而來；${engine} 本身不提供嚴重程度。`;
+  const template = "Severity derived from {basis}; {engine} reports no severity of its own.";
+  return translateBilingualText("ja", { en: template, zhTW: template }, {
+    basis: japaneseText(BASIS_ENGLISH[code]),
+    engine,
+  });
 };
 
 /** The first stored reason that places a password-policy check below its severity. */
@@ -1091,16 +1127,29 @@ export const benchmarkLine = (
   const hidden = groups.length - shown.length;
   const body = shown.map((group) => {
     const versions = group.versions.join("/");
-    return locale !== "zh-TW"
-      ? `${group.name} ${versions} item ${group.reference}`
-      : `${group.name} ${versions} 第 ${group.reference} 項`;
-  }).join(locale !== "zh-TW" ? "; " : "；");
+    if (locale === "zh-TW") return `${group.name} ${versions} 第 ${group.reference} 項`;
+    if (locale === "ja") {
+      const template = "{name} {versions} item {reference}";
+      return translateBilingualText("ja", { en: template, zhTW: template }, {
+        name: group.name,
+        versions,
+        reference: group.reference,
+      });
+    }
+    return `${group.name} ${versions} item ${group.reference}`;
+  }).join(locale !== "zh-TW" && locale !== "ja" ? "; " : "；");
   const more = hidden > 0
-    ? (locale !== "zh-TW" ? ` and ${hidden} more` : `，另有 ${hidden} 項`)
+    ? (locale === "zh-TW"
+      ? `，另有 ${hidden} 項`
+      : locale === "ja"
+        ? translateBilingualText("ja", { en: " and {hidden} more", zhTW: " and {hidden} more" }, { hidden })
+        : ` and ${hidden} more`)
     : "";
-  const reportedBy = locale !== "zh-TW"
-    ? ` (reported by ${engine})`
-    : `（${engine} 回報）`;
+  const reportedBy = locale === "zh-TW"
+    ? `（${engine} 回報）`
+    : locale === "ja"
+      ? translateBilingualText("ja", { en: " (reported by {engine})", zhTW: " (reported by {engine})" }, { engine })
+      : ` (reported by ${engine})`;
   return `${body}${more}${reportedBy}`;
 };
 
@@ -1119,12 +1168,34 @@ export const findingUnattributedGap = (
   unattributed: UnattributedResults,
   english: { dimension: string; reason: string; nextAction: string },
 ): { dimension: string; reason: string; nextAction: string } => {
-  if (locale !== "zh-TW") return english;
+  if (locale !== "zh-TW" && locale !== "ja") return english;
   const { provider, identifier, discardedResults } = unattributed;
+  if (locale === "zh-TW") {
+    return {
+      dimension: `${engineId}：針對 ${provider} ${identifier} 的結果`,
+      reason: `${engineId} 回報了 ${discardedResults} 筆針對 ${provider} 識別碼 ${identifier} 的結果。你已授權的資產都沒有登記這個識別碼，因此這些結果都沒有被歸屬，也不會出現在這份報告中。`,
+      nextAction: `請在你已授權的資產上，新增 ${provider} 識別碼 ${identifier}，然後重新掃描。`,
+    };
+  }
+  const dimensionTemplate = "{engineId}: results for {provider} {identifier}";
+  const reasonTemplate = "{engineId} reported {discardedResults} results for {provider} identifier {identifier}. None of your authorized assets carry this identifier, so those results were not attributed and are absent from this report.";
+  const nextActionTemplate = "Add {provider} identifier {identifier} to your authorized asset and scan again.";
   return {
-    dimension: `${engineId}：針對 ${provider} ${identifier} 的結果`,
-    reason: `${engineId} 回報了 ${discardedResults} 筆針對 ${provider} 識別碼 ${identifier} 的結果。你已授權的資產都沒有登記這個識別碼，因此這些結果都沒有被歸屬，也不會出現在這份報告中。`,
-    nextAction: `請在你已授權的資產上，新增 ${provider} 識別碼 ${identifier}，然後重新掃描。`,
+    dimension: translateBilingualText("ja", { en: dimensionTemplate, zhTW: dimensionTemplate }, {
+      engineId,
+      provider,
+      identifier,
+    }),
+    reason: translateBilingualText("ja", { en: reasonTemplate, zhTW: reasonTemplate }, {
+      engineId,
+      discardedResults,
+      provider,
+      identifier,
+    }),
+    nextAction: translateBilingualText("ja", { en: nextActionTemplate, zhTW: nextActionTemplate }, {
+      provider,
+      identifier,
+    }),
   };
 };
 
@@ -2993,12 +3064,12 @@ export const findingActionSentence = (
   if (options.unconfirmedByCoverage) {
     return locale === "zh-TW"
       ? INCOMPLETE_CHECK_CONFIRM_ACTION_ZH_HANT
-      : INCOMPLETE_CHECK_CONFIRM_ACTION;
+      : locale === "ja"
+        ? japaneseText(INCOMPLETE_CHECK_CONFIRM_ACTION)
+        : INCOMPLETE_CHECK_CONFIRM_ACTION;
   }
   if (options.awsIamPolicy) {
-    return locale === "zh-TW"
-      ? awsIamPolicyActionZhTW(options.awsIamPolicy)
-      : awsIamPolicyActionEnglish(options.awsIamPolicy);
+    return awsIamPolicyAction(options.awsIamPolicy, locale);
   }
   const remedy = options.family ? REMEDY[options.family] : undefined;
   if (!remedy || !options.family) {
@@ -3008,8 +3079,9 @@ export const findingActionSentence = (
     const direct = options.englishFallback.slice(at + marker.length).trim();
     return direct ? direct[0]!.toLocaleUpperCase("en") + direct.slice(1) : options.englishFallback;
   }
-  if (locale !== "zh-TW") return `${REMEDY_ENGLISH[options.family]}.`;
-  return `${remedy}。`;
+  if (locale === "zh-TW") return `${remedy}。`;
+  if (locale === "ja") return `${japaneseText(REMEDY_ENGLISH[options.family])}。`;
+  return `${REMEDY_ENGLISH[options.family]}.`;
 };
 
 /**
@@ -3072,7 +3144,7 @@ export const beginnerStepAction = (
       reference.detailsFrozen === true && reference.engineId === "cloudsplaining")
     .map((reference) => reference.scannerDetails?.awsIamPolicy)
     .find((details) => details !== undefined);
-  const composed = locale !== "zh-TW" && !derivedFrom
+  const composed = locale !== "zh-TW" && locale !== "ja" && !derivedFrom
     ? step.action
     : findingActionSentence(locale, {
       englishFallback: step.action,
@@ -3315,11 +3387,32 @@ export const findingLocationText = (locale: Locale, raw: string): string => {
   const pathText = reportFilePath(path);
   const parts = [pathText];
   if (line && column) {
-    parts.push(locale !== "zh-TW" ? `line ${line}, column ${column}` : `第 ${line} 行第 ${column} 欄`);
+    parts.push(
+      locale === "zh-TW"
+        ? `第 ${line} 行第 ${column} 欄`
+        : locale === "ja"
+          ? translateBilingualText("ja", { en: "line {line}, column {column}", zhTW: "line {line}, column {column}" }, {
+            line,
+            column,
+          })
+          : `line ${line}, column ${column}`,
+    );
   } else if (line) {
-    parts.push(locale !== "zh-TW" ? `line ${line}` : `第 ${line} 行`);
+    parts.push(
+      locale === "zh-TW"
+        ? `第 ${line} 行`
+        : locale === "ja"
+          ? translateBilingualText("ja", { en: "line {line}", zhTW: "line {line}" }, { line })
+          : `line ${line}`,
+    );
   } else if (column) {
-    parts.push(locale !== "zh-TW" ? `column ${column}` : `第 ${column} 欄`);
+    parts.push(
+      locale === "zh-TW"
+        ? `第 ${column} 欄`
+        : locale === "ja"
+          ? translateBilingualText("ja", { en: "column {column}", zhTW: "column {column}" }, { column })
+          : `column ${column}`,
+    );
   }
   if (resource) {
     const resourceParts = resource
