@@ -1668,10 +1668,11 @@ async fn execute_foreground_scan(cli: &Cli) -> u8 {
         Ok((
             tokio::signal::unix::signal(tokio::signal::unix::SignalKind::interrupt())?,
             tokio::signal::unix::signal(tokio::signal::unix::SignalKind::terminate())?,
+            tokio::signal::unix::signal(tokio::signal::unix::SignalKind::hangup())?,
         ))
     })();
     #[cfg(unix)]
-    let (mut interrupt, mut terminate) = match signals {
+    let (mut interrupt, mut terminate, mut hangup) = match signals {
         Ok(signals) => signals,
         Err(error) => {
             let terminal = foreground_rejected(
@@ -1684,9 +1685,33 @@ async fn execute_foreground_scan(cli: &Cli) -> u8 {
             return 4;
         }
     };
-    #[cfg(not(unix))]
+    #[cfg(windows)]
+    let signals = (|| -> io::Result<_> {
+        Ok((
+            tokio::signal::windows::ctrl_c()?,
+            tokio::signal::windows::ctrl_break()?,
+            tokio::signal::windows::ctrl_close()?,
+            tokio::signal::windows::ctrl_logoff()?,
+            tokio::signal::windows::ctrl_shutdown()?,
+        ))
+    })();
+    #[cfg(windows)]
+    let (mut interrupt, mut break_signal, mut close, mut logoff, mut shutdown) = match signals {
+        Ok(signals) => signals,
+        Err(error) => {
+            let terminal = foreground_rejected(
+                &request,
+                AppError::Internal(format!(
+                    "cannot install foreground signal handlers: {error}"
+                )),
+            );
+            let _ = output.finish(&terminal);
+            return 4;
+        }
+    };
+    #[cfg(not(any(unix, windows)))]
     let interrupt = tokio::signal::ctrl_c();
-    #[cfg(not(unix))]
+    #[cfg(not(any(unix, windows)))]
     tokio::pin!(interrupt);
 
     let worker_request = request.clone();
@@ -1713,8 +1738,18 @@ async fn execute_foreground_scan(cli: &Cli) -> u8 {
             completed = &mut owner => break completed,
             _ = interrupt.recv() => { let _ = stop.compare_exchange(0, 130, Ordering::AcqRel, Ordering::Acquire); },
             _ = terminate.recv() => { let _ = stop.compare_exchange(0, 143, Ordering::AcqRel, Ordering::Acquire); },
+            _ = hangup.recv() => { let _ = stop.compare_exchange(0, 143, Ordering::AcqRel, Ordering::Acquire); },
         }
-        #[cfg(not(unix))]
+        #[cfg(windows)]
+        tokio::select! {
+            completed = &mut owner => break completed,
+            _ = interrupt.recv() => { let _ = stop.compare_exchange(0, 130, Ordering::AcqRel, Ordering::Acquire); },
+            _ = break_signal.recv() => { let _ = stop.compare_exchange(0, 130, Ordering::AcqRel, Ordering::Acquire); },
+            _ = close.recv() => { let _ = stop.compare_exchange(0, 143, Ordering::AcqRel, Ordering::Acquire); },
+            _ = logoff.recv() => { let _ = stop.compare_exchange(0, 143, Ordering::AcqRel, Ordering::Acquire); },
+            _ = shutdown.recv() => { let _ = stop.compare_exchange(0, 143, Ordering::AcqRel, Ordering::Acquire); },
+        }
+        #[cfg(not(any(unix, windows)))]
         tokio::select! {
             completed = &mut owner => break completed,
             signal = &mut interrupt, if stop.load(Ordering::Acquire) == 0 => {

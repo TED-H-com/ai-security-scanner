@@ -68,6 +68,7 @@ use crate::{
 use chrono::{Duration, Utc};
 use sha2::{Digest, Sha256};
 use std::collections::{BTreeMap, BTreeSet, VecDeque};
+use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::mpsc;
 use std::thread;
 use std::time::{Duration as StdDuration, Instant};
@@ -1807,13 +1808,20 @@ pub(crate) fn prepare_runtime_with_deadline(
     context: &JobContext,
     deadline: StdDuration,
 ) -> RuntimePreparationOutcome {
-    prepare_runtime_with_deadline_tracked(resolve, context, deadline, None)
+    prepare_runtime_with_deadline_tracked(
+        resolve,
+        context,
+        deadline,
+        &Arc::new(AtomicBool::new(false)),
+        None,
+    )
 }
 
 fn prepare_runtime_with_deadline_tracked(
     resolve: impl FnOnce() -> AppResult<ProcessContainerRuntime> + Send + 'static,
     context: &JobContext,
     deadline: StdDuration,
+    cancellation: &Arc<AtomicBool>,
     tracker: Option<&Mutex<Vec<thread::JoinHandle<()>>>>,
 ) -> RuntimePreparationOutcome {
     let (sender, receiver) = mpsc::sync_channel(1);
@@ -1836,10 +1844,12 @@ fn prepare_runtime_with_deadline_tracked(
     let started = Instant::now();
     loop {
         if context.is_cancelled() {
+            cancellation.store(true, Ordering::Release);
             return RuntimePreparationOutcome::Cancelled;
         }
         let remaining = deadline.saturating_sub(started.elapsed());
         if remaining.is_zero() {
+            cancellation.store(true, Ordering::Release);
             return RuntimePreparationOutcome::Unavailable;
         }
         match receiver.recv_timeout(remaining.min(SCAN_RUNTIME_PREPARATION_POLL)) {
@@ -2034,20 +2044,29 @@ pub(crate) fn prepare_persisted_new_scan(
     let runtime_preparation = prepare_runtime_task_groups(runnable, |identity, _representative| {
         let runtime_app = app.clone();
         let identity = identity.clone();
+        let cancellation = Arc::new(AtomicBool::new(false));
+        let worker_cancellation = cancellation.clone();
         let resolve = move || {
             let state = runtime_app.state();
             match identity {
                 RuntimePreparationIdentity::Recorded {
                     provider,
                     provenance,
-                } => state.runtime_for_recorded_execution(provider, &provenance),
-                RuntimePreparationIdentity::Fresh => state.runtime_for_execution(),
+                } => state.runtime_for_recorded_execution_cancellable(
+                    provider,
+                    &provenance,
+                    &worker_cancellation,
+                ),
+                RuntimePreparationIdentity::Fresh => {
+                    state.runtime_for_execution_cancellable(&worker_cancellation)
+                }
             }
         };
         prepare_runtime_with_deadline_tracked(
             resolve,
             context,
             SCAN_RUNTIME_PREPARATION_DEADLINE,
+            &cancellation,
             Some(&app.preparers),
         )
     });
@@ -8548,6 +8567,126 @@ pub(crate) mod tests {
             crate::job_manager::JobStatus::Cancelled
         );
         drop(release_resolution_tx);
+    }
+
+    #[test]
+    fn cancelled_runtime_resolution_stops_before_joining_preparers() {
+        let (_directory, state, _) = ready_repository_state();
+        let state = Arc::new(state);
+        let coordinator = ScanCoordinator::new(state.clone(), Arc::new(DiscardEvents));
+        let key = JobKey::new("case-preparer", "run-preparer").unwrap();
+        let cancellation = Arc::new(AtomicBool::new(false));
+        let worker_cancellation = cancellation.clone();
+        let monitor_cancellation = cancellation.clone();
+        let worker_coordinator = coordinator.clone();
+        let (entered_tx, entered_rx) = mpsc::channel();
+        let (outcome_tx, outcome_rx) = mpsc::channel();
+
+        state
+            .jobs
+            .start_job(
+                key.clone(),
+                ["engine-preparer"],
+                move |context| {
+                    let outcome = prepare_runtime_with_deadline_tracked(
+                        move || {
+                            entered_tx.send(()).unwrap();
+                            while !worker_cancellation.load(Ordering::Acquire) {
+                                thread::sleep(StdDuration::from_millis(10));
+                            }
+                            Err(AppError::Runtime("fixture cancelled".into()))
+                        },
+                        &context,
+                        StdDuration::from_secs(30),
+                        &monitor_cancellation,
+                        Some(&worker_coordinator.preparers),
+                    );
+                    assert!(matches!(outcome, RuntimePreparationOutcome::Cancelled));
+                    context
+                        .engine("engine-preparer")
+                        .unwrap()
+                        .mark_cancelled()
+                        .unwrap();
+                    outcome_tx.send(()).unwrap();
+                    JobCompletion::Cancelled
+                },
+                |_| {},
+            )
+            .unwrap();
+
+        entered_rx.recv_timeout(StdDuration::from_secs(2)).unwrap();
+        state.jobs.cancel(&key).unwrap();
+        outcome_rx.recv_timeout(StdDuration::from_secs(2)).unwrap();
+        let (joined_tx, joined_rx) = mpsc::channel();
+        let joiner = thread::spawn(move || {
+            joined_tx.send(coordinator.join_preparers()).unwrap();
+        });
+        let joined = joined_rx.recv_timeout(StdDuration::from_secs(1));
+        // Release the fixture even when the assertion fails, so it cannot leak a thread.
+        cancellation.store(true, Ordering::Release);
+        joiner.join().unwrap();
+        joined
+            .expect("cancelled runtime preparation did not stop within one second")
+            .unwrap();
+    }
+
+    #[test]
+    fn timed_out_runtime_resolution_stops_before_joining_preparers() {
+        let (_directory, state, _) = ready_repository_state();
+        let state = Arc::new(state);
+        let coordinator = ScanCoordinator::new(state.clone(), Arc::new(DiscardEvents));
+        let key = JobKey::new("case-deadline", "run-deadline").unwrap();
+        let cancellation = Arc::new(AtomicBool::new(false));
+        let worker_cancellation = cancellation.clone();
+        let monitor_cancellation = cancellation.clone();
+        let worker_coordinator = coordinator.clone();
+        let (entered_tx, entered_rx) = mpsc::channel();
+        let (outcome_tx, outcome_rx) = mpsc::channel();
+
+        state
+            .jobs
+            .start_job(
+                key,
+                ["engine-deadline"],
+                move |context| {
+                    let outcome = prepare_runtime_with_deadline_tracked(
+                        move || {
+                            entered_tx.send(()).unwrap();
+                            while !worker_cancellation.load(Ordering::Acquire) {
+                                thread::sleep(StdDuration::from_millis(10));
+                            }
+                            Err(AppError::Runtime("fixture timed out".into()))
+                        },
+                        &context,
+                        StdDuration::from_millis(300),
+                        &monitor_cancellation,
+                        Some(&worker_coordinator.preparers),
+                    );
+                    assert!(matches!(outcome, RuntimePreparationOutcome::Unavailable));
+                    context
+                        .engine("engine-deadline")
+                        .unwrap()
+                        .mark_failed()
+                        .unwrap();
+                    outcome_tx.send(()).unwrap();
+                    JobCompletion::Failed
+                },
+                |_| {},
+            )
+            .unwrap();
+
+        entered_rx.recv_timeout(StdDuration::from_secs(2)).unwrap();
+        outcome_rx.recv_timeout(StdDuration::from_secs(2)).unwrap();
+        assert!(cancellation.load(Ordering::Acquire));
+        let (joined_tx, joined_rx) = mpsc::channel();
+        let joiner = thread::spawn(move || {
+            joined_tx.send(coordinator.join_preparers()).unwrap();
+        });
+        let joined = joined_rx.recv_timeout(StdDuration::from_secs(1));
+        joiner.join().unwrap();
+        joined
+            .expect("timed-out runtime preparation did not stop within one second")
+            .unwrap();
     }
 
     #[test]

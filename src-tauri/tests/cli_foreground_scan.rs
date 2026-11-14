@@ -697,6 +697,81 @@ fn assert_cancelled_owner(fixture: &Fixture, runtime: &Value, result: &Value) {
     );
 }
 
+#[cfg(any(unix, windows))]
+fn await_blocked_cleanup(process: &mut Running, fixture: &Fixture) {
+    let deadline = Instant::now() + Duration::from_secs(10);
+    while !fixture.binary_directory.join("cleanup.json").exists() {
+        assert!(
+            process
+                .child
+                .as_mut()
+                .unwrap()
+                .try_wait()
+                .unwrap()
+                .is_none(),
+            "CLI exited before cleanup started"
+        );
+        assert!(Instant::now() < deadline, "cleanup did not start");
+        thread::sleep(Duration::from_millis(10));
+    }
+}
+
+#[cfg(unix)]
+#[test]
+fn sighup_then_sigint_waits_for_cleanup_and_saves_receipt() {
+    let fixture = Fixture::new(true, "block-cleanup");
+    let mut process = Running::spawn(fixture.run_command(false, "gitleaks"), true);
+    let _release = fixture_runtime::ReleaseOnDrop(fixture.binary_directory.join("release"));
+    let runtime = process.await_runtime(&fixture);
+    let pid = process.child.as_ref().unwrap().id();
+    assert_eq!(unsafe { libc::kill(pid as libc::pid_t, libc::SIGHUP) }, 0);
+    await_blocked_cleanup(&mut process, &fixture);
+    assert_eq!(unsafe { libc::kill(pid as libc::pid_t, libc::SIGINT) }, 0);
+    thread::sleep(Duration::from_millis(50));
+    assert!(
+        process
+            .child
+            .as_mut()
+            .unwrap()
+            .try_wait()
+            .unwrap()
+            .is_none()
+    );
+    fs::write(fixture.binary_directory.join("release"), "finish cleanup").unwrap();
+    let result = terminal(&process.wait(), 143);
+    assert_cancelled_owner(&fixture, &runtime, &result);
+}
+
+#[cfg(windows)]
+#[test]
+fn repeated_ctrl_break_settles_scan_and_saves_receipt() {
+    let fixture = Fixture::new(true, "block-cleanup");
+    let mut command = fixture.run_command(false, "gitleaks");
+    fixture_runtime::new_console_process_group(&mut command);
+    let mut process = Running::spawn(command, true);
+    let _release = fixture_runtime::ReleaseOnDrop(fixture.binary_directory.join("release"));
+    let runtime = process.await_runtime(&fixture);
+    let pid = process.child.as_ref().unwrap().id();
+    let first = Instant::now();
+    fixture_runtime::send_ctrl_break(pid);
+    await_blocked_cleanup(&mut process, &fixture);
+    thread::sleep(Duration::from_millis(200).saturating_sub(first.elapsed()));
+    fixture_runtime::send_ctrl_break(pid);
+    thread::sleep(Duration::from_millis(50));
+    assert!(
+        process
+            .child
+            .as_mut()
+            .unwrap()
+            .try_wait()
+            .unwrap()
+            .is_none()
+    );
+    fs::write(fixture.binary_directory.join("release"), "finish cleanup").unwrap();
+    let result = terminal(&process.wait(), 130);
+    assert_cancelled_owner(&fixture, &runtime, &result);
+}
+
 #[cfg(unix)]
 #[test]
 fn sigint_and_sigterm_wait_for_exact_cancellation_cleanup_and_saved_receipt() {

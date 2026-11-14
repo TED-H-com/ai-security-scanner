@@ -78,6 +78,11 @@ path. Saved evidence and completed sibling results remain available. A command
 receipt is stored in case history before successful delivery; it travels with a
 complete case archive.
 
+For foreground scans and runtime preparation, Unix handles SIGINT (130) and
+SIGTERM or SIGHUP (143). Windows handles Ctrl+C or Ctrl+Break (130) and console
+close, logoff or shutdown (143). The first interruption sets the exit code;
+later events are absorbed while work settles.
+
 When started through the development bootstrap, the parent uses a fixed private
 pipe to request cancellation for both `scan run` and `scan recover`. The core also
 settles owned work if the bootstrap exits unexpectedly. It runs detached on all
@@ -126,8 +131,8 @@ Run/recover use these exit codes; older command conventions remain unchanged:
 | 2 | Invalid or unsupported request |
 | 3 | Another owner holds the data directory, or an optimistic revision conflicts |
 | 4 | Execution coordination, persistence, output or unresolved cleanup requires attention |
-| 130 | Interrupted by Ctrl+C, after settling owned work |
-| 143 | Termination requested by SIGTERM or the bootstrap control pipe, after settling owned work |
+| 130 | Interrupted by SIGINT, Ctrl+C, Ctrl+Break or bootstrap cancellation, after settling owned work |
+| 143 | Termination requested by SIGTERM, SIGHUP, a Windows close, logoff or shutdown event, or the bootstrap control pipe, after settling owned work |
 
 Findings alone never select an error exit code. Reopen status after a lost output
 acknowledgement instead of immediately repeating `scan run`.

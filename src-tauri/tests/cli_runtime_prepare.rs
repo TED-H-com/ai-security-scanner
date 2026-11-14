@@ -386,6 +386,123 @@ fn held_writer_lease_rejects_preparation_before_runtime_contact() {
     assert!(fixture.calls().is_empty());
 }
 
+#[cfg(any(unix, windows))]
+fn await_fixture_exit(running: &mut Running, pid: u32) {
+    let deadline = Instant::now() + Duration::from_secs(10);
+    while !fixture_runtime::process_is_gone(pid) {
+        assert!(
+            running
+                .child
+                .as_mut()
+                .unwrap()
+                .try_wait()
+                .unwrap()
+                .is_none(),
+            "CLI exited before settling its runtime operation"
+        );
+        assert!(Instant::now() < deadline, "runtime operation did not stop");
+        thread::sleep(Duration::from_millis(10));
+    }
+}
+
+#[cfg(unix)]
+#[test]
+fn sighup_then_sigint_settles_preparation_and_saves_receipt() {
+    let fixture = Fixture::new("block-pipe");
+    let mut running = Running::spawn(fixture.prepare("gitleaks", true));
+    let _release = fixture_runtime::ReleaseOnDrop(fixture.bin.join("release"));
+    let blocked = running.await_blocked(&fixture);
+    let pid = running.child.as_ref().unwrap().id();
+    assert_eq!(unsafe { libc::kill(pid as libc::pid_t, libc::SIGHUP) }, 0);
+    await_fixture_exit(&mut running, blocked["pid"].as_u64().unwrap() as u32);
+    assert_eq!(unsafe { libc::kill(pid as libc::pid_t, libc::SIGINT) }, 0);
+    thread::sleep(Duration::from_millis(50));
+    assert!(
+        running
+            .child
+            .as_mut()
+            .unwrap()
+            .try_wait()
+            .unwrap()
+            .is_none()
+    );
+    fs::write(fixture.bin.join("release"), "finish pipe drain").unwrap();
+    let value = result(&running.wait(), 143);
+    assert_eq!(value["command_outcome"], "cancelled");
+    fixture.assert_receipt(&value);
+    assert!(fixture_runtime::process_is_gone(
+        blocked["pid"].as_u64().unwrap() as u32
+    ));
+}
+
+#[cfg(windows)]
+fn hold_fixture_stdout(blocked: &Value) -> std::os::windows::io::OwnedHandle {
+    use std::os::windows::io::FromRawHandle;
+    use windows_sys::Win32::Foundation::{CloseHandle, DUPLICATE_SAME_ACCESS, DuplicateHandle};
+    use windows_sys::Win32::System::Threading::{
+        GetCurrentProcess, OpenProcess, PROCESS_DUP_HANDLE,
+    };
+
+    let process = unsafe {
+        OpenProcess(
+            PROCESS_DUP_HANDLE,
+            0,
+            blocked["pid"].as_u64().unwrap() as u32,
+        )
+    };
+    assert!(!process.is_null(), "open fixture process");
+    let mut held = std::ptr::null_mut();
+    let duplicated = unsafe {
+        DuplicateHandle(
+            process,
+            blocked["stdout_handle"].as_u64().unwrap() as usize as _,
+            GetCurrentProcess(),
+            &raw mut held,
+            0,
+            0,
+            DUPLICATE_SAME_ACCESS,
+        )
+    };
+    unsafe { CloseHandle(process) };
+    assert_ne!(duplicated, 0, "duplicate fixture stdout");
+    unsafe { std::os::windows::io::OwnedHandle::from_raw_handle(held) }
+}
+
+#[cfg(windows)]
+#[test]
+fn repeated_ctrl_break_settles_preparation_and_saves_receipt() {
+    let fixture = Fixture::new("block");
+    let mut command = fixture.prepare("gitleaks", true);
+    fixture_runtime::new_console_process_group(&mut command);
+    let mut running = Running::spawn(command);
+    let _release = fixture_runtime::ReleaseOnDrop(fixture.bin.join("release"));
+    let blocked = running.await_blocked(&fixture);
+    let held_stdout = hold_fixture_stdout(&blocked);
+    let pid = running.child.as_ref().unwrap().id();
+    let first = Instant::now();
+    fixture_runtime::send_ctrl_break(pid);
+    await_fixture_exit(&mut running, blocked["pid"].as_u64().unwrap() as u32);
+    thread::sleep(Duration::from_millis(200).saturating_sub(first.elapsed()));
+    fixture_runtime::send_ctrl_break(pid);
+    thread::sleep(Duration::from_millis(50));
+    assert!(
+        running
+            .child
+            .as_mut()
+            .unwrap()
+            .try_wait()
+            .unwrap()
+            .is_none()
+    );
+    drop(held_stdout);
+    let value = result(&running.wait(), 130);
+    assert_eq!(value["command_outcome"], "cancelled");
+    fixture.assert_receipt(&value);
+    assert!(fixture_runtime::process_is_gone(
+        blocked["pid"].as_u64().unwrap() as u32
+    ));
+}
+
 #[cfg(unix)]
 #[test]
 fn sigint_waits_for_the_bounded_runtime_operation_then_saves_cancellation_and_releases_lease() {

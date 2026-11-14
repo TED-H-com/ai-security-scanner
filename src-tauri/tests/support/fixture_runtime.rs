@@ -113,6 +113,60 @@ pub fn process_is_gone(pid: u32) -> bool {
         }
     }
 }
+
+pub struct ReleaseOnDrop(pub PathBuf);
+
+impl Drop for ReleaseOnDrop {
+    fn drop(&mut self) {
+        let _ = fs::write(&self.0, "release fixture");
+        let Some(root) = self.0.parent() else {
+            return;
+        };
+        let mut pids = Vec::new();
+        for name in ["blocked.json", "running.json", "cleanup.json"] {
+            if let Ok(bytes) = fs::read(root.join(name))
+                && let Ok(value) = serde_json::from_slice::<serde_json::Value>(&bytes)
+                && let Some(pid) = value["pid"].as_u64()
+            {
+                pids.push(pid as u32);
+            }
+        }
+        if let Ok(pid) = fs::read_to_string(root.join("holder.pid"))
+            && let Ok(pid) = pid.parse::<u32>()
+        {
+            pids.push(pid);
+        }
+        let deadline = std::time::Instant::now() + std::time::Duration::from_secs(3);
+        while pids.iter().any(|pid| !process_is_gone(*pid)) && std::time::Instant::now() < deadline
+        {
+            std::thread::sleep(std::time::Duration::from_millis(10));
+        }
+    }
+}
+
+#[cfg(windows)]
+pub fn new_console_process_group(command: &mut Command) {
+    use std::os::windows::process::CommandExt;
+    use windows_sys::Win32::System::Console::{AllocConsole, GetConsoleCP};
+    use windows_sys::Win32::System::Threading::CREATE_NEW_PROCESS_GROUP;
+
+    if unsafe { GetConsoleCP() } == 0 {
+        assert_ne!(unsafe { AllocConsole() }, 0, "allocate test console");
+    }
+    command.creation_flags(CREATE_NEW_PROCESS_GROUP);
+}
+
+#[cfg(windows)]
+pub fn send_ctrl_break(pid: u32) {
+    use windows_sys::Win32::System::Console::{CTRL_BREAK_EVENT, GenerateConsoleCtrlEvent};
+
+    assert_ne!(
+        unsafe { GenerateConsoleCtrlEvent(CTRL_BREAK_EVENT, pid) },
+        0,
+        "send Ctrl+Break: {}",
+        std::io::Error::last_os_error()
+    );
+}
 #[allow(dead_code)]
 pub fn make_tree_removable(path: &Path) {
     let metadata = fs::symlink_metadata(path).unwrap();

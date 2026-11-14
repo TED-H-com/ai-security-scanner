@@ -49,6 +49,14 @@ fn run() -> Result<i32, String> {
         .skip(1)
         .map(|s| s.to_string_lossy().into_owned())
         .collect();
+    #[cfg(unix)]
+    if args == ["--hold-preparation-output"] {
+        let deadline = Instant::now() + Duration::from_secs(12);
+        while !root.join("release").exists() && Instant::now() < deadline {
+            std::thread::sleep(Duration::from_millis(10));
+        }
+        return Ok(0);
+    }
     OpenOptions::new()
         .create(true)
         .append(true)
@@ -125,13 +133,42 @@ fn run() -> Result<i32, String> {
                     return Err("missing image inspect image".into());
                 }
                 let image = last()?;
-                if mode == "block" || (mode == "block-nuclei" && image.contains("engine-nuclei@")) {
+                if mode == "block"
+                    || mode == "block-pipe"
+                    || (mode == "block-nuclei" && image.contains("engine-nuclei@"))
+                {
+                    #[cfg(unix)]
+                    if mode == "block-pipe" {
+                        use std::os::unix::process::CommandExt;
+                        let mut holder = std::process::Command::new(&exe)
+                            .arg("--hold-preparation-output")
+                            .stdin(std::process::Stdio::null())
+                            .stderr(std::process::Stdio::null())
+                            .process_group(0)
+                            .spawn()
+                            .map_err(|e| format!("start output holder: {e}"))?;
+                        write(&root.join("holder.pid"), &holder.id().to_string())?;
+                        std::thread::spawn(move || {
+                            let _ = holder.wait();
+                        });
+                    }
+                    #[cfg(windows)]
+                    let stdout_handle = {
+                        use std::os::windows::io::AsRawHandle;
+                        format!(
+                            ",\"stdout_handle\":{}",
+                            std::io::stdout().as_raw_handle() as usize
+                        )
+                    };
+                    #[cfg(not(windows))]
+                    let stdout_handle = "";
                     atomic(
                         "blocked.json",
                         &format!(
-                            "{{\"pid\":{},\"image\":{}}}",
+                            "{{\"pid\":{},\"image\":{}{}}}",
                             std::process::id(),
-                            json_string(image)
+                            json_string(image),
+                            stdout_handle
                         ),
                     )?;
                     let code = wait(12, None)?;
@@ -231,7 +268,7 @@ fn run() -> Result<i32, String> {
                     json_string(name)
                 ),
             )?;
-            if mode == "block" {
+            if mode == "block" || mode == "block-cleanup" {
                 let code = wait(20, Some(&root.join(format!("{id}.stopped"))))?;
                 if code != 0 {
                     return Ok(code);
@@ -277,6 +314,16 @@ fn run() -> Result<i32, String> {
             if id.len() != 64 {
                 eprintln!("fixture refuses control by mutable name");
                 return Ok(93);
+            }
+            if op == "stop" && mode == "block-cleanup" {
+                atomic(
+                    "cleanup.json",
+                    &format!("{{\"pid\":{}}}", std::process::id()),
+                )?;
+                let code = wait(12, None)?;
+                if code != 0 {
+                    return Ok(code);
+                }
             }
             write(&root.join(format!("{id}.stopped")), "stopped")?;
             if op == "rm" {
