@@ -27,6 +27,16 @@ The dated sections below preserve observations at each milestone. [The product s
 
 CI document and contract tests: 114 tests cover the current source boundaries.
 
+## November 13 report and archive gates — 27
+
+A new, empty bootstrap cache at the same pinned revision rebuilt the CLI with `--offline` in under four minutes while the earlier cache was unreadable, and the new binary's digest equals the earlier build's. With that core the restore verifier again passed all 78 checks on the host archive from the 26 journey: both source selections restored into fresh workspaces, and the saved reports retrieved and replayed byte for byte. Connection tracing recorded no network connection attempts during the build or the restore. The Rust dependencies were already on the machine; nothing was downloaded.
+
+An automated test now covers an audit that could not start because its budget was too small and an audit that was stopped. Before archiving, the saved report names the ending and its reason, with the task's technical record collapsed under Technical details. Exports after reopening the case and after restoring the archive show the same reason and disclosure, and the restored snapshot bytes equal the originals.
+
+Source audits in the host flow may not run target code, with or without a sandbox; the preparation receipt and the sealed record both say so. Facts that would need execution stay as To validate records without severity, and an audit with an unvalidated candidate stays incomplete. Reports now name those records as a next step. The first layer of a single-run or combined report says how many source-audit items under To validate need validation, first when nothing else was found and after the main action otherwise. An asset whose completed checks found no problems but that has such records shows the next action “validate the listed source-audit items first”. Counts, severities, status labels and JSON output are unchanged.
+
+Evidence: `b27b-01` passed the failure-row group (11 tests); `b27e-01` passed the report tests (11) and `b27e-02` the whole Cloudflare audit target (157 tests). On the final tree, `b27-lead-01` passed the library, CLI and Cloudflare targets (2,020 tests), `b27-lead-02` the snapshot, archive, foreground, runtime and baseline targets (56 passed, 2 ignored), and `b27-lead-03` and `b27-lead-04` the all-engine report and case lifecycle targets; `b27-lead-05` passed repository checks (2 frozen cases, 26 document snapshots, 36 payload hashes, 20 screenshots) and `b27-lead-06` all 114 CI tests.
+
 ## November 13 bootstrap-first real-host journey — 26
 
 A Linux host received only the operator skill, a clean product checkout at a pinned, committed revision and an empty private cache location. It ran the pinned bootstrap itself: `doctor`, then `prepare` with the default release profile and `--offline`, which built the CLI from existing Rust dependencies in about three and a half minutes, then Gitleaks scan preparation through the existing Docker compatibility runtime. Every scanner command after that went through `bootstrap.mjs run`.
