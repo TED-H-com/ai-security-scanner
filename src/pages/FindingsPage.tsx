@@ -2036,7 +2036,7 @@ function BeginnerReportOverview({ report, run }: { report: BeginnerMasterReport;
         key={check.taskId} className="section-block source-audit-failure">
         <h2>{localizedCheckName(check.checkId, locale, engineByTaskId.get(check.taskId))}</h2>
         <p>{[check.outcome!.summary, check.outcome!.reason, check.outcome!.nextAction]
-          .map((sentence) => coverageGapProse(locale, sentence)).join(locale === "zh-TW" ? "" : " ")}</p>
+          .map((sentence) => coverageGapProse(locale, sentence)).join(locale === "en" ? " " : "")}</p>
       </section>)}
       <SourceAuditResults audits={report.sourceAudits ?? []} />
       {report.incidentFocus && <IncidentFocusReport report={report.incidentFocus} targets={report.requested.targets} />}

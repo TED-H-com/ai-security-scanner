@@ -1,6 +1,6 @@
 import { failureTranslation } from "./auditFailure.ts";
 import { sourceAuditCoverageText } from "./sourceAuditCoverageText.ts";
-import type { Locale } from "./i18n/core";
+import { japaneseText, translateBilingualText, type Locale } from "./i18n/core.ts";
 import type {
   AwsIamPolicyFindingDetails,
   BeginnerCoverageStatus,
@@ -1752,33 +1752,41 @@ const COVERAGE_GAP_PROSE: ReadonlyArray<readonly [string, string]> = [
 /**
  * One sentence of a coverage row, in the reader's language.
  *
- * English is the stored sentence. Traditional Chinese is that sentence when
- * this product authored it, with a recorded upstream detail, diagnostic code,
- * support-end date, or refused-connection count kept verbatim.
+ * English is the stored sentence. Product-authored wording is translated,
+ * with recorded upstream detail, diagnostic codes, dates, and counts kept
+ * verbatim.
  */
 export const coverageGapProse = (
   locale: Locale,
   english: string,
 ): string => {
   const failure = failureTranslation(english);
-  if (failure) return locale === "zh-TW" ? failure : english;
+  if (failure) return locale === "zh-TW" ? failure : locale === "ja" ? japaneseText(english) : english;
   const auditCoverage = sourceAuditCoverageText(locale, english);
   if (auditCoverage !== undefined) return auditCoverage;
 
-  if (locale !== "zh-TW") return english;
+  if (locale !== "zh-TW" && locale !== "ja") return english;
   const trimmed = english.trim();
   const reviewBase = "Maester evaluated this control but did not return a pass or fail verdict.";
   const reviewDetailPrefix = `${reviewBase} Upstream detail: `;
   if (trimmed.startsWith(reviewDetailPrefix) && trimmed.length > reviewDetailPrefix.length) {
     const base = lookupProse(reviewBase);
-    if (base) return `${base}上游詳細資料：${trimmed.slice(reviewDetailPrefix.length)}`;
+    if (base) return locale === "zh-TW"
+      ? `${base}上游詳細資料：${trimmed.slice(reviewDetailPrefix.length)}`
+      : translateBilingualText("ja", {
+        en: "{sentence} Upstream detail: {detail}", zhTW: "{sentence} Upstream detail: {detail}",
+      }, { sentence: japaneseText(reviewBase), detail: trimmed.slice(reviewDetailPrefix.length) });
   }
   // Six reasons gain a diagnostic code when the task recorded one. It is the
   // scanner's own code and stays verbatim; only the sentence around it moves.
   const withCode = /^(.*\.) Diagnostic code: (.+)\.$/u.exec(trimmed);
   if (withCode) {
     const base = lookupProse(withCode[1] ?? "");
-    if (base) return `${base}診斷代碼：${withCode[2]}。`;
+    if (base) return locale === "zh-TW"
+      ? `${base}診斷代碼：${withCode[2]}。`
+      : translateBilingualText("ja", {
+        en: "{sentence} Diagnostic code: {code}.", zhTW: "{sentence} Diagnostic code: {code}.",
+      }, { sentence: japaneseText(withCode[1] ?? ""), code: withCode[2] ?? "" });
     return english;
   }
   // The stale-knowledge reason carries the support date the run recorded.
@@ -1787,7 +1795,11 @@ export const coverageGapProse = (
   const withSupportEnd = /^(.*\.) Support ended: (.+)\.$/u.exec(trimmed);
   if (withSupportEnd) {
     const base = lookupProse(withSupportEnd[1] ?? "");
-    if (base) return `${base}支援結束日期：${withSupportEnd[2]}。`;
+    if (base) return locale === "zh-TW"
+      ? `${base}支援結束日期：${withSupportEnd[2]}。`
+      : translateBilingualText("ja", {
+        en: "{sentence} Support ended: {date}.", zhTW: "{sentence} Support ended: {date}.",
+      }, { sentence: japaneseText(withSupportEnd[1] ?? ""), date: withSupportEnd[2] ?? "" });
     return english;
   }
   // A gateway refusal count is data the cleanup record measured. Same split
@@ -1795,7 +1807,11 @@ export const coverageGapProse = (
   const withRefusals = /^(.*\.) Refused connections: (\d+)\.$/u.exec(trimmed);
   if (withRefusals) {
     const base = lookupProse(withRefusals[1] ?? "");
-    if (base) return `${base}拒絕的連線：${withRefusals[2]}。`;
+    if (base) return locale === "zh-TW"
+      ? `${base}拒絕的連線：${withRefusals[2]}。`
+      : translateBilingualText("ja", {
+        en: "{sentence} Refused connections: {count}.", zhTW: "{sentence} Refused connections: {count}.",
+      }, { sentence: japaneseText(withRefusals[1] ?? ""), count: withRefusals[2] ?? "" });
     return english;
   }
   // Unevaluated controls are counted by kind. Each count is the engine's and
@@ -1803,10 +1819,18 @@ export const coverageGapProse = (
   const withUnevaluated = /^(.*\.) Not evaluated: (.+)\.$/u.exec(trimmed);
   if (withUnevaluated) {
     const base = lookupProse(withUnevaluated[1] ?? "");
-    if (base) return `${base}未評估：${unevaluatedControlItemsZhTW(withUnevaluated[2] ?? "")}。`;
+    if (base) return locale === "zh-TW"
+      ? `${base}未評估：${unevaluatedControlItemsZhTW(withUnevaluated[2] ?? "")}。`
+      : translateBilingualText("ja", {
+        en: "{sentence} Not evaluated: {items}.", zhTW: "{sentence} Not evaluated: {items}.",
+      }, {
+        sentence: japaneseText(withUnevaluated[1] ?? ""),
+        items: unevaluatedControlItemsJa(withUnevaluated[2] ?? ""),
+      });
     return english;
   }
-  return lookupProse(trimmed) ?? english;
+  const prose = lookupProse(trimmed);
+  return prose === undefined ? english : locale === "zh-TW" ? prose : japaneseText(trimmed);
 };
 
 /**
@@ -1847,6 +1871,21 @@ export const unevaluatedControlItemsZhTW = (items: string): string => items
     return item;
   })
   .join("、");
+
+const unevaluatedControlItemsJa = (items: string): string => items
+  .split(", ")
+  .map((item) => {
+    for (const [english] of UNEVALUATED_CONTROL_KINDS) {
+      const count = item.endsWith(` ${english}`)
+        ? item.slice(0, item.length - english.length - 1)
+        : undefined;
+      if (count && /^\d+$/u.test(count)) return translateBilingualText("ja", {
+        en: "{count} {kind}", zhTW: "{count} {kind}",
+      }, { count, kind: japaneseText(english) });
+    }
+    return item;
+  })
+  .join("\u3001");
 
 /**
  * `coverageGapProse`, with a trailing diagnostic code removed first.
