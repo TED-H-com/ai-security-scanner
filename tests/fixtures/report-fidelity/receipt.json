@@ -1,46 +1,20 @@
 {
-  "baselineCoreRevision": "cc2ef089584594b2908177550da65bb18ae26361",
-  "capturedAt": "2026-11-14T13:25:15.157534239Z",
+  "baselineCoreRevision": "fa37cf98da3494f6155ee2cb5ae82c0dc0cd8726",
+  "capturedAt": "2026-11-14T18:34:44.179683746Z",
   "fixedInputTime": "2026-11-08T12:00:00Z",
   "inputPreparation": "One-time fixture identity, timestamp and temporary-path freezing; production output bytes are never rewritten",
   "liveTargetContact": false,
   "productVersion": "0.6.2",
   "replaces": {
-    "baselineCoreRevision": "6e259b497b87fb8aa2ece1f3b512cc29c9ea5af7",
+    "baselineCoreRevision": "cc2ef089584594b2908177550da65bb18ae26361",
     "changedDocuments": [
-      "all-detectors/en-full.html",
-      "all-detectors/en-full.json",
-      "all-detectors/en-standard.html",
-      "all-detectors/en-standard.json",
-      "all-detectors/framework.json",
-      "all-detectors/ocsf.json",
-      "all-detectors/ocsf.json.coverage.json",
-      "all-detectors/oscal.json",
-      "all-detectors/oscal.json.coverage.json",
-      "all-detectors/report.case.tar.gz",
-      "all-detectors/zh-Hant-full.html",
-      "all-detectors/zh-Hant-full.json",
       "all-detectors/zh-Hant-standard.html",
-      "all-detectors/zh-Hant-standard.json",
-      "mixed-terminal/en-full.html",
-      "mixed-terminal/en-full.json",
-      "mixed-terminal/en-standard.html",
-      "mixed-terminal/en-standard.json",
-      "mixed-terminal/framework.json",
-      "mixed-terminal/ocsf.json",
-      "mixed-terminal/ocsf.json.coverage.json",
-      "mixed-terminal/oscal.json",
-      "mixed-terminal/oscal.json.coverage.json",
-      "mixed-terminal/report.case.tar.gz",
-      "mixed-terminal/zh-Hant-full.html",
-      "mixed-terminal/zh-Hant-full.json",
-      "mixed-terminal/zh-Hant-standard.html",
-      "mixed-terminal/zh-Hant-standard.json"
+      "mixed-terminal/zh-Hant-standard.html"
     ],
     "inputs": "carried over byte-identical",
-    "productVersion": "0.6.0",
-    "reason": "Reviewed report wording: unfinished-check summary, framework section, run-state label, Chinese asset aliases and coverage term",
-    "receiptSha256": "22785304d261945802c10f47d3698263a4b3b990623b80dc35bba10ee5a672b7"
+    "productVersion": "0.6.2",
+    "reason": "Traditional Chinese requested limits drop the space between 適用於 and a Chinese asset alias",
+    "receiptSha256": "b67ca11e5ea71f01d2e67273bdeb6f4c36ca0d6bbc910d2162803c3f691e31bf"
   },
   "runtime": "FakeContainerRuntime",
   "scenarios": [
@@ -170,8 +144,8 @@
           "sha256": "1e04fe00141f48ecb545d57ec49fe2b981108ab7798537024b8ec53a454b8716"
         },
         "zh-Hant-standard.html": {
-          "byteLength": 367101,
-          "sha256": "1276ae9d483186fa287d6dc0b9ff6a2b581d1d390a3f69d4b712cc61e3f312d9"
+          "byteLength": 367097,
+          "sha256": "d11e9d3992424cdb5b0664b541e51cceded369b10acfa22eb9dd9c2d4cb64b78"
         },
         "zh-Hant-standard.json": {
           "byteLength": 478257,
@@ -434,8 +408,8 @@
           "sha256": "f378ad67a92d7b652282088c9006320d0883fd72878d649dd6da483bbc41a6a2"
         },
         "zh-Hant-standard.html": {
-          "byteLength": 343611,
-          "sha256": "6b4e68edec383b73d2999f1002c5bf9b3f9556054f7879e0fe1d19c107063b9d"
+          "byteLength": 343607,
+          "sha256": "b1e561b2af5d12b2cb62c149a10707c631a863de0022e85ffed8df3b47ef994e"
         },
         "zh-Hant-standard.json": {
           "byteLength": 449190,
@@ -578,13 +552,13 @@
     "Cargo.lock": "e9a831a8e594a8aa514343958e1994e6a38080816bc5edee916c3801faab0cdb",
     "engines/catalog.json": "4d738d59c887d269d3c17736470aa13deaba3e1071f4f868e6100b18e1768f50",
     "src-tauri/src/beginner_report.rs": "256659125315ce3a54859de3db156aec519674c8b8d734deda7e5557fb75a675",
-    "src-tauri/src/case_service.rs": "aa2cabb4986c04a3066dd5f4f5b0d0b51d229bdd500a445f7919ae7a48e43692",
+    "src-tauri/src/case_service.rs": "baf66872e3a3b584498669242601c7fb6e71c070cc101928ebaa9a83bee480df",
     "src-tauri/src/export.rs": "3e9af716db92dc9314488d3cbcc2c9fca6fcae8706866fb4d801023b8ad6e1d3",
     "src-tauri/src/exporters/framework_report.rs": "81d007202ada04023c8f0d49cb403033c94394b8af972a49aae4d36660860867",
     "src-tauri/src/exporters/ocsf.rs": "4059467978852ca26169788064ffd3607ecdb839a025329ba8674f0c0b59ddf9",
     "src-tauri/src/exporters/oscal.rs": "41eb9ed8971cb1ed3dcf24d82aba342f9acd88d63d3abee667723013dae669bf",
     "src-tauri/tests/all_engine_report_audit.rs": "4fb2313e180ad0d285db79c1dfa49350686d7d01ae8c52de80566bd6c2c846a1",
-    "src-tauri/tests/report_fidelity_baseline.rs": "1444bd02e799ead3a09a605e83d79aea00a6b8da7d3eb87c45c88d0a10fea8a3",
+    "src-tauri/tests/report_fidelity_baseline.rs": "96847ef4d9253850d7bc4e6594f90b58e45dbb4ed97dadbf28f0eb4f6aed196d",
     "src-tauri/tests/support/public_sample_reports.rs": "911fd1f47361789a060b9a157bc5993d777f0b9cb6dacda426e0bb0ef2a4b985"
   }
 }

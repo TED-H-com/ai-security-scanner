@@ -14,7 +14,7 @@ const hash = (bytes) => createHash('sha256').update(bytes).digest('hex');
 const receipt = JSON.parse(await readFile(path.join(directory, 'receipt.json'), 'utf8'));
 assert.equal(receipt.schemaVersion, 1);
 assert.equal(receipt.liveTargetContact, false);
-assert.equal(receipt.baselineCoreRevision, 'cc2ef089584594b2908177550da65bb18ae26361');
+assert.equal(receipt.baselineCoreRevision, 'fa37cf98da3494f6155ee2cb5ae82c0dc0cd8726');
 assert.equal(receipt.scenarios.length, 2);
 if (Object.hasOwn(receipt, 'replaces')) {
   const replacement = receipt.replaces;
