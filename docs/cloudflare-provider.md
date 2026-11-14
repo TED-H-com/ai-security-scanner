@@ -651,8 +651,8 @@ Anchored reads verify exact object length and SHA-256. The snapshot boundary is
 rechecked immediately before publication; a busy database or concurrent change
 returns conflict without an automatic retry.
 
-The destination must not exist and must be outside the data directory and product
-storage. Publication pins and rechecks its parent namespace, creates a private
+The destination must not exist, its parent must already exist, and it must be outside
+the data directory and product storage. Publication pins and rechecks its parent namespace, creates a private
 regular file without replacement, and refuses links and special files. Exact
 captured text may contain sensitive material; bytes go only to this destination,
 never to stdout. The single terminal envelope uses
@@ -957,6 +957,8 @@ assigned fingerprint.
 A read or declaration failure returns exit 2 (`output_unreadable`,
 `output_mismatch` or `output_invalid`) without recording anything. A non-verifier
 contract failure also returns `output_invalid` and leaves the assignment open.
+Output capture refusals identify the submitted path in `output`; document capture
+refusals identify their document in `document`.
 The host can submit again. Missing Node or a validator runtime failure records
 nothing and leaves the assignment open; it never becomes a contract rejection.
 
@@ -1074,6 +1076,9 @@ Separate `record_errors` answer only questions supported by the product record:
   a closed post-wave critic for every wave with a closed hunter, and a closed
   final-clean critic unless the profile is quick. These completion requirements
   do not apply to an `incomplete` run with its native reason.
+- The record has room for a seal entry, including its reported projection. A
+  limit refusal appears as `record_entry_limit`, `entry_bytes_limit` or
+  `record_bytes_limit` in `record_errors`.
 
 The terminal envelope's `result` contains `sealable`, `record_head`,
 `manifest_sha256`, `bundle_sha256`, `bundle_receipt`, `record_errors`,
@@ -1089,7 +1094,7 @@ bundle digest to `finalize`; case admission and shared reports are available bel
 | --- | --- | --- |
 | 2 | `invalid_request`, `request_file_limit` | Strict request or explicit data-directory requirement failed. |
 | 2 | `unknown_preparation`, `blocked_preparation` | No usable prepared run was selected. |
-| 2 | `record_invalid` | The stored preparation or record chain could not be verified. |
+| 2 | `record_invalid` | The stored preparation or record chain failed decoding or verification. |
 | 2 | `documents_required` | At least one shared document has no accepted revision. |
 | 2 | `assignments_open` | An assignment remains open; capture its output or interrupt it. |
 | 3 | `stale_head` | The optional expected head differs from the current record head. |
@@ -1126,7 +1131,8 @@ assembly and validation path. It verifies the current authorization, pinned
 validator resources, complete source view and canonical snapshot bytes. It never
 opens the host working directory. A changed head returns exit 3 `stale_head`; a
 changed bundle digest returns exit 3 `bundle_mismatch`; a validation result with
-`sealable: false` returns exit 2 `not_sealable` with that same result body.
+`sealable: false` returns exit 2 `not_sealable` with that same result body. If
+the seal entry would exceed a record limit, finalize returns that limit's code.
 Missing documents or open assignments retain the validation refusals above.
 These refusals publish nothing and append no entry. A lapsed grant leaves an
 unsealed historical run. Writer contention returns exit 3 `data_directory_busy`.

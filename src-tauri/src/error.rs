@@ -30,10 +30,14 @@ pub enum AppError {
     InvalidRequest(String),
     #[error("conflict: {0}")]
     Conflict(String),
+    #[error("request conflict: {0}")]
+    RequestConflict(String),
     #[error("data directory busy: {0}")]
     DataDirectoryBusy(String),
     #[error("storage error: {0}")]
     Storage(String),
+    #[error("storage error: {0}")]
+    InvalidCloudflareRecord(String),
     #[error("engine registry error: {0}")]
     EngineRegistry(String),
     #[error("runtime error: {0}")]
@@ -57,11 +61,12 @@ pub fn foreground_error_class(error: &AppError) -> (u8, &'static str, bool) {
         AppError::UnsafeFilesystemEntry => (2, "unsafe_filesystem_entry", false),
         AppError::DataDirectoryBusy(_) => (3, "data_directory_busy", true),
         AppError::Conflict(_) => (3, "conflict", true),
+        AppError::RequestConflict(_) => (3, "request_conflict", false),
         AppError::CaseNotFound(_) => (2, "case_not_found", false),
         AppError::InvalidRequest(_) => (2, "invalid_request", false),
         AppError::NotAuthorized(_) => (2, "not_authorized", false),
         AppError::NotAvailable(_) => (2, "not_available", false),
-        AppError::Storage(_) => (4, "storage_failed", true),
+        AppError::Storage(_) | AppError::InvalidCloudflareRecord(_) => (4, "storage_failed", true),
         AppError::EngineRegistry(_) => (4, "engine_registry_failed", false),
         AppError::Runtime(_) => (4, "runtime_failed", true),
         AppError::Internal(_) => (4, "internal_failed", true),

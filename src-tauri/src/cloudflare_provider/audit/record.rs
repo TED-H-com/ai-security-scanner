@@ -611,6 +611,10 @@ pub enum CheckpointOutcome {
         document: String,
         validation: Option<super::super::DocumentValidation>,
     },
+    OutputRejected {
+        error_code: Refusal,
+        output: String,
+    },
     Saved {
         entry: Box<Entry>,
         head: Head,

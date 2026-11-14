@@ -234,8 +234,9 @@ the archive or retrieve a renderer from it.
   use bounded GNU tar metadata; arbitrary tar extensions are unsupported.
 - Existing legacy data must have a verifiable reference graph. Missing history
   remains unknown; an incomplete graph cannot be labeled a complete restore.
-- Temporary storage must also have a trusted parent. Windows uses the existing
-  product namespace verifier; an unsafe configured `TEMP` is rejected.
+- Temporary storage must also have a trusted parent. An unsafe temporary directory
+  returns `unsafe_temporary_directory`; point `TMPDIR` at a private directory.
+  Windows uses the existing product namespace verifier and rejects unsafe `TEMP`.
 - The current format preserves the existing domain, including terminal-run and
   combined report snapshots. Admitted Cloudflare archives support creation and
   verification and read-only restore; the complete skill workflow remains pending. The development

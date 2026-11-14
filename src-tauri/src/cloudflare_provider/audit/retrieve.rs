@@ -27,6 +27,16 @@ pub fn retrieve(
     request: &Request<'_>,
     observed: &mut Observation,
 ) -> AppResult<PathBuf> {
+    retrieve_inner(data, product_roots, request, observed)
+        .map_err(super::super::retained::retrieve_error)
+}
+
+fn retrieve_inner(
+    data: &Path,
+    product_roots: &[PathBuf],
+    request: &Request<'_>,
+    observed: &mut Observation,
+) -> AppResult<PathBuf> {
     if !valid_id(request.case_id)
         || !valid_id(request.session_id)
         || [request.expected_sha256, request.expected_head_sha256]

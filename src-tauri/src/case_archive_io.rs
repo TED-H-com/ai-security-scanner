@@ -86,6 +86,13 @@ fn invalid(message: &str) -> AppError {
     AppError::InvalidRequest(format!("case archive: {message}"))
 }
 
+pub(crate) fn temporary_directory_error(error: AppError) -> AppError {
+    match error {
+        AppError::UnsafeArchiveParent => AppError::UnsafeTemporaryDirectory,
+        other => other,
+    }
+}
+
 /// Keep the existing staging/publication namespace verified for its lifetime.
 /// The caller must use this canonical path for subsequent child operations.
 #[derive(Debug)]
@@ -764,8 +771,9 @@ fn read_archive_in(path: &Path, temporary_parent: Option<&Path>) -> AppResult<Ve
         Some(parent) => parent.to_owned(),
         None => crate::internal_paths::canonicalize(std::env::temp_dir())?,
     };
-    let parent_guard = guard_archive_parent(&parent)?;
-    let directory = private_tempdir_in(parent_guard.path(), "ai-scanner-verified-archive-")?;
+    let parent_guard = guard_archive_parent(&parent).map_err(temporary_directory_error)?;
+    let directory = private_tempdir_in(parent_guard.path(), "ai-scanner-verified-archive-")
+        .map_err(temporary_directory_error)?;
     let mut seen = BTreeSet::new();
     let mut physical_entries = 1usize;
     while let Some((entry_path, length, headers)) = read_header(&mut reader)? {

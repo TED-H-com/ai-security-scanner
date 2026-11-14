@@ -16,6 +16,7 @@ use std::time::Duration;
 use tokio::io::{AsyncRead, AsyncReadExt, AsyncWriteExt};
 
 pub const UPSTREAM_COMMIT: &str = "c1c8a8c1471069fb0e188eeaff69b8e8db6564a8";
+pub(crate) const MAX_SEALED_FILE_BYTES: u64 = 8 * 1024 * 1024;
 const MAX_INPUT_BYTES: u64 = 5 * 1024 * 1024;
 const MAX_OUTPUT_BYTES: u64 = 256 * 1024;
 const TIMEOUT: Duration = Duration::from_secs(15);

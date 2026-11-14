@@ -174,8 +174,10 @@ struct Builder {
 impl Builder {
     fn new() -> AppResult<Self> {
         let parent = crate::internal_paths::canonicalize(std::env::temp_dir())?;
-        let parent_guard = transport::guard_archive_parent(&parent)?;
-        let directory = transport::private_tempdir_in(&parent, "ai-scanner-archive-")?;
+        let parent_guard = transport::guard_archive_parent(&parent)
+            .map_err(transport::temporary_directory_error)?;
+        let directory = transport::private_tempdir_in(&parent, "ai-scanner-archive-")
+            .map_err(transport::temporary_directory_error)?;
         Ok(Self {
             directory,
             _parent_guard: parent_guard,

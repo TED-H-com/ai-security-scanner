@@ -306,7 +306,9 @@ fn empty_views_commit_blocked_receipts() {
 fn request_conflicts_stale_digest_and_invalid_scope_do_not_commit() {
     let f = Fixture::new(&[("src/a.rs", b"a"), ("other/b.rs", b"b")], false);
     f.prepare("one", ".");
-    terminal(f.prepare_command("one", "src").output().unwrap(), 3);
+    let conflict = terminal(f.prepare_command("one", "src").output().unwrap(), 3);
+    assert_eq!(conflict["error_code"], "request_conflict");
+    assert_eq!(conflict["retryable"], false);
     let f = Fixture::new(&[("src/a.rs", b"a"), ("other/b.rs", b"b")], true);
     for scope in ["missing", "../x", "SRC", "src/*"] {
         terminal(f.prepare_command("invalid", scope).output().unwrap(), 2);

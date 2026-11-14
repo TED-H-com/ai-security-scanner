@@ -52,7 +52,9 @@ fn prepared_replay_conflict_status_and_independent_runs() {
     assert_eq!(f.events(), 1);
     assert_eq!(again["result"]["replayed"], true);
     request["profile"] = json!("standard");
-    f.audit(&request, 3);
+    let conflict = f.audit(&request, 3);
+    assert_eq!(conflict["error_code"], "request_conflict");
+    assert_eq!(conflict["retryable"], false);
     assert_eq!(f.events(), 1);
     request["request_id"] = json!("audit-two");
     let second = f.audit(&request, 0);

@@ -140,7 +140,7 @@ fn evaluate(
         .source_view_receipt(&request.case_id, &request.request_id)?;
     if let Some(saved) = &saved {
         if saved.request_sha256 != request_sha256 {
-            return Err(AppError::Conflict(
+            return Err(AppError::RequestConflict(
                 "source-view request_id has different inputs".into(),
             ));
         }

@@ -1180,6 +1180,44 @@ fn connector_capture_history_requires_complete_references_only_when_sources_are_
     }
 }
 
+#[cfg(unix)]
+#[test]
+fn archive_operations_report_unsafe_temporary_directory() {
+    use std::os::unix::fs::PermissionsExt;
+
+    let root = test_directory();
+    let fixture = fixture(root.path());
+    let archive = root.path().join("valid.tar.gz");
+    success(create(&fixture, &archive).output().unwrap());
+    let shared = root.path().join("shared");
+    let temporary = shared.join("private");
+    fs::create_dir_all(&temporary).unwrap();
+    fs::set_permissions(&shared, fs::Permissions::from_mode(0o777)).unwrap();
+    fs::set_permissions(&temporary, fs::Permissions::from_mode(0o700)).unwrap();
+    let destination = root.path().join("restored");
+    let mut restore = archive_command(&fixture.data_dir, "restore", &archive);
+    restore
+        .arg("--destination")
+        .arg(&destination)
+        .arg("--acknowledge-sensitive-data");
+    for mut command in [
+        create(&fixture, &root.path().join("refused.tar.gz")),
+        archive_command(&fixture.data_dir, "verify", &archive),
+        restore,
+    ] {
+        let output = command.env("TMPDIR", &temporary).output().unwrap();
+        assert_eq!(output.status.code(), Some(1));
+        let error: Value = serde_json::from_slice(&output.stderr).unwrap();
+        assert_eq!(error["error_code"], "unsafe_temporary_directory");
+        assert_eq!(
+            error["error"],
+            "temporary directory has an untrusted writable ancestor; point TMPDIR at a private directory"
+        );
+    }
+    assert!(!destination.exists());
+    assert_eq!(fs::read_dir(&temporary).unwrap().count(), 0);
+}
+
 #[test]
 fn create_refuses_missing_evidence_active_runs_and_existing_output_without_publication() {
     let directory = test_directory();
