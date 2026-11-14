@@ -4,7 +4,7 @@ import { constants } from 'node:fs';
 import {
   access, lstat, mkdir, open, readdir, realpath, rename, rm, rmdir, stat, unlink, writeFile,
 } from 'node:fs/promises';
-import { dirname, isAbsolute, join, parse, relative, resolve, sep } from 'node:path';
+import { dirname, isAbsolute, join, parse, relative, resolve, sep, win32 } from 'node:path';
 import { homedir, hostname } from 'node:os';
 import { fileURLToPath } from 'node:url';
 import { collectInputManifest, stageInputSnapshot } from './input-manifest.mjs';
@@ -247,10 +247,32 @@ async function unlinkedDirectoryPath(path) {
   return true;
 }
 
+export function installedManagedRuntimeBundleCandidates(entry, deps) {
+  const candidates = [...(entry.installed_paths ?? [])];
+  if (deps.platform !== 'win32') return candidates;
+  for (const item of entry.installed_locations ?? []) {
+    const base = deps.environment?.[item.environment];
+    if (
+      typeof base !== 'string'
+      || !/^[A-Za-z]:\\/.test(base)
+      || base.includes('/')
+      || /[:*?"<>|]/.test(base.slice(3))
+      || base.slice(3).split('\\').some(part => part === '.' || part === '..')
+    ) {
+      continue;
+    }
+    candidates.push(win32.join(base, ...item.components));
+  }
+  return candidates;
+}
+
 export async function locateInstalledManagedRuntimeBundle(deps) {
   const entry = deps.recognizedManagedRuntimeBundles.find(item => item.platform === deps.platform && item.arch.includes(deps.arch));
-  if (!entry || entry.installed_paths.length === 0) return { state: 'unsupported' };
-  for (const path of entry.installed_paths) {
+  if (!entry || (entry.installed_paths.length === 0 && (entry.installed_locations ?? []).length === 0)) {
+    return { state: 'unsupported' };
+  }
+  let unrecognized;
+  for (const path of installedManagedRuntimeBundleCandidates(entry, deps)) {
     if (!isAbsolute(path)) continue;
     try {
       if (!(await unlinkedDirectoryPath(path))) continue;
@@ -275,12 +297,13 @@ export async function locateInstalledManagedRuntimeBundle(deps) {
           || current.isSymbolicLink() || current.dev !== opened.dev || current.ino !== opened.ino || !(await unlinkedDirectoryPath(path))) continue;
         manifestSha256 = hash(bytes.subarray(0, count));
       } finally { await handle.close(); }
-      return manifestSha256 === entry.manifest_sha256
-        ? { state: 'recognized', path, manifest_sha256: manifestSha256, product_version: entry.product_version }
-        : { state: 'unrecognized', path };
+      if (manifestSha256 === entry.manifest_sha256) {
+        return { state: 'recognized', path, manifest_sha256: manifestSha256, product_version: entry.product_version };
+      }
+      unrecognized ??= { state: 'unrecognized', path };
     } catch { /* An inaccessible, replaced or missing path is not a candidate. */ }
   }
-  return { state: 'absent' };
+  return unrecognized ?? { state: 'absent' };
 }
 
 async function compatibilityCommandsOnPath(deps) {

@@ -150,10 +150,10 @@ Its `runtime_sources` reports compatibility commands on `PATH` and the installed
 
 When the host has no Docker, no Podman and no prepared managed runtime,
 `prepare --capability scan` reuses an installed desktop app's scan runtime if this
-revision recognizes its manifest (Linux x86_64 and macOS; Windows detection is
-not implemented), checks it again in the core, and otherwise stops with a
-`next_step`. It never downloads or installs a runtime. Development
-bundles are produced by the existing versioned
+revision recognizes its manifest (Linux x86_64, macOS, and Windows x64 in the
+default per-user or all-users install folder), checks it again in the core, and
+otherwise stops with a `next_step`. It never downloads or installs a runtime.
+Development bundles are produced by the existing versioned
 [`runtime/vendor-managed-runtime.mjs`](../runtime/vendor-managed-runtime.mjs)
 procedure; its Linux helper build requires an existing Docker builder. Windows
 and macOS host execution and dynamic sandbox readiness remain separate

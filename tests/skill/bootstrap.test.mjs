@@ -3,7 +3,7 @@ import { createHash } from 'node:crypto';
 import { execFileSync, spawn } from 'node:child_process';
 import { chmod, link, lstat, mkdir, mkdtemp, readFile, readdir, realpath, rm, symlink, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
-import { basename, dirname, join } from 'node:path';
+import { basename, dirname, join, win32 } from 'node:path';
 import test from 'node:test';
 import * as bootstrapCore from '../../scripts/skill/bootstrap-core.mjs';
 import * as bootstrapEntry from '../../scripts/skill/bootstrap.mjs';
@@ -14,6 +14,7 @@ import {
   assertWindowsAclSnapshot, auditWindowsCachePaths,
   invokeRuntimePreparation, runtimePreparationArguments,
 } from '../../scripts/skill/bootstrap-core.mjs';
+import { RECOGNIZED_MANAGED_RUNTIME_BUNDLES } from '../../scripts/skill/managed-runtime-bundles.mjs';
 
 const digest = value => createHash('sha256').update(value).digest('hex');
 const revision = 'a'.repeat(40);
@@ -942,6 +943,128 @@ test('installed bundle discovery does not follow symbolic links', { skip: proces
   assert.deepEqual(await bootstrapCore.locateInstalledManagedRuntimeBundle({ ...f.deps, recognizedManagedRuntimeBundles: [{ ...f.entry,
     installed_paths: [directoryLink, fileLinkDir, join(parentLink, 'desktop-runtime')],
   }] }), { state: 'absent' });
+});
+
+test('installed Windows bundle candidates come from the two default install folders', () => {
+  const win32Entry = RECOGNIZED_MANAGED_RUNTIME_BUNDLES.find(entry => entry.platform === 'win32');
+  assert.ok(win32Entry);
+  const environment = { LOCALAPPDATA: 'C:\\Users\\u\\AppData\\Local', ProgramFiles: 'C:\\Program Files' };
+  assert.deepEqual(
+    bootstrapCore.installedManagedRuntimeBundleCandidates(win32Entry, { platform: 'win32', environment }),
+    [
+      'C:\\Users\\u\\AppData\\Local\\ai-security-scanner\\managed-runtime',
+      'C:\\Program Files\\ai-security-scanner\\managed-runtime',
+    ],
+  );
+  assert.deepEqual(
+    bootstrapCore.installedManagedRuntimeBundleCandidates(win32Entry, { platform: 'win32', environment: { LOCALAPPDATA: environment.LOCALAPPDATA } }),
+    ['C:\\Users\\u\\AppData\\Local\\ai-security-scanner\\managed-runtime'],
+  );
+  assert.deepEqual(
+    bootstrapCore.installedManagedRuntimeBundleCandidates(win32Entry, { platform: 'linux', environment }),
+    [],
+  );
+  for (const invalid of [
+    '\\\\server\\share\\AppData',
+    '\\\\?\\C:\\Users\\u',
+    '\\\\.\\C:\\Users\\u',
+    'Users\\u',
+    'C:relative',
+    'C:\\Users\\..\\Windows',
+    'C:\\Users\\.\\u',
+    'C:\\Users\\u/AppData',
+    'C:\\Users\\u\\A*',
+    'C:\\Users\\u\\a:b',
+    '',
+    42,
+    undefined,
+  ]) {
+    assert.deepEqual(
+      bootstrapCore.installedManagedRuntimeBundleCandidates(win32Entry, { platform: 'win32', environment: { LOCALAPPDATA: invalid } }),
+      [],
+    );
+  }
+  assert.deepEqual(
+    bootstrapCore.installedManagedRuntimeBundleCandidates({ ...win32Entry, installed_paths: ['/fixed'] }, { platform: 'win32', environment }),
+    [
+      '/fixed',
+      'C:\\Users\\u\\AppData\\Local\\ai-security-scanner\\managed-runtime',
+      'C:\\Program Files\\ai-security-scanner\\managed-runtime',
+    ],
+  );
+});
+
+test('installed bundle lookup prefers a recognized candidate over an earlier unrecognized one', async t => {
+  const f = await installedBundleFixture(t);
+  const first = join(f.root, 'first-unrecognized');
+  const second = join(f.root, 'second-recognized');
+  const missing = join(f.root, 'missing');
+  await mkdir(first);
+  await writeFile(join(first, 'manifest.json'), 'different');
+  await mkdir(second);
+  await writeFile(join(second, 'manifest.json'), await readFile(join(f.bundle, 'manifest.json')));
+  const locate = paths => bootstrapCore.locateInstalledManagedRuntimeBundle({
+    ...f.deps,
+    recognizedManagedRuntimeBundles: [{ ...f.entry, installed_paths: paths }],
+  });
+  assert.deepEqual(await locate([first, second]),
+    { state: 'recognized', path: second, manifest_sha256: f.entry.manifest_sha256, product_version: '0.6.2' });
+  assert.deepEqual(await locate([first]), { state: 'unrecognized', path: first });
+  assert.deepEqual(await locate([first, missing]), { state: 'unrecognized', path: first });
+  const win32Entry = RECOGNIZED_MANAGED_RUNTIME_BUNDLES.find(entry => entry.platform === 'win32');
+  assert.deepEqual(await bootstrapCore.locateInstalledManagedRuntimeBundle({
+    ...f.deps,
+    platform: 'win32',
+    arch: 'x64',
+    environment: {},
+    recognizedManagedRuntimeBundles: [win32Entry],
+  }), { state: 'absent' });
+});
+
+test('installed Windows bundle is found in the per-user or the all-users install folder', { skip: process.platform !== 'win32' }, async t => {
+  const f = await fixture(t);
+  const local = win32.join(f.root, 'local');
+  const programs = win32.join(f.root, 'programs');
+  const manifest = '{"fixture":"windows desktop"}\n';
+  const manifestSha = digest(manifest);
+  const win32Entry = RECOGNIZED_MANAGED_RUNTIME_BUNDLES.find(entry => entry.platform === 'win32');
+  assert.ok(win32Entry);
+  const entry = {
+    platform: 'win32',
+    arch: [process.arch],
+    product_version: '0.6.2',
+    manifest_sha256: manifestSha,
+    installed_paths: [],
+    installed_locations: win32Entry.installed_locations,
+  };
+  const deps = {
+    ...f.deps,
+    platform: 'win32',
+    arch: process.arch,
+    environment: { ...f.deps.environment, LOCALAPPDATA: local, ProgramFiles: programs },
+    recognizedManagedRuntimeBundles: [entry],
+  };
+  const localBundle = win32.join(local, 'ai-security-scanner', 'managed-runtime');
+  const programsBundle = win32.join(programs, 'ai-security-scanner', 'managed-runtime');
+
+  assert.deepEqual(await bootstrapCore.locateInstalledManagedRuntimeBundle(deps), { state: 'absent' });
+
+  await mkdir(programsBundle, { recursive: true });
+  await writeFile(win32.join(programsBundle, 'manifest.json'), manifest);
+  assert.deepEqual(await bootstrapCore.locateInstalledManagedRuntimeBundle(deps),
+    { state: 'recognized', path: programsBundle, manifest_sha256: manifestSha, product_version: '0.6.2' });
+
+  await mkdir(localBundle, { recursive: true });
+  await writeFile(win32.join(localBundle, 'manifest.json'), manifest);
+  assert.deepEqual(await bootstrapCore.locateInstalledManagedRuntimeBundle(deps),
+    { state: 'recognized', path: localBundle, manifest_sha256: manifestSha, product_version: '0.6.2' });
+
+  await writeFile(win32.join(localBundle, 'manifest.json'), 'different');
+  assert.deepEqual(await bootstrapCore.locateInstalledManagedRuntimeBundle(deps),
+    { state: 'recognized', path: programsBundle, manifest_sha256: manifestSha, product_version: '0.6.2' });
+
+  const doctor = await doctorBootstrap({ ...f.options, capability: 'scan', engineIds: ['gitleaks'], dataDir: join(f.root, 'data') }, deps);
+  assert.equal(doctor.runtime_sources.installed_desktop_bundle, 'recognized');
 });
 
 test('runtime arguments bind an expected manifest digest to the selected bundle', () => {
