@@ -22,7 +22,7 @@
 
 - 真實宿主驗收已在一個 Linux 宿主以合成專案完成，從空的固定版本 bootstrap 快取一路到還原；第二個宿主、多資產與 macOS／Windows 宿主仍待完成。
 - 預設 skill 仍使用已發布桌面版，尚未切換。
-- 沒有安裝桌面程式的電腦仍無法自動取得受管理執行環境套件。macOS 與 Windows 的 CI 現在也會執行程式庫測試，以及使用測試替身的前景掃描與引擎準備測試；在這兩種系統上執行實際掃描工具仍未驗證。
+- 在 Linux x86_64 上，沒有其他執行環境時會從已發布的桌面套件下載掃描執行環境；已在一台 Linux 主機上用它啟動受管理環境並備妥 Gitleaks 映像。在 macOS 與 Windows 自動取得套件仍待完成。macOS 與 Windows 的 CI 現在也會執行程式庫測試，以及使用測試替身的前景掃描與引擎準備測試；在這兩種系統上執行實際掃描工具仍未驗證。
 
 以下日期章節保留各階段當時的觀察。[產品規格](product-spec.md)定義產品行為；[遷移計畫](plans/skill-first-cloudflare-migration.md)與[報告及封存契約](specs/report-fidelity-and-archive.md)說明已採納的工作。可用內容請見[發布狀態](release-model.zh-TW.md)。
 

@@ -8,12 +8,19 @@ export const RECOGNIZED_MANAGED_RUNTIME_BUNDLES = Object.freeze([
     manifest_sha256: 'd8e495ff77a57e7166821e6207e330a3790b6496ea2023dd367de077490912e5',
     installed_paths: Object.freeze(['/usr/lib/ai-security-scanner/managed-runtime']),
     installed_locations: Object.freeze([]),
+    release_source: Object.freeze({
+      kind: 'deb',
+      url: 'https://github.com/TED-H-com/ai-security-scanner/releases/download/v0.6.2/ai-security-scanner_0.6.2_amd64.deb',
+      bytes: 84427266, sha256: 'd7a579978d811e8b516e5623f9ecfcb83d71aad6f0e2f63af351d73f98183a32',
+      inner_path: 'usr/lib/ai-security-scanner/managed-runtime', extracted_bytes: 423333863,
+    }),
   }),
   Object.freeze({
     platform: 'darwin', arch: Object.freeze(['x64', 'arm64']), product_version: '0.6.2',
     manifest_sha256: '470fd782236000a33b18a084379c8c260097cf6c5ea988963e70d4ab90b6a24b',
     installed_paths: Object.freeze(['/Applications/ai-security-scanner.app/Contents/Resources/managed-runtime']),
     installed_locations: Object.freeze([]),
+    release_source: null,
   }),
   Object.freeze({
     platform: 'win32', arch: Object.freeze(['x64']), product_version: '0.6.2',
@@ -23,5 +30,6 @@ export const RECOGNIZED_MANAGED_RUNTIME_BUNDLES = Object.freeze([
       Object.freeze({ environment: 'LOCALAPPDATA', components: Object.freeze(['ai-security-scanner', 'managed-runtime']) }),
       Object.freeze({ environment: 'ProgramFiles', components: Object.freeze(['ai-security-scanner', 'managed-runtime']) }),
     ]),
+    release_source: null,
   }),
 ]);

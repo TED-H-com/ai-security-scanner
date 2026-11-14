@@ -15,6 +15,7 @@ import {
   invokeRuntimePreparation, runtimePreparationArguments,
 } from '../../scripts/skill/bootstrap-core.mjs';
 import { RECOGNIZED_MANAGED_RUNTIME_BUNDLES } from '../../scripts/skill/managed-runtime-bundles.mjs';
+import { chunkedResponse, packageFixture } from './release-bundle-fixture.mjs';
 
 const digest = value => createHash('sha256').update(value).digest('hex');
 const revision = 'a'.repeat(40);
@@ -29,7 +30,7 @@ async function fixture(t) {
   t.after(() => rm(root, { recursive: true, force: true }));
   const source = join(root, 'source');
   await mkdir(join(source, 'scripts', 'skill'), { recursive: true });
-  for (const name of ['bootstrap.mjs', 'bootstrap-core.mjs', 'input-manifest.mjs', 'managed-runtime-bundles.mjs']) {
+  for (const name of ['bootstrap.mjs', 'bootstrap-core.mjs', 'input-manifest.mjs', 'managed-runtime-bundles.mjs', 'release-bundle.mjs']) {
     await writeFile(join(source, 'scripts', 'skill', name), `// ${name} trusted fixture recipe\n`);
   }
   await writeFile(join(source, 'Cargo.lock'), 'version = 4\n');
@@ -132,8 +133,10 @@ test('core source, lockfile, native toolchain, profile, and recipe each invalida
   keys.push((await prepareBootstrap({ ...f.options, profile: 'release' }, changedTools)).cache_key);
   await writeFile(join(f.source, 'scripts', 'skill', 'managed-runtime-bundles.mjs'), '// changed trusted runtime list\n');
   keys.push((await prepareBootstrap({ ...f.options, profile: 'release' }, changedTools)).cache_key);
-  assert.equal(new Set(keys).size, 7);
-  assert.equal(f.state.builds, 7);
+  await writeFile(join(f.source, 'scripts', 'skill', 'release-bundle.mjs'), '// changed release verification recipe\n');
+  keys.push((await prepareBootstrap({ ...f.options, profile: 'release' }, changedTools)).cache_key);
+  assert.equal(new Set(keys).size, 8);
+  assert.equal(f.state.builds, 8);
 });
 
 test('cached artifact corruption fails before executing identity or rebuilding', async t => {
@@ -1095,12 +1098,12 @@ test('scan doctor reports runtime sources without executing commands or changing
   await mkdir(join(bin, 'podman'));
   const deps = { ...f.deps, environment: { ...f.deps.environment, PATH: bin } };
   const scan = await doctorBootstrap(f.options, deps);
-  assert.deepEqual(scan.runtime_sources, { compatibility_commands_on_path: ['docker'], installed_desktop_bundle: 'recognized' });
+  assert.deepEqual(scan.runtime_sources, { compatibility_commands_on_path: ['docker'], installed_desktop_bundle: 'recognized', release_bundle: 'unsupported' });
   const core = await doctorBootstrap({ ...f.options, capability: 'core', engineIds: undefined, dataDir: undefined }, deps);
   assert.equal(Object.hasOwn(core, 'runtime_sources'), false);
   assert.equal(scan.ready, false);
   const emptySources = await doctorBootstrap(f.options, { ...deps, environment: { ...deps.environment, PATH: join(f.root, 'missing-bin') }, recognizedManagedRuntimeBundles: [] });
-  assert.deepEqual(emptySources.runtime_sources, { compatibility_commands_on_path: [], installed_desktop_bundle: 'unsupported' });
+  assert.deepEqual(emptySources.runtime_sources, { compatibility_commands_on_path: [], installed_desktop_bundle: 'unsupported', release_bundle: 'unsupported' });
   assert.equal(scan.ready, emptySources.ready);
   const windowsBin = join(f.root, 'windows-bin');
   await mkdir(windowsBin);
@@ -1108,7 +1111,7 @@ test('scan doctor reports runtime sources without executing commands or changing
   await writeFile(join(windowsBin, 'podman.CMD'), 'must not execute');
   const windows = await doctorBootstrap(f.options, { ...deps, platform: 'win32', recognizedManagedRuntimeBundles: [{ ...f.entry, platform: 'win32', installed_paths: [] }],
     environment: { ...deps.environment, PATH: windowsBin, PATHEXT: '.EXE;.CMD' } });
-  assert.deepEqual(windows.runtime_sources, { compatibility_commands_on_path: ['docker', 'podman'], installed_desktop_bundle: 'unsupported' });
+  assert.deepEqual(windows.runtime_sources, { compatibility_commands_on_path: ['docker', 'podman'], installed_desktop_bundle: 'unsupported', release_bundle: 'unsupported' });
   assert.equal(windows.ready, scan.ready);
 });
 
@@ -1119,4 +1122,272 @@ test('scan doctor records this host runtime sources without executing commands',
   assert.ok(Array.isArray(result.runtime_sources.compatibility_commands_on_path));
   assert.ok(['recognized', 'unrecognized', 'absent', 'unsupported'].includes(result.runtime_sources.installed_desktop_bundle));
   t.diagnostic(`host runtime_sources: ${JSON.stringify(result.runtime_sources)}`);
+});
+
+async function releaseFixture(t) {
+  const f = await installedBundleFixture(t);
+  const pkg = packageFixture();
+  const entry = { ...f.entry, manifest_sha256: pkg.manifestSha, installed_paths: [join(f.root, 'absent')], release_source: pkg.source };
+  const calls = []; let fetches = 0; let output = '';
+  const failed = runtimeResult(f.options, { ready: false, runtime_unavailable_reason: 'no_runtime' });
+  const deps = {
+    ...f.deps, recognizedManagedRuntimeBundles: [entry],
+    statfs: async () => ({ bavail: 1_000_000_000, bsize: 4096 }),
+    stderr: { write: value => { output += value; } },
+    fetch: async () => { fetches += 1; return chunkedResponse(pkg.bytes); },
+    prepareRuntime: async (_executable, request) => { calls.push(request); return request.managedRuntimeBundle ? runtimeResult(request) : failed; },
+  };
+  return { ...f, pkg, entry, deps, calls, failed, output: () => output, fetches: () => fetches };
+}
+
+const downloadStep = 'The scan runtime download did not finish. Check the internet connection, or start Docker or Podman, then run prepare again.';
+const checksumStep = 'The downloaded scan runtime did not match its pinned checksum and was discarded. Run prepare again, or start Docker or Podman.';
+const unpackStep = 'The downloaded scan runtime could not be unpacked safely and was discarded. Start Docker or Podman, then run prepare again.';
+const diskStep = 'There is not enough free disk space for the scan runtime (about 0 MB). Free some space, or start Docker or Podman, then run prepare again.';
+
+test('release runtime is promoted, retried with a pinned manifest, reused, and replaced when corrupt', async t => {
+  const f = await releaseFixture(t);
+  const final = join(f.options.cacheDir, 'managed-bundles', f.pkg.manifestSha);
+  const first = await prepareBootstrap(f.options, f.deps);
+  assert.equal(f.fetches(), 1);
+  assert.deepEqual(f.calls[1], { ...f.options, managedRuntimeBundle: final, expectedManagedRuntimeManifestSha256: f.pkg.manifestSha });
+  assert.equal(first.runtime_bundle_source, 'downloaded_release');
+  assert.deepEqual(first.runtime_bundle, { path: final, manifest_sha256: f.pkg.manifestSha, product_version: '0.6.2', source: { url: f.pkg.source.url, bytes: f.pkg.source.bytes, sha256: f.pkg.source.sha256 }, downloaded: true });
+  assert.equal(f.output(), 'No Docker, Podman or installed desktop app found. Downloading the scan runtime from the published desktop package (0 MB, once); its first start also downloads a machine image and can take several minutes.\n');
+  assert.deepEqual(await readdir(join(f.options.cacheDir, 'managed-bundles')), [f.pkg.manifestSha]);
+  const second = await prepareBootstrap(f.options, f.deps);
+  assert.equal(second.runtime_bundle.downloaded, false);
+  assert.equal(f.fetches(), 1);
+  assert.match(f.output(), /No Docker or Podman found\. Using the scan runtime downloaded earlier; its first start downloads a machine image and can take several minutes\.\n$/);
+  await writeFile(join(final, 'notes.txt'), 'tampered');
+  const third = await prepareBootstrap(f.options, f.deps);
+  assert.equal(third.runtime_bundle.downloaded, true);
+  assert.equal(f.fetches(), 2);
+  assert.deepEqual(await readdir(join(f.options.cacheDir, 'managed-bundles')), [f.pkg.manifestSha]);
+});
+
+test('release acquisition failure preserves original core details and maps useful next steps', async t => {
+  for (const type of ['network', 'checksum', 'archive', 'disk']) {
+    const f = await releaseFixture(t);
+    let count = 0;
+    const source = type === 'checksum' ? { ...f.pkg.source, sha256: '0'.repeat(64) } : f.pkg.source;
+    const bad = Buffer.alloc(f.pkg.bytes.length, 7);
+    const entry = { ...f.entry, release_source: type === 'archive' ? { ...source, sha256: digest(bad) } : source };
+    const deps = { ...f.deps, recognizedManagedRuntimeBundles: [entry],
+      statfs: async () => ({ bavail: type === 'disk' ? 0 : 1_000_000_000, bsize: 4096 }),
+      fetch: async () => { count += 1; return type === 'network' ? new Response(null, { status: 404 }) : chunkedResponse(type === 'archive' || type === 'checksum' ? bad : f.pkg.bytes); },
+    };
+    const steps = { network: downloadStep, checksum: checksumStep, archive: unpackStep, disk: diskStep };
+    await assert.rejects(prepareBootstrap(f.options, deps), error => {
+      assert.equal(error.code, 'runtime_preparation_failed');
+      assert.deepEqual(error.details, f.failed);
+      assert.equal(error.nextStep, steps[type]);
+      return true;
+    });
+    assert.equal(count, type === 'disk' ? 0 : 1);
+    assert.match(f.output(), /Scan runtime download failed: .+\.\n$/);
+    assert.deepEqual(await readdir(join(f.options.cacheDir, 'managed-bundles')), []);
+    assert.deepEqual(await readdir(join(f.options.cacheDir, 'locks')), []);
+  }
+});
+
+test('download interruption removes staging and releases the bundle lock', async t => {
+  const f = await releaseFixture(t);
+  const before = process.listenerCount('SIGINT');
+  const deps = { ...f.deps, fetch: async () => {
+    setImmediate(() => process.emit('SIGINT'));
+    return new Response(new ReadableStream({ pull() { return new Promise(() => {}); } }));
+  } };
+  await assert.rejects(prepareBootstrap(f.options, deps), { code: 'interrupted', exitCode: 130, message: 'Runtime download was interrupted.' });
+  assert.deepEqual(await readdir(join(f.options.cacheDir, 'managed-bundles')), []);
+  assert.deepEqual(await readdir(join(f.options.cacheDir, 'locks')), []);
+  assert.equal(process.listenerCount('SIGINT'), before);
+});
+
+test('release acquisition is skipped for offline, explicit, recognized and unsupported platforms', async t => {
+  for (const scenario of ['offline', 'explicit', 'recognized', 'unsupported']) {
+    const f = await releaseFixture(t); let fetches = 0; let calls = 0;
+    const options = { ...f.options, ...(scenario === 'offline' ? { offline: true } : {}), ...(scenario === 'explicit' ? { managedRuntimeBundle: f.bundle } : {}) };
+    const entry = scenario === 'recognized' ? { ...f.entry, installed_paths: [f.bundle], manifest_sha256: digest(await readFile(join(f.bundle, 'manifest.json'))) } : f.entry;
+    const failed = runtimeResult(options, { ready: false, runtime_unavailable_reason: 'no_runtime' });
+    await assert.rejects(prepareBootstrap(options, { ...f.deps,
+      recognizedManagedRuntimeBundles: scenario === 'unsupported' ? [{ ...entry, release_source: null }] : [entry],
+      fetch: async () => { fetches += 1; throw new Error('unexpected'); },
+      prepareRuntime: async () => { calls += 1; return failed; },
+    }), error => {
+      assert.equal(error.code, 'runtime_preparation_failed');
+      assert.equal(error.nextStep, ({ offline: runtimeNextSteps.offline, explicit: runtimeNextSteps.absent, recognized: undefined, unsupported: runtimeNextSteps.absent })[scenario]);
+      return true;
+    });
+    assert.equal(fetches, 0, scenario);
+    assert.equal(calls, scenario === 'recognized' ? 2 : 1, scenario);
+  }
+});
+
+test('doctor reports release source without creating cache data', async t => {
+  const f = await releaseFixture(t);
+  assert.equal((await doctorBootstrap(f.options, f.deps)).runtime_sources.release_bundle, 'downloadable');
+  await assert.rejects(lstat(f.options.cacheDir), { code: 'ENOENT' });
+  const prepared = await prepareBootstrap(f.options, f.deps);
+  assert.equal((await doctorBootstrap(f.options, f.deps)).runtime_sources.release_bundle, 'cached');
+  await writeFile(join(prepared.runtime_bundle.path, 'manifest.json'), 'corrupt');
+  assert.equal((await doctorBootstrap(f.options, f.deps)).runtime_sources.release_bundle, 'downloadable');
+  assert.equal((await doctorBootstrap(f.options, { ...f.deps, recognizedManagedRuntimeBundles: [{ ...f.entry, release_source: null }] })).runtime_sources.release_bundle, 'unsupported');
+});
+
+test('unsupported release kinds are never downloaded and do not hide a supported entry', async t => {
+  const f = await releaseFixture(t);
+  const zip = { ...f.entry, release_source: { ...f.entry.release_source, kind: 'zip' } };
+  const unsupported = { ...f.deps, recognizedManagedRuntimeBundles: [zip] };
+  assert.equal((await doctorBootstrap(f.options, unsupported)).runtime_sources.release_bundle, 'unsupported');
+  await assert.rejects(prepareBootstrap(f.options, unsupported), error => {
+    assert.equal(error.code, 'runtime_preparation_failed');
+    assert.deepEqual(error.details, f.failed);
+    assert.equal(error.nextStep, runtimeNextSteps.absent);
+    return true;
+  });
+  assert.equal(f.fetches(), 0);
+  const supported = { ...f.deps, recognizedManagedRuntimeBundles: [zip, f.entry] };
+  assert.equal((await doctorBootstrap(f.options, supported)).runtime_sources.release_bundle, 'downloadable');
+  assert.equal((await prepareBootstrap(f.options, supported)).runtime_bundle.downloaded, true);
+  assert.equal(f.fetches(), 1);
+});
+
+test('unrecognized installed runtime can use release, and a failed release retry is final', async t => {
+  const f = await releaseFixture(t);
+  await mkdir(f.entry.installed_paths[0]);
+  await writeFile(join(f.entry.installed_paths[0], 'manifest.json'), 'unrecognized');
+  const finalFailure = runtimeResult(f.options, { ready: false, runtime_unavailable_reason: 'managed_bundle_rejected' });
+  let calls = 0;
+  await assert.rejects(prepareBootstrap(f.options, { ...f.deps, prepareRuntime: async () => {
+    calls += 1;
+    if (calls === 1) return f.failed;
+    throw new BootstrapError('runtime_preparation_failed', 'Downloaded bundle failed.', 3, finalFailure);
+  } }), error => {
+    assert.equal(error.message, 'Downloaded bundle failed.');
+    assert.equal(error.exitCode, 3);
+    assert.deepEqual(error.details, finalFailure);
+    assert.equal(error.nextStep, runtimeNextSteps.managed_bundle_rejected);
+    return true;
+  });
+  assert.equal(calls, 2);
+  assert.equal(f.fetches(), 1);
+});
+
+test('bundle cleanup removes only this manifest digest’s stale staging directories', async t => {
+  const f = await releaseFixture(t);
+  await prepareBootstrap(f.options, f.deps);
+  const bundles = join(f.options.cacheDir, 'managed-bundles');
+  const foreignDigest = 'f'.repeat(64);
+  assert.notEqual(foreignDigest, f.pkg.manifestSha);
+  const own = `.staging-${f.pkg.manifestSha}-${'a'.repeat(32)}`;
+  const foreign = `.staging-${foreignDigest}-${'b'.repeat(32)}`;
+  await mkdir(join(bundles, own));
+  await writeFile(join(bundles, own, 'old'), 'remove');
+  await mkdir(join(bundles, foreign));
+  await writeFile(join(bundles, foreign, 'keep'), 'safe');
+  const result = await prepareBootstrap(f.options, f.deps);
+  assert.equal(result.runtime_bundle.downloaded, false);
+  assert.deepEqual((await readdir(bundles)).sort(), [foreign, f.pkg.manifestSha].sort());
+  assert.equal(await readFile(join(bundles, foreign, 'keep'), 'utf8'), 'safe');
+});
+
+test('bundle cleanup removes stale staging directories without following links', { skip: process.platform === 'win32' }, async t => {
+  const f = await releaseFixture(t);
+  await prepareBootstrap(f.options, f.deps);
+  const bundles = join(f.options.cacheDir, 'managed-bundles');
+  const outside = join(f.root, 'outside');
+  await mkdir(outside);
+  await writeFile(join(outside, 'keep'), 'safe');
+  const own = `.staging-${f.pkg.manifestSha}-${'a'.repeat(32)}`;
+  const link = `.staging-${f.pkg.manifestSha}-${'b'.repeat(32)}`;
+  await mkdir(join(bundles, own));
+  await writeFile(join(bundles, own, 'old'), 'remove');
+  await symlink(outside, join(bundles, link));
+  const result = await prepareBootstrap(f.options, f.deps);
+  assert.equal(result.runtime_bundle.downloaded, false);
+  assert.deepEqual((await readdir(bundles)).sort(), [link, f.pkg.manifestSha].sort());
+  assert.equal(await readFile(join(outside, 'keep'), 'utf8'), 'safe');
+});
+
+test('termination and hangup abort release download with their signal exit codes', { skip: process.platform === 'win32' }, async t => {
+  for (const [signal, exitCode] of [['SIGTERM', 143], ['SIGHUP', 129]]) {
+    const f = await releaseFixture(t);
+    const count = process.listenerCount(signal);
+    await assert.rejects(prepareBootstrap(f.options, { ...f.deps, fetch: async () => {
+      setImmediate(() => process.emit(signal));
+      return new Response(new ReadableStream({ pull() { return new Promise(() => {}); } }));
+    } }), { code: 'interrupted', exitCode });
+    assert.deepEqual(await readdir(join(f.options.cacheDir, 'managed-bundles')), []);
+    assert.deepEqual(await readdir(join(f.options.cacheDir, 'locks')), []);
+    assert.equal(process.listenerCount(signal), count);
+  }
+});
+
+test('disk message uses the pinned package and extracted byte counts', async t => {
+  const f = await releaseFixture(t);
+  const source = { ...f.entry.release_source, bytes: 84427266, extracted_bytes: 423333863 };
+  let fetches = 0;
+  await assert.rejects(prepareBootstrap(f.options, { ...f.deps, recognizedManagedRuntimeBundles: [{ ...f.entry, release_source: source }],
+    statfs: async () => ({ bavail: 0, bsize: 4096 }), fetch: async () => { fetches += 1; },
+  }), error => {
+    assert.equal(error.nextStep, 'There is not enough free disk space for the scan runtime (about 508 MB). Free some space, or start Docker or Podman, then run prepare again.');
+    assert.deepEqual(error.details, f.failed);
+    return true;
+  });
+  assert.equal(fetches, 0);
+});
+
+test('unavailable free-space query is optional and write-time disk exhaustion maps to disk advice', async t => {
+  const f = await releaseFixture(t);
+  const unavailable = Object.assign(new Error('not implemented'), { code: 'ENOSYS' });
+  const result = await prepareBootstrap(f.options, { ...f.deps, statfs: async () => { throw unavailable; } });
+  assert.equal(result.runtime_bundle.downloaded, true);
+  const g = await releaseFixture(t);
+  const exhausted = Object.assign(new Error('disk full'), { code: 'ENOSPC' });
+  await assert.rejects(prepareBootstrap(g.options, { ...g.deps, fetch: async () => { throw exhausted; } }), error => {
+    assert.equal(error.nextStep, diskStep);
+    assert.deepEqual(error.details, g.failed);
+    return true;
+  });
+  assert.deepEqual(await readdir(join(g.options.cacheDir, 'managed-bundles')), []);
+});
+
+test('concurrent release preparation cannot remove another download staging directory', async t => {
+  const f = await releaseFixture(t);
+  let begin;
+  const started = new Promise(resolve => { begin = resolve; });
+  let finish;
+  const response = new Promise(resolve => { finish = resolve; });
+  const deps = { ...f.deps, fetch: async () => { begin(); return response; } };
+  const first = prepareBootstrap(f.options, deps);
+  await started;
+  const bundles = join(f.options.cacheDir, 'managed-bundles');
+  const stage = (await readdir(bundles)).find(name => name.startsWith(`.staging-${f.pkg.manifestSha}-`));
+  assert.ok(stage);
+  assert.match(stage, new RegExp(`^\\.staging-${f.pkg.manifestSha}-[a-f0-9]{32}$`));
+  await assert.rejects(prepareBootstrap(f.options, deps), error => {
+    assert.equal(error.code, 'runtime_preparation_failed');
+    assert.deepEqual(error.details, f.failed);
+    return true;
+  });
+  assert.ok((await lstat(join(bundles, stage))).isDirectory());
+  finish(chunkedResponse(f.pkg.bytes));
+  assert.equal((await first).runtime_bundle.downloaded, true);
+  assert.deepEqual(await readdir(bundles), [f.pkg.manifestSha]);
+  assert.deepEqual(await readdir(join(f.options.cacheDir, 'locks')), []);
+});
+
+test('a linked cached bundle is replaced without following the link', { skip: process.platform === 'win32' }, async t => {
+  const f = await releaseFixture(t);
+  const first = await prepareBootstrap(f.options, f.deps);
+  const outside = join(f.root, 'outside-bundle');
+  await mkdir(outside);
+  await writeFile(join(outside, 'keep'), 'safe');
+  await rm(first.runtime_bundle.path, { recursive: true });
+  await symlink(outside, first.runtime_bundle.path);
+  const second = await prepareBootstrap(f.options, f.deps);
+  assert.equal(second.runtime_bundle.downloaded, true);
+  assert.equal(await readFile(join(outside, 'keep'), 'utf8'), 'safe');
+  assert.ok((await lstat(second.runtime_bundle.path)).isDirectory());
 });
