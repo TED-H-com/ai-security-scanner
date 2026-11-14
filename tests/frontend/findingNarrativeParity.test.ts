@@ -17,6 +17,7 @@ import {
 // neither side's own tests can see it. This one reads both files.
 
 const typescript = readFileSync(new URL("../../src/findingNarrative.ts", import.meta.url), "utf8");
+const sourceAuditCoverage = readFileSync(new URL("../../src/sourceAuditCoverageText.ts", import.meta.url), "utf8");
 const rustSource = readFileSync(
   new URL("../../src-tauri/src/finding_narrative.rs", import.meta.url),
   "utf8",
@@ -51,8 +52,17 @@ const chineseLiterals = (source: string): Set<string> => {
   return found;
 };
 
+// The stored source-audit reasons use complete placeholder templates on screen
+// and separate fragments around the count in the shared report.
+const chineseCoverageFragments = (source: string): Set<string> => {
+  const templates = [...source.matchAll(/\bzhTW:\s*"([^"]*\{count\}[^"]*)"/gu)];
+  assert.ok(templates.length >= 4, "source-audit coverage templates must be present");
+  return new Set(templates.flatMap((match) => (match[1] ?? "").split("{count}"))
+    .filter((fragment) => HAN.test(fragment)).map((fragment) => fragment.trim()));
+};
+
 test("the report and the screen tell a reader the same thing", () => {
-  const fromTypescript = chineseLiterals(typescript);
+  const fromTypescript = new Set([...chineseLiterals(typescript), ...chineseCoverageFragments(sourceAuditCoverage)]);
   const fromRust = chineseLiterals(rust);
 
   assert.ok(fromTypescript.size > 25, `extractor found only ${fromTypescript.size} strings`);
@@ -81,6 +91,10 @@ test("the extractor can tell two translations apart", () => {
   assert.notEqual(changed, typescript, "the sentence this guard edits has moved");
   const drifted = [...chineseLiterals(changed)].filter((line) => !chineseLiterals(rust).has(line));
   assert.ok(drifted.includes("雲端資源可能有風險"), drifted.join("\n"));
+  const changedCoverage = sourceAuditCoverage.replace("尚有 {count} 個單元未完成。", "仍有 {count} 個單元未完成。");
+  assert.notEqual(changedCoverage, sourceAuditCoverage, "the coverage template this guard edits has moved");
+  const coverageDrift = [...chineseCoverageFragments(changedCoverage)].filter((line) => !chineseLiterals(rust).has(line));
+  assert.ok(coverageDrift.includes("仍有"), coverageDrift.join("\n"));
 });
 
 /**

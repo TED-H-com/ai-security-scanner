@@ -1,4 +1,5 @@
 import { failureTranslation } from "./auditFailure.ts";
+import { sourceAuditCoverageText } from "./sourceAuditCoverageText.ts";
 import type { Locale } from "./i18n/core";
 import type {
   AwsIamPolicyFindingDetails,
@@ -1761,19 +1762,8 @@ export const coverageGapProse = (
 ): string => {
   const failure = failureTranslation(english);
   if (failure) return locale === "zh-TW" ? failure : english;
-  if (locale === "zh-TW") {
-    for (const [suffix, before, after] of [
-      [" unit remains.", "尚有 ", " 個單元未完成。"],
-      [" units remain.", "尚有 ", " 個單元未完成。"],
-      [" unit is outside the audit scope.", "有 ", " 個單元不在稽核範圍內。"],
-      [" units are outside the audit scope.", "有 ", " 個單元不在稽核範圍內。"],
-    ]) {
-      if (english.endsWith(suffix!)) {
-        const n = english.slice(0, -suffix!.length);
-        if (/^\d+$/u.test(n)) return `${before}${n}${after}`;
-      }
-    }
-  }
+  const auditCoverage = sourceAuditCoverageText(locale, english);
+  if (auditCoverage !== undefined) return auditCoverage;
 
   if (locale !== "zh-TW") return english;
   const trimmed = english.trim();

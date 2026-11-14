@@ -3,12 +3,14 @@ import { readFileSync } from "node:fs";
 import test from "node:test";
 
 import { parseSync } from "vite";
+import { coverageGapProse } from "../../src/findingNarrative.ts";
 import { jaInline } from "../../src/i18n/locales/ja-inline.ts";
 
 const sources = [
   "../../src/auditFailure.ts",
   "../../src/components/AuditFailureDetails.tsx",
   "../../src/components/SourceAuditResults.tsx",
+  "../../src/sourceAuditCoverageText.ts",
   "../../src/components/CombinedReportExport.tsx",
 ];
 
@@ -29,7 +31,7 @@ type ParsedNode = {
 
 // These components use en: fields, bilingual tuples and t(en, zhTW) calls.
 // Walk their syntax instead of matching source text, so escaped and single-quoted
-// literals are checked too. Runtime-generated strings are not string literals.
+// literals, including placeholder templates, are checked too.
 const englishLiterals = (path: string, source: string): Set<string> => {
   const parsed = parseSync(path, source);
   assert.deepEqual(parsed.errors, [], `${path} must parse`);
@@ -79,15 +81,41 @@ const englishLiterals = (path: string, source: string): Set<string> => {
   return result;
 };
 
+const missingJapaneseEntries = (english: Iterable<string>): string[] =>
+  [...english].filter((entry) => !Object.hasOwn(jaInline, entry)).sort();
+
 test("source audit copy collector handles inline translation forms", () => {
   const source = [
     'const copy = { en: "A \\"quote\\"", zhTW: "中文" };',
     "const rows = [['Second', '第二'], ['field', 'Third', '第三']];",
     "t(flag ? 'Fourth' : `Fifth`, '選項');",
+    "text({ en: 'Missing {count} items', zhTW: '缺少 {count} 個項目' }, { count: 2 });",
   ].join("\n");
-  assert.deepEqual([...englishLiterals("example.tsx", source)].sort(), [
-    'A "quote"', "Fifth", "Fourth", "Second", "Third",
+  const found = englishLiterals("example.tsx", source);
+  assert.deepEqual([...found].sort(), [
+    'A "quote"', "Fifth", "Fourth", "Missing {count} items", "Second", "Third",
   ]);
+  assert.deepEqual(missingJapaneseEntries([...found].filter((entry) => entry.includes("{count}"))), ["Missing {count} items"]);
+});
+
+test("source audit coverage reasons retain the recorded count and other prose", () => {
+  for (const count of ["0", "1", "2", "0003", "1000"]) {
+    for (const [ending, chinese, japanese] of [
+      [" unit remains.", `尚有 ${count} 個單元未完成。`, `対象ユニットが ${count} 件残っています。`],
+      [" units remain.", `尚有 ${count} 個單元未完成。`, `対象ユニットが ${count} 件残っています。`],
+      [" unit is outside the audit scope.", `有 ${count} 個單元不在稽核範圍內。`, `対象ユニットが ${count} 件、監査の対象外です。`],
+      [" units are outside the audit scope.", `有 ${count} 個單元不在稽核範圍內。`, `対象ユニットが ${count} 件、監査の対象外です。`],
+    ]) {
+      const english = `${count}${ending}`;
+      assert.equal(coverageGapProse("en", english), english);
+      assert.equal(coverageGapProse("zh-TW", english), chinese);
+      assert.equal(coverageGapProse("ja", english), japanese);
+    }
+  }
+  for (const locale of ["en", "zh-TW", "ja"] as const) {
+    assert.equal(coverageGapProse(locale, "3.5 units remain."), "3.5 units remain.");
+    assert.equal(coverageGapProse(locale, "Other: 3 units remain."), "Other: 3 units remain.");
+  }
 });
 
 test("source audit inline copy has complete and nonempty Japanese translations", () => {
@@ -97,7 +125,7 @@ test("source audit inline copy has complete and nonempty Japanese translations",
     assert.ok(entries.size > 0, `No inline copy found in ${source}`);
     for (const entry of entries) english.add(entry);
   }
-  const missing = [...english].filter((entry) => !Object.hasOwn(jaInline, entry)).sort();
+  const missing = missingJapaneseEntries(english);
   assert.deepEqual(missing, [], `Missing Japanese inline entries:\n${missing.join("\n")}`);
 
   const productNames = new Set(["Cloudflare"]);

@@ -17,19 +17,26 @@ const object = (value: unknown): Record<string, unknown> =>
 const string = (value: unknown): string => typeof value === "string" ? value : "";
 
 export function SourceAuditResults({ audits }: { audits: readonly SourceAuditReportWire[] }) {
-  const { text, locale } = useI18n();
+  const { text } = useI18n();
   const t = (en: string, zhTW: string) => text({ en, zhTW });
   return <>{audits.map((audit) => {
     const n = audit.coverage_gaps.filter((gap) => gap.status !== "out_of_scope").length;
     const m = audit.unresolved_candidates.length;
-    const unresolved = locale === "zh-TW" ? `尚有 ${m} 個候選問題未解決。`
-      : m === 1 ? "1 candidate finding remains unresolved." : `${m} candidate findings remain unresolved.`;
+    const unresolved = text({
+      en: m === 1 ? "{count} candidate finding remains unresolved." : "{count} candidate findings remain unresolved.",
+      zhTW: "尚有 {count} 個候選問題未解決。",
+    }, { count: m });
     const incomplete = n > 0
-      ? t(n === 1 ? "Source audit incomplete: 1 unit remains. Continue with the listed paths."
-        : `Source audit incomplete: ${n} units remain. Continue with the listed paths.`,
-      `原始碼稽核未完成：尚有 ${n} 個單元未完成。請從列出的路徑繼續。`)
-      : m > 0 ? t(m === 1 ? "Source audit incomplete: 1 candidate finding remains unresolved."
-        : `Source audit incomplete: ${m} candidate findings remain unresolved.`, `原始碼稽核未完成：尚有 ${m} 個候選問題未解決。`)
+      ? text({
+        en: n === 1 ? "Source audit incomplete: {count} unit remains. Continue with the listed paths."
+          : "Source audit incomplete: {count} units remain. Continue with the listed paths.",
+        zhTW: "原始碼稽核未完成：尚有 {count} 個單元未完成。請從列出的路徑繼續。",
+      }, { count: n })
+      : m > 0 ? text({
+        en: m === 1 ? "Source audit incomplete: {count} candidate finding remains unresolved."
+          : "Source audit incomplete: {count} candidate findings remain unresolved.",
+        zhTW: "原始碼稽核未完成：尚有 {count} 個候選問題未解決。",
+      }, { count: m })
         : t("Source audit incomplete.", "原始碼稽核未完成。");
     const technical: Array<[string, string, unknown]> = [
       ["Method", "方法", audit.method], ["Outcome", "結果", audit.outcome],
