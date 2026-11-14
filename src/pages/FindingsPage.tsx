@@ -1674,8 +1674,8 @@ function BeginnerReportOverview({ report, run }: { report: BeginnerMasterReport;
   // space in Traditional Chinese (an ASCII colon plus space is not how a
   // Chinese-reading label ends). Every other label on this page keeps its
   // literal ": " regardless of locale.
-  const firstLayerLabelColon = locale !== "zh-TW" ? ":" : "：";
-  const firstLayerLabelGap = locale !== "zh-TW" ? " " : "";
+  const firstLayerLabelColon = locale !== "zh-TW" && locale !== "ja" ? ":" : "：";
+  const firstLayerLabelGap = locale !== "zh-TW" && locale !== "ja" ? " " : "";
   const firstLayerLabelSeparator = `${firstLayerLabelColon}${firstLayerLabelGap}`;
   const securityFindingIds = new Set(
     report.findings.filter(isSecurityFinding).map((finding) => finding.findingId),

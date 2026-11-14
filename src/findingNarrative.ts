@@ -130,17 +130,23 @@ const REMEDY_ENGLISH: Record<FindingFamily, string> = {
 
 /** The secret family's remedy, with the period the report prints. */
 export const exposedCredentialNextStep = (locale: Locale): string =>
-  locale !== "zh-TW" ? EXPOSED_CREDENTIAL_NEXT_STEP_ENGLISH : EXPOSED_CREDENTIAL_NEXT_STEP_ZH_HANT;
+  locale === "zh-TW"
+    ? EXPOSED_CREDENTIAL_NEXT_STEP_ZH_HANT
+    : locale === "ja"
+      ? japaneseText(EXPOSED_CREDENTIAL_NEXT_STEP_ENGLISH)
+      : EXPOSED_CREDENTIAL_NEXT_STEP_ENGLISH;
 
 const IAM_PRINCIPAL_PREVIEW_LIMIT = 6;
 
-const iamPrincipalLabels = (
+export const iamPrincipalLabels = (
   details: AwsIamPolicyFindingDetails,
   locale: Locale,
 ): string[] => {
-  const [role, group, user] = locale !== "zh-TW"
-    ? ["role", "group", "user"]
-    : ["角色", "群組", "使用者"];
+  const [role, group, user] = locale === "zh-TW"
+    ? ["角色", "群組", "使用者"]
+    : locale === "ja"
+      ? [japaneseText("role"), japaneseText("group"), japaneseText("user")]
+      : ["role", "group", "user"];
   return [
     ...details.attachedTo.roles.map((name) => `${role} ${name}`),
     ...details.attachedTo.groups.map((name) => `${group} ${name}`),
@@ -153,7 +159,7 @@ const iamPrincipalLabels = (
  * downstream has to agree in number with a one-principal attachment, which is
  * the common case for an inline or customer-managed policy.
  */
-const iamPrincipalSummary = (
+export const iamPrincipalSummary = (
   details: AwsIamPolicyFindingDetails,
   locale: Locale,
 ): { text: string; count: number } | undefined => {
@@ -162,10 +168,18 @@ const iamPrincipalSummary = (
   const count = labels.length;
   const retained = labels
     .slice(0, IAM_PRINCIPAL_PREVIEW_LIMIT)
-    .join(locale !== "zh-TW" ? ", " : "、");
+    .join(locale === "zh-TW" || locale === "ja" ? "、" : ", ");
   const omitted = Math.max(0, count - IAM_PRINCIPAL_PREVIEW_LIMIT);
   if (omitted === 0) return { text: retained, count };
   if (locale === "zh-TW") return { text: `${retained}，以及另外 ${omitted} 個主體`, count };
+  if (locale === "ja") {
+    if (omitted === 1) {
+      const template = "{retained}, and 1 more principal";
+      return { text: translateBilingualText("ja", { en: template, zhTW: template }, { retained }), count };
+    }
+    const template = "{retained}, and {omitted} more principals";
+    return { text: translateBilingualText("ja", { en: template, zhTW: template }, { retained, omitted }), count };
+  }
   return {
     text: omitted === 1
       ? `${retained}, and 1 more principal`
@@ -178,9 +192,80 @@ export const awsIamPolicySourceLabel = (
   source: AwsIamPolicyFindingDetails["policySource"],
   locale: Locale,
 ): string => {
-  if (source === "aws_managed") return locale !== "zh-TW" ? "AWS-managed" : "AWS 受管";
-  if (source === "customer_managed") return locale !== "zh-TW" ? "Customer-managed" : "客戶受管";
-  return locale !== "zh-TW" ? "Inline" : "內嵌";
+  const english = source === "aws_managed"
+    ? "AWS-managed"
+    : source === "customer_managed"
+      ? "Customer-managed"
+      : "Inline";
+  if (locale === "zh-TW") {
+    if (source === "aws_managed") return "AWS 受管";
+    if (source === "customer_managed") return "客戶受管";
+    return "內嵌";
+  }
+  return locale === "ja" ? japaneseText(english) : english;
+};
+
+const awsIamPolicyActionJapanese = (details: AwsIamPolicyFindingDetails): string => {
+  const principals = iamPrincipalSummary(details, "ja")?.text;
+  const attachmentsComplete = details.attachedTo.complete;
+  let action: string;
+  if (details.policySource === "aws_managed") {
+    if (principals) {
+      const template =
+        "Replace AWS-managed policy {policyName} with a narrower policy on {principals}, or detach it where it is not needed; AWS-managed policies cannot be edited by this account.";
+      action = translateBilingualText("ja", { en: template, zhTW: template }, {
+        policyName: details.policyName,
+        principals,
+      });
+    } else {
+      const template = attachmentsComplete
+        ? "Keep AWS-managed policy {policyName} detached and choose a narrower policy before attaching it; AWS-managed policies cannot be edited by this account."
+        : "Identify the current roles, groups, and users attached to AWS-managed policy {policyName}, then replace it with a narrower policy or detach it where it is not needed; AWS-managed policies cannot be edited by this account.";
+      action = translateBilingualText("ja", { en: template, zhTW: template }, {
+        policyName: details.policyName,
+      });
+    }
+  } else if (details.policySource === "customer_managed") {
+    if (principals) {
+      const template =
+        "Narrow customer-managed policy {policyName} and verify that {principals} retain only the permissions they need.";
+      action = translateBilingualText("ja", { en: template, zhTW: template }, {
+        policyName: details.policyName,
+        principals,
+      });
+    } else {
+      const template = attachmentsComplete
+        ? "Narrow customer-managed policy {policyName} before it is attached or reused."
+        : "Identify the current attachments to customer-managed policy {policyName}, then narrow it and verify that each principal retains only the permissions it needs.";
+      action = translateBilingualText("ja", { en: template, zhTW: template }, {
+        policyName: details.policyName,
+      });
+    }
+  } else if (principals) {
+    const template = "Narrow inline policy {policyName} directly on {principals}.";
+    action = translateBilingualText("ja", { en: template, zhTW: template }, {
+      policyName: details.policyName,
+      principals,
+    });
+  } else {
+    const template = "Identify where inline policy {policyName} is owned and narrow it there before reuse.";
+    action = translateBilingualText("ja", { en: template, zhTW: template }, {
+      policyName: details.policyName,
+    });
+  }
+  const incomplete = attachmentsComplete
+    ? ""
+    : japaneseText("Confirm the current IAM attachments first.");
+  return `${action}${incomplete}`;
+};
+
+export const awsIamPolicyAction = (
+  details: AwsIamPolicyFindingDetails,
+  locale: Locale,
+): string => {
+  if (locale === "zh-TW") return awsIamPolicyActionZhTW(details);
+  if (locale === "ja") return awsIamPolicyActionJapanese(details);
+  return awsIamPolicyActionEnglish(details);
 };
 
 const awsIamPolicyActionZhTW = (details: AwsIamPolicyFindingDetails): string => {
@@ -316,21 +401,38 @@ export const findingConfidencePresentation = (
 ): string => {
   if (confidenceBasisCode) {
     if (confidenceBasisCode === "missing_detection_quality_score") {
-      return locale !== "zh-TW"
-        ? `${confidenceLabel} — scanner did not report detection quality`
-        : `${confidenceLabel} — 掃描工具未提供偵測品質`;
+      if (locale === "zh-TW") return `${confidenceLabel} — 掃描工具未提供偵測品質`;
+      if (locale === "ja") {
+        const template = "{confidenceLabel} — scanner did not report detection quality";
+        return translateBilingualText("ja", { en: template, zhTW: template }, { confidenceLabel });
+      }
+      return `${confidenceLabel} — scanner did not report detection quality`;
     }
-    const basis = CONFIDENCE_BASIS[confidenceBasisCode];
+    const basis = locale === "zh-TW"
+      ? CONFIDENCE_BASIS[confidenceBasisCode]
+      : CONFIDENCE_BASIS_ENGLISH[confidenceBasisCode];
     if (!basis) return confidenceLabel;
-    return locale !== "zh-TW"
-      ? `${confidenceLabel} — this product's rating from ${CONFIDENCE_BASIS_ENGLISH[confidenceBasisCode]}`
-      : `${confidenceLabel} — 本產品依據${basis}評定`;
+    if (locale === "zh-TW") return `${confidenceLabel} — 本產品依據${basis}評定`;
+    if (locale === "ja") {
+      const template = "{confidenceLabel} — this product's rating from {basis}";
+      return translateBilingualText("ja", { en: template, zhTW: template }, {
+        confidenceLabel,
+        basis: japaneseText(basis),
+      });
+    }
+    return `${confidenceLabel} — this product's rating from ${basis}`;
   }
   const source = sourceConfidence(priorityReasons);
   if (!source) return confidenceLabel;
-  return locale !== "zh-TW"
-    ? `${confidenceLabel} — engine rating: ${source}`
-    : `${confidenceLabel} — 來源工具評定：${source}`;
+  if (locale === "zh-TW") return `${confidenceLabel} — 來源工具評定：${source}`;
+  if (locale === "ja") {
+    const template = "{confidenceLabel} — engine rating: {source}";
+    return translateBilingualText("ja", { en: template, zhTW: template }, {
+      confidenceLabel,
+      source,
+    });
+  }
+  return `${confidenceLabel} — engine rating: ${source}`;
 };
 
 /**
@@ -368,12 +470,18 @@ export const localizedExpertType = (
   expert: string,
   locale: Locale,
 ): string => {
-  if (locale !== "zh-TW") return expert;
-  // A name from a build this one has never seen still has to say something, and
-  // a general answer beats a confidently wrong one. Kept identical to the Rust
-  // fallback rather than sniffed here: two surfaces guessing differently about
-  // the same unknown title is the drift this pair exists to avoid.
-  return EXPERT[expert.trim()] ?? "資安或 IT 專業人員";
+  if (locale !== "zh-TW" && locale !== "ja") return expert;
+  const trimmed = expert.trim();
+  if (locale === "zh-TW") {
+    // A name from a build this one has never seen still has to say something, and
+    // a general answer beats a confidently wrong one. Kept identical to the Rust
+    // fallback rather than sniffed here: two surfaces guessing differently about
+    // the same unknown title is the drift this pair exists to avoid.
+    return EXPERT[trimmed] ?? "資安或 IT 專業人員";
+  }
+  return Object.hasOwn(EXPERT, trimmed)
+    ? japaneseText(trimmed)
+    : japaneseText("Security or IT professional");
 };
 
 /**
@@ -415,14 +523,17 @@ export const engineNameFrom = (englishSummary: string): string | undefined => {
 const controlVerdict = (
   family: FindingFamily | undefined,
   english: string,
-  localeZh: boolean,
+  locale: Locale,
 ): string | undefined => {
   if (family !== "microsoft365") return undefined;
   const engine = engineNameFrom(english);
   if (!engine) return undefined;
-  return localeZh
-    ? `${engine} 檢查了這項 Microsoft 365 要求，這個租戶未通過。`
-    : `${engine} checked this Microsoft 365 requirement and the tenant did not meet it.`;
+  if (locale === "zh-TW") return `${engine} 檢查了這項 Microsoft 365 要求，這個租戶未通過。`;
+  if (locale === "ja") {
+    const template = "{engine} checked this Microsoft 365 requirement and the tenant did not meet it.";
+    return translateBilingualText("ja", { en: template, zhTW: template }, { engine });
+  }
+  return `${engine} checked this Microsoft 365 requirement and the tenant did not meet it.`;
 };
 
 /**
@@ -465,7 +576,7 @@ export const findingSummarySentence = (
   },
 ): string => {
   if (options.sourceAudit) return options.englishFallback;
-  const verdict = controlVerdict(options.family, options.englishFallback, locale === "zh-TW");
+  const verdict = controlVerdict(options.family, options.englishFallback, locale);
   if (verdict) return verdict;
   const englishFallback = withoutConfidenceMethodology(options.englishFallback)
     .replace(" The attached raw record is evidence, not an instruction.", "")
@@ -473,7 +584,7 @@ export const findingSummarySentence = (
     .replace("a credential detector match that this product does not verify", "a credential detector match")
     .replace("an unverified credential detector match", "a credential detector match")
     .replace("an unverified pattern or detector match", "a pattern or detector match");
-  if (locale !== "zh-TW") return englishFallback;
+  if (locale !== "zh-TW" && locale !== "ja") return englishFallback;
   const { severityLabel, severityBasisCode } = options;
   const unratedSeverity = options.severity !== undefined && findingSeverityIsUnrated({
     severity: options.severity,
@@ -481,17 +592,45 @@ export const findingSummarySentence = (
     priorityReasons: options.priorityReasons,
   });
   const name = engineNameFrom(englishFallback);
-  const engineName = name === "Cloudflare source audit" ? "Cloudflare 原始碼稽核" : name;
+  const engineName = name === "Cloudflare source audit"
+    ? (locale === "ja" ? japaneseText(name) : "Cloudflare 原始碼稽核")
+    : name;
   if (!engineName) return englishFallback;
   let summary: string;
   if (unratedSeverity) {
-    summary = `${engineName} 回報了這項狀況，但未評定嚴重程度。嚴重程度為未知。`;
+    if (locale === "zh-TW") {
+      summary = `${engineName} 回報了這項狀況，但未評定嚴重程度。嚴重程度為未知。`;
+    } else {
+      const template = "{engine} reported this condition without rating it. Severity is Unknown.";
+      summary = translateBilingualText("ja", { en: template, zhTW: template }, {
+        engine: engineName,
+      });
+    }
   } else if (!severityBasisCode) {
-    summary = `${engineName} 在受評估的資產上回報了一項${severityLabel}等級的狀況。`;
+    if (locale === "zh-TW") {
+      summary = `${engineName} 在受評估的資產上回報了一項${severityLabel}等級的狀況。`;
+    } else {
+      const template = "{engine} reported a {severity}-severity condition on the assessed asset.";
+      summary = translateBilingualText("ja", { en: template, zhTW: template }, {
+        engine: engineName,
+        severity: severityLabel,
+      });
+    }
   } else {
-    const basis = BASIS[severityBasisCode];
+    const basis = locale === "zh-TW"
+      ? BASIS[severityBasisCode]
+      : BASIS_ENGLISH[severityBasisCode];
     if (!basis) return englishFallback;
-    summary = `${engineName} 在受評估的資產上回報了這項狀況，但未評定嚴重程度。本產品依據${basis}，將它評為${severityLabel}。`;
+    if (locale === "zh-TW") {
+      summary = `${engineName} 在受評估的資產上回報了這項狀況，但未評定嚴重程度。本產品依據${basis}，將它評為${severityLabel}。`;
+    } else {
+      const template = "{engine} reported this condition on the assessed asset without rating it. This product rated it {severity} from {basis}.";
+      summary = translateBilingualText("ja", { en: template, zhTW: template }, {
+        engine: engineName,
+        severity: severityLabel,
+        basis: japaneseText(basis),
+      });
+    }
   }
   // The English twin drops the same sentence. The confidence rating, its
   // basis, and the engine's own lack of one are already the labelled
@@ -554,15 +693,25 @@ export const findingImpactSentence = (
   },
 ): string => {
   if (options.sourceAudit) return options.englishFallback;
+  const consequenceEnglish = options.family ? CONSEQUENCE_ENGLISH[options.family] : undefined;
   const consequence = options.family
-    ? (locale !== "zh-TW" ? CONSEQUENCE_ENGLISH[options.family] : CONSEQUENCE[options.family])
+    ? (locale === "zh-TW"
+        ? CONSEQUENCE[options.family]
+        : locale === "ja"
+          ? (consequenceEnglish ? japaneseText(consequenceEnglish) : undefined)
+          : consequenceEnglish)
     : undefined;
   if (!consequence) return directLegacyImpact(options.englishFallback);
-  const context = locale !== "zh-TW" ? CONTEXT_ENGLISH : CONTEXT;
-  const ending = locale !== "zh-TW" ? "." : "。";
-  return `${consequence}${ending}${(options.contextFactors ?? [])
-    .map((factor) => context[factor] ?? "")
-    .join("")}`;
+  const ending = locale === "zh-TW" || locale === "ja" ? "。" : ".";
+  const factors = (options.contextFactors ?? [])
+    .map((factor) => {
+      if (locale === "zh-TW") return CONTEXT[factor] ?? "";
+      const contextEnglish = CONTEXT_ENGLISH[factor];
+      if (!contextEnglish) return "";
+      return locale === "ja" ? japaneseText(contextEnglish) : contextEnglish;
+    })
+    .join("");
+  return `${consequence}${ending}${factors}`;
 };
 
 /**
@@ -584,8 +733,8 @@ export const findingRollbackSentence = (
   const normalized = english.trim() === "Before any manual change, preserve the current approved configuration and document a tested restoration path."
     ? ENGLISH_ROLLBACK
     : english;
-  if (locale !== "zh-TW" || normalized.trim() !== ENGLISH_ROLLBACK) return normalized;
-  return "變更前先保存目前設定，並測試還原路徑。";
+  if ((locale !== "zh-TW" && locale !== "ja") || normalized.trim() !== ENGLISH_ROLLBACK) return normalized;
+  return locale === "zh-TW" ? "變更前先保存目前設定，並測試還原路徑。" : japaneseText(ENGLISH_ROLLBACK);
 };
 
 const OPAQUE_RULE_ID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -626,14 +775,27 @@ export const findingVerificationSentence = (
   if (!engine || !rule) return english;
   const trimmedTitle = title?.trim();
   const namedTitle = trimmedTitle && OPAQUE_RULE_ID.test(rule) ? trimmedTitle : undefined;
-  if (locale !== "zh-TW") {
+  if (locale === "zh-TW") {
     return namedTitle
-      ? `Rerun ${engine} with the same scope after the change and confirm that “${namedTitle}” is no longer reported.`
-      : `Rerun ${engine} with the same scope after the change and confirm that source rule ${rule} is no longer reported.`;
+      ? `變更後以相同範圍重新執行 ${engine}，並確認「${namedTitle}」不再被回報。`
+      : `變更後以相同範圍重新執行 ${engine}，並確認來源規則 ${rule} 不再被回報。`;
+  }
+  if (locale === "ja") {
+    if (namedTitle) {
+      const template =
+        "Rerun {engine} with the same scope after the change and confirm that “{title}” is no longer reported.";
+      return translateBilingualText("ja", { en: template, zhTW: template }, {
+        engine,
+        title: namedTitle,
+      });
+    }
+    const template =
+      "Rerun {engine} with the same scope after the change and confirm that source rule {rule} is no longer reported.";
+    return translateBilingualText("ja", { en: template, zhTW: template }, { engine, rule });
   }
   return namedTitle
-    ? `變更後以相同範圍重新執行 ${engine}，並確認「${namedTitle}」不再被回報。`
-    : `變更後以相同範圍重新執行 ${engine}，並確認來源規則 ${rule} 不再被回報。`;
+    ? `Rerun ${engine} with the same scope after the change and confirm that “${namedTitle}” is no longer reported.`
+    : `Rerun ${engine} with the same scope after the change and confirm that source rule ${rule} is no longer reported.`;
 };
 
 /**
@@ -649,7 +811,12 @@ export const findingHeadline = (
   family?: FindingFamily,
 ): string => {
   if (family !== "microsoft365") return title;
-  return locale !== "zh-TW" ? `Requirement not met: ${title}` : `未符合要求：${title}`;
+  if (locale === "zh-TW") return `未符合要求：${title}`;
+  if (locale === "ja") {
+    const template = "Requirement not met: {title}";
+    return translateBilingualText("ja", { en: template, zhTW: template }, { title });
+  }
+  return `Requirement not met: ${title}`;
 };
 
 /**
@@ -666,13 +833,19 @@ export const stepGroupLead = (
   reason: string,
 ): string => {
   if (sharedFix) {
-    return locale !== "zh-TW"
-      ? `${count} problems name this same fix. The first is ${reason}`
-      : `有 ${count} 項問題指向同一個修復方式，第一項是 ${reason}`;
+    if (locale === "zh-TW") return `有 ${count} 項問題指向同一個修復方式，第一項是 ${reason}`;
+    if (locale === "ja") {
+      const template = "{count} problems name this same fix. The first is {reason}";
+      return translateBilingualText("ja", { en: template, zhTW: template }, { count, reason });
+    }
+    return `${count} problems name this same fix. The first is ${reason}`;
   }
-  return locale !== "zh-TW"
-    ? `${count} related problems call for this kind of change; each needs its own fix. The first is ${reason}`
-    : `有 ${count} 項相關問題需要這類處理，每一項都要分別修正；第一項是 ${reason}`;
+  if (locale === "zh-TW") return `有 ${count} 項相關問題需要這類處理，每一項都要分別修正；第一項是 ${reason}`;
+  if (locale === "ja") {
+    const template = "{count} related problems call for this kind of change; each needs its own fix. The first is {reason}";
+    return translateBilingualText("ja", { en: template, zhTW: template }, { count, reason });
+  }
+  return `${count} related problems call for this kind of change; each needs its own fix. The first is ${reason}`;
 };
 
 /**
@@ -689,15 +862,21 @@ export const stepConfirmation = (
   problems: number,
 ): string => {
   if (problems > 1) {
-    return locale !== "zh-TW"
-      ? "Rerun the same scan after the changes and confirm these problems are no longer reported."
-      : "修正後以相同範圍重新掃描，確認這些問題不再被回報。";
+    const english = "Rerun the same scan after the changes and confirm these problems are no longer reported.";
+    return locale === "zh-TW"
+      ? "修正後以相同範圍重新掃描，確認這些問題不再被回報。"
+      : locale === "ja"
+        ? japaneseText(english)
+        : english;
   }
   const guidance = verification?.trim();
   if (guidance) return findingVerificationSentence(locale, guidance, title);
-  return locale !== "zh-TW"
-    ? "Rerun the same scan after the change and confirm this problem is no longer reported."
-    : "修正後以相同範圍重新掃描，確認這項問題不再被回報。";
+  const english = "Rerun the same scan after the change and confirm this problem is no longer reported.";
+  return locale === "zh-TW"
+    ? "修正後以相同範圍重新掃描，確認這項問題不再被回報。"
+    : locale === "ja"
+      ? japaneseText(english)
+      : english;
 };
 
 /**
