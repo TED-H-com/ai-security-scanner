@@ -35845,6 +35845,67 @@ mod tests {
     }
 
     #[test]
+    fn requested_limit_holder_spacing_follows_the_report_language() {
+        let fixture = Fixture::new();
+        let (mut case, run_id) = failed_gitleaks_on_two_repositories_case(&fixture);
+        let run = case
+            .scan_runs
+            .iter_mut()
+            .find(|run| run.id == run_id)
+            .unwrap();
+        assert_eq!(run.scope_grant_snapshots.len(), 2);
+        for grant in &mut run.scope_grant_snapshots {
+            grant.external_scope = Some(crate::external_scope::ExternalScopeGrant {
+                id: format!("external-{}", grant.id),
+                case_id: case.id.clone(),
+                asset_id: grant.asset_id.clone(),
+                target: CanonicalTarget::Hostname("example.test".into()),
+                ports: BTreeSet::from([443]),
+                protocol: crate::external_scope::TransportProtocol::Https,
+                activity: ExternalActivity::ActiveExternal,
+                rate_policy: crate::external_scope::RatePolicy {
+                    requests_per_second: 2,
+                    concurrency: 1,
+                    timeout_seconds: 15,
+                },
+                template_policy: crate::external_scope::TemplatePolicy::conservative_profile(
+                    DECLARED_WEBSITE_TEMPLATE_REVISION,
+                    "nuclei_web_safe_v1",
+                ),
+                asserted_authority: "test fixture".into(),
+                approved_by: "Owner".into(),
+                approved_at: grant.confirmed_at,
+                expires_at: grant.confirmed_at + Duration::hours(1),
+                allow_sensitive_networks: false,
+            });
+        }
+
+        let zh = html_for_run(
+            &case,
+            &run_id,
+            RedactionProfile::Standard,
+            crate::export::ReportLocale::ZhHant,
+        );
+        let zh_assets = zh
+            .split("；適用於")
+            .find(|text| text.trim_start().starts_with("資產 1、資產 2"))
+            .expect("grouped asset holders")
+            .split('<')
+            .next()
+            .unwrap();
+        assert_eq!(zh_assets, "資產 1、資產 2");
+        assert!(zh.contains("；適用於 Gitleaks"));
+        let en = html_for_run(
+            &case,
+            &run_id,
+            RedactionProfile::Standard,
+            crate::export::ReportLocale::En,
+        );
+        assert!(en.contains(" — Asset 1, Asset 2"));
+        assert!(en.contains(" — Gitleaks"));
+    }
+
+    #[test]
     fn rpt30_chinese_standard_aliases_are_html_only() {
         let fixture = Fixture::new();
         let (case, run_id) = failed_gitleaks_on_two_repositories_case(&fixture);

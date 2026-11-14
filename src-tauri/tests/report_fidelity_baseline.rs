@@ -13,7 +13,7 @@ mod report_fidelity {
     use std::io::{Read, Write};
     use std::process::Command;
 
-    const BASELINE_COMMIT: &str = "cc2ef089584594b2908177550da65bb18ae26361";
+    const BASELINE_COMMIT: &str = "fa37cf98da3494f6155ee2cb5ae82c0dc0cd8726";
     const FIXED_TIME: &str = "2026-11-08T12:00:00Z";
 
     fn root() -> PathBuf {

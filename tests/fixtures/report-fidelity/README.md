@@ -3,7 +3,7 @@
 This is the RF-01 compatibility corpus. Its input was generated from production
 core `6e259b497b87fb8aa2ece1f3b512cc29c9ea5af7` on 2026-11-08; its expected
 outputs were last replaced from production core
-`cc2ef089584594b2908177550da65bb18ae26361` on 2026-11-14 (see
+`fa37cf98da3494f6155ee2cb5ae82c0dc0cd8726` on 2026-11-14 (see
 [Replacement history](#replacement-history)). It is not a copy of the
 older public sample reports, a live security scan, or evidence that the planned
 snapshot/archive/restore features exist.
@@ -126,6 +126,17 @@ uses Chromium print media for the print view. Screenshots do not imply that a
 new scanner, provider, or restore workflow has been executed.
 
 ## Replacement history
+
+### 2026-11-14: Chinese asset alias spacing
+
+Replaces the outputs of core `cc2ef089584594b2908177550da65bb18ae26361` with
+those of core `fa37cf98da3494f6155ee2cb5ae82c0dc0cd8726`. Both `case.json.gz`
+inputs are carried over byte-identical. Only the two Traditional Chinese
+standard HTML reports changed: in each, four requested-limit lines that name
+asset aliases now read 「；適用於資產 1、資產 2」 instead of
+「；適用於 資產 1、資產 2」. Engine names keep the space (「；適用於 Gitleaks」).
+The new HTML renders byte-identical screenshots because the changed lines are
+below the captured viewport; the visual receipt records the new source hashes.
 
 ### 2026-11-14: reviewed report wording
 
