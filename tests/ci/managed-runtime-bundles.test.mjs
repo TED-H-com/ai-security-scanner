@@ -50,7 +50,13 @@ test('recognized desktop runtime manifests match the published installer assets'
     kind: 'deb', url: deb.url, bytes: deb.bytes, sha256: deb.sha256,
     inner_path: linux.installed_paths[0].slice(1), extracted_bytes: 423333863,
   });
-  assert.equal(entries.find(entry => entry.platform === 'darwin').release_source, null);
+  const archive = publication.publication.assets.find(asset => asset.name === 'ai-security-scanner_0.6.2_universal.app.tar.gz');
+  const darwin = entries.find(entry => entry.platform === 'darwin');
+  assert.ok(Object.isFrozen(darwin.release_source));
+  assert.deepEqual(darwin.release_source, {
+    kind: 'tar.gz', url: archive.url, bytes: archive.bytes, sha256: archive.sha256,
+    inner_path: darwin.installed_paths[0].slice('/Applications/'.length), extracted_bytes: 181947360,
+  });
   assert.equal(entries.find(entry => entry.platform === 'win32').release_source, null);
   const tauriConf = JSON.parse(await readFile(new URL('../../src-tauri/tauri.conf.json', import.meta.url), 'utf8'));
   const installerNsi = await readFile(new URL('../../src-tauri/windows/nsis/installer.nsi', import.meta.url), 'utf8');

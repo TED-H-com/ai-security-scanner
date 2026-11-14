@@ -152,11 +152,11 @@ When the host has no Docker, no Podman and no prepared managed runtime,
 `prepare --capability scan` reuses an installed desktop app's scan runtime if this
 revision recognizes its manifest (Linux x86_64, macOS, and Windows x64 in the
 default per-user or all-users install folder) and checks it again in the core.
-On Linux x86_64, if no recognized desktop runtime is present, it downloads the
-published desktop package once over HTTPS, checks its pinned checksum before
-reading it, and keeps only the scan runtime under the cache's `managed-bundles/`
-directory; nothing is installed system-wide. `--offline` never downloads; other
-platforms stop with a `next_step` when no usable runtime is found.
+On Linux x86_64 and macOS, if no recognized desktop runtime is present, it
+downloads the published desktop package once over HTTPS, checks its pinned
+checksum before reading it, and keeps only the scan runtime under the cache's
+`managed-bundles/` directory; nothing is installed system-wide. `--offline` never
+downloads. Windows stops with a `next_step` when no usable runtime is found.
 Development bundles are produced by the existing versioned
 [`runtime/vendor-managed-runtime.mjs`](../runtime/vendor-managed-runtime.mjs)
 procedure; its Linux helper build requires an existing Docker builder. Windows

@@ -20,7 +20,12 @@ export const RECOGNIZED_MANAGED_RUNTIME_BUNDLES = Object.freeze([
     manifest_sha256: '470fd782236000a33b18a084379c8c260097cf6c5ea988963e70d4ab90b6a24b',
     installed_paths: Object.freeze(['/Applications/ai-security-scanner.app/Contents/Resources/managed-runtime']),
     installed_locations: Object.freeze([]),
-    release_source: null,
+    release_source: Object.freeze({
+      kind: 'tar.gz',
+      url: 'https://github.com/TED-H-com/ai-security-scanner/releases/download/v0.6.2/ai-security-scanner_0.6.2_universal.app.tar.gz',
+      bytes: 143685789, sha256: 'a815e381943a853acc7e2a50d3241241ec8d925dfff847ebaea9937ecf4ed56f',
+      inner_path: 'ai-security-scanner.app/Contents/Resources/managed-runtime', extracted_bytes: 181947360,
+    }),
   }),
   Object.freeze({
     platform: 'win32', arch: Object.freeze(['x64']), product_version: '0.6.2',

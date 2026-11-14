@@ -457,7 +457,7 @@ async function acquireLock(root, key) {
 }
 
 function releaseBundleEntry(deps) {
-  return deps.recognizedManagedRuntimeBundles.find(item => item.platform === deps.platform && item.arch.includes(deps.arch) && item.release_source?.kind === 'deb');
+  return deps.recognizedManagedRuntimeBundles.find(item => item.platform === deps.platform && item.arch.includes(deps.arch) && ['deb', 'tar.gz'].includes(item.release_source?.kind));
 }
 
 async function releaseBundleState(cacheDir, entry, sourceRoot) {
@@ -521,7 +521,7 @@ async function obtainReleaseBundle(root, entry, deps) {
     await mkdir(bundle, { mode: 0o700 });
     deps.stderr.write(`No Docker, Podman or installed desktop app found. Downloading the scan runtime from the published desktop package (${Math.round(source.bytes / 1e6)} MB, once); its first start also downloads a machine image and can take several minutes.\n`);
     await downloadReleaseBundle(source, packageFile, { fetch: deps.fetch, signal: controller.signal });
-    await extractReleaseBundle(packageFile, source.inner_path, bundle, controller.signal);
+    await extractReleaseBundle(packageFile, source.kind, source.inner_path, bundle, controller.signal);
     await unlink(packageFile);
     await verifyReleaseBundle(bundle, entry.manifest_sha256, controller.signal);
     if (controller.signal.aborted) throw controller.signal.reason;
