@@ -19,13 +19,21 @@ These features are implemented in source on this branch and are not in any relea
 
 **Not finished**
 
-- Real-host acceptance has covered one Linux host through restore on a synthetic repository; a second host, several assets and macOS/Windows hosts remain.
+- Real-host acceptance has covered one Linux host on a synthetic repository, from an empty pinned-bootstrap cache through restore; a second host, several assets and macOS/Windows hosts remain.
 - The default skill has not switched from the released desktop.
 - Automatic managed-bundle acquisition and verification across the declared platforms remain unfinished. On macOS and Windows, CI covers the bootstrap, Cloudflare audits, saved reports and archives; foreground scans and engine preparation are not yet fully covered there.
 
 The dated sections below preserve observations at each milestone. [The product specification](product-spec.md) defines product behavior; [the migration plan](plans/skill-first-cloudflare-migration.md) and [report and archive contract](specs/report-fidelity-and-archive.md) describe the accepted work. See [publication status](release-model.md) for availability.
 
 CI document and contract tests: 114 tests cover the current source boundaries.
+
+## November 13 bootstrap-first real-host journey — 26
+
+A Linux host received only the operator skill, a clean product checkout at a pinned, committed revision and an empty private cache location. It ran the pinned bootstrap itself: `doctor`, then `prepare` with the default release profile and `--offline`, which built the CLI from existing Rust dependencies in about three and a half minutes, then Gitleaks scan preparation through the existing Docker compatibility runtime. Every scanner command after that went through `bootstrap.mjs run`.
+
+The build receipt records the pinned revision with a clean source and dirty builds not allowed, and its CLI digest matches the cached binary; the checkout stayed clean. The host then completed the 25b journey in the same order: a Gitleaks scan with no secrets found, a quick Cloudflare source audit with seven of seven delegations, sealing, automatic admission, one combined Traditional Chinese report and a complete archive with source snapshots, which it verified. All seven delegated outputs matched their captured artifacts byte for byte, each delegation followed the checkpoint that issued it, and no delegated reader went outside the approved source view. The approval runner refused one request that left out the data directory; the host corrected it and continued. The run took about 19 minutes. A separate restore check with the bootstrap-built CLI passed all 78 checks.
+
+Evidence: native checks `b26-01` passed (2 frozen cases, 26 document snapshots, 36 payload hashes, 20 screenshots); CI document tests `b26-02` passed all 114 tests.
 
 ## November 13 real-host journey — 25b
 

@@ -92,3 +92,4 @@ audit's `provider cloudflare status`) is identical before and after; this bracke
 the whole verification on the original data and each refused admission on a restore.
 Snapshot references read from different commands are matched by their identifying
 fields (ID, path, SHA-256, length and source revision), not by key order.
+The restore verifier accepts any CLI built from the same revision, including the binary cached by the pinned bootstrap.

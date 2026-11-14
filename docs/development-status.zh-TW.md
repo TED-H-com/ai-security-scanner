@@ -19,13 +19,21 @@
 
 **尚未完成**
 
-- 真實宿主驗收已在一個 Linux 宿主以合成專案完成至還原；第二個宿主、多資產與 macOS／Windows 宿主仍待完成。
+- 真實宿主驗收已在一個 Linux 宿主以合成專案完成，從空的固定版本 bootstrap 快取一路到還原；第二個宿主、多資產與 macOS／Windows 宿主仍待完成。
 - 預設 skill 仍使用已發布桌面版，尚未切換。
 - 受管理執行環境套件的自動取得與宣稱平台驗證尚未完成。macOS 與 Windows 的 CI 已涵蓋 bootstrap、Cloudflare 原始碼稽核、報告保存與案件封存；前景掃描與掃描引擎準備在這兩個平台的測試尚不完整。
 
 以下日期章節保留各階段當時的觀察。[產品規格](product-spec.md)定義產品行為；[遷移計畫](plans/skill-first-cloudflare-migration.md)與[報告及封存契約](specs/report-fidelity-and-archive.md)說明已採納的工作。可用內容請見[發布狀態](release-model.zh-TW.md)。
 
 CI 文件與契約測試目前共 114 項。
+
+## 11 月 13 日以 bootstrap 起步的真實宿主流程 — 26
+
+一個 Linux 宿主只取得操作 skill、固定於已提交版本的乾淨產品 checkout，以及一個空的私有快取位置。它自行執行固定版本的 bootstrap：先 `doctor`，再以預設 release 設定加 `--offline` 執行 `prepare`，以本機既有的 Rust 相依套件約三分半鐘建好 CLI，接著透過既有的 Docker 相容執行環境完成 Gitleaks 掃描準備。之後每個掃描器指令都經由 `bootstrap.mjs run` 執行。
+
+建置收據記錄固定版本、乾淨來源且不允許以變更中的來源建置，CLI 摘要與快取中的執行檔一致；checkout 全程保持乾淨。宿主接著依 25b 的順序完成同一流程：Gitleaks 掃描未發現秘密、Cloudflare quick 原始碼稽核七次委派全數完成、定稿、自動入案、一份繁體中文整合報告，以及含原始碼快照並經宿主驗證的完整封存。七個委派輸出都與保存的成品逐位元組相同，每次委派都在核發它的 checkpoint 之後，且沒有委派讀取超出核准的原始碼檢視。核准執行器拒絕了一個漏了資料目錄的請求，宿主更正後繼續。全程約 19 分鐘。另以 bootstrap 建出的 CLI 做還原檢查，78 項全數通過。
+
+證據：native 檢查 `b26-01` 通過（2 個凍結案件、26 份文件快照、36 個 payload hashes、20 張截圖）；CI 文件測試 `b26-02` 全部 114 項通過。
 
 ## 11 月 13 日真實宿主完整流程 — 25b
 

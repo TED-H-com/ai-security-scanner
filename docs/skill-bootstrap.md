@@ -276,3 +276,7 @@ directory and retains commands' stdout/stderr, fixture file digests, preparation
 results, reports, archive and a `receipt.json`. The November 9 observation is
 retained locally at `/tmp/scanner-owned-gitleaks-c85nt4el/receipt.json`; these
 ephemeral paths are evidence locations, not required product inputs.
+
+### November 13 real-host journey
+
+A real host started from an empty private cache and a clean checkout at a committed revision. It used the default release profile with `--offline`, built the CLI in about three and a half minutes, prepared Gitleaks with the existing pinned image through the Docker compatibility runtime, and ran a Gitleaks scan and a Cloudflare source audit through `run`, ending with one combined report and a complete case archive. The receipt records a clean source with dirty builds not allowed, and its artifact digest matches the cached binary. A separate restore check with that binary passed.
