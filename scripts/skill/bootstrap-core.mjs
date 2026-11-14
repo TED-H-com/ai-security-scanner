@@ -2,12 +2,13 @@ import { createHash, randomBytes, randomUUID } from 'node:crypto';
 import { spawn } from 'node:child_process';
 import { constants } from 'node:fs';
 import {
-  access, lstat, mkdir, open, readdir, realpath, rename, rm, rmdir, unlink, writeFile,
+  access, lstat, mkdir, open, readdir, realpath, rename, rm, rmdir, stat, unlink, writeFile,
 } from 'node:fs/promises';
 import { dirname, isAbsolute, join, parse, relative, resolve, sep } from 'node:path';
 import { homedir, hostname } from 'node:os';
 import { fileURLToPath } from 'node:url';
 import { collectInputManifest, stageInputSnapshot } from './input-manifest.mjs';
+import { RECOGNIZED_MANAGED_RUNTIME_BUNDLES } from './managed-runtime-bundles.mjs';
 
 export const RECIPE = 'skill-bootstrap-v1';
 export const RUST_VERSION = '1.98.0';
@@ -131,12 +132,13 @@ export async function auditWindowsCachePaths(requests, environment = process.env
 }
 
 export class BootstrapError extends Error {
-  constructor(code, message, exitCode = 4, details) {
+  constructor(code, message, exitCode = 4, details, nextStep) {
     super(message);
     this.name = 'BootstrapError';
     this.code = code;
     this.exitCode = exitCode;
     if (details !== undefined) this.details = details;
+    if (nextStep !== undefined) this.nextStep = nextStep;
   }
 }
 
@@ -223,12 +225,82 @@ function dependencies(overrides) {
     build: buildSnapshot,
     readIdentity: readBuildIdentity,
     prepareRuntime: invokeRuntimePreparation,
+    recognizedManagedRuntimeBundles: RECOGNIZED_MANAGED_RUNTIME_BUNDLES,
+    stderr: process.stderr,
     platform: process.platform,
     arch: process.arch,
     environment: process.env,
     nodeVersion: process.versions.node,
     ...overrides,
   };
+}
+
+async function unlinkedDirectoryPath(path) {
+  const { root } = parse(path);
+  let current = root;
+  for (const part of path.slice(root.length).split(sep).filter(Boolean)) {
+    if (part === '.' || part === '..') return false;
+    current = join(current, part);
+    const entry = await lstat(current);
+    if (!entry.isDirectory() || entry.isSymbolicLink()) return false;
+  }
+  return true;
+}
+
+export async function locateInstalledManagedRuntimeBundle(deps) {
+  const entry = deps.recognizedManagedRuntimeBundles.find(item => item.platform === deps.platform && item.arch.includes(deps.arch));
+  if (!entry || entry.installed_paths.length === 0) return { state: 'unsupported' };
+  for (const path of entry.installed_paths) {
+    if (!isAbsolute(path)) continue;
+    try {
+      if (!(await unlinkedDirectoryPath(path))) continue;
+      const manifestPath = join(path, 'manifest.json');
+      const before = await lstat(manifestPath);
+      if (!before.isFile() || before.isSymbolicLink() || before.size > 262144) continue;
+      const handle = await open(manifestPath, constants.O_RDONLY | (constants.O_NOFOLLOW ?? 0));
+      let manifestSha256;
+      try {
+        const opened = await handle.stat();
+        if (!opened.isFile() || opened.dev !== before.dev || opened.ino !== before.ino || opened.size !== before.size) continue;
+        const bytes = Buffer.alloc(opened.size + 1);
+        let count = 0;
+        while (count < bytes.length) {
+          const { bytesRead } = await handle.read(bytes, count, bytes.length - count, count);
+          if (!bytesRead) break;
+          count += bytesRead;
+        }
+        const after = await handle.stat();
+        const current = await lstat(manifestPath);
+        if (count !== opened.size || after.size !== opened.size || after.mtimeMs !== opened.mtimeMs || after.ctimeMs !== opened.ctimeMs
+          || current.isSymbolicLink() || current.dev !== opened.dev || current.ino !== opened.ino || !(await unlinkedDirectoryPath(path))) continue;
+        manifestSha256 = hash(bytes.subarray(0, count));
+      } finally { await handle.close(); }
+      return manifestSha256 === entry.manifest_sha256
+        ? { state: 'recognized', path, manifest_sha256: manifestSha256, product_version: entry.product_version }
+        : { state: 'unrecognized', path };
+    } catch { /* An inaccessible, replaced or missing path is not a candidate. */ }
+  }
+  return { state: 'absent' };
+}
+
+async function compatibilityCommandsOnPath(deps) {
+  const path = deps.environment.PATH ?? deps.environment.Path;
+  if (!path) return [];
+  const windows = deps.platform === 'win32';
+  const directories = path.split(windows ? ';' : ':').map(directory => directory || '.');
+  const extensions = windows ? ['', ...(deps.environment.PATHEXT ?? '.COM;.EXE;.BAT;.CMD').split(';').filter(Boolean)] : [''];
+  const found = [];
+  for (const command of ['docker', 'podman']) {
+    let exists = false;
+    for (const directory of directories) {
+      for (const extension of extensions) {
+        try { if ((await stat(join(directory, `${command}${extension}`))).isFile()) { exists = true; break; } } catch { /* Not a file on PATH. */ }
+      }
+      if (exists) break;
+    }
+    if (exists) found.push(command);
+  }
+  return found;
 }
 
 async function safeStat(path) {
@@ -408,7 +480,7 @@ async function inspectSource(sourceRoot, revision) {
 
 async function validatePinnedInputs(sourceRoot, revision, manifest) {
   const files = new Map([...manifest.files, ...(manifest.metadataFiles ?? [])].map(file => [file.path, file]));
-  for (const path of ['scripts/skill/bootstrap.mjs', 'scripts/skill/bootstrap-core.mjs', 'scripts/skill/input-manifest.mjs']) {
+  for (const path of ['scripts/skill/bootstrap.mjs', 'scripts/skill/bootstrap-core.mjs', 'scripts/skill/input-manifest.mjs', 'scripts/skill/managed-runtime-bundles.mjs']) {
     if (!files.has(path)) files.set(path, { path });
   }
   const gitEnvironment = Object.fromEntries(Object.entries(process.env).filter(([key]) => !key.startsWith('GIT_')));
@@ -540,7 +612,7 @@ function buildConfiguration(options) {
 
 async function recipeDigest(sourceRoot) {
   const inputs = [];
-  for (const path of ['scripts/skill/bootstrap.mjs', 'scripts/skill/bootstrap-core.mjs', 'scripts/skill/input-manifest.mjs']) {
+  for (const path of ['scripts/skill/bootstrap.mjs', 'scripts/skill/bootstrap-core.mjs', 'scripts/skill/input-manifest.mjs', 'scripts/skill/managed-runtime-bundles.mjs']) {
     inputs.push({ path, sha256: hash(await regularBytes(join(sourceRoot, path), 2 * 1024 * 1024)) });
   }
   return hash(canonical({ version: RECIPE, inputs }));
@@ -794,9 +866,40 @@ export async function prepareBootstrap(options, overrides = {}) {
     // Runtime preparation owns its own data-directory lease and receipt. It
     // must not hold the unrelated core build lock while starting or fetching.
     const verified = await verifyEntry(entry, expected, deps);
-    result.runtime_preparation = await deps.prepareRuntime(verified.executable, options, { environment: deps.environment });
-    validateRuntimePreparation(result.runtime_preparation, options);
-    if (!result.runtime_preparation.ready) throw new BootstrapError('runtime_preparation_failed', 'Selected scanner resources are not ready.', 4, result.runtime_preparation);
+    const prepareSelectedRuntime = async request => {
+      const preparation = await deps.prepareRuntime(verified.executable, request, { environment: deps.environment });
+      validateRuntimePreparation(preparation, request);
+      if (!preparation.ready) throw new BootstrapError('runtime_preparation_failed', 'Selected scanner resources are not ready.', 4, preparation);
+      return preparation;
+    };
+    let failure;
+    let failed = false;
+    let location;
+    let bundleSource = options.managedRuntimeBundle ? 'explicit' : 'none';
+    try { result.runtime_preparation = await prepareSelectedRuntime(options); } catch (error) { failed = true; failure = error; }
+    if (failed && !options.managedRuntimeBundle && !options.offline
+      && failure instanceof BootstrapError && failure.code === 'runtime_preparation_failed'
+      && failure.details?.schema_version === 'ai-security-scanner.runtime-preparation/v1'
+      && failure.details.ready === false && failure.details.runtime_unavailable_reason === 'no_runtime') {
+      location = await locateInstalledManagedRuntimeBundle(deps);
+      if (location.state === 'recognized') {
+        deps.stderr.write('No Docker or Podman found. Using the scan runtime of the installed desktop app; its first start downloads a machine image and can take several minutes.\n');
+        try {
+          result.runtime_preparation = await prepareSelectedRuntime({ ...options, managedRuntimeBundle: location.path, expectedManagedRuntimeManifestSha256: location.manifest_sha256 });
+          bundleSource = 'installed_desktop';
+          failed = false;
+        } catch (error) { failure = error; }
+      }
+    }
+    if (failed) {
+      const nextStep = await runtimePreparationNextStep(failure, options, deps, location);
+      if (nextStep !== undefined) failure.nextStep = nextStep;
+      throw failure;
+    }
+    result.runtime_bundle_source = bundleSource;
+    if (bundleSource === 'installed_desktop') {
+      result.runtime_bundle = { path: location.path, manifest_sha256: location.manifest_sha256, product_version: location.product_version };
+    }
   }
   return result;
 }
@@ -863,7 +966,32 @@ export async function doctorBootstrap(options, overrides = {}) {
     ready: checks.every(item => item.ready),
     checks,
     execution: { native_core: 'build identity is verified during prepare', scanner_runtime: 'not prepared', cloudflare_delegation: 'not assessed', dynamic_sandbox: 'not assessed' },
+    ...(options.capability === 'scan' ? { runtime_sources: {
+      compatibility_commands_on_path: await compatibilityCommandsOnPath(deps),
+      installed_desktop_bundle: (await locateInstalledManagedRuntimeBundle(deps)).state,
+    } } : {}),
   };
+}
+
+async function runtimePreparationNextStep(error, options, deps, location) {
+  if (!(error instanceof BootstrapError) || error.code !== 'runtime_preparation_failed'
+    || error.details?.schema_version !== 'ai-security-scanner.runtime-preparation/v1' || error.details.ready !== false) return undefined;
+  switch (error.details.runtime_unavailable_reason) {
+    case 'no_runtime': {
+      if (options.offline) return 'Offline preparation needs a runtime that is already running. Start Docker or Podman, or run prepare once without --offline.';
+      const state = (location ?? await locateInstalledManagedRuntimeBundle(deps)).state;
+      if (state === 'unrecognized') return "The installed desktop app's scan runtime is not one this source revision recognizes. Use a newer source revision, or start Docker or Podman, then run prepare again.";
+      if (state === 'absent') return 'Start Docker or Podman, or install the desktop app for this computer, then run prepare again.';
+      if (state === 'unsupported') return 'Start Docker or Podman, then run prepare again.';
+      return undefined;
+    }
+    case 'managed_runtime_unavailable':
+      return 'The managed scan runtime could not start; the image errors in detail say why. Fix that, or start Docker or Podman, then run prepare again.';
+    case 'managed_bundle_rejected':
+      return 'The selected runtime bundle was refused; the image errors in detail say why. Select the bundle that ships with the desktop app, or start Docker or Podman.';
+    default:
+      return undefined;
+  }
 }
 
 function validateRuntimePreparation(value, options) {
@@ -895,6 +1023,10 @@ function validateRuntimePreparation(value, options) {
 export function runtimePreparationArguments(options) {
   const args = ['--json', '--data-dir', resolve(options.dataDir)];
   if (options.managedRuntimeBundle) args.push('--managed-runtime-bundle', resolve(options.managedRuntimeBundle));
+  if (options.expectedManagedRuntimeManifestSha256 !== undefined) {
+    if (!options.managedRuntimeBundle) fail('invalid_request', 'An expected managed-runtime manifest digest requires a bundle.', 2);
+    args.push('--expected-managed-runtime-manifest-sha256', options.expectedManagedRuntimeManifestSha256);
+  }
   if (options.localImageDirectory) args.push('--release-approved-local-image-directory', resolve(options.localImageDirectory));
   args.push('runtime', 'prepare', '--engine', options.engineIds.join(','), '--bootstrap-control-stdin');
   if (options.offline) args.push('--offline');

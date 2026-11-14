@@ -5,6 +5,8 @@ import { chmod, link, lstat, mkdir, mkdtemp, readFile, readdir, realpath, rm, sy
 import { tmpdir } from 'node:os';
 import { basename, dirname, join } from 'node:path';
 import test from 'node:test';
+import * as bootstrapCore from '../../scripts/skill/bootstrap-core.mjs';
+import * as bootstrapEntry from '../../scripts/skill/bootstrap.mjs';
 import {
   BootstrapError, RECIPE, controlledBuildEnvironment, doctorBootstrap,
   parseBootstrapArguments, prepareBootstrap, runPrepared,
@@ -26,7 +28,7 @@ async function fixture(t) {
   t.after(() => rm(root, { recursive: true, force: true }));
   const source = join(root, 'source');
   await mkdir(join(source, 'scripts', 'skill'), { recursive: true });
-  for (const name of ['bootstrap.mjs', 'bootstrap-core.mjs', 'input-manifest.mjs']) {
+  for (const name of ['bootstrap.mjs', 'bootstrap-core.mjs', 'input-manifest.mjs', 'managed-runtime-bundles.mjs']) {
     await writeFile(join(source, 'scripts', 'skill', name), `// ${name} trusted fixture recipe\n`);
   }
   await writeFile(join(source, 'Cargo.lock'), 'version = 4\n');
@@ -127,8 +129,10 @@ test('core source, lockfile, native toolchain, profile, and recipe each invalida
   keys.push((await prepareBootstrap({ ...f.options, profile: 'release' }, changedTools)).cache_key);
   await writeFile(join(f.source, 'scripts', 'skill', 'bootstrap-core.mjs'), '// changed trusted recipe\n');
   keys.push((await prepareBootstrap({ ...f.options, profile: 'release' }, changedTools)).cache_key);
-  assert.equal(new Set(keys).size, 6);
-  assert.equal(f.state.builds, 6);
+  await writeFile(join(f.source, 'scripts', 'skill', 'managed-runtime-bundles.mjs'), '// changed trusted runtime list\n');
+  keys.push((await prepareBootstrap({ ...f.options, profile: 'release' }, changedTools)).cache_key);
+  assert.equal(new Set(keys).size, 7);
+  assert.equal(f.state.builds, 7);
 });
 
 test('cached artifact corruption fails before executing identity or rebuilding', async t => {
@@ -467,6 +471,12 @@ test('clean pin compares raw Git blobs even when assume-unchanged hides source e
   delete realSourceInspection.inspectSource;
   delete realSourceInspection.validatePinnedInputs;
   await prepareBootstrap({ ...f.options, revision: pinned }, realSourceInspection);
+  git(['update-index', '--assume-unchanged', 'scripts/skill/managed-runtime-bundles.mjs']);
+  await writeFile(join(f.source, 'scripts', 'skill', 'managed-runtime-bundles.mjs'), '// hidden runtime list change\n');
+  assert.equal(git(['status', '--porcelain=v1']), '');
+  await assert.rejects(prepareBootstrap({ ...f.options, revision: pinned }, realSourceInspection), { code: 'dirty_source' });
+  await writeFile(join(f.source, 'scripts', 'skill', 'managed-runtime-bundles.mjs'), '// managed-runtime-bundles.mjs trusted fixture recipe\n');
+  git(['update-index', '--no-assume-unchanged', 'scripts/skill/managed-runtime-bundles.mjs']);
   git(['update-index', '--assume-unchanged', 'core.rs']);
   await writeFile(join(f.source, 'core.rs'), 'a hidden source change');
   assert.equal(git(['status', '--porcelain=v1']), '');
@@ -629,6 +639,7 @@ test('bootstrap error schema is documented before CLI recovery', async () => {
   for (const path of ['docs/skill-bootstrap.md', 'skills/ai-security-scanner/references/cloudflare-source-audit.md']) {
     assert.match(await readFile(path, 'utf8'), /ai-security-scanner\.bootstrap-error\/v1/);
   }
+  assert.match(await readFile('docs/skill-bootstrap.md', 'utf8'), /next_step/);
 });
 
 
@@ -775,4 +786,212 @@ test('doctor checks the nearest existing cache ancestor for writability', { skip
     assert.equal(check.ready, false);
     assert.equal(check.error, 'cache_parent_not_writable');
   } finally { await chmod(parent, 0o700); }
+});
+
+async function installedBundleFixture(t) {
+  const f = await fixture(t);
+  const bundle = join(f.root, 'desktop-runtime');
+  const manifest = '{"fixture":"installed desktop"}\n';
+  await mkdir(bundle);
+  await writeFile(join(bundle, 'manifest.json'), manifest);
+  const entry = { platform: 'fixture', arch: ['fixture-arch'], product_version: '0.6.2', manifest_sha256: digest(manifest), installed_paths: [bundle] };
+  const deps = { ...f.deps, platform: entry.platform, arch: 'fixture-arch', recognizedManagedRuntimeBundles: [entry] };
+  const options = { ...f.options, capability: 'scan', engineIds: ['gitleaks'], dataDir: join(f.root, 'data') };
+  return { ...f, bundle, entry, deps, options };
+}
+
+const retryNotice = 'No Docker or Podman found. Using the scan runtime of the installed desktop app; its first start downloads a machine image and can take several minutes.\n';
+const runtimeNextSteps = {
+  offline: 'Offline preparation needs a runtime that is already running. Start Docker or Podman, or run prepare once without --offline.',
+  unrecognized: "The installed desktop app's scan runtime is not one this source revision recognizes. Use a newer source revision, or start Docker or Podman, then run prepare again.",
+  absent: 'Start Docker or Podman, or install the desktop app for this computer, then run prepare again.',
+  unsupported: 'Start Docker or Podman, then run prepare again.',
+  managed_runtime_unavailable: 'The managed scan runtime could not start; the image errors in detail say why. Fix that, or start Docker or Podman, then run prepare again.',
+  managed_bundle_rejected: 'The selected runtime bundle was refused; the image errors in detail say why. Select the bundle that ships with the desktop app, or start Docker or Podman.',
+};
+
+test('scan preparation retries a recognized desktop bundle once and records its provenance', async t => {
+  for (const firstThrows of [false, true]) {
+    const f = await installedBundleFixture(t);
+    const calls = [];
+    let stderr = '';
+    const failed = runtimeResult(f.options, { ready: false, runtime_unavailable_reason: 'no_runtime' });
+    const prepareRuntime = async (_executable, request) => {
+      calls.push(request);
+      if (calls.length === 1) {
+        if (firstThrows) throw new BootstrapError('runtime_preparation_failed', 'Core exited.', 4, failed);
+        return failed;
+      }
+      return runtimeResult(request, { runtime_unavailable_reason: null });
+    };
+    const result = await prepareBootstrap(f.options, { ...f.deps, prepareRuntime, stderr: { write: value => { stderr += value; } } });
+    assert.equal(calls.length, 2);
+    assert.equal(calls[0].managedRuntimeBundle, undefined);
+    assert.equal(calls[1].managedRuntimeBundle, f.bundle);
+    assert.equal(calls[1].expectedManagedRuntimeManifestSha256, f.entry.manifest_sha256);
+    assert.equal(stderr, retryNotice);
+    assert.equal(result.runtime_bundle_source, 'installed_desktop');
+    assert.deepEqual(result.runtime_bundle, { path: f.bundle, manifest_sha256: f.entry.manifest_sha256, product_version: '0.6.2' });
+  }
+});
+
+test('scan preparation records explicit and absent bundle sources without retrying success', async t => {
+  const f = await installedBundleFixture(t);
+  for (const bundle of [undefined, f.bundle]) {
+    let calls = 0;
+    const result = await prepareBootstrap({ ...f.options, managedRuntimeBundle: bundle }, {
+      ...f.deps, prepareRuntime: async (_executable, request) => { calls += 1; return runtimeResult(request); },
+    });
+    assert.equal(calls, 1);
+    assert.equal(result.runtime_bundle_source, bundle ? 'explicit' : 'none');
+    assert.equal(Object.hasOwn(result, 'runtime_bundle'), false);
+  }
+});
+
+test('scan failures do not retry in excluded cases and give the matching next step', async t => {
+  const f = await installedBundleFixture(t);
+  const cases = [
+    { name: 'explicit', reason: 'no_runtime', options: { managedRuntimeBundle: f.bundle }, entries: [], next: runtimeNextSteps.unsupported },
+    { name: 'offline', reason: 'no_runtime', options: { offline: true }, next: runtimeNextSteps.offline },
+    { name: 'managed unavailable', reason: 'managed_runtime_unavailable', next: runtimeNextSteps.managed_runtime_unavailable },
+    { name: 'bundle rejected', reason: 'managed_bundle_rejected', next: runtimeNextSteps.managed_bundle_rejected },
+    { name: 'null reason', reason: null },
+    { name: 'missing reason' },
+    { name: 'unrecognized', reason: 'no_runtime', entries: [{ ...f.entry, manifest_sha256: '0'.repeat(64) }], next: runtimeNextSteps.unrecognized },
+    { name: 'absent', reason: 'no_runtime', entries: [{ ...f.entry, installed_paths: [join(f.root, 'missing')] }], next: runtimeNextSteps.absent },
+    { name: 'unsupported', reason: 'no_runtime', entries: [], next: runtimeNextSteps.unsupported },
+    { name: 'unsupported architecture', reason: 'no_runtime', entries: [{ ...f.entry, arch: ['other'] }], next: runtimeNextSteps.unsupported },
+    { name: 'no installed paths', reason: 'no_runtime', entries: [{ ...f.entry, installed_paths: [] }], next: runtimeNextSteps.unsupported },
+  ];
+  for (const testCase of cases) {
+    for (const firstThrows of [false, true]) {
+      const options = { ...f.options, ...testCase.options };
+      const failed = runtimeResult(options, { ready: false, ...(Object.hasOwn(testCase, 'reason') ? { runtime_unavailable_reason: testCase.reason } : {}) });
+      let calls = 0;
+      const prepareRuntime = async () => {
+        calls += 1;
+        if (firstThrows) throw new BootstrapError('runtime_preparation_failed', 'Existing core message.', 3, failed);
+        return failed;
+      };
+      await assert.rejects(prepareBootstrap(options, { ...f.deps, recognizedManagedRuntimeBundles: testCase.entries ?? [f.entry], prepareRuntime }), error => {
+        assert.equal(error.code, 'runtime_preparation_failed', testCase.name);
+        assert.equal(error.nextStep, testCase.next, testCase.name);
+        assert.deepEqual(error.details, failed, testCase.name);
+        if (firstThrows) {
+          assert.equal(error.message, 'Existing core message.');
+          assert.equal(error.exitCode, 3);
+        }
+        return true;
+      });
+      assert.equal(calls, 1, testCase.name);
+    }
+  }
+});
+
+test('a failed desktop retry is final and an interrupted first attempt never retries', async t => {
+  const f = await installedBundleFixture(t);
+  const failed = runtimeResult(f.options, { ready: false, runtime_unavailable_reason: 'managed_runtime_unavailable' });
+  let calls = 0;
+  await assert.rejects(prepareBootstrap(f.options, { ...f.deps, stderr: { write() {} }, prepareRuntime: async () => {
+    calls += 1;
+    if (calls === 1) throw new BootstrapError('runtime_preparation_failed', 'First failed.', 4, runtimeResult(f.options, { ready: false, runtime_unavailable_reason: 'no_runtime' }));
+    throw new BootstrapError('runtime_preparation_failed', 'Second failed.', 3, failed);
+  } }), error => {
+    assert.equal(error.message, 'Second failed.');
+    assert.equal(error.exitCode, 3);
+    assert.deepEqual(error.details, failed);
+    assert.equal(error.nextStep, runtimeNextSteps.managed_runtime_unavailable);
+    return true;
+  });
+  assert.equal(calls, 2);
+  calls = 0;
+  await assert.rejects(prepareBootstrap(f.options, { ...f.deps, prepareRuntime: async () => {
+    calls += 1;
+    throw new BootstrapError('interrupted', 'Interrupted.', 130, runtimeResult(f.options, { ready: false, runtime_unavailable_reason: 'no_runtime' }));
+  } }), { code: 'interrupted', exitCode: 130 });
+  assert.equal(calls, 1);
+});
+
+test('installed bundle discovery ignores relative and oversized paths and distinguishes wrong digests', async t => {
+  const f = await installedBundleFixture(t);
+  const oversized = join(f.root, 'oversized');
+  await mkdir(oversized);
+  await writeFile(join(oversized, 'manifest.json'), Buffer.alloc(262145));
+  const locate = paths => bootstrapCore.locateInstalledManagedRuntimeBundle({ ...f.deps, recognizedManagedRuntimeBundles: [{ ...f.entry, installed_paths: paths }] });
+  assert.deepEqual(await locate(['relative-path', oversized]), { state: 'absent' });
+  assert.deepEqual(await locate([join(f.root, 'missing'), f.bundle]), { state: 'recognized', path: f.bundle, manifest_sha256: f.entry.manifest_sha256, product_version: '0.6.2' });
+  await writeFile(join(f.bundle, 'manifest.json'), 'different');
+  assert.deepEqual(await locate([f.bundle]), { state: 'unrecognized', path: f.bundle });
+  assert.deepEqual(await bootstrapCore.locateInstalledManagedRuntimeBundle({ ...f.deps, arch: 'other' }), { state: 'unsupported' });
+  const maximum = Buffer.alloc(262144, 7);
+  await writeFile(join(f.bundle, 'manifest.json'), maximum);
+  assert.deepEqual(await bootstrapCore.locateInstalledManagedRuntimeBundle({ ...f.deps, recognizedManagedRuntimeBundles: [{ ...f.entry, manifest_sha256: digest(maximum) }] }),
+    { state: 'recognized', path: f.bundle, manifest_sha256: digest(maximum), product_version: '0.6.2' });
+});
+
+test('installed bundle discovery does not follow symbolic links', { skip: process.platform === 'win32' ? 'Symbolic link creation requires Windows privileges' : false }, async t => {
+  const f = await installedBundleFixture(t);
+  const directoryLink = join(f.root, 'directory-link');
+  await symlink(f.bundle, directoryLink);
+  const fileLinkDir = join(f.root, 'file-link');
+  await mkdir(fileLinkDir);
+  await symlink(join(f.bundle, 'manifest.json'), join(fileLinkDir, 'manifest.json'));
+  const parentLink = join(f.root, 'parent-link');
+  await symlink(f.root, parentLink);
+  assert.deepEqual(await bootstrapCore.locateInstalledManagedRuntimeBundle({ ...f.deps, recognizedManagedRuntimeBundles: [{ ...f.entry,
+    installed_paths: [directoryLink, fileLinkDir, join(parentLink, 'desktop-runtime')],
+  }] }), { state: 'absent' });
+});
+
+test('runtime arguments bind an expected manifest digest to the selected bundle', () => {
+  const options = { engineIds: ['gitleaks'], dataDir: 'data', managedRuntimeBundle: 'bundle', expectedManagedRuntimeManifestSha256: 'a'.repeat(64) };
+  const args = runtimePreparationArguments(options);
+  assert.deepEqual(args.slice(3, 7), ['--managed-runtime-bundle', join(process.cwd(), 'bundle'), '--expected-managed-runtime-manifest-sha256', options.expectedManagedRuntimeManifestSha256]);
+  assert.throws(() => runtimePreparationArguments({ ...options, managedRuntimeBundle: undefined }), { code: 'invalid_request', exitCode: 2 });
+});
+
+test('bootstrap error printer emits next_step only when set', t => {
+  const detail = { schema_version: 'ai-security-scanner.runtime-preparation/v1', ready: false, offline: false,
+    engines: ['gitleaks'], runtime: null, images: [], receipt_path: null, runtime_unavailable_reason: 'no_runtime' };
+  let output = '';
+  const write = text => { output += text; };
+  bootstrapEntry.printBootstrapError(new BootstrapError('runtime_preparation_failed', 'Selected scanner resources are not ready.', 4, detail, runtimeNextSteps.absent), write);
+  assert.deepEqual(JSON.parse(output), { schema_version: 'ai-security-scanner.bootstrap-error/v1', error: 'runtime_preparation_failed', message: 'Selected scanner resources are not ready.', detail, next_step: runtimeNextSteps.absent });
+  t.diagnostic(`printed error: ${output.trim()}`);
+  output = '';
+  bootstrapEntry.printBootstrapError(new BootstrapError('invalid_request', 'Unchanged.', 2), write);
+  assert.deepEqual(JSON.parse(output), { schema_version: 'ai-security-scanner.bootstrap-error/v1', error: 'invalid_request', message: 'Unchanged.' });
+});
+
+test('scan doctor reports runtime sources without executing commands or changing readiness', async t => {
+  const f = await installedBundleFixture(t);
+  const bin = join(f.root, 'bin');
+  await mkdir(bin);
+  await writeFile(join(bin, 'docker'), 'must not execute');
+  await mkdir(join(bin, 'podman'));
+  const deps = { ...f.deps, platform: 'linux', recognizedManagedRuntimeBundles: [{ ...f.entry, platform: 'linux' }], environment: { ...f.deps.environment, PATH: bin } };
+  const scan = await doctorBootstrap(f.options, deps);
+  assert.deepEqual(scan.runtime_sources, { compatibility_commands_on_path: ['docker'], installed_desktop_bundle: 'recognized' });
+  const core = await doctorBootstrap({ ...f.options, capability: 'core', engineIds: undefined, dataDir: undefined }, deps);
+  assert.equal(Object.hasOwn(core, 'runtime_sources'), false);
+  assert.equal(scan.ready, false);
+  const emptySources = await doctorBootstrap(f.options, { ...deps, environment: { ...deps.environment, PATH: join(f.root, 'missing-bin') }, recognizedManagedRuntimeBundles: [] });
+  assert.deepEqual(emptySources.runtime_sources, { compatibility_commands_on_path: [], installed_desktop_bundle: 'unsupported' });
+  assert.equal(scan.ready, emptySources.ready);
+  const windowsBin = join(f.root, 'windows-bin');
+  await mkdir(windowsBin);
+  await writeFile(join(windowsBin, 'docker.EXE'), 'must not execute');
+  await writeFile(join(windowsBin, 'podman.CMD'), 'must not execute');
+  const windows = await doctorBootstrap(f.options, { ...deps, platform: 'win32', environment: { ...deps.environment, PATH: windowsBin, PATHEXT: '.EXE;.CMD' } });
+  assert.deepEqual(windows.runtime_sources, { compatibility_commands_on_path: ['docker', 'podman'], installed_desktop_bundle: 'unsupported' });
+  assert.equal(windows.ready, scan.ready);
+});
+
+test('scan doctor records this host runtime sources without executing commands', async t => {
+  const f = await fixture(t);
+  const result = await doctorBootstrap({ ...f.options, capability: 'scan', engineIds: ['gitleaks'], dataDir: join(f.root, 'data') }, f.deps);
+  assert.equal(result.ready, false);
+  assert.ok(Array.isArray(result.runtime_sources.compatibility_commands_on_path));
+  assert.ok(['recognized', 'unrecognized', 'absent', 'unsupported'].includes(result.runtime_sources.installed_desktop_bundle));
+  t.diagnostic(`host runtime_sources: ${JSON.stringify(result.runtime_sources)}`);
 });

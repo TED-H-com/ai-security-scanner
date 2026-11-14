@@ -66,6 +66,8 @@ prepared core matches, `run` stops with `core_not_prepared`; run `prepare` with
 the same `--revision`, `--cache-dir` and `--profile` first. CLI output stays on
 stdout; bootstrap diagnostics go to stderr.
 
+Scan preparation reports `runtime_bundle_source` as `explicit`, `installed_desktop` or `none`; an installed bundle also includes its path, manifest digest and desktop version in `runtime_bundle`.
+
 The default profile is `release`. Contributors may select `--profile dev` for a
 separate development cache. A changed checkout is rejected unless the caller
 explicitly selects `--allow-dirty`; its receipt then records the actual source
@@ -144,8 +146,13 @@ scan, passing the same explicit data directory and any selected runtime bundle.
 `run --capability scan` is rejected: preparation is its own operation.
 `doctor --capability scan` reports preparation as still needed; it does not build,
 start a runtime, or treat a previous receipt as current readiness.
+Its `runtime_sources` reports compatibility commands on `PATH` and the installed desktop bundle's recognition state.
 
-Cold-machine acquisition of a managed bundle is not automatic yet. Development
+When the host has no Docker, no Podman and no prepared managed runtime,
+`prepare --capability scan` reuses an installed desktop app's scan runtime if this
+revision recognizes its manifest (Linux x86_64 and macOS; Windows detection is
+not implemented), checks it again in the core, and otherwise stops with a
+`next_step`. It never downloads or installs a runtime. Development
 bundles are produced by the existing versioned
 [`runtime/vendor-managed-runtime.mjs`](../runtime/vendor-managed-runtime.mjs)
 procedure; its Linux helper build requires an existing Docker builder. Windows
@@ -167,7 +174,8 @@ operator route changes.
 
 On Windows, a user-owned cache example is `%LOCALAPPDATA%\ai-security-scanner\core`.
 
-A stderr line with `schema_version` `ai-security-scanner.bootstrap-error/v1` means the core did not run. Handle its `error` without applying the CLI exit table or replaying the request.
+A stderr line with `schema_version` `ai-security-scanner.bootstrap-error/v1` means the bootstrap stopped the request. Handle its `error` without applying the CLI exit table or replaying the request.
+When `next_step` is present, relay it to the user and stop.
 
 ## Cache identity and recovery
 
