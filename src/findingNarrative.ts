@@ -1004,11 +1004,18 @@ export const localizedCoverageDimension = (
   const taskState = taskStateCheck(dimension);
   if (taskState) {
     const [check, whole] = taskState;
-    if (locale !== "zh-TW") return whole ? check : `${check}: unfinished part`;
-    return whole ? `${check} 檢查` : `${check} 未完成的部分`;
+    if (locale === "zh-TW") return whole ? `${check} 檢查` : `${check} 未完成的部分`;
+    if (locale === "ja") {
+      return translateBilingualText("ja", {
+        en: whole ? "{check} check" : "{check}: unfinished part", zhTW: whole ? "{check} check" : "{check}: unfinished part",
+      }, { check });
+    }
+    return whole ? check : `${check}: unfinished part`;
   }
-  if (locale !== "zh-TW") return dimension;
-  if (dimension === "Source audit coverage") return "原始碼稽核涵蓋範圍";
+  if (locale !== "zh-TW" && locale !== "ja") return dimension;
+  if (dimension === "Source audit coverage") {
+    return locale === "zh-TW" ? "原始碼稽核涵蓋範圍" : japaneseText(dimension);
+  }
   const lower = dimension.toLocaleLowerCase("en");
 
   const noVerdictSeparators = [": no verdict for ", ": manual review for "];
@@ -1017,7 +1024,13 @@ export const localizedCoverageDimension = (
   if (noVerdictSeparator && noVerdictAt > 0) {
     const check = dimension.slice(0, noVerdictAt);
     const control = dimension.slice(noVerdictAt + noVerdictSeparator.length);
-    if (control) return `${check}：未回傳判定的控制項 ${control}`;
+    if (control) {
+      if (locale === "zh-TW") return `${check}：未回傳判定的控制項 ${control}`;
+      const template = noVerdictSeparator === ": no verdict for "
+        ? "{check}: no verdict for {control}"
+        : "{check}: manual review for {control}";
+      return translateBilingualText("ja", { en: template, zhTW: template }, { check, control });
+    }
   }
 
   // Fixed names, in the order the more specific one has to be tried first:
@@ -1118,7 +1131,7 @@ export const localizedCoverageDimension = (
     ["additional packaged checks", "額外的內建檢查項目"],
     ["requested checks", "要求的檢查項目"],
   ] as const) {
-    if (lower.includes(needle)) return label;
+    if (lower.includes(needle)) return locale === "zh-TW" ? label : japaneseText(needle);
   }
 
   // "{check id} {kind} scan batches ({count})". The count is what makes the row
@@ -1134,9 +1147,16 @@ export const localizedCoverageDimension = (
     ] as const) {
       const head = counted[1] ?? "";
       if (head.endsWith(suffix)) {
+        const count = counted[2] ?? "";
+        const localized = locale === "zh-TW"
+          ? `${label}（${count}）`
+          : translateBilingualText("ja", {
+            en: "{label} ({count})", zhTW: "{label} ({count})",
+          }, { label: japaneseText(suffix.trimStart()), count });
         return withCheck(
           head.slice(0, head.length - suffix.length),
-          `${label}（${counted[2]}）`,
+          localized,
+          locale,
         );
       }
     }
@@ -1155,7 +1175,8 @@ export const localizedCoverageDimension = (
     if (dimension.endsWith(suffix)) {
       return withCheck(
         dimension.slice(0, dimension.length - suffix.length),
-        label,
+        locale === "zh-TW" ? label : japaneseText(suffix.trimStart()),
+        locale,
       );
     }
   }
@@ -1181,8 +1202,13 @@ export const localizedCoverageDimension = (
       ["destination outside the approved scope", "核准範圍外的目的地"],
       ["unrecorded connection refusals", "未記錄的連線拒絕"],
     ] as const) {
-      if (rest === fragment)
-        return withCheck(dimension.slice(0, separator), label);
+      if (rest === fragment) {
+        return withCheck(
+          dimension.slice(0, separator),
+          locale === "zh-TW" ? label : japaneseText(fragment),
+          locale,
+        );
+      }
     }
   }
 
@@ -1190,20 +1216,34 @@ export const localizedCoverageDimension = (
   // different row, about the whole requested list rather than one scanner.
   if (dimension.startsWith("requested check ")) {
     const engine = dimension.slice("requested check ".length);
-    if (engine) return `要求的檢查項目：${engine}`;
+    if (engine) {
+      return locale === "zh-TW"
+        ? `要求的檢查項目：${engine}`
+        : translateBilingualText("ja", {
+          en: "requested check {engine}", zhTW: "requested check {engine}",
+        }, { engine });
+    }
   }
 
-  return `涵蓋範圍細節：${dimension}`;
+  return locale === "zh-TW"
+    ? `涵蓋範圍細節：${dimension}`
+    : translateBilingualText("ja", {
+      en: "Coverage detail: {dimension}", zhTW: "Coverage detail: {dimension}",
+    }, { dimension });
 };
 
 /**
  * Names the check a composed dimension belongs to, or just the kind when the
  * producer had no id to interpolate.
  */
-const withCheck = (check: string, label: string): string => {
+const withCheck = (check: string, label: string, locale: Locale): string => {
   const trimmed = check.trim();
   if (!trimmed) return label;
-  return `${trimmed} 的${label}`;
+  return locale === "zh-TW"
+    ? `${trimmed} 的${label}`
+    : translateBilingualText("ja", {
+      en: "{check} {label}", zhTW: "{check} {label}",
+    }, { check: trimmed, label });
 };
 
 /**
@@ -1983,14 +2023,17 @@ export const testedObservationProse = (
   locale: Locale,
   english: string,
 ): string => {
-  if (english === "Recorded source audit" && locale === "zh-TW") return "已記錄的原始碼稽核";
+  if (english === "Recorded source audit") {
+    if (locale === "zh-TW") return "已記錄的原始碼稽核";
+    if (locale === "ja") return japaneseText(english);
+  }
   const trimmed = english.trim();
-  if (locale !== "zh-TW") return trimmed;
-  return (
-    TESTED_OBSERVATION_PROSE.find(
-      ([candidate]) => candidate === trimmed,
-    )?.[1] ?? english
+  if (locale !== "zh-TW" && locale !== "ja") return trimmed;
+  const match = TESTED_OBSERVATION_PROSE.find(
+    ([candidate]) => candidate === trimmed,
   );
+  if (!match) return english;
+  return locale === "zh-TW" ? match[1] : japaneseText(trimmed);
 };
 
 /**
@@ -2013,7 +2056,8 @@ const counted = (value: string): string | undefined =>
  *
  * `undefined` for a row name this build does not author.
  */
-export const testedValueZhHant = (
+const translateTestedValue = (
+  locale: "zh-TW" | "ja",
   dimension: string,
   value: string,
 ): string | undefined => {
@@ -2028,7 +2072,12 @@ export const testedValueZhHant = (
     const onAsset = `${noun} on asset `;
     if (count === undefined || !rest.startsWith(onAsset)) return undefined;
     const asset = rest.slice(onAsset.length);
-    return asset ? `對資產 ${asset} 的 ${count} 項已凍結 ${translated}` : undefined;
+    if (!asset) return undefined;
+    return locale === "zh-TW"
+      ? `對資產 ${asset} 的 ${count} 項已凍結 ${translated}`
+      : translateBilingualText("ja", {
+        en: "{count} frozen {checks} on asset {asset}", zhTW: "{count} frozen {checks} on asset {asset}",
+      }, { count, checks: japaneseText(noun), asset });
   };
   const suffixed = (text: string, suffix: string): string | undefined =>
     text.endsWith(suffix) ? text.slice(0, -suffix.length) : undefined;
@@ -2054,11 +2103,20 @@ export const testedValueZhHant = (
       const timeout = counted(timeoutText);
       const payload = counted(payloadText);
       if (timeout === undefined || payload === undefined) return undefined;
-      return `一次連線嘗試；逾時 ${timeout} 毫秒；應用層酬載 ${payload} 位元組`;
+      return locale === "zh-TW"
+        ? `一次連線嘗試；逾時 ${timeout} 毫秒；應用層酬載 ${payload} 位元組`
+        : translateBilingualText("ja", {
+          en: "one connection attempt; {timeout} ms timeout; {payload} application-payload bytes", zhTW: "one connection attempt; {timeout} ms timeout; {payload} application-payload bytes",
+        }, { timeout, payload });
     }
     case "completed check-to-target coordinate": {
       const parts = split(value, " on asset ");
-      return parts && parts[0] && parts[1] ? `${parts[0]} 對資產 ${parts[1]}` : undefined;
+      if (!parts || !parts[0] || !parts[1]) return undefined;
+      return locale === "zh-TW"
+        ? `${parts[0]} 對資產 ${parts[1]}`
+        : translateBilingualText("ja", {
+          en: "{check} on asset {asset}", zhTW: "{check} on asset {asset}",
+        }, { check: parts[0], asset: parts[1] });
     }
     case "completed planned scan batches":
     case "partly completed planned scan batches": {
@@ -2066,9 +2124,12 @@ export const testedValueZhHant = (
       if (!parts) return undefined;
       const done = counted(parts[0]);
       const total = counted(parts[1]);
-      return done !== undefined && total !== undefined
+      if (done === undefined || total === undefined) return undefined;
+      return locale === "zh-TW"
         ? `${total} 個中的 ${done} 個`
-        : undefined;
+        : translateBilingualText("ja", {
+          en: "{done} of {total}", zhTW: "{done} of {total}",
+        }, { done, total });
     }
     case "internal-device TLS vulnerability checks":
       return countedProfile("Greenbone TLS tests", "Greenbone TLS 檢查");
@@ -2090,9 +2151,12 @@ export const testedValueZhHant = (
       const prefix = "technology-aware upstream profile on exact website origin for asset ";
       if (!value.startsWith(prefix)) return undefined;
       const asset = value.slice(prefix.length);
-      return asset
+      if (!asset) return undefined;
+      return locale === "zh-TW"
         ? `依技術偵測選擇的上游設定檔，套用於資產 ${asset} 的確切網站來源`
-        : undefined;
+        : translateBilingualText("ja", {
+          en: "technology-aware upstream profile on exact website origin for asset {asset}", zhTW: "technology-aware upstream profile on exact website origin for asset {asset}",
+        }, { asset });
     }
     case "Greenbone remote vulnerability scan": {
       const prefix = "applicability-driven upstream profile on asset ";
@@ -2101,9 +2165,12 @@ export const testedValueZhHant = (
       if (!parts || !parts[0]) return undefined;
       const portsText = suffixed(parts[1], " approved TCP ports");
       const ports = portsText === undefined ? undefined : counted(portsText);
-      return ports === undefined
-        ? undefined
-        : `依適用性選擇的上游設定檔，套用於資產 ${parts[0]} 的 ${ports} 個已核准 TCP 連接埠`;
+      if (ports === undefined) return undefined;
+      return locale === "zh-TW"
+        ? `依適用性選擇的上游設定檔，套用於資產 ${parts[0]} 的 ${ports} 個已核准 TCP 連接埠`
+        : translateBilingualText("ja", {
+          en: "applicability-driven upstream profile on asset {asset} across {ports} approved TCP ports", zhTW: "applicability-driven upstream profile on asset {asset} across {ports} approved TCP ports",
+        }, { asset: parts[0], ports });
     }
     case "SMTP fixed security profile attempt": {
       const prefix = "exact ";
@@ -2114,9 +2181,12 @@ export const testedValueZhHant = (
       );
       if (!parts || !parts[1]) return undefined;
       const count = counted(parts[0]);
-      return count === undefined
-        ? undefined
-        : `對資產 ${parts[1]} 的確切上游 Greenbone SMTP 設定檔，共 ${count} 項檢查`;
+      if (count === undefined) return undefined;
+      return locale === "zh-TW"
+        ? `對資產 ${parts[1]} 的確切上游 Greenbone SMTP 設定檔，共 ${count} 項檢查`
+        : translateBilingualText("ja", {
+          en: "exact {count}-check upstream Greenbone SMTP profile on asset {asset}", zhTW: "exact {count}-check upstream Greenbone SMTP profile on asset {asset}",
+        }, { count, asset: parts[1] });
     }
     case "SMTP TLS checks with selected-run evidence": {
       const first = split(value, " of ");
@@ -2125,21 +2195,31 @@ export const testedValueZhHant = (
       const second = split(first[1], " selected TLS checks on asset ");
       if (!second || !second[1]) return undefined;
       const total = counted(second[0]);
-      return evidenced === undefined || total === undefined
-        ? undefined
-        : `對資產 ${second[1]} 已選取的 ${total} 項 TLS 檢查中的 ${evidenced} 項`;
+      if (evidenced === undefined || total === undefined) return undefined;
+      return locale === "zh-TW"
+        ? `對資產 ${second[1]} 已選取的 ${total} 項 TLS 檢查中的 ${evidenced} 項`
+        : translateBilingualText("ja", {
+          en: "{evidenced} of {total} selected TLS checks on asset {asset}", zhTW: "{evidenced} of {total} selected TLS checks on asset {asset}",
+        }, { evidenced, total, asset: second[1] });
     }
     default:
       return undefined;
   }
 };
 
+export const testedValueZhHant = (
+  dimension: string,
+  value: string,
+): string | undefined => translateTestedValue("zh-TW", dimension, value);
+
 /** A tested-dimension value in the reader's language. */
 export const localizedTestedValue = (
   locale: Locale,
   dimension: string,
   value: string,
-): string => (locale !== "zh-TW" ? value : testedValueZhHant(dimension, value) ?? value);
+): string => (locale !== "zh-TW" && locale !== "ja"
+  ? value
+  : (translateTestedValue(locale, dimension, value) ?? value));
 
 /** Fixed coverage-ledger explanations shared by the screen and case export. */
 const COVERAGE_RECORD_DETAIL_PROSE: ReadonlyArray<readonly [string, string]> = [
@@ -2209,9 +2289,11 @@ const stripFrame = (
 };
 
 const translateTrailingCoverageFrame = (
+  locale: "zh-TW" | "ja",
   english: string,
   middle: readonly [string, string],
   suffix: readonly [string, string],
+  formatJa: (sentence: string, detail: string) => string,
 ): string | undefined => {
   const index = english.lastIndexOf(middle[0]);
   if (index < 0 || !english.endsWith(suffix[0])) return undefined;
@@ -2219,33 +2301,49 @@ const translateTrailingCoverageFrame = (
   const end = suffix[0] ? english.length - suffix[0].length : english.length;
   const retained = english.slice(index + middle[0].length, end);
   if (!retained) return undefined;
-  const translatedBase = base ? translateCoverageRecordDetail(base) : "";
+  const translatedBase = base ? translateCoverageRecordDetail(locale, base) : "";
   if (base && translatedBase === undefined) return undefined;
-  return `${translatedBase ?? ""}${middle[1]}${retained}${suffix[1]}`;
+  if (locale === "zh-TW") return `${translatedBase ?? ""}${middle[1]}${retained}${suffix[1]}`;
+  return formatJa(translatedBase ?? "", retained);
 };
 
-const translateCoverageRecordDetail = (english: string): string | undefined => {
+const translateCoverageRecordDetail = (
+  locale: "zh-TW" | "ja",
+  english: string,
+): string | undefined => {
   const fixed = COVERAGE_RECORD_DETAIL_PROSE.find(
     ([candidate]) => candidate === english,
-  )?.[1];
-  if (fixed) return fixed;
+  );
+  if (fixed) return locale === "zh-TW" ? fixed[1] : japaneseText(english);
 
   const stale = translateTrailingCoverageFrame(
+    locale,
     english,
     STALE_KNOWLEDGE_APPEND,
     STALE_KNOWLEDGE_SUFFIX,
+    (sentence, detail) => translateBilingualText("ja", {
+      en: "{sentence} Explicit stale-knowledge warning: {detail}. Completion proves execution, not current knowledge.", zhTW: "{sentence} Explicit stale-knowledge warning: {detail}. Completion proves execution, not current knowledge.",
+    }, { sentence, detail }),
   );
   if (stale) return stale;
   const localhost = translateTrailingCoverageFrame(
+    locale,
     english,
     LOCALHOST_ATTEMPT_APPEND,
     LOCALHOST_ATTEMPT_SUFFIX,
+    (sentence, detail) => translateBilingualText("ja", {
+      en: "{sentence} Exact built-in localhost TCP attempt(s): {detail}. This records only those connection attempts; it does not establish that the service or computer is secure, and it does not cover other ports or hosts.", zhTW: "{sentence} Exact built-in localhost TCP attempt(s): {detail}. This records only those connection attempts; it does not establish that the service or computer is secure, and it does not cover other ports or hosts.",
+    }, { sentence, detail }),
   );
   if (localhost) return localhost;
   const provider = translateTrailingCoverageFrame(
+    locale,
     english,
     PROVIDER_DISCOVERY_APPEND,
     ["", ""],
+    (sentence, detail) => translateBilingualText("ja", {
+      en: "{sentence} Latest provider discovery: {detail}", zhTW: "{sentence} Latest provider discovery: {detail}",
+    }, { sentence, detail }),
   );
   if (provider) return provider;
 
@@ -2253,8 +2351,14 @@ const translateCoverageRecordDetail = (english: string): string | undefined => {
     ? english.slice(0, -COVERAGE_STATE_APPEND[0].length)
     : undefined;
   if (summary !== undefined) {
-    const translated = translateCoverageRecordDetail(summary);
-    if (translated) return `${translated}${COVERAGE_STATE_APPEND[1]}`;
+    const translated = translateCoverageRecordDetail(locale, summary);
+    if (translated) {
+      return locale === "zh-TW"
+        ? `${translated}${COVERAGE_STATE_APPEND[1]}`
+        : translateBilingualText("ja", {
+          en: "{sentence} This state is independent of how many findings were reported.", zhTW: "{sentence} This state is independent of how many findings were reported.",
+        }, { sentence: translated });
+    }
   }
 
   const applicabilityReason = stripFrame(
@@ -2263,7 +2367,11 @@ const translateCoverageRecordDetail = (english: string): string | undefined => {
     " This is a scoped applicability statement, not a successful scan result.",
   );
   if (applicabilityReason) {
-    return `此來源範圍明確不在本案件內：${applicabilityReason} 這是範圍適用性的說明，不是掃描成功的結果。`;
+    return locale === "zh-TW"
+      ? `此來源範圍明確不在本案件內：${applicabilityReason} 這是範圍適用性的說明，不是掃描成功的結果。`
+      : translateBilingualText("ja", {
+        en: "The source area is explicitly outside this case: {reason} This is a scoped applicability statement, not a successful scan result.", zhTW: "The source area is explicitly outside this case: {reason} This is a scoped applicability statement, not a successful scan result.",
+      }, { reason: applicabilityReason });
   }
 
   const retainedCount = stripFrame(
@@ -2272,14 +2380,22 @@ const translateCoverageRecordDetail = (english: string): string | undefined => {
     " prior asset observation(s) remain retained.",
   );
   if (retainedCount && /^\d+$/u.test(retainedCount)) {
-    return `來源已連線，且最近一次可歸屬的探索未傳回任何資產。這不是掃描成功的結果；仍保留 ${retainedCount} 筆先前的資產觀察結果。`;
+    return locale === "zh-TW"
+      ? `來源已連線，且最近一次可歸屬的探索未傳回任何資產。這不是掃描成功的結果；仍保留 ${retainedCount} 筆先前的資產觀察結果。`
+      : translateBilingualText("ja", {
+        en: "The source is connected and the latest attributable discovery returned no assets. This is not a successful scan result; {count} prior asset observation(s) remain retained.", zhTW: "The source is connected and the latest attributable discovery returned no assets. This is not a successful scan result; {count} prior asset observation(s) remain retained.",
+      }, { count: retainedCount });
   }
 
   const disconnected = english.match(
     /^The source is not currently connected \(status: (.+)\)\. Its present coverage is unknown; (\d+) previously attributed asset\(s\) are retained but do not make the source green\.$/u,
   );
   if (disconnected?.[1] && disconnected[2]) {
-    return `來源目前未連線（狀態：${disconnected[1]}）。目前的涵蓋未知；仍保留 ${disconnected[2]} 筆先前歸屬的資產，但這不會讓來源顯示為綠色。`;
+    return locale === "zh-TW"
+      ? `來源目前未連線（狀態：${disconnected[1]}）。目前的涵蓋未知；仍保留 ${disconnected[2]} 筆先前歸屬的資產，但這不會讓來源顯示為綠色。`
+      : translateBilingualText("ja", {
+        en: "The source is not currently connected (status: {status}). Its present coverage is unknown; {count} previously attributed asset(s) are retained but do not make the source green.", zhTW: "The source is not currently connected (status: {status}). Its present coverage is unknown; {count} previously attributed asset(s) are retained but do not make the source green.",
+      }, { status: disconnected[1], count: disconnected[2] });
   }
 
   const authorizationDetail = stripFrame(
@@ -2288,7 +2404,11 @@ const translateCoverageRecordDetail = (english: string): string | undefined => {
     ". Live grants are never used to reconstruct historical scan permission.",
   );
   if (authorizationDetail) {
-    return `掃描中凍結的授權證據不完整：${authorizationDetail}。絕不會用現行授權重建過去的掃描權限。`;
+    return locale === "zh-TW"
+      ? `掃描中凍結的授權證據不完整：${authorizationDetail}。絕不會用現行授權重建過去的掃描權限。`
+      : translateBilingualText("ja", {
+        en: "The scan's frozen authorization evidence is incomplete: {detail}. Live grants are never used to reconstruct historical scan permission.", zhTW: "The scan's frozen authorization evidence is incomplete: {detail}. Live grants are never used to reconstruct historical scan permission.",
+      }, { detail: authorizationDetail });
   }
 
   const compatibleCount = stripFrame(
@@ -2297,7 +2417,11 @@ const translateCoverageRecordDetail = (english: string): string | undefined => {
     " compatible engine run(s) planned for this asset completed.",
   );
   if (compatibleCount && /^\d+$/u.test(compatibleCount)) {
-    return `為此資產規劃的 ${compatibleCount} 項相容掃描工具工作皆已完成。`;
+    return locale === "zh-TW"
+      ? `為此資產規劃的 ${compatibleCount} 項相容掃描工具工作皆已完成。`
+      : translateBilingualText("ja", {
+        en: "All {count} compatible engine run(s) planned for this asset completed.", zhTW: "All {count} compatible engine run(s) planned for this asset completed.",
+      }, { count: compatibleCount });
   }
 
   const exactTaskCount = stripFrame(
@@ -2306,7 +2430,11 @@ const translateCoverageRecordDetail = (english: string): string | undefined => {
     " planned task(s) for this asset completed their exact declared dimensions.",
   );
   if (exactTaskCount && /^\d+$/u.test(exactTaskCount)) {
-    return `為此資產規劃的 ${exactTaskCount} 項工作，皆已完成各自明確宣告的檢查範圍。`;
+    return locale === "zh-TW"
+      ? `為此資產規劃的 ${exactTaskCount} 項工作，皆已完成各自明確宣告的檢查範圍。`
+      : translateBilingualText("ja", {
+        en: "All {count} planned task(s) for this asset completed their exact declared dimensions.", zhTW: "All {count} planned task(s) for this asset completed their exact declared dimensions.",
+      }, { count: exactTaskCount });
   }
 
   const incompleteReasons = stripFrame(
@@ -2315,7 +2443,11 @@ const translateCoverageRecordDetail = (english: string): string | undefined => {
     ". Only completed compatible catalog-engine runs or exact completed built-in tasks can produce scanned coverage.",
   );
   if (incompleteReasons) {
-    return `已授權的掃描未完成：${incompleteReasons}。只有已完成且相容的目錄掃描工具工作，或精確完成的內建工作，才能產生已掃描涵蓋。`;
+    return locale === "zh-TW"
+      ? `已授權的掃描未完成：${incompleteReasons}。只有已完成且相容的目錄掃描工具工作，或精確完成的內建工作，才能產生已掃描涵蓋。`
+      : translateBilingualText("ja", {
+        en: "The authorized scan is incomplete: {reasons}. Only completed compatible catalog-engine runs or exact completed built-in tasks can produce scanned coverage.", zhTW: "The authorized scan is incomplete: {reasons}. Only completed compatible catalog-engine runs or exact completed built-in tasks can produce scanned coverage.",
+      }, { reasons: incompleteReasons });
   }
   return undefined;
 };
@@ -2560,17 +2692,21 @@ export const controlMappingRationaleZhHant = (
 export const localizedControlMappingRationale = (
   rationale: string,
   locale: Locale,
-): string =>
-  locale !== "zh-TW"
-    ? rationale
-    : (controlMappingRationaleZhHant(rationale) ?? rationale);
+): string => {
+  const zh = controlMappingRationaleZhHant(rationale);
+  if (zh === undefined) return rationale;
+  if (locale === "zh-TW") return zh;
+  if (locale === "ja") return japaneseText(rationale);
+  return rationale;
+};
 
 /** A stored coverage-record explanation in the reader's language. */
 export const localizedCoverageRecordDetail = (
   detail: string,
   locale: Locale,
-): string =>
-  locale !== "zh-TW" ? detail : (translateCoverageRecordDetail(detail) ?? detail);
+): string => (locale !== "zh-TW" && locale !== "ja"
+  ? detail
+  : (translateCoverageRecordDetail(locale, detail) ?? detail));
 
 const DATA_QUALITY_WARNING_PROSE: ReadonlyArray<readonly [string, string]> = [
   [
@@ -2587,32 +2723,53 @@ const DATA_QUALITY_WARNING_PROSE: ReadonlyArray<readonly [string, string]> = [
   ],
 ];
 
-const translateDataQualityWarning = (english: string): string | undefined => {
+const translateDataQualityWarning = (
+  locale: "zh-TW" | "ja",
+  english: string,
+): string | undefined => {
   const fixed = DATA_QUALITY_WARNING_PROSE.find(
     ([candidate]) => candidate === english,
-  )?.[1];
-  if (fixed) return fixed;
+  );
+  if (fixed) return locale === "zh-TW" ? fixed[1] : japaneseText(english);
   const missingSnapshot = stripFrame(
     english,
     "Finding ",
     " selected-run presentation snapshot: unavailable. Display wording: current canonical text.",
   );
-  if (missingSnapshot)
-    return `問題 ${missingSnapshot} 所選輪次呈現快照：無法取得；顯示文字：目前正式版本。`;
+  if (missingSnapshot) {
+    if (locale === "zh-TW") {
+      return `問題 ${missingSnapshot} 所選輪次呈現快照：無法取得；顯示文字：目前正式版本。`;
+    }
+    const template =
+      "Finding {finding} selected-run presentation snapshot: unavailable. Display wording: current canonical text.";
+    return translateBilingualText("ja", { en: template, zhTW: template }, {
+      finding: missingSnapshot,
+    });
+  }
   const observationOnly = stripFrame(
     english,
     "Finding ",
     " presentation detail: unavailable. Retained run observation: available.",
   );
-  if (observationOnly)
-    return `問題 ${observationOnly} 呈現細節：無法取得；保留的輪次觀察：可用。`;
+  if (observationOnly) {
+    if (locale === "zh-TW") {
+      return `問題 ${observationOnly} 呈現細節：無法取得；保留的輪次觀察：可用。`;
+    }
+    const template =
+      "Finding {finding} presentation detail: unavailable. Retained run observation: available.";
+    return translateBilingualText("ja", { en: template, zhTW: template }, {
+      finding: observationOnly,
+    });
+  }
   return undefined;
 };
 
 export const localizedDataQualityWarning = (
   warning: string,
   locale: Locale,
-): string => locale !== "zh-TW" ? warning : (translateDataQualityWarning(warning) ?? warning);
+): string => (locale !== "zh-TW" && locale !== "ja"
+  ? warning
+  : (translateDataQualityWarning(locale, warning) ?? warning));
 
 /** Next action when every attached check failed to produce observations. */
 export const INCOMPLETE_CHECK_CONFIRM_ACTION =
@@ -2767,14 +2924,31 @@ const REQUESTED_LIMIT_KIND_SUFFIXES: ReadonlyArray<readonly [string, string]> = 
  * The label for a limit kind this build authors, if it is one. Three names are
  * fixed strings rather than composed ones, so they never carry a holder.
  */
-const requestedLimitKindZh = (kind: string): string | undefined => {
-  if (kind === "declared invocation limit") return "宣告的呼叫次數上限";
-  if (kind === "remaining invocations") return "剩餘呼叫次數";
-  if (kind === "issued invocations") return "已發出的呼叫次數";
-  if (kind === "endpoint") return "連線端點";
-  if (kind === "connection timeout") return "連線逾時限制";
-  if (kind === "application payload") return "應用資料量";
-  return REQUESTED_LIMIT_KIND_SUFFIXES.find(([suffix]) => suffix === kind)?.[1];
+const requestedLimitKind = (
+  kind: string,
+  locale: "zh-TW" | "ja",
+): string | undefined => {
+  if (kind === "declared invocation limit") {
+    return locale === "zh-TW" ? "宣告的呼叫次數上限" : japaneseText(kind);
+  }
+  if (kind === "remaining invocations") {
+    return locale === "zh-TW" ? "剩餘呼叫次數" : japaneseText(kind);
+  }
+  if (kind === "issued invocations") {
+    return locale === "zh-TW" ? "已發出的呼叫次數" : japaneseText("Issued invocations");
+  }
+  if (kind === "endpoint") {
+    return locale === "zh-TW" ? "連線端點" : japaneseText(kind);
+  }
+  if (kind === "connection timeout") {
+    return locale === "zh-TW" ? "連線逾時限制" : japaneseText(kind);
+  }
+  if (kind === "application payload") {
+    return locale === "zh-TW" ? "應用資料量" : japaneseText(kind);
+  }
+  const suffix = REQUESTED_LIMIT_KIND_SUFFIXES.find(([candidate]) => candidate === kind);
+  if (!suffix) return undefined;
+  return locale === "zh-TW" ? suffix[1] : japaneseText(kind);
 };
 
 /**
@@ -2806,8 +2980,16 @@ export const localizedRequestedLimitKind = (
   kind: string,
   locale: Locale,
 ): string => {
-  const label = requestedLimitKindZh(kind);
-  if (locale === "zh-TW") return label ?? `本輪使用的限制：${kind}`;
+  if (locale === "zh-TW" || locale === "ja") {
+    const label = requestedLimitKind(kind, locale);
+    if (label !== undefined) return label;
+    return locale === "zh-TW"
+      ? `本輪使用的限制：${kind}`
+      : translateBilingualText("ja", {
+        en: "Limit used in this run: {kind}", zhTW: "Limit used in this run: {kind}",
+      }, { kind });
+  }
+  const label = requestedLimitKind(kind, "zh-TW");
   return label === undefined
     ? kind
     : `${kind.charAt(0).toLocaleUpperCase("en")}${kind.slice(1)}`;
@@ -2828,9 +3010,15 @@ export const localizedRequestedLimitName = (
   name: string,
   locale: Locale,
 ): string => {
-  if (locale !== "zh-TW") return name;
+  if (locale !== "zh-TW" && locale !== "ja") return name;
   const { holder, kind } = requestedLimitParts(name);
-  return withIdentifier(localizedRequestedLimitKind(kind, locale), holder);
+  const localizedKind = localizedRequestedLimitKind(kind, locale);
+  if (locale === "zh-TW") return withIdentifier(localizedKind, holder);
+  return holder
+    ? translateBilingualText("ja", {
+      en: "{kind} ({holder})", zhTW: "{kind} ({holder})",
+    }, { kind: localizedKind, holder })
+    : localizedKind;
 };
 
 const REQUESTED_LIMIT_VALUE_UNITS: ReadonlyArray<readonly [string, string]> = [
@@ -2850,10 +3038,16 @@ export const localizedRequestedLimitValue = (
   value: string,
   locale: Locale,
 ): string => {
-  if (locale !== "zh-TW") return value;
+  if (locale !== "zh-TW" && locale !== "ja") return value;
   for (const [englishUnit, chineseUnit] of REQUESTED_LIMIT_VALUE_UNITS) {
     const match = value.match(new RegExp(`^(\\d+)${englishUnit}$`, "u"));
-    if (match?.[1]) return `${match[1]}${chineseUnit}`;
+    if (match?.[1]) {
+      return locale === "zh-TW"
+        ? `${match[1]}${chineseUnit}`
+        : translateBilingualText("ja", {
+          en: `{value}${englishUnit}`, zhTW: `{value}${englishUnit}`,
+        }, { value: match[1] });
+    }
   }
 
   const [requests, concurrency, extra] = value.split(REQUEST_RATE_MIDDLE[0]);
@@ -2862,7 +3056,11 @@ export const localizedRequestedLimitValue = (
     /^\d+$/u.test(requests ?? "") &&
     /^\d+$/u.test(concurrency ?? "")
   ) {
-    return `每秒 ${requests}${REQUEST_RATE_MIDDLE[1]}${concurrency}`;
+    return locale === "zh-TW"
+      ? `每秒 ${requests}${REQUEST_RATE_MIDDLE[1]}${concurrency}`
+      : translateBilingualText("ja", {
+        en: "{requests} per second, concurrency {concurrency}", zhTW: "{requests} per second, concurrency {concurrency}",
+      }, { requests: requests ?? "", concurrency: concurrency ?? "" });
   }
 
   // Identifier-shaped values are intentionally returned unchanged. Keeping
