@@ -942,9 +942,15 @@ fn trusted_git_binary() -> Option<PathBuf> {
 /// only this fixed environment: no user or system configuration, no prompt, no
 /// pager, no transport of any kind, and no on-demand fetch of missing objects.
 /// Repository configuration therefore cannot make the scanner start a program
-/// or contact a network. Build every Git invocation in this crate here.
+/// or contact a network. On Unix, each child leads a new process group so a
+/// bounded probe can stop its descendants. Build every Git invocation here.
 pub(crate) fn trusted_git_command(binary: &Path) -> Command {
     let mut command = Command::new(binary);
+    #[cfg(unix)]
+    {
+        use std::os::unix::process::CommandExt;
+        command.process_group(0);
+    }
     command
         .env_clear()
         .env("LC_ALL", "C")
@@ -1016,22 +1022,92 @@ fn collect_bounded_child_output(
         let _ = sender.send(result);
     });
     let deadline = Instant::now().checked_add(timeout)?;
-    let status = loop {
-        match child.try_wait() {
-            Ok(Some(status)) => break status,
-            Ok(None) if Instant::now() < deadline => {
-                thread::sleep(Duration::from_millis(10));
-            }
-            _ => {
-                let _ = child.kill();
-                let _ = child.wait();
-                return None;
+    #[cfg(unix)]
+    {
+        loop {
+            match child_exited_without_reaping(&child) {
+                Ok(true) => break,
+                Ok(false) if Instant::now() < deadline => {
+                    thread::sleep(Duration::from_millis(10));
+                }
+                Ok(false) => {
+                    terminate_git_probe(&mut child);
+                    return None;
+                }
+                Err(_) => {
+                    // An ECHILD error, for example, cannot establish that the
+                    // leader is still unreaped, so do not signal its group.
+                    let _ = child.kill();
+                    let _ = child.wait();
+                    return None;
+                }
             }
         }
-    };
-    let remaining = deadline.saturating_duration_since(Instant::now());
-    let bytes = receiver.recv_timeout(remaining).ok()??;
-    Some((status, bytes))
+        let remaining = deadline.saturating_duration_since(Instant::now());
+        match receiver.recv_timeout(remaining) {
+            Ok(Some(bytes)) => Some((child.wait().ok()?, bytes)),
+            _ => {
+                terminate_git_probe(&mut child);
+                None
+            }
+        }
+    }
+    #[cfg(not(unix))]
+    {
+        let status = loop {
+            match child.try_wait() {
+                Ok(Some(status)) => break status,
+                Ok(None) if Instant::now() < deadline => {
+                    thread::sleep(Duration::from_millis(10));
+                }
+                _ => {
+                    let _ = child.kill();
+                    let _ = child.wait();
+                    return None;
+                }
+            }
+        };
+        let remaining = deadline.saturating_duration_since(Instant::now());
+        let bytes = receiver.recv_timeout(remaining).ok()??;
+        Some((status, bytes))
+    }
+}
+
+#[cfg(unix)]
+fn child_exited_without_reaping(child: &std::process::Child) -> io::Result<bool> {
+    // WNOHANG leaves si_pid zero when there is no exit to report. WNOWAIT
+    // keeps the leader's PID reserved until its output has been collected.
+    loop {
+        let mut info: libc::siginfo_t = unsafe { std::mem::zeroed() };
+        let result = unsafe {
+            libc::waitid(
+                libc::P_PID,
+                child.id() as libc::id_t,
+                &mut info,
+                libc::WEXITED | libc::WNOHANG | libc::WNOWAIT,
+            )
+        };
+        if result != -1 {
+            return Ok(unsafe { info.si_pid() } != 0);
+        }
+        let error = io::Error::last_os_error();
+        if error.kind() != io::ErrorKind::Interrupted {
+            return Err(error);
+        }
+    }
+}
+
+#[cfg(unix)]
+fn terminate_git_probe(child: &mut std::process::Child) {
+    // The leader has not been reaped, so its PID cannot identify a new group.
+    // Other callers may not have created a group; still kill the direct child.
+    if let Ok(process_group) = i32::try_from(child.id()) {
+        unsafe {
+            libc::kill(-process_group, libc::SIGKILL);
+        }
+    }
+    let _ = child.kill();
+    let _ = child.wait();
 }
 
 fn parse_git_tracked_inventory(bytes: &[u8]) -> Option<BTreeSet<String>> {
@@ -3225,6 +3301,222 @@ mod tests {
         let _ = hung_reader.reserve().unwrap();
         hung_reader.consume(Duration::from_millis(1), None);
         assert_eq!(hung_reader.reserve(), None);
+    }
+
+    #[cfg(unix)]
+    struct ProbeProcessGuard {
+        child: Option<std::process::Child>,
+        leader_pid: libc::pid_t,
+        leader_reaped: bool,
+        grandchild_pid: Option<libc::pid_t>,
+    }
+
+    #[cfg(unix)]
+    fn wait_for_fixture_child(pid: libc::pid_t, options: libc::c_int) -> libc::pid_t {
+        let mut status = 0;
+        loop {
+            let result = unsafe { libc::waitpid(pid, &mut status, options) };
+            if result != -1 || io::Error::last_os_error().kind() != io::ErrorKind::Interrupted {
+                return result;
+            }
+        }
+    }
+
+    #[cfg(unix)]
+    impl ProbeProcessGuard {
+        fn new(child: std::process::Child) -> Self {
+            Self {
+                leader_pid: child.id() as libc::pid_t,
+                child: Some(child),
+                leader_reaped: false,
+                grandchild_pid: None,
+            }
+        }
+
+        fn record_grandchild(&mut self, pid_file: &Path) -> libc::pid_t {
+            let deadline = Instant::now() + Duration::from_secs(2);
+            loop {
+                if let Ok(contents) = fs::read_to_string(pid_file)
+                    && let Ok(pid) = contents.trim().parse::<libc::pid_t>()
+                    && pid > 1
+                {
+                    self.grandchild_pid = Some(pid);
+                    return pid;
+                }
+                assert!(
+                    Instant::now() < deadline,
+                    "fixture did not record its child"
+                );
+                thread::sleep(Duration::from_millis(10));
+            }
+        }
+
+        fn assert_leader_reaped(&mut self) {
+            let result = wait_for_fixture_child(self.leader_pid, libc::WNOHANG);
+            let error = io::Error::last_os_error().raw_os_error();
+            assert_eq!((result, error), (-1, Some(libc::ECHILD)));
+            self.leader_reaped = true;
+        }
+    }
+
+    #[cfg(unix)]
+    impl Drop for ProbeProcessGuard {
+        fn drop(&mut self) {
+            if let Some(mut child) = self.child.take() {
+                // The collector never took this child, so it is still unreaped.
+                unsafe {
+                    libc::kill(-self.leader_pid, libc::SIGKILL);
+                }
+                let _ = child.kill();
+                let _ = child.wait();
+            } else if !self.leader_reaped {
+                // Independently clean up a leader the collector failed to reap.
+                if wait_for_fixture_child(self.leader_pid, libc::WNOHANG) == 0 {
+                    unsafe {
+                        libc::kill(self.leader_pid, libc::SIGKILL);
+                    }
+                    wait_for_fixture_child(self.leader_pid, 0);
+                }
+            }
+            // After collection, only target the recorded descendant while it
+            // still belongs to this fixture's original process group.
+            if let Some(pid) = self.grandchild_pid
+                && unsafe { libc::getpgid(pid) } == self.leader_pid
+            {
+                unsafe {
+                    libc::kill(pid, libc::SIGKILL);
+                }
+            }
+        }
+    }
+
+    #[cfg(unix)]
+    fn probe_grandchild_finished(pid: libc::pid_t) -> bool {
+        #[cfg(target_os = "linux")]
+        {
+            match fs::read_to_string(format!("/proc/{pid}/stat")) {
+                Ok(stat) => {
+                    stat.rsplit_once(") ")
+                        .and_then(|(_, fields)| fields.chars().next())
+                        == Some('Z')
+                }
+                Err(error) => error.kind() == io::ErrorKind::NotFound,
+            }
+        }
+        #[cfg(not(target_os = "linux"))]
+        {
+            (unsafe { libc::kill(pid, 0) }) == -1
+                && io::Error::last_os_error().raw_os_error() == Some(libc::ESRCH)
+        }
+    }
+
+    #[cfg(unix)]
+    fn assert_probe_grandchild_finished(fixture: &mut ProbeProcessGuard, pid: libc::pid_t) {
+        let deadline = Instant::now() + Duration::from_secs(2);
+        loop {
+            if probe_grandchild_finished(pid) {
+                fixture.grandchild_pid = None;
+                return;
+            }
+            assert!(
+                Instant::now() < deadline,
+                "grandchild {pid} is still running"
+            );
+            thread::sleep(Duration::from_millis(10));
+        }
+    }
+
+    #[cfg(unix)]
+    fn spawn_git_probe_fixture(script: &str, pid_file: &Path) -> ProbeProcessGuard {
+        let child = trusted_git_command(Path::new("/bin/sh"))
+            .args(["-c", script, "probe"])
+            .arg(pid_file)
+            .stdin(Stdio::null())
+            .stdout(Stdio::piped())
+            .stderr(Stdio::null())
+            .spawn()
+            .expect("spawn Git probe fixture");
+        ProbeProcessGuard::new(child)
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn git_probe_timeout_stops_running_leader_and_grandchild() {
+        let temporary = crate::test_temp::tempdir().expect("probe fixture directory");
+        let pid_file = temporary.path().join("grandchild.pid");
+        let mut fixture = spawn_git_probe_fixture(
+            "/bin/sleep 30 & printf '%s\\n' \"$!\" > \"$1\"; exec /bin/sleep 30",
+            &pid_file,
+        );
+        let pid = fixture.record_grandchild(&pid_file);
+        assert!(!probe_grandchild_finished(pid));
+
+        let child = fixture.child.take().unwrap();
+        assert!(collect_bounded_child_output(child, 64, Duration::from_millis(200)).is_none());
+        fixture.assert_leader_reaped();
+        assert_probe_grandchild_finished(&mut fixture, pid);
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn git_probe_timeout_stops_grandchild_holding_exited_leaders_stdout() {
+        let temporary = crate::test_temp::tempdir().expect("probe fixture directory");
+        let pid_file = temporary.path().join("grandchild.pid");
+        let mut fixture = spawn_git_probe_fixture(
+            "/bin/sleep 30 & printf '%s\\n' \"$!\" > \"$1\"; exit 0",
+            &pid_file,
+        );
+        let pid = fixture.record_grandchild(&pid_file);
+        let deadline = Instant::now() + Duration::from_secs(2);
+        while !child_exited_without_reaping(fixture.child.as_ref().unwrap()).unwrap() {
+            assert!(Instant::now() < deadline, "fixture leader did not exit");
+            thread::sleep(Duration::from_millis(10));
+        }
+        assert!(!probe_grandchild_finished(pid));
+
+        let child = fixture.child.take().unwrap();
+        assert!(collect_bounded_child_output(child, 64, Duration::from_millis(200)).is_none());
+        fixture.assert_leader_reaped();
+        assert_probe_grandchild_finished(&mut fixture, pid);
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn git_probe_preserves_quick_child_status_and_bounded_bytes() {
+        for (limit, expected, code) in [(64, &b"inventory\n"[..], 0), (3, &b"inve"[..], 7)] {
+            let child = trusted_git_command(Path::new("/bin/sh"))
+                .args(["-c", "printf 'inventory\\n'; exit \"$1\"", "probe"])
+                .arg(code.to_string())
+                .stdin(Stdio::null())
+                .stdout(Stdio::piped())
+                .stderr(Stdio::null())
+                .spawn()
+                .expect("spawn quick probe fixture");
+            let mut fixture = ProbeProcessGuard::new(child);
+            let child = fixture.child.take().unwrap();
+            let (status, bytes) =
+                collect_bounded_child_output(child, limit, Duration::from_secs(2))
+                    .expect("collect quick probe");
+            fixture.assert_leader_reaped();
+            assert_eq!(status.code(), Some(code));
+            assert_eq!(bytes, expected);
+        }
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn git_probe_timeout_reaps_a_child_without_its_own_process_group() {
+        let child = Command::new("/bin/sleep")
+            .arg("30")
+            .stdin(Stdio::null())
+            .stdout(Stdio::piped())
+            .stderr(Stdio::null())
+            .spawn()
+            .expect("spawn ungrouped probe fixture");
+        let mut fixture = ProbeProcessGuard::new(child);
+        let child = fixture.child.take().unwrap();
+        assert!(collect_bounded_child_output(child, 64, Duration::from_millis(200)).is_none());
+        fixture.assert_leader_reaped();
     }
 
     #[cfg(unix)]
