@@ -34723,16 +34723,24 @@ mod tests {
         // Nothing ran without a verdict: unchanged.
         assert_eq!(named_coverage_items(10, 0, en), "10 coverage gaps");
         assert_eq!(named_coverage_items(1, 0, en), "1 coverage gap");
-        assert_eq!(named_coverage_items(10, 0, zh), "10 項覆蓋缺口");
+        assert_eq!(named_coverage_items(10, 0, zh), "10 項涵蓋缺口");
 
-        // Part of the list did: named the way the tile labels it.
+        // Part of the list did: both parts are named, so neither reads as the other.
         assert_eq!(
             named_coverage_items(10, 1, en),
-            "10 unfinished checks and results to review"
+            "9 coverage gaps and 1 check without a verdict"
         );
         assert_eq!(
             named_coverage_items(10, 1, zh),
-            "10 項未完成的檢查與待判讀結果"
+            "9 項涵蓋缺口與 1 項未回傳判定的檢查"
+        );
+        assert_eq!(
+            named_coverage_items(2, 1, en),
+            "1 coverage gap and 1 check without a verdict"
+        );
+        assert_eq!(
+            named_coverage_items(5, 2, en),
+            "3 coverage gaps and 2 checks without verdicts"
         );
 
         // All of it did: nothing here is a coverage gap, so it is not called one.
@@ -34744,7 +34752,7 @@ mod tests {
             named_coverage_items(3, 3, zh),
         ] {
             assert!(!named.contains("coverage gap"));
-            assert!(!named.contains("覆蓋缺口"));
+            assert!(!named.contains("涵蓋缺口"));
         }
     }
 
@@ -35263,6 +35271,405 @@ mod tests {
         case.status = CaseStatus::ReadyForHandoff;
         case.updated_at = finished;
         (case, run_id)
+    }
+
+    #[test]
+    fn demo_summary_distinguishes_unfinished_checks_from_coverage_gaps() {
+        let case = crate::demo::build_demo_case();
+        let run_id = &case.scan_runs[0].id;
+        for (locale, expected, wrong) in [
+            (
+                crate::export::ReportLocale::En,
+                "1 check did not complete and 1 coverage gap remains. Those areas were not tested and cannot be read as clear.",
+                "2 checks did not complete",
+            ),
+            (
+                crate::export::ReportLocale::ZhHant,
+                "有 1 項檢查沒有完成，另有 1 項涵蓋缺口——這些範圍未經測試，不能視為安全。",
+                "有 2 項檢查沒有完成",
+            ),
+        ] {
+            let html = String::from_utf8(
+                html_report_bytes(
+                    &case,
+                    run_id,
+                    &ExportOptions {
+                        locale,
+                        ..ExportOptions::default()
+                    },
+                )
+                .unwrap(),
+            )
+            .unwrap();
+            let first = html.split("<details class=\"technical\"").next().unwrap();
+            assert!(first.contains(expected), "{first}");
+            assert!(!first.contains(wrong));
+        }
+    }
+
+    #[test]
+    fn unfinished_shared_check_counts_each_asset_in_summary_and_cover() {
+        let mut case = crate::demo::build_demo_case();
+        let run = &mut case.scan_runs[0];
+        let second_asset = run.engine_runs[0].asset_ids[0].clone();
+        run.engine_runs[1].asset_ids.push(second_asset);
+        let html = String::from_utf8(
+            html_report_bytes(&case, &case.scan_runs[0].id, &ExportOptions::default()).unwrap(),
+        )
+        .unwrap();
+        let primary = html.split("<details class=\"technical\"").next().unwrap();
+        assert!(primary.contains("2 checks did not complete"));
+        assert!(primary.contains(
+            "<span class=\"kpi__value\">2</span><span class=\"kpi__label\">Timed out</span>"
+        ));
+        assert!(primary.contains("2 checks did not complete and 1 coverage gap remains."));
+    }
+
+    #[test]
+    fn gap_only_failures_are_not_counted_as_checks_and_manual_review_stays_distinct() {
+        let fixture = Fixture::new();
+        let (mut report, asset_id) =
+            one_asset_one_completed_check_report(&fixture, Severity::Medium);
+        report.coverage_gaps = vec![CoverageGap {
+            kind: CoverageGapKind::Failed,
+            class: CoverageGapClass::CoverageLoss,
+            task_id: Some("unrecorded-task".into()),
+            target_asset_ids: vec![asset_id],
+            dimension: "unrecorded check".into(),
+            reason: "The check was not recorded.".into(),
+            next_action_code: NextActionCode::RetryCheck,
+            next_action: "Retry this check.".into(),
+            unattributed: None,
+        }];
+        report.coverage_counts.failed = 1;
+        let en = HtmlReportCatalog::new(crate::export::ReportLocale::En);
+        let zh = HtmlReportCatalog::new(crate::export::ReportLocale::ZhHant);
+        let summary = html_executive_summary(&report, &report.coverage_counts, 1, en);
+        assert!(summary.contains("1 coverage gap remains."));
+        assert!(!summary.contains("check did not complete"));
+
+        report.coverage_gaps[0].kind = CoverageGapKind::ManualReview;
+        report.coverage_counts.failed = 0;
+        report.coverage_counts.manual_review = 1;
+        let en_summary = html_executive_summary(&report, &report.coverage_counts, 1, en);
+        let zh_summary = html_executive_summary(&report, &report.coverage_counts, 1, zh);
+        assert!(en_summary.contains("1 check without a verdict remains. None of that reached a tested result, so none of it can be read as clear."));
+        assert!(
+            zh_summary.contains("有 1 項未回傳判定的檢查——這些都沒有得到測試結果，不能視為安全。")
+        );
+    }
+
+    #[test]
+    fn unbound_unfinished_checks_count_once_and_mixed_remainders_name_both_parts() {
+        let fixture = Fixture::new();
+        let (mut report, asset_id) =
+            one_asset_one_completed_check_report(&fixture, Severity::Medium);
+        let mut unbound = report.actual.checks[0].clone();
+        unbound.task_id = "unbound-task".into();
+        unbound.status = CoverageDimensionStatus::Failed;
+        unbound.target_asset_ids.clear();
+        report.actual.checks.push(unbound);
+        let restating = CoverageGap {
+            kind: CoverageGapKind::Failed,
+            class: CoverageGapClass::CoverageLoss,
+            task_id: Some("unbound-task".into()),
+            target_asset_ids: Vec::new(),
+            dimension: "unbound check".into(),
+            reason: "The check failed.".into(),
+            next_action_code: NextActionCode::RetryCheck,
+            next_action: "Retry this check.".into(),
+            unattributed: None,
+        };
+        report.coverage_gaps = vec![restating.clone()];
+        report.coverage_counts.failed = 1;
+        let en = HtmlReportCatalog::new(crate::export::ReportLocale::En);
+        let zh = HtmlReportCatalog::new(crate::export::ReportLocale::ZhHant);
+        let summary = html_executive_summary(&report, &report.coverage_counts, 1, en);
+        assert!(
+            summary.contains("1 check did not complete. Those areas were not tested"),
+            "{summary}"
+        );
+        assert!(!summary.contains("coverage gap"), "{summary}");
+
+        report.coverage_gaps.push(CoverageGap {
+            kind: CoverageGapKind::NotTested,
+            task_id: None,
+            target_asset_ids: vec![asset_id.clone()],
+            ..restating.clone()
+        });
+        report.coverage_gaps.push(CoverageGap {
+            kind: CoverageGapKind::ManualReview,
+            task_id: None,
+            target_asset_ids: vec![asset_id],
+            ..restating
+        });
+        report.coverage_counts.not_tested = 1;
+        report.coverage_counts.manual_review = 1;
+        let en_summary = html_executive_summary(&report, &report.coverage_counts, 1, en);
+        let zh_summary = html_executive_summary(&report, &report.coverage_counts, 1, zh);
+        assert!(
+            en_summary.contains("1 check did not complete; 1 coverage gap and 1 check without a verdict remain. None of that reached a tested result, so none of it can be read as clear."),
+            "{en_summary}"
+        );
+        assert!(
+            zh_summary.contains("有 1 項檢查沒有完成，另有 1 項涵蓋缺口與 1 項未回傳判定的檢查——這些都沒有得到測試結果，不能視為安全。"),
+            "{zh_summary}"
+        );
+    }
+
+    #[test]
+    fn cancelled_checks_are_counted_on_the_cover_and_in_the_summary() {
+        let mut case = crate::demo::build_demo_case();
+        let task = &mut case.scan_runs[0].engine_runs[1];
+        task.status = EngineRunStatus::Cancelled;
+        task.error_code = None;
+        let html = String::from_utf8(
+            html_report_bytes(&case, &case.scan_runs[0].id, &ExportOptions::default()).unwrap(),
+        )
+        .unwrap();
+        let primary = html.split("<details class=\"technical\"").next().unwrap();
+        assert!(primary.contains(
+            "<span class=\"kpi__value\">1</span><span class=\"kpi__label\">Cancelled</span>"
+        ));
+        assert!(primary.contains("1 check did not complete and 1 coverage gap remains."));
+    }
+
+    #[test]
+    fn mapped_framework_attribution_follows_terms_and_states_are_clear() {
+        let mut case = crate::demo::build_demo_case();
+        case.scan_runs[0].ai_system_applicability = AiSystemApplicabilityAnswer::Unknown;
+        case.scan_runs[0].ai_generated_artifact = AiGeneratedArtifactAnswer::Unknown;
+        let run_id = &case.scan_runs[0].id;
+        for (locale, terms, attribution, state, explanation) in [
+            (
+                crate::export::ReportLocale::En,
+                "Report terms",
+                "Framework sources and attribution",
+                "Unknown — this run&#39;s checks do not cover this framework",
+                "It is not marked as not applicable.",
+            ),
+            (
+                crate::export::ReportLocale::ZhHant,
+                "報告條款",
+                "框架來源與出處聲明",
+                "未知——本輪檢查未涵蓋此框架",
+                "並非標示為不適用。",
+            ),
+        ] {
+            let html = String::from_utf8(
+                html_report_bytes(
+                    &case,
+                    run_id,
+                    &ExportOptions {
+                        locale,
+                        ..ExportOptions::default()
+                    },
+                )
+                .unwrap(),
+            )
+            .unwrap();
+            let framework = html
+                .split("<section class=\"framework-coverage\">")
+                .nth(1)
+                .unwrap()
+                .split("</section>")
+                .next()
+                .unwrap();
+            assert!(framework.contains("<table class=\"framework-overview\">"));
+            assert!(framework.contains(state), "{state}");
+            assert!(framework.contains(explanation), "{explanation}");
+            assert!(!framework.contains(attribution));
+            let footer = html.split("<footer>").nth(1).unwrap();
+            assert!(footer.find(attribution).unwrap() > footer.find(terms).unwrap());
+            assert!(
+                !footer.contains(
+                    "Framework sources and attribution are shown in the framework section."
+                )
+            );
+            assert!(!footer.contains("框架來源與出處聲明顯示於框架區塊。"));
+        }
+    }
+
+    #[test]
+    fn findings_without_framework_mappings_use_the_zero_mapped_section() {
+        let mut case = crate::demo::build_demo_case();
+        for finding in &mut case.findings {
+            finding.control_references.clear();
+        }
+        for observation in &mut case.finding_observations {
+            if let Some(finding) = &mut observation.finding_snapshot {
+                finding.control_references.clear();
+            }
+        }
+        for (locale, sentence) in [
+            (
+                crate::export::ReportLocale::En,
+                "None of the findings in this run map to a security framework.",
+            ),
+            (
+                crate::export::ReportLocale::ZhHant,
+                "本輪的發現都沒有對應到資安框架。",
+            ),
+        ] {
+            let html = String::from_utf8(
+                html_report_bytes(
+                    &case,
+                    &case.scan_runs[0].id,
+                    &ExportOptions {
+                        locale,
+                        ..ExportOptions::default()
+                    },
+                )
+                .unwrap(),
+            )
+            .unwrap();
+            let framework = html
+                .split("<section class=\"framework-coverage\">")
+                .nth(1)
+                .unwrap()
+                .split("</section>")
+                .next()
+                .unwrap();
+            assert!(framework.contains(&format!("<p>{sentence}</p>")));
+            assert!(!framework.contains("No problems were found"));
+            assert!(!framework.contains("未發現問題"));
+            assert!(!framework.contains("<table"));
+            let footer = html.split("<footer>").nth(1).unwrap();
+            assert!(!footer.to_ascii_lowercase().contains("framework"));
+            assert!(!footer.contains("框架"));
+        }
+    }
+
+    #[test]
+    fn clean_report_framework_section_has_one_sentence_and_no_framework_terms() {
+        let fixture = Fixture::new();
+        let (mut case, run_id) = failed_gitleaks_only_case(&fixture);
+        let task = &mut case.scan_runs[0].engine_runs[0];
+        task.status = EngineRunStatus::Completed;
+        task.phase = "completed".into();
+        task.error_message = None;
+        task.exit_code = Some(0);
+        for (locale, heading, sentence) in [
+            (
+                crate::export::ReportLocale::En,
+                "Where this lands in each framework",
+                "No problems were found, so there is nothing to map to security frameworks.",
+            ),
+            (
+                crate::export::ReportLocale::ZhHant,
+                "對應到各框架的位置",
+                "未發現問題，因此沒有可對應到資安框架的項目。",
+            ),
+        ] {
+            let html = String::from_utf8(
+                html_report_bytes(
+                    &case,
+                    &run_id,
+                    &ExportOptions {
+                        locale,
+                        ..ExportOptions::default()
+                    },
+                )
+                .unwrap(),
+            )
+            .unwrap();
+            let primary = html.split("<details class=\"technical\"").next().unwrap();
+            assert!(!primary.contains("coverage is incomplete"));
+            assert!(!primary.contains("覆蓋並不完整"));
+            assert!(primary.contains(&format!("<section class=\"framework-coverage\"><h2>{heading}</h2><p>{sentence}</p></section>")));
+            let footer = html.split("<footer>").nth(1).unwrap();
+            assert!(!footer.to_ascii_lowercase().contains("framework"));
+            assert!(!footer.contains("框架"));
+        }
+    }
+
+    #[test]
+    fn run_without_a_completed_security_check_does_not_claim_no_problems_in_frameworks() {
+        let fixture = Fixture::new();
+        let (case, run_id) = failed_gitleaks_only_case(&fixture);
+        for (locale, sentence, claim) in [
+            (
+                crate::export::ReportLocale::En,
+                "No security check completed, so there is nothing to map to security frameworks.",
+                "No problems were found",
+            ),
+            (
+                crate::export::ReportLocale::ZhHant,
+                "沒有完成的資安檢查，因此沒有可對應到資安框架的項目。",
+                "未發現問題，因此",
+            ),
+        ] {
+            let html = String::from_utf8(
+                html_report_bytes(
+                    &case,
+                    &run_id,
+                    &ExportOptions {
+                        locale,
+                        ..ExportOptions::default()
+                    },
+                )
+                .unwrap(),
+            )
+            .unwrap();
+            let framework = html
+                .split("<section class=\"framework-coverage\">")
+                .nth(1)
+                .unwrap()
+                .split("</section>")
+                .next()
+                .unwrap();
+            assert!(
+                framework.contains(&format!("<p>{sentence}</p>")),
+                "{framework}"
+            );
+            assert!(!framework.contains(claim), "{framework}");
+        }
+    }
+
+    #[test]
+    fn clean_report_next_steps_are_actions_in_both_languages_without_changing_json() {
+        let fixture = Fixture::new();
+        let (mut case, run_id) = failed_gitleaks_only_case(&fixture);
+        let task = &mut case.scan_runs[0].engine_runs[0];
+        task.status = EngineRunStatus::Completed;
+        task.phase = "completed".into();
+        task.error_message = None;
+        task.exit_code = Some(0);
+        let report = build_beginner_master_report(&case, &run_id).unwrap();
+        assert_eq!(
+            report.next_steps[0].reason,
+            "Actionable findings in completed checks: 0."
+        );
+        for (locale, step, reason) in [
+            (
+                crate::export::ReportLocale::En,
+                "check that the scan covered everything you meant to include.",
+                "No problems were found in the completed checks.",
+            ),
+            (
+                crate::export::ReportLocale::ZhHant,
+                "確認掃描範圍已涵蓋你要檢查的所有內容。",
+                "已完成的檢查沒有發現問題。",
+            ),
+        ] {
+            let html = String::from_utf8(
+                html_report_bytes(
+                    &case,
+                    &run_id,
+                    &ExportOptions {
+                        locale,
+                        ..ExportOptions::default()
+                    },
+                )
+                .unwrap(),
+            )
+            .unwrap();
+            let first = html.split("<details class=\"technical\"").next().unwrap();
+            assert!(first.contains(step), "{step}");
+            assert!(first.contains(reason), "{reason}");
+            assert!(!first.contains("Actionable findings in completed checks: 0."));
+            assert!(!first.contains("已完成檢查中的可處理問題：0。"));
+        }
     }
 
     /// A website run whose one check failed has no result to describe. Its
@@ -36993,7 +37400,7 @@ mod tests {
         )));
         assert!(html.contains("<html lang=\"en\">"));
         assert!(html.contains("What was actually tested"));
-        assert!(html.contains("Framework references are informational navigation"));
+        assert!(!html.contains("Framework references are informational navigation"));
         let terms_position = html
             .rfind("<footer><h2>Report terms</h2>")
             .expect("report terms stay in the footer");
