@@ -33921,6 +33921,9 @@ mod tests {
         let (open_layer, _) = article
             .split_once("<details class=\"technical finding-technical\">")
             .expect("finding card technical details");
+        assert!(!open_layer.contains("map-2026-08"));
+        assert!(article.contains("Mapping version"));
+        assert!(article.contains("map-2026-08"));
         assert!(
             open_layer.contains("class=\"finding-scanner-remediation\""),
             "scanner-provided remediation was only inside collapsed technical details"
@@ -37063,8 +37066,6 @@ mod tests {
             "為這個資產選擇適用的資安檢查，然後開始掃描",
             "實際測試的內容",
             "已完成",
-            "框架參照只供資訊導航。",
-            "AIDEFEND 參照屬於獨立、非官方的對照",
             "2026年09月01日 12:34:56 UTC",
         ] {
             assert!(
@@ -37072,6 +37073,9 @@ mod tests {
                 "zh-Hant HTML omitted {expected}"
             );
         }
+        assert!(!zh_html.contains("<section class=\"framework-coverage\">"));
+        assert!(!zh_html.contains("框架參照只供資訊導航。"));
+        assert!(!zh_html.contains("AIDEFEND 參照屬於獨立、非官方的對照"));
         for english_only in [
             "<html lang=\"en\">",
             "What was actually tested",
@@ -43379,10 +43383,7 @@ mod tests {
         );
         let redacted_zh_section = verification_comparison_section(&redacted_zh);
         assert!(redacted_zh_section.contains("Token file in Asset 1"));
-        assert!(
-            redacted_zh_section
-                .contains("Asset 1：[redacted snapshot hash] → [redacted snapshot hash]")
-        );
+        assert!(redacted_zh_section.contains("Asset 1：（快照雜湊） → （快照雜湊）"));
         assert!(!redacted_zh_section.contains(FIX_CHECK_ASSET));
     }
 

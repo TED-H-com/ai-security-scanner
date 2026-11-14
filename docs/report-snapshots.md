@@ -26,6 +26,8 @@ When an audit has To validate records, the first layer names them as a next step
 first when nothing else was found, otherwise after the main action. An asset with
 no problems in its completed checks but with such records shows the next action
 “validate the listed source-audit items first”.
+Standard HTML counts the hidden evidence locations for each lead and asks the
+code owner to use its claim and validation plan in the unredacted report or app.
 
 Admission automatically retains its terminal report after the case transaction.
 The admit result includes `report_snapshot_state: "retained"` and `report_snapshot`
@@ -37,7 +39,7 @@ original receipt and retries the missing snapshot. Audit status reports
 admitted run saves only its missing snapshot; it never starts audit or scanner work.
 
 Replay uses the frozen admission and case without source files, current grants,
-provider workspace or catalog manifests. Standard redaction applies the shared masking policy to provider prose, trace and evidence descriptions, remediation, ledger text and incomplete reasons, with separate withheld-text and withheld-code counts. Provider files, paths, source scope and source references use the location marker; titles replace known private literals. Standard replaces provider coverage identifiers with `unit-` and provider fingerprints with `fp-`, followed by the first twelve lowercase hexadecimal characters of the original value’s SHA-256; product-generated identities, timestamps, enums, scores and digests remain unchanged. Confirmed findings use the localized SourceCode family summary, impact and action in Standard. The `none` profile preserves native text and code verbatim.
+provider workspace or catalog manifests. Standard redaction applies the shared masking policy to provider prose, trace and evidence descriptions, remediation, ledger text and incomplete reasons, with separate withheld-text and withheld-code counts. Provider files, paths, source scope and source references use the location marker; titles replace known private literals. In the shared report, Standard replaces provider coverage identifiers with `unit-`, provider fingerprints with `fp-`, and source-view request IDs with `req-`, followed by the first twelve lowercase hexadecimal characters of the original value’s SHA-256; product-generated identities, timestamps, enums, scores and digests remain unchanged. Confirmed findings use the localized SourceCode family summary, impact and action in Standard. The `none` profile preserves native text and code verbatim.
 Private snapshot inputs retain their full context as described below.
 
 Framework reports include the profile-redacted shared `source_audits` extension. OCSF and OSCAL export confirmed findings with provider identity and retain the full shared audit report in their mandatory hash-bound companion; provider identity is not a control conclusion. See [export formats for admitted audits](#export-formats-for-admitted-audits) below. Single-run and combined HTML attachments now accept admitted source audits. Only `none` plus the raw-artifact option includes their exact original bytes and nested names, with provider/admission/method attribution and original digests in each ZIP manifest. Standard omits provider originals without reading them and records sensitive omissions. A frozen snapshot retains selected ZIP bytes: retrieval and exact-compatible replay continue after source originals disappear; creating a new unmasked attachment export then refuses. Signed case bundles now carry the profile-aware case-wide admission document. Combined attachment overflow uses the explicitly acknowledged private archive fallback for all cases. Complete archives support read-only audit restore; run comparisons involving an audit remain unavailable. Unknown case format requirements still block report
@@ -63,8 +65,8 @@ events or observations. The mandatory hash-bound OCSF/OSCAL companion keeps the
 shared audit report, including leads, gaps, method and outcome when there are zero
 confirmed findings; keep the companion with the main file.
 
-Both redaction profiles preserve IDs, enums and digests. Standard uses identical
-`fp-` pseudonyms for unresolved fingerprint lists. Derived gap labels and
+Both redaction profiles preserve product-generated IDs, enums and digests. Standard uses identical
+`fp-` pseudonyms for unresolved fingerprint lists and masks source-view request IDs in the shared report as described above. Derived gap labels and
 identifier masks do not increase withheld-text counts; those counts cover only
 provider prose or code actually withheld. `none` retains native values. Missing or
 mismatched admission/task/artifact bindings refuse export before files are written.
@@ -184,6 +186,8 @@ private file; it is not a successful export or a recorded historical snapshot.
 list in a private snapshot. Select two to sixteen distinct terminal runs in one
 case. Each source keeps its own time, findings and coverage gaps; combining reports
 does not merge repeated observations or mark historical findings resolved.
+Combined HTML shows UTC times to the minute and retains the exact timestamp in
+each time element; JSON keeps the original values.
 
 ```sh
 ./target/debug/ai-security-scanner-cli --json --data-dir /path/to/existing-data \

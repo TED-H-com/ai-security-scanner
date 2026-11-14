@@ -63,6 +63,9 @@ The unreleased development core adds [automatic terminal/export report snapshots
 
 In development, admitted [Cloudflare source audits](cloudflare-provider.md#admitting-a-sealed-audit) appear in **Results** and in the same single-run and combined reports: confirmed findings with the others, leads under **To validate** (candidates do not count as problems), and paths still to audit under **What was not tested**. Single-run and combined HTML can include the original audit files. Redaction, framework, OCSF, OSCAL, case bundle and attachment details are in [Saved report snapshots](report-snapshots.md#admitted-source-audits); see also [release definitions and current availability](release-model.md).
 
+Combined HTML shows each source's check names, recorded versions, outcomes and coverage gaps before its technical details.
+For a source-audit lead, Standard HTML counts hidden evidence locations and directs the code owner to the claim and validation plan in the unredacted report or app.
+
 ### Source audits that did not finish
 
 Blocked preparation appears as a not-executed **Cloudflare source audit** check:
