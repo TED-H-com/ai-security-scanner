@@ -1174,15 +1174,11 @@ test('macOS release runtime is selected for both supported architectures', async
       const deps = {
         ...f.deps, platform: 'darwin', arch,
         recognizedManagedRuntimeBundles: [RECOGNIZED_MANAGED_RUNTIME_BUNDLES[0], entry],
-        build: async args => {
-          await f.deps.build(args);
-          if (process.platform === 'win32') {
-            const binary = join(args.targetDirectory, toolchain.target, args.configuration.profile === 'release' ? 'release' : 'debug', 'ai-security-scanner-cli');
-            await writeFile(binary, await readFile(`${binary}.exe`));
-          }
-        },
       };
       assert.equal((await doctorBootstrap(f.options, deps)).runtime_sources.release_bundle, 'downloadable');
+      // A simulated darwin prepare expects a POSIX core artifact with an executable bit, which a
+      // Windows host cannot produce; the download flow below runs on the Linux and macOS lanes.
+      if (process.platform === 'win32') return;
       if (arch === 'arm64') {
         const publishedDeps = { ...deps, recognizedManagedRuntimeBundles: [{ ...entry, release_source: published.release_source }], fetch: async () => new Response(null, { status: 404 }) };
         await assert.rejects(prepareBootstrap(f.options, publishedDeps), { code: 'runtime_preparation_failed' });
