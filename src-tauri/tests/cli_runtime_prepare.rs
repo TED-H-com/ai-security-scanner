@@ -739,6 +739,29 @@ fn repeated_ctrl_break_settles_preparation_and_saves_receipt() {
     ));
 }
 
+/// Cancelled preparation may still be writing its result after it gives up the
+/// data directory, so a running process with a free lease is valid. Ownership
+/// may end only after the runtime operation is gone and the receipt is saved.
+fn assert_ownership_ends_only_after_cleanup(fixture: &Fixture, blocked: &Value, context: &str) {
+    if let Ok(lease) = DataDirectoryExclusiveLease::acquire(&fixture.data) {
+        drop(lease);
+        assert!(
+            fixture_runtime::process_is_gone(blocked["pid"].as_u64().unwrap() as u32),
+            "ownership ended while the runtime operation was still running ({context})"
+        );
+        assert!(
+            fs::read_dir(fixture.data.join("runtime-preparations"))
+                .unwrap()
+                .any(|entry| entry
+                    .unwrap()
+                    .path()
+                    .extension()
+                    .is_some_and(|extension| extension == "json")),
+            "ownership ended before the receipt was saved ({context})"
+        );
+    }
+}
+
 #[cfg(unix)]
 #[test]
 fn sigint_waits_for_the_bounded_runtime_operation_then_saves_cancellation_and_releases_lease() {
@@ -749,16 +772,7 @@ fn sigint_waits_for_the_bounded_runtime_operation_then_saves_cancellation_and_re
     let pid = running.child.as_ref().unwrap().id();
     assert_eq!(unsafe { libc::kill(pid as libc::pid_t, libc::SIGINT) }, 0);
     thread::sleep(Duration::from_millis(100));
-    if running
-        .child
-        .as_mut()
-        .unwrap()
-        .try_wait()
-        .unwrap()
-        .is_none()
-    {
-        assert!(DataDirectoryExclusiveLease::acquire(&fixture.data).is_err());
-    }
+    assert_ownership_ends_only_after_cleanup(&fixture, &blocked, "SIGINT");
     fs::write(
         fixture.bin.join("release"),
         "complete the admitted fixture operation",
@@ -811,16 +825,11 @@ fn bootstrap_control_pipe_eof_cancel_and_terminate_preserve_owned_cleanup_and_re
         }
         drop(input);
         thread::sleep(Duration::from_millis(100));
-        if running
-            .child
-            .as_mut()
-            .unwrap()
-            .try_wait()
-            .unwrap()
-            .is_none()
-        {
-            assert!(DataDirectoryExclusiveLease::acquire(&fixture.data).is_err());
-        }
+        assert_ownership_ends_only_after_cleanup(
+            &fixture,
+            &blocked,
+            &format!("control {control:?}"),
+        );
         fs::write(fixture.bin.join("release"), "complete admitted operation").unwrap();
         let output = running.wait();
         let value = result(&output, code);
