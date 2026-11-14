@@ -34,13 +34,13 @@ new private directories on this computer:
 
 ```sh
 node scripts/skill/bootstrap.mjs doctor \
-  --revision FULL_40_CHARACTER_COMMIT --cache-dir /private/scanner-core-cache
+  --revision FULL_40_CHARACTER_COMMIT --cache-dir "$HOME/.cache/ai-security-scanner/core"
 
 node scripts/skill/bootstrap.mjs prepare \
-  --revision FULL_40_CHARACTER_COMMIT --cache-dir /private/scanner-core-cache
+  --revision FULL_40_CHARACTER_COMMIT --cache-dir "$HOME/.cache/ai-security-scanner/core"
 
 node scripts/skill/bootstrap.mjs run \
-  --revision FULL_40_CHARACTER_COMMIT --cache-dir /private/scanner-core-cache \
+  --revision FULL_40_CHARACTER_COMMIT --cache-dir "$HOME/.cache/ai-security-scanner/core" \
   -- --json build-identity
 ```
 
@@ -59,9 +59,14 @@ rewrite existing ACLs. Native Windows validation is a separate CI check.
 
 `doctor` reports source, tools, cache and requested capability separately without
 creating a workspace or opening the scanner database. `prepare` returns a JSON
-receipt and `cache_hit`. `run` verifies the cache again, forwards the CLI arguments
-without a shell and preserves the child exit status. CLI output stays on stdout;
-bootstrap diagnostics go to stderr.
+receipt and `cache_hit`. `run` never builds and needs no Rust or C toolchain: it
+selects the core that `prepare` left for this checkout, verifies it, then forwards
+the CLI arguments without a shell and preserves the child exit status. When no
+prepared core matches, `run` stops with `core_not_prepared`; run `prepare` with
+the same `--revision`, `--cache-dir` and `--profile` first. CLI output stays on
+stdout; bootstrap diagnostics go to stderr.
+
+Scan preparation reports `runtime_bundle_source` as `explicit`, `installed_desktop` or `none`; an installed bundle also includes its path, manifest digest and desktop version in `runtime_bundle`.
 
 The default profile is `release`. Contributors may select `--profile dev` for a
 separate development cache. A changed checkout is rejected unless the caller
@@ -79,12 +84,12 @@ The bootstrap cache contains build inputs and binaries, never case data.
 
 ```sh
 node scripts/skill/bootstrap.mjs run \
-  --revision FULL_40_CHARACTER_COMMIT --cache-dir /private/scanner-core-cache \
-  -- --json --data-dir /private/scanner-cases \
+  --revision FULL_40_CHARACTER_COMMIT --cache-dir "$HOME/.cache/ai-security-scanner/core" \
+  -- --json --data-dir "$HOME/ai-security-scanner-cases" \
   scan status --case-id CASE_ID --run-id RUN_ID
 ```
 
-Use the same forwarding form for the implemented [foreground scan](foreground-scans.md),
+Use the same forwarding form for the implemented [case setup and foreground scan](foreground-scans.md),
 [report snapshot](report-snapshots.md) and [archive/restore](case-archives.md)
 commands. Scope grants, target selection and private export acknowledgements
 retain their existing meanings. `build-identity` does not need a data directory.
@@ -96,8 +101,8 @@ prepare only their runtime dependencies:
 
 ```sh
 node scripts/skill/bootstrap.mjs prepare \
-  --revision FULL_40_CHARACTER_COMMIT --cache-dir /private/scanner-core-cache \
-  --capability scan --engine gitleaks --data-dir /private/scanner-cases
+  --revision FULL_40_CHARACTER_COMMIT --cache-dir "$HOME/.cache/ai-security-scanner/core" \
+  --capability scan --engine gitleaks --data-dir "$HOME/ai-security-scanner-cases"
 ```
 
 The core build is reused independently of the engine selection. The verified CLI
@@ -141,25 +146,36 @@ scan, passing the same explicit data directory and any selected runtime bundle.
 `run --capability scan` is rejected: preparation is its own operation.
 `doctor --capability scan` reports preparation as still needed; it does not build,
 start a runtime, or treat a previous receipt as current readiness.
+Its `runtime_sources` reports compatibility commands on `PATH` and the installed desktop bundle's recognition state.
 
-Cold-machine acquisition of a managed bundle is not automatic yet. Development
+When the host has no Docker, no Podman and no prepared managed runtime,
+`prepare --capability scan` reuses an installed desktop app's scan runtime if this
+revision recognizes its manifest (Linux x86_64 and macOS; Windows detection is
+not implemented), checks it again in the core, and otherwise stops with a
+`next_step`. It never downloads or installs a runtime. Development
 bundles are produced by the existing versioned
 [`runtime/vendor-managed-runtime.mjs`](../runtime/vendor-managed-runtime.mjs)
 procedure; its Linux helper build requires an existing Docker builder. Windows
-and macOS execution, Cloudflare delegation and dynamic sandbox readiness remain
-separate verification work. The released desktop remains the normal first-run
+and macOS host execution and dynamic sandbox readiness remain separate
+verification work; Cloudflare delegation has completed on one Linux host (see
+below). The released desktop remains the normal first-run
 route while that full skill journey is completed.
 
 The bootstrap uses a fixed cancellation pipe for selected preparation and for
 `run -- ... scan run`, `scan recover`, and `runtime prepare`. Ctrl+C requests
 cancellation and waits for the core to finish cleanup and save its outcome.
 An unexpected bootstrap exit closes the pipe and also requests cancellation.
-Owning commands run detached on every platform so they can finish cleanup after
-the bootstrap exits, including on Windows. Standard output and standard error
+`run` owning commands run detached on every platform so they can finish cleanup after
+the bootstrap exits. Selected-engine preparation is detached except on Windows. Standard output and standard error
 remain inherited, and the bootstrap preserves the core's exit code. This path no
 longer uses Node's forceful Windows `child.kill()` for these owning commands;
 Windows/macOS execution still needs native verification before the default
 operator route changes.
+
+On Windows, a user-owned cache example is `%LOCALAPPDATA%\ai-security-scanner\core`.
+
+A stderr line with `schema_version` `ai-security-scanner.bootstrap-error/v1` means the bootstrap stopped the request. Handle its `error` without applying the CLI exit table or replaying the request.
+When `next_step` is present, relay it to the user and stop.
 
 ## Cache identity and recovery
 
@@ -173,7 +189,7 @@ Git revision is provenance, rather than the sole cache key. A documentation or
 skill wording change can reuse an identical core; changing an embedded input or
 build recipe cannot. Source-controlled Cargo configuration and unreviewed embed
 paths are rejected until the recipe accounts for them. Ambient compiler flags
-and wrappers are excluded from the controlled build environment.
+and wrappers are excluded from the controlled build environment. The bootstrap does not use personal Cargo settings. Temporarily rename a conflicting Cargo configuration file, or set CARGO_HOME to a directory without config and choose a cache directory outside the file's parent tree.
 
 A new build uses private staging with a random 12-hex-character directory name
 to keep native build paths short. Only a complete, verified entry can become the
@@ -183,10 +199,13 @@ Changed or corrupt entries are refused, not silently accepted or rebuilt over.
 The cache must be a dedicated directory created by this bootstrap; existing
 unrelated directories and symlink paths are refused.
 
-Concurrent preparation of one entry returns busy. An interrupted lock is not
-automatically stolen. Inspect the recorded owner and finish that process before
-choosing another new cache directory. No automatic cache purge removes cases,
-evidence, source snapshots or archives.
+Concurrent preparation of one entry returns busy. Stopping `prepare` with Ctrl+C
+or a termination signal stops its build, removes its staging files and releases
+its lock. Locks are never taken over automatically: a lock left by a killed
+process stays in place, and the busy error names the lock directory, its recorded
+owner and whether that owner is still running. Remove that directory by hand once
+the owner is gone. No automatic cache purge removes cases, evidence, source
+snapshots or archives.
 
 ## One maintained skill source
 

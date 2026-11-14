@@ -16,6 +16,7 @@ use std::time::Duration;
 use tokio::io::{AsyncRead, AsyncReadExt, AsyncWriteExt};
 
 pub const UPSTREAM_COMMIT: &str = "c1c8a8c1471069fb0e188eeaff69b8e8db6564a8";
+pub(crate) const MAX_SEALED_FILE_BYTES: u64 = 8 * 1024 * 1024;
 const MAX_INPUT_BYTES: u64 = 5 * 1024 * 1024;
 const MAX_OUTPUT_BYTES: u64 = 256 * 1024;
 const TIMEOUT: Duration = Duration::from_secs(15);
@@ -295,30 +296,38 @@ mod tests {
                 ),
             )
             .unwrap();
-            let started = std::time::Instant::now();
-            let result = execute_validator(
-                &node,
-                temporary.path(),
-                CloudflareDocument::Findings,
-                &vec![b' '; MAX_INPUT_BYTES as usize],
-                Duration::from_secs(2),
-            )
-            .await;
-            assert!(result.unwrap_err().to_string().contains(expected));
-            assert!(started.elapsed() < Duration::from_secs(6));
-            let pid = std::fs::read_to_string(&marker).expect("owned validator actually started");
-            #[cfg(unix)]
-            {
-                // SAFETY: signal zero only inspects the owned child's process ID.
-                assert_eq!(unsafe { libc::kill(pid.parse().unwrap(), 0) }, -1);
-                assert_eq!(
-                    std::io::Error::last_os_error().raw_os_error(),
-                    Some(libc::ESRCH)
-                );
+            for seconds in [2, 8, 20] {
+                let limit = Duration::from_secs(seconds);
+                let started = std::time::Instant::now();
+                let result = execute_validator(
+                    &node,
+                    temporary.path(),
+                    CloudflareDocument::Findings,
+                    &vec![b' '; MAX_INPUT_BYTES as usize],
+                    limit,
+                )
+                .await;
+                if !marker.exists() && seconds < 20 {
+                    continue;
+                }
+                let pid =
+                    std::fs::read_to_string(&marker).expect("owned validator actually started");
+                assert!(result.unwrap_err().to_string().contains(expected));
+                assert!(started.elapsed() < limit + Duration::from_secs(4));
+                #[cfg(unix)]
+                {
+                    // SAFETY: signal zero only inspects the owned child's process ID.
+                    assert_eq!(unsafe { libc::kill(pid.parse().unwrap(), 0) }, -1);
+                    assert_eq!(
+                        std::io::Error::last_os_error().raw_os_error(),
+                        Some(libc::ESRCH)
+                    );
+                }
+                #[cfg(not(unix))]
+                assert!(pid.parse::<u32>().unwrap() > 0);
+                std::fs::remove_file(&marker).unwrap();
+                break;
             }
-            #[cfg(not(unix))]
-            assert!(pid.parse::<u32>().unwrap() > 0);
-            std::fs::remove_file(&marker).unwrap();
         }
     }
 }

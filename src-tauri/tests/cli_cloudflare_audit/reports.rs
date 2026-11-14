@@ -102,7 +102,15 @@ fn assert_audit_continuation_step(case: &AssessmentCase, run_id: &str, path: &st
                     .count(),
                 1
             );
-            assert_eq!(rendered_steps.matches("<li>").count(), 1);
+            let has_validation = report["source_audits"]
+                .as_array()
+                .unwrap()
+                .iter()
+                .any(|audit| !audit["to_validate"].as_array().unwrap().is_empty());
+            assert_eq!(
+                rendered_steps.matches("<li>").count(),
+                1 + usize::from(has_validation)
+            );
             for action in rendered_steps.split("<strong>").skip(1) {
                 let action = action.split("</strong>").next().unwrap();
                 assert!(!action.contains(path));
@@ -127,7 +135,7 @@ fn assert_audit_continuation_step(case: &AssessmentCase, run_id: &str, path: &st
                 assert!(untested.contains(if locale == ReportLocale::En {
                     "[redacted location]"
                 } else {
-                    "（位置）"
+                    "（已遮蔽位置）"
                 }));
             }
         }
@@ -281,12 +289,38 @@ fn admitted_reports_keep_native_sections_counts_and_localized_first_layer() {
                     "Validate the 1 source-audit item under To validate first."
                 }
                 (ReportLocale::En, _) => "Also validate the 1 source-audit item under To validate.",
-                (ReportLocale::ZhHant, "quick") => {
-                    "請先驗證下方「待驗證」中的 1 個原始碼稽核項目。"
-                }
-                (ReportLocale::ZhHant, _) => "另請驗證下方「待驗證」中的 1 個原始碼稽核項目。",
+                (ReportLocale::ZhHant, "quick") => "請先驗證「待驗證」中的 1 個原始碼稽核項目。",
+                (ReportLocale::ZhHant, _) => "另請驗證「待驗證」中的 1 個原始碼稽核項目。",
             };
             assert!(first_layer.contains(expected));
+            if profile == "quick" {
+                assert!(!first_layer.contains(if locale == ReportLocale::En {
+                    "The first thing to do is:"
+                } else {
+                    "建議最先處理的是："
+                }));
+                assert!(first_layer.contains(if locale == ReportLocale::En {
+                    "Then continue the source audit from the listed paths."
+                } else {
+                    "接著請從列出的路徑繼續原始碼稽核。"
+                }));
+            }
+            let next_steps = html
+                .split(if locale == ReportLocale::En {
+                    "What to do next</h2>"
+                } else {
+                    "下一步怎麼做</h2>"
+                })
+                .nth(1)
+                .unwrap()
+                .split("</ol>")
+                .next()
+                .unwrap();
+            assert!(next_steps.contains(if locale == ReportLocale::En {
+                "Validate the 1 source-audit item under To validate."
+            } else {
+                "請驗證「待驗證」中的 1 個原始碼稽核項目。"
+            }));
             if profile == "standard" {
                 let first_action = if locale == ReportLocale::En {
                     "Start with “"
@@ -872,7 +906,7 @@ fn hostile_native_text_is_inert_and_standard_withholds_code_in_all_copies() {
                     "[redacted location]"
                 );
                 if locale == ReportLocale::ZhHant {
-                    assert!(html.contains("（位置）"));
+                    assert!(html.contains("（已遮蔽位置）"));
                 }
                 assert!(html.contains(if locale == ReportLocale::En {
                     "withheld in the standard profile"
@@ -1411,12 +1445,12 @@ fn provider_identifiers_are_pseudonymous_in_single_combined_and_replayed_reports
                     assert!(!validation.contains(key));
                 }
                 if redaction == RedactionProfile::Standard {
-                    let withheld = if locale == ReportLocale::En {
-                        "Details withheld in the standard profile."
+                    let guidance = if locale == ReportLocale::En {
+                        "Ask the code owner to check whether this behavior can occur, using the claim and validation plan in the unredacted report or the app."
                     } else {
-                        "詳細內容已在標準設定檔中隱藏。"
+                        "請程式碼負責人依照未遮蔽報告或應用程式中的主張與驗證計畫，確認這個行為是否可能發生。"
                     };
-                    assert_eq!(validation.matches(withheld).count(), 1);
+                    assert_eq!(validation.matches(guidance).count(), 1);
                     let audit_first = first
                         .split("<section class=\"source-audit report-card\">")
                         .nth(1)
@@ -1426,11 +1460,19 @@ fn provider_identifiers_are_pseudonymous_in_single_combined_and_replayed_reports
                         .unwrap();
                     assert!(!audit_first.contains("[withheld provider text"));
                     assert!(!audit_first.contains("隱藏提供者文字"));
-                    assert!(validation.contains(if locale == ReportLocale::En {
-                        "[redacted location]:"
+                    let count = audit["to_validate"][0]["native_record"]["evidence"]
+                        .as_array()
+                        .unwrap()
+                        .len();
+                    let count_line = if locale == ReportLocale::En {
+                        format!(
+                            "{count} evidence location{} (hidden in this profile)",
+                            if count == 1 { "" } else { "s" }
+                        )
                     } else {
-                        "（位置）:"
-                    }));
+                        format!("{count} 個證據位置（此設定下已隱藏）")
+                    };
+                    assert!(validation.contains(&count_line));
                 } else {
                     assert!(validation.contains(if locale == ReportLocale::En {
                         "Local check"
@@ -1617,13 +1659,13 @@ fn validation_next_steps_in_combined_reports_and_zero_lead_regression() {
                         "The selected reports contain no problem observations. Validate the 1 source-audit item under To validate first, then review each source&#39;s completed checks and coverage limits below."
                     }
                     (ReportLocale::ZhHant, false, true) => {
-                        "所選報告沒有問題觀察紀錄；請先驗證下方「待驗證」中的 1 個原始碼稽核項目，再查看各來源完成的檢查與涵蓋限制。"
+                        "所選報告沒有問題觀察紀錄；請先驗證「待驗證」中的 1 個原始碼稽核項目，再查看各來源完成的檢查與涵蓋限制。"
                     }
                     (ReportLocale::En, true, true) => {
                         "Also validate the 1 source-audit item under To validate."
                     }
                     (ReportLocale::ZhHant, true, true) => {
-                        "另請驗證下方「待驗證」中的 1 個原始碼稽核項目。"
+                        "另請驗證「待驗證」中的 1 個原始碼稽核項目。"
                     }
                     (ReportLocale::En, false, false) => {
                         "The selected reports contain no problem observations. Review each source's completed checks and coverage limits below."
@@ -1653,6 +1695,449 @@ fn validation_next_steps_in_combined_reports_and_zero_lead_regression() {
                     }
                 }
             }
+        }
+    }
+}
+
+#[test]
+fn combined_sources_show_checks_and_coverage_gaps_before_details() {
+    use ai_security_scanner_lib::beginner_report::CoverageDimensionStatus;
+    use ai_security_scanner_lib::domain::EngineRunStatus;
+    use ai_security_scanner_lib::selected_run_report::preview_selected_run_report;
+    let (run, request) = admit::sealed("quick");
+    let saved = admit::admit(&run, &request, 0);
+    let mut case = admit::case(&run);
+    let scanner_run = append_scanner_run(&mut case);
+    let scanner = case
+        .scan_runs
+        .iter_mut()
+        .find(|r| r.id == scanner_run)
+        .unwrap();
+    let mut secret_check = scanner.engine_runs[0].clone();
+    secret_check.id = "synthetic-gitleaks-check".into();
+    secret_check.engine_id = "gitleaks".into();
+    secret_check.engine_version = Some("8.30.1".into());
+    secret_check.reported_version = None;
+    let mut failed_check = secret_check.clone();
+    failed_check.id = "synthetic-failed-check".into();
+    failed_check.engine_id = "semgrep".into();
+    failed_check.status = EngineRunStatus::Failed;
+    failed_check.progress_percent = 0;
+    scanner.engine_runs.push(secret_check);
+    scanner.engine_runs.push(failed_check);
+    let selected = vec![scanner_run, saved["run_id"].as_str().unwrap().to_owned()];
+    let opts = options(ReportLocale::En, RedactionProfile::None);
+    let report = preview_selected_run_report(&case, &selected, &opts).unwrap();
+    let snapshot = ReportSnapshot::capture_combined(&case, &selected, opts).unwrap();
+    let dest = run.f.data.with_file_name("combined-source-coverage.html");
+    snapshot.replay(ReportDocumentFormat::Html, &dest).unwrap();
+    let html = fs::read_to_string(&dest).unwrap();
+    fs::remove_file(dest).unwrap();
+    let escape = |s: &str| {
+        s.replace('&', "&amp;")
+            .replace('<', "&lt;")
+            .replace('>', "&gt;")
+            .replace('"', "&quot;")
+            .replace('\'', "&#39;")
+    };
+    for (index, source) in report.sources.iter().enumerate() {
+        let article = html
+            .split(&format!(
+                "<article class=\"source\" id=\"source-{}\">",
+                index + 1
+            ))
+            .nth(1)
+            .unwrap()
+            .split("<details>")
+            .next()
+            .unwrap();
+        for check in &source.report.actual.checks {
+            let name = ai_security_scanner_lib::registry::builtin_display_name(&check.check_id)
+                .unwrap_or(&check.check_id);
+            assert!(article.contains(&escape(name)), "missing {name}: {article}");
+            assert!(
+                article
+                    .split("</h3>")
+                    .next()
+                    .unwrap()
+                    .contains(&escape(name))
+            );
+            let outcome = match check.status {
+                CoverageDimensionStatus::TestedComplete => "Completed in source run",
+                CoverageDimensionStatus::TestedPartial => "Partial",
+                CoverageDimensionStatus::Failed => "Failed",
+                CoverageDimensionStatus::TimedOut => "Timed out",
+                CoverageDimensionStatus::Cancelled => "Cancelled",
+                CoverageDimensionStatus::NotTested => "Not tested",
+            };
+            assert!(article.contains(outcome), "missing outcome: {article}");
+        }
+        for gap in &source.report.coverage_gaps {
+            assert!(
+                article.contains(&escape(&gap.reason)),
+                "missing gap: {article}"
+            );
+        }
+        assert!(article.contains("What was not tested"));
+        assert!(!article.contains(&source.run_id));
+        assert!(!article.contains(&source.created_at.to_rfc3339()));
+    }
+    let scanner_first = html
+        .split("<article class=\"source\"")
+        .nth(1)
+        .unwrap()
+        .split("<details>")
+        .next()
+        .unwrap();
+    assert!(scanner_first.contains("Gitleaks / Version 8.30.1"));
+    assert!(scanner_first.contains("Failed"));
+    let zh = ReportSnapshot::capture_combined(
+        &case,
+        &selected,
+        options(ReportLocale::ZhHant, RedactionProfile::None),
+    )
+    .unwrap();
+    let dest = run
+        .f
+        .data
+        .with_file_name("combined-source-coverage-zh.html");
+    zh.replay(ReportDocumentFormat::Html, &dest).unwrap();
+    let html = fs::read_to_string(&dest).unwrap();
+    fs::remove_file(dest).unwrap();
+    let audit_first = html
+        .split("<article class=\"source\"")
+        .nth(2)
+        .unwrap()
+        .split("<details>")
+        .next()
+        .unwrap();
+    assert!(audit_first.contains("Cloudflare 原始碼稽核"));
+    assert!(audit_first.contains("未測試的內容"));
+    assert!(audit_first.contains("尚有 1 個單元未完成。"));
+}
+
+#[test]
+fn combined_chinese_standard_localizes_redacted_case_title_in_html() {
+    use ai_security_scanner_lib::selected_run_report::preview_selected_run_report;
+    let (run, request) = admit::sealed("quick");
+    let saved = admit::admit(&run, &request, 0);
+    let mut case = admit::case(&run);
+    let scanner_run = append_scanner_run(&mut case);
+    let selected = vec![scanner_run, saved["run_id"].as_str().unwrap().to_owned()];
+    let opts = options(ReportLocale::ZhHant, RedactionProfile::Standard);
+    let report = preview_selected_run_report(&case, &selected, &opts).unwrap();
+    assert_eq!(report.project_title, "Redacted assessment case");
+    let snapshot = ReportSnapshot::capture_combined(&case, &selected, opts).unwrap();
+    let dest = run.f.data.with_file_name("combined-zh-title.html");
+    snapshot.replay(ReportDocumentFormat::Html, &dest).unwrap();
+    let html = fs::read_to_string(&dest).unwrap();
+    fs::remove_file(dest).unwrap();
+    assert!(html.contains("<title>已遮蔽的評估案件</title>"));
+    assert!(html.contains("<p>已遮蔽的評估案件</p>"));
+    assert!(!html.contains(">Redacted assessment case<"));
+}
+
+#[test]
+fn standard_validation_guidance_counts_hidden_evidence_in_single_and_combined_html() {
+    let (run, request) = admit::sealed("quick");
+    let saved = admit::admit(&run, &request, 0);
+    let mut case = admit::case(&run);
+    let run_id = saved["run_id"].as_str().unwrap().to_owned();
+    let evidence = case.agent_audit_admissions[0].retained_projection["records"][0]
+        ["native_record"]["evidence"].as_array_mut().unwrap();
+    let location = evidence[0].clone();
+    evidence.resize(7, location);
+    let scanner_run = append_scanner_run(&mut case);
+    for locale in [ReportLocale::En, ReportLocale::ZhHant] {
+        let opts = options(locale, RedactionProfile::Standard);
+        let (single, doc) = render(&case, &run_id, &opts);
+        assert_eq!(
+            doc["report"]["source_audits"][0]["to_validate"][0]["native_record"]["evidence"]
+                .as_array()
+                .unwrap()
+                .len(),
+            7
+        );
+        let snapshot =
+            ReportSnapshot::capture_combined(&case, &[scanner_run.clone(), run_id.clone()], opts)
+                .unwrap();
+        let dest = run.f.data.with_file_name("hidden-validation-evidence.html");
+        snapshot.replay(ReportDocumentFormat::Html, &dest).unwrap();
+        let combined = fs::read_to_string(&dest).unwrap();
+        fs::remove_file(dest).unwrap();
+        for html in [single, combined] {
+            let validation = html
+                .split(if locale == ReportLocale::En {
+                    "<h3>To validate</h3>"
+                } else {
+                    "<h3>待驗證</h3>"
+                })
+                .nth(1)
+                .unwrap()
+                .split("</article>")
+                .next()
+                .unwrap();
+            assert!(validation.contains(if locale == ReportLocale::En {
+                "Ask the code owner to check whether this behavior can occur, using the claim and validation plan in the unredacted report or the app."
+            } else {
+                "請程式碼負責人依照未遮蔽報告或應用程式中的主張與驗證計畫，確認這個行為是否可能發生。"
+            }));
+            assert!(validation.contains(if locale == ReportLocale::En {
+                "7 evidence locations (hidden in this profile)"
+            } else {
+                "7 個證據位置（此設定下已隱藏）"
+            }));
+            assert!(!validation.contains("[redacted location]:"));
+            if locale == ReportLocale::ZhHant {
+                assert!(html.contains("（已遮蔽位置）"));
+            }
+        }
+    }
+}
+
+#[test]
+fn combined_visible_times_are_readable_and_keep_exact_datetime_values() {
+    let (run, request) = admit::sealed("quick");
+    let saved = admit::admit(&run, &request, 0);
+    let mut case = admit::case(&run);
+    let selected = vec![
+        append_scanner_run(&mut case),
+        saved["run_id"].as_str().unwrap().to_owned(),
+    ];
+    for locale in [ReportLocale::En, ReportLocale::ZhHant] {
+        let snapshot = ReportSnapshot::capture_combined(
+            &case,
+            &selected,
+            options(locale, RedactionProfile::None),
+        )
+        .unwrap();
+        let html_path = run.f.data.with_file_name("combined-times.html");
+        let json_path = run.f.data.with_file_name("combined-times.json");
+        snapshot
+            .replay(ReportDocumentFormat::Html, &html_path)
+            .unwrap();
+        snapshot
+            .replay(ReportDocumentFormat::Json, &json_path)
+            .unwrap();
+        let html = fs::read_to_string(&html_path).unwrap();
+        let doc: Value = serde_json::from_slice(&fs::read(&json_path).unwrap()).unwrap();
+        fs::remove_file(html_path).unwrap();
+        fs::remove_file(json_path).unwrap();
+        let sources = doc["sources"].as_array().unwrap();
+        for value in std::iter::once(&doc["generated_at"])
+            .chain(
+                sources
+                    .iter()
+                    .flat_map(|s| [&s["created_at"], &s["completed_at"]]),
+            )
+            .chain(sources.iter().flat_map(|s| {
+                s["report"]["actual"]["checks"]
+                    .as_array()
+                    .unwrap()
+                    .iter()
+                    .filter_map(|check| check.get("finished_at").filter(|value| value.is_string()))
+            }))
+        {
+            let exact = chrono::DateTime::parse_from_rfc3339(value.as_str().unwrap())
+                .unwrap()
+                .with_timezone(&chrono::Utc);
+            assert!(html.contains(&format!(
+                "<time datetime=\"{}\">{}</time>",
+                exact.to_rfc3339(),
+                exact.format("%Y-%m-%d %H:%M UTC")
+            )));
+        }
+    }
+}
+
+#[test]
+fn chinese_audit_technical_details_localize_phase_and_punctuation() {
+    let (run, request) = admit::sealed("standard");
+    let saved = admit::admit(&run, &request, 0);
+    let case = admit::case(&run);
+    let run_id = saved["run_id"].as_str().unwrap();
+    let (html, _) = render(
+        &case,
+        run_id,
+        &options(ReportLocale::ZhHant, RedactionProfile::Standard),
+    );
+    assert!(html.contains("階段：</strong>原始碼稽核已封存"));
+    assert!(html.contains("已發出的呼叫次數："));
+    assert!(html.contains("標準設定檔中隱藏的文字欄位："));
+    assert!(html.contains("標準設定檔中隱藏的程式碼欄位："));
+    assert!(html.contains("原始碼稽核：cloudflare-security-audit；納入紀錄："));
+}
+
+#[test]
+fn chinese_standard_localizes_bare_redaction_in_demo_technical_detail() {
+    let case = ai_security_scanner_lib::demo::build_demo_case();
+    let run_id = &case.scan_runs[0].id;
+    let (standard, _) = render(
+        &case,
+        run_id,
+        &options(ReportLocale::ZhHant, RedactionProfile::Standard),
+    );
+    assert!(standard.contains("<strong>建立者：</strong>（已遮蔽）"));
+    let (unredacted, _) = render(
+        &case,
+        run_id,
+        &options(ReportLocale::ZhHant, RedactionProfile::None),
+    );
+    assert!(unredacted.contains("Synthetic demo builder"));
+}
+
+#[test]
+fn audit_report_terms_exclude_unshown_framework_references() {
+    let (run, request) = admit::sealed("standard");
+    let saved = admit::admit(&run, &request, 0);
+    let case = admit::case(&run);
+    let run_id = saved["run_id"].as_str().unwrap();
+    let scanner = ai_security_scanner_lib::demo::build_demo_case();
+    for locale in [ReportLocale::En, ReportLocale::ZhHant] {
+        let opts = options(locale, RedactionProfile::Standard);
+        let (audit_html, _) = render(&case, run_id, &opts);
+        let (scanner_html, _) = render(&scanner, &scanner.scan_runs[0].id, &opts);
+        let terms = |html: &str| html.split("<footer><h2>").nth(1).unwrap().to_owned();
+        let audit_terms = terms(&audit_html);
+        let scanner_terms = terms(&scanner_html);
+        let (framework, aidefend, disclaimer) = match locale {
+            ReportLocale::En => (
+                "Framework references are informational navigation.",
+                "AIDEFEND references are an independent, unofficial mapping",
+                "This report is not an audit, certification, compliance decision, security guarantee, or automatic remediation.",
+            ),
+            ReportLocale::ZhHant => (
+                "框架參照只供資訊導航。",
+                "AIDEFEND 參照屬於獨立、非官方的對照。",
+                "本報告不是稽核、認證、合規判定、資安保證或自動修復。",
+            ),
+        };
+        assert!(!audit_terms.contains(framework));
+        assert!(!audit_terms.contains(aidefend));
+        assert!(!audit_terms.to_ascii_lowercase().contains("framework"));
+        assert!(!audit_terms.contains("框架"));
+        assert!(audit_terms.contains(disclaimer));
+        assert!(scanner_terms.contains(framework));
+        assert!(scanner_terms.contains(aidefend));
+        assert!(scanner_terms.contains(disclaimer));
+    }
+}
+
+#[test]
+fn standard_source_view_request_id_is_pseudonymous_in_single_and_combined_reports() {
+    let (run, request) = admit::sealed("standard");
+    let saved = admit::admit(&run, &request, 0);
+    let mut case = admit::case(&run);
+    let scanner_run = append_scanner_run(&mut case);
+    let run_id = saved["run_id"].as_str().unwrap();
+    for locale in [ReportLocale::En, ReportLocale::ZhHant] {
+        for redaction in [RedactionProfile::Standard, RedactionProfile::None] {
+            let opts = options(locale, redaction);
+            let expected = if redaction == RedactionProfile::Standard {
+                pseudonym("req", "view-request")
+            } else {
+                "view-request".to_owned()
+            };
+            let (html, doc) = render(&case, run_id, &opts);
+            let lineage = &doc["report"]["source_audits"][0]["technical_detail"]["lineage"];
+            assert_eq!(lineage["source_view_request_id"], expected);
+            assert_eq!(lineage["source"]["source_view_request_id"], expected);
+            assert!(html.contains(&expected));
+            if redaction == RedactionProfile::Standard {
+                assert!(!html.contains("view-request"));
+                assert!(!doc.to_string().contains("view-request"));
+            }
+
+            let snapshot = ReportSnapshot::capture_combined(
+                &case,
+                &[scanner_run.clone(), run_id.to_owned()],
+                opts,
+            )
+            .unwrap();
+            for format in [ReportDocumentFormat::Html, ReportDocumentFormat::Json] {
+                let dest = run.f.data.with_file_name("source-view-report");
+                snapshot.replay(format, &dest).unwrap();
+                let combined = fs::read_to_string(&dest).unwrap();
+                fs::remove_file(dest).unwrap();
+                assert!(combined.contains(&expected));
+                if redaction == RedactionProfile::Standard {
+                    assert!(!combined.contains("view-request"));
+                }
+            }
+        }
+    }
+}
+
+#[test]
+fn empty_problem_section_reflects_completed_security_checks() {
+    use ai_security_scanner_lib::beginner_report::{CheckResultKind, CoverageDimensionStatus};
+
+    let scanner = ai_security_scanner_lib::demo::build_demo_case();
+    let mut clean = scanner.clone();
+    clean.findings.clear();
+    clean.finding_observations.clear();
+    clean.finding_groups.clear();
+    clean.finding_group_events.clear();
+    let clean_run = &clean.scan_runs[0].id;
+    let complete = build_beginner_master_report(&clean, clean_run).unwrap();
+    assert!(complete.findings.is_empty());
+    assert!(complete.actual.checks.iter().any(|check| {
+        check.effective_result_kind() == CheckResultKind::SecurityCheck
+            && check.status == CoverageDimensionStatus::TestedComplete
+    }));
+
+    let (run, request) = admit::sealed("quick");
+    let saved = admit::admit(&run, &request, 0);
+    let incomplete = admit::case(&run);
+    let incomplete_run = saved["run_id"].as_str().unwrap();
+    let incomplete_report = build_beginner_master_report(&incomplete, incomplete_run).unwrap();
+    assert!(incomplete_report.findings.is_empty());
+    assert!(!incomplete_report.actual.checks.iter().any(|check| {
+        check.effective_result_kind() == CheckResultKind::SecurityCheck
+            && check.status == CoverageDimensionStatus::TestedComplete
+    }));
+
+    for locale in [ReportLocale::En, ReportLocale::ZhHant] {
+        let (heading, completed_text, incomplete_text, explanation) = match locale {
+            ReportLocale::En => (
+                "Problems found",
+                "No problems were found in the completed checks.",
+                "No confirmed problems were recorded for this run.",
+                "Problems follow the report order.",
+            ),
+            ReportLocale::ZhHant => (
+                "發現的問題",
+                "已完成的檢查沒有發現問題。",
+                "本輪未記錄已確認的問題。",
+                "問題依報告順序排列。",
+            ),
+        };
+        for redaction in [RedactionProfile::Standard, RedactionProfile::None] {
+            let opts = options(locale, redaction);
+            for (case, run_id, expected) in [
+                (&clean, clean_run.as_str(), completed_text),
+                (&incomplete, incomplete_run, incomplete_text),
+            ] {
+                let (html, _) = render(case, run_id, &opts);
+                let section = html
+                    .split(&format!("<h2>{heading}</h2>"))
+                    .nth(1)
+                    .unwrap()
+                    .split("<section")
+                    .next()
+                    .unwrap();
+                assert!(section.contains(expected), "{section}");
+                assert!(!section.contains(explanation));
+            }
+            let (html, _) = render(&scanner, &scanner.scan_runs[0].id, &opts);
+            let section = html
+                .split(&format!("<h2>{heading}</h2>"))
+                .nth(1)
+                .unwrap()
+                .split("<section")
+                .next()
+                .unwrap();
+            assert!(section.contains(explanation));
         }
     }
 }

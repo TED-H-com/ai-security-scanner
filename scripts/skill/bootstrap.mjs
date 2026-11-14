@@ -5,11 +5,22 @@ import { realpath } from 'node:fs/promises';
 import {
   BootstrapError,
   doctorBootstrap,
+  loadPreparedBootstrap,
   parseBootstrapArguments,
   prepareBootstrap,
   runPrepared,
   validateRunArguments,
 } from './bootstrap-core.mjs';
+
+export function printBootstrapError(error, write = process.stderr.write.bind(process.stderr)) {
+  write(`${JSON.stringify({
+    schema_version: 'ai-security-scanner.bootstrap-error/v1',
+    error: error instanceof BootstrapError ? error.code : 'bootstrap_failed',
+    message: error.message,
+    ...(error instanceof BootstrapError && error.details !== undefined ? { detail: error.details } : {}),
+    ...(error instanceof BootstrapError && error.nextStep !== undefined ? { next_step: error.nextStep } : {}),
+  })}\n`);
+}
 
 export async function main(argv = process.argv.slice(2)) {
   try {
@@ -24,7 +35,7 @@ export async function main(argv = process.argv.slice(2)) {
       return result.ready ? 0 : 4;
     }
     if (options.command === 'run') validateRunArguments(options.cliArguments);
-    const result = await prepareBootstrap(options);
+    const result = options.command === 'run' ? await loadPreparedBootstrap(options) : await prepareBootstrap(options);
     if (options.command === 'prepare') {
       process.stdout.write(`${JSON.stringify(result)}\n`);
       return 0;
@@ -32,12 +43,7 @@ export async function main(argv = process.argv.slice(2)) {
     process.stderr.write(`Scanner core ${result.cache_hit ? 'reused' : 'prepared'}: ${result.cache_key}\n`);
     return await runPrepared(result, options.cliArguments);
   } catch (error) {
-    process.stderr.write(`${JSON.stringify({
-      schema_version: 'ai-security-scanner.bootstrap-error/v1',
-      error: error instanceof BootstrapError ? error.code : 'bootstrap_failed',
-      message: error.message,
-      ...(error instanceof BootstrapError && error.details !== undefined ? { detail: error.details } : {}),
-    })}\n`);
+    printBootstrapError(error);
     return error instanceof BootstrapError ? error.exitCode : 4;
   }
 }

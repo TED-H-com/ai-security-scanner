@@ -80,7 +80,9 @@ impl Seal {
         if !valid_hash(&self.bundle_sha256)
             || !valid_hash(&self.manifest_sha256)
             || self.files.iter().zip(FILES).any(|(f, name)| {
-                f.path != name || !valid_hash(&f.sha256) || f.byte_length > 8 * 1024 * 1024
+                f.path != name
+                    || !valid_hash(&f.sha256)
+                    || f.byte_length > crate::cloudflare_provider::MAX_SEALED_FILE_BYTES
             })
             || digest(&projection) != self.files[2].sha256
             || projection.len() as u64 != self.files[2].byte_length
@@ -183,9 +185,14 @@ pub fn finalize(
     let receipt = match loaded {
         Ok(Some(r)) => r,
         Ok(None) => return Ok(refused(Refusal::UnknownPreparation)),
-        Err(_) => return Ok(refused(Refusal::RecordInvalid)),
+        Err(AppError::InvalidCloudflareRecord(_)) => return Ok(refused(Refusal::RecordInvalid)),
+        Err(error) => return Err(error),
     };
-    let record = context.storage.cloudflare_audit_record(&receipt)?;
+    let record = match context.storage.cloudflare_audit_record(&receipt) {
+        Ok(record) => record,
+        Err(AppError::InvalidCloudflareRecord(_)) => return Ok(refused(Refusal::RecordInvalid)),
+        Err(error) => return Err(error),
+    };
     record.ensure_active()?;
     let identity = request.record_request()?;
     // Idempotency precedes authority: replay hands out no new authority or bytes.
@@ -222,6 +229,9 @@ pub fn finalize(
     };
     if staged.result["bundle_sha256"] != request.expected_bundle_sha256 {
         return Ok(refused(Refusal::BundleMismatch));
+    }
+    if let Some(code) = seal_headroom(&staged)? {
+        return Ok(refused(code));
     }
     if staged.result["sealable"] != true {
         return Ok(FinalizeOutcome::NotSealable(Box::new(staged.result)));
@@ -261,11 +271,79 @@ fn file(path: &str, bytes: &[u8]) -> BundleFile {
         byte_length: bytes.len() as u64,
     }
 }
-fn package(context: &OwnedContext<'_>, staged: &Staged) -> AppResult<Seal> {
-    let receipt = &staged.receipt;
-    let PreparationResult::Prepared { facts, .. } = &receipt.result else {
+
+fn workflow_projection(staged: &Staged, reported: &Value, hashes: &[String; 3]) -> Value {
+    let PreparationResult::Prepared { facts, .. } = &staged.receipt.result else {
         unreachable!()
     };
+    json!({"schema_version":PROJECTION_SCHEMA,
+        "binding":staged.result["bundle_receipt"]["binding"],"source":facts.source,
+        "upstream_commit":facts.upstream_commit,"validator_resources_sha256":facts.validator_resources_sha256,
+        "profile":facts.profile,"budget":staged.record.budget(facts.invocation_budget),
+        "provenance":ProviderProvenance::WorkflowRecorded,"canonical_snapshot_binding_verified":true,
+        "source_authorization_verified":true,"audit_performed":staged.record.assignments.iter().any(|a| a.assignment.spec.role == Role::Hunter && a.state == "closed"),
+        "admission_ready":false,"target_execution_allowed":false,
+        "run_status":reported["reported_run_status"],"incomplete_reason":staged.result["incomplete_reason"],
+        "reported_counts":reported["reported_counts"],"coverage_by_status":reported["coverage_by_status"],
+        "unresolved_candidates":reported["unresolved_candidates"],
+        "counts_by_role":staged.record.counts(),"counts_by_state":staged.record.counts_by_state(),
+        "issued_total":staged.record.assignments.len(),
+        "retention_sha256":hashes[0],"retained_projection_sha256":hashes[1],
+        "workflow_sha256":hashes[2],"record_head_sha256":staged.result["record_head"]["entry_sha256"]})
+}
+
+/// Bound the eventual entry before a package exists, including the full reported projection.
+pub(super) fn seal_headroom(staged: &Staged) -> AppResult<Option<Refusal>> {
+    if let Err(code) = record_limits(staged.record.entries.len(), 0, staged.record.bytes, false) {
+        return Ok(Some(code));
+    }
+    let reported = &staged.result["bundle_receipt"]["projection"];
+    if reported.is_null() {
+        return Ok(None);
+    }
+    let hash = "0".repeat(64);
+    let projection = workflow_projection(
+        staged,
+        reported,
+        &[hash.clone(), hash.clone(), hash.clone()],
+    );
+    let seal = Seal {
+        bundle_sha256: hash.clone(),
+        manifest_sha256: hash.clone(),
+        files: FILES.map(|path| BundleFile {
+            path: path.into(),
+            sha256: hash.clone(),
+            byte_length: u64::MAX,
+        }),
+        projection,
+    };
+    // Validation does not receive a finalize request. Use the maximum request ID,
+    // numeric widths and timestamp precision so every accepted request fits.
+    let entry = Entry {
+        schema_version: ENTRY_SCHEMA.into(),
+        case_id: staged.receipt.case_id.clone(),
+        session_id: staged.receipt.session_id().unwrap().into(),
+        request_id: "a".repeat(128),
+        request_sha256: hash.clone(),
+        case_revision: i64::MAX,
+        sequence: u64::MAX,
+        predecessor_sha256: hash.clone(),
+        occurred_at: "9999-12-31T23:59:59.999999999+00:00".into(),
+        content: Content::Sealed {
+            seal: Box::new(seal),
+        },
+        entry_sha256: hash,
+    };
+    Ok(record_limits(
+        staged.record.entries.len(),
+        canonical_bytes(&entry)?.len(),
+        staged.record.bytes,
+        false,
+    )
+    .err())
+}
+fn package(context: &OwnedContext<'_>, staged: &Staged) -> AppResult<Seal> {
+    let receipt = &staged.receipt;
     let directory = io::directory(context.data_dir, receipt)
         .unwrap()
         .join("sealed");
@@ -300,20 +378,15 @@ fn package(context: &OwnedContext<'_>, staged: &Staged) -> AppResult<Seal> {
     let retention = fs::read(stage.0.path().join(FILES[0]))?;
     let retained_projection = fs::read(stage.0.path().join("retained/projection.json"))?;
     let reported: Value = serde_json::from_slice(&retained_projection)?;
-    let projection = json!({"schema_version":PROJECTION_SCHEMA,
-        "binding":staged.result["bundle_receipt"]["binding"],"source":facts.source,
-        "upstream_commit":facts.upstream_commit,"validator_resources_sha256":facts.validator_resources_sha256,
-        "profile":facts.profile,"budget":staged.record.budget(facts.invocation_budget),
-        "provenance":ProviderProvenance::WorkflowRecorded,"canonical_snapshot_binding_verified":true,
-        "source_authorization_verified":true,"audit_performed":staged.record.assignments.iter().any(|a| a.assignment.spec.role == Role::Hunter && a.state == "closed"),
-        "admission_ready":false,"target_execution_allowed":false,
-        "run_status":reported["reported_run_status"],"incomplete_reason":staged.result["incomplete_reason"],
-        "reported_counts":reported["reported_counts"],"coverage_by_status":reported["coverage_by_status"],
-        "unresolved_candidates":reported["unresolved_candidates"],
-        "counts_by_role":staged.record.counts(),"counts_by_state":staged.record.counts_by_state(),
-        "issued_total":staged.record.assignments.len(),
-        "retention_sha256":digest(&retention),"retained_projection_sha256":digest(&retained_projection),
-        "workflow_sha256":digest(&workflow),"record_head_sha256":staged.result["record_head"]["entry_sha256"]});
+    let projection = workflow_projection(
+        staged,
+        &reported,
+        &[
+            digest(&retention),
+            digest(&retained_projection),
+            digest(&workflow),
+        ],
+    );
     let projection_bytes = canonical_bytes(&projection)?;
     io::publish_bytes(
         stage.0.path(),
@@ -360,5 +433,47 @@ struct PackageStage(crate::case_archive_io::PrivateArchiveDirectory);
 impl Drop for PackageStage {
     fn drop(&mut self) {
         crate::workspace_snapshot::make_tree_deletable(self.0.path());
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::cloudflare_provider::MAX_SEALED_FILE_BYTES;
+
+    #[test]
+    fn seal_verification_uses_the_shared_file_size_boundary() {
+        let hash = "a".repeat(64);
+        let projection = json!({"schema_version":PROJECTION_SCHEMA,
+            "provenance":"workflow_recorded", "canonical_snapshot_binding_verified":true,
+            "source_authorization_verified":true, "audit_performed":true,
+            "admission_ready":false, "target_execution_allowed":false,
+            "retention_sha256":hash, "workflow_sha256":hash});
+        let projection_bytes = canonical_bytes(&projection).unwrap();
+        let mut seal = Seal {
+            bundle_sha256: hash.clone(),
+            manifest_sha256: hash.clone(),
+            files: [
+                BundleFile {
+                    path: FILES[0].into(),
+                    sha256: hash.clone(),
+                    byte_length: 0,
+                },
+                BundleFile {
+                    path: FILES[1].into(),
+                    sha256: hash,
+                    byte_length: 0,
+                },
+                file(FILES[2], &projection_bytes),
+            ],
+            projection,
+        };
+        for index in 0..2 {
+            seal.files[index].byte_length = MAX_SEALED_FILE_BYTES;
+            assert!(seal.verify().is_ok());
+            seal.files[index].byte_length = MAX_SEALED_FILE_BYTES + 1;
+            assert!(seal.verify().is_err());
+            seal.files[index].byte_length = 0;
+        }
     }
 }

@@ -95,10 +95,9 @@ pub(super) fn capture(
     id: &str,
     spec: &OutputSpec,
 ) -> AppResult<Result<CapturedOutput, CheckpointOutcome>> {
-    let fail = |error_code| CheckpointOutcome::DocumentRejected {
+    let fail = |error_code| CheckpointOutcome::OutputRejected {
         error_code,
-        document: spec.path.clone(),
-        validation: None,
+        output: spec.path.clone(),
     };
     let a = match assignment(record, id, spec) {
         Ok(a) => a,

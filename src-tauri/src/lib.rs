@@ -533,7 +533,12 @@ mod desktop_environment_path_tests {
         let lease = prepare_and_lease_desktop_data_directory(&override_path, true)
             .expect("desktop override lease");
 
-        assert_eq!(lease.path(), override_path.join(".exclusive-process.lock"));
+        assert_eq!(
+            lease.path(),
+            crate::internal_paths::canonicalize(&override_path)
+                .unwrap()
+                .join(".exclusive-process.lock")
+        );
         assert!(DataDirectoryExclusiveLease::acquire(&override_path).is_err());
     }
 }

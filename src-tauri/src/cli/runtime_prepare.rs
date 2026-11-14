@@ -29,6 +29,7 @@ struct Request {
     args: PrepareArgs,
     data_dir: Option<PathBuf>,
     managed_bundle: Option<PathBuf>,
+    expected_managed_runtime_manifest_sha256: Option<String>,
     local_images: Option<PathBuf>,
 }
 
@@ -44,6 +45,7 @@ fn failure(request: &Request, error: &AppError) -> Value {
         "offline": request.args.offline,
         "engines": request.args.engine,
         "runtime": null,
+        "runtime_unavailable_reason": null,
         "images": [],
         "error_code": error_code,
         "error": error.to_string(),
@@ -58,6 +60,9 @@ pub(super) async fn execute(cli: &Cli, args: &PrepareArgs, sources: GlobalOption
         args: args.clone(),
         data_dir: cli.data_dir.clone(),
         managed_bundle: cli.managed_runtime_bundle.clone(),
+        expected_managed_runtime_manifest_sha256: cli
+            .expected_managed_runtime_manifest_sha256
+            .clone(),
         local_images: cli.release_approved_local_image_directory.clone(),
     };
     if !sources.data_dir_was_explicit() || request.data_dir.is_none() {
@@ -92,16 +97,32 @@ pub(super) async fn execute(cli: &Cli, args: &PrepareArgs, sources: GlobalOption
         Ok((
             tokio::signal::unix::signal(tokio::signal::unix::SignalKind::interrupt())?,
             tokio::signal::unix::signal(tokio::signal::unix::SignalKind::terminate())?,
+            tokio::signal::unix::signal(tokio::signal::unix::SignalKind::hangup())?,
         ))
     })();
     #[cfg(unix)]
-    let (mut interrupt, mut terminate) = match signals {
+    let (mut interrupt, mut terminate, mut hangup) = match signals {
         Ok(signals) => signals,
         Err(error) => return deliver(failure(&request, &error.into()), cli.json),
     };
-    #[cfg(not(unix))]
+    #[cfg(windows)]
+    let signals = (|| -> io::Result<_> {
+        Ok((
+            tokio::signal::windows::ctrl_c()?,
+            tokio::signal::windows::ctrl_break()?,
+            tokio::signal::windows::ctrl_close()?,
+            tokio::signal::windows::ctrl_logoff()?,
+            tokio::signal::windows::ctrl_shutdown()?,
+        ))
+    })();
+    #[cfg(windows)]
+    let (mut interrupt, mut break_signal, mut close, mut logoff, mut shutdown) = match signals {
+        Ok(signals) => signals,
+        Err(error) => return deliver(failure(&request, &error.into()), cli.json),
+    };
+    #[cfg(not(any(unix, windows)))]
     let interrupt = tokio::signal::ctrl_c();
-    #[cfg(not(unix))]
+    #[cfg(not(any(unix, windows)))]
     tokio::pin!(interrupt);
     let worker_request = request.clone();
     let worker_cancelled = cancelled.clone();
@@ -124,8 +145,36 @@ pub(super) async fn execute(cli: &Cli, args: &PrepareArgs, sources: GlobalOption
                 let _ = exit_signal.compare_exchange(0, 143, Ordering::AcqRel, Ordering::Acquire);
                 cancelled.store(true, Ordering::Release);
             },
+            _ = hangup.recv() => {
+                let _ = exit_signal.compare_exchange(0, 143, Ordering::AcqRel, Ordering::Acquire);
+                cancelled.store(true, Ordering::Release);
+            },
         }
-        #[cfg(not(unix))]
+        #[cfg(windows)]
+        tokio::select! {
+            result = &mut owner => break result,
+            _ = interrupt.recv() => {
+                let _ = exit_signal.compare_exchange(0, 130, Ordering::AcqRel, Ordering::Acquire);
+                cancelled.store(true, Ordering::Release);
+            },
+            _ = break_signal.recv() => {
+                let _ = exit_signal.compare_exchange(0, 130, Ordering::AcqRel, Ordering::Acquire);
+                cancelled.store(true, Ordering::Release);
+            },
+            _ = close.recv() => {
+                let _ = exit_signal.compare_exchange(0, 143, Ordering::AcqRel, Ordering::Acquire);
+                cancelled.store(true, Ordering::Release);
+            },
+            _ = logoff.recv() => {
+                let _ = exit_signal.compare_exchange(0, 143, Ordering::AcqRel, Ordering::Acquire);
+                cancelled.store(true, Ordering::Release);
+            },
+            _ = shutdown.recv() => {
+                let _ = exit_signal.compare_exchange(0, 143, Ordering::AcqRel, Ordering::Acquire);
+                cancelled.store(true, Ordering::Release);
+            },
+        }
+        #[cfg(not(any(unix, windows)))]
         tokio::select! {
             result = &mut owner => break result,
             signal = &mut interrupt, if !cancelled.load(Ordering::Acquire) => {
@@ -163,22 +212,37 @@ fn owned_prepare(
         &fs::canonicalize(&data_dir)?.join("runtime-preparations"),
     )?;
     let started_at = chrono::Utc::now();
+    let mut runtime_unavailable_reason = None;
     let prepared = if cancelled.load(Ordering::Acquire) {
         plan.report_for_failure(request.args.offline, "Preparation was cancelled.", true)
     } else {
         let resolved = (|| {
-            let managed =
-                match open_managed_runtime_manager(&data_dir, request.managed_bundle.as_deref()) {
-                    Ok(manager) => Some(manager),
-                    Err(error) if request.managed_bundle.is_some() => return Err(error),
-                    Err(_) => None,
-                };
-            resolve_preparation_runtime(
+            let managed = match open_managed_runtime_manager(
+                &data_dir,
+                request.managed_bundle.as_deref(),
+                request.expected_managed_runtime_manifest_sha256.as_deref(),
+            ) {
+                Ok(manager) => Some(manager),
+                Err(error) if request.managed_bundle.is_some() => {
+                    runtime_unavailable_reason = Some("managed_bundle_rejected");
+                    return Err(error);
+                }
+                Err(_) => None,
+            };
+            let resolved = resolve_preparation_runtime(
                 managed.as_ref(),
                 request.local_images.as_deref(),
                 !request.args.offline,
                 cancelled,
-            )
+            );
+            if resolved.is_err() {
+                runtime_unavailable_reason = Some(if managed.is_some() {
+                    "managed_runtime_unavailable"
+                } else {
+                    "no_runtime"
+                });
+            }
+            resolved
         })();
         match resolved {
             Ok(runtime) => plan.prepare(&runtime, request.args.offline, cancelled),
@@ -191,6 +255,12 @@ fn owned_prepare(
     };
     let mut result = serde_json::to_value(prepared)?;
     let signal = exit_signal.load(Ordering::Acquire);
+    result["runtime_unavailable_reason"] =
+        json!(if cancelled.load(Ordering::Acquire) || signal != 0 {
+            None
+        } else {
+            runtime_unavailable_reason
+        });
     let exit_code = if signal != 0 {
         signal
     } else if result["ready"] == true {
@@ -214,18 +284,37 @@ fn owned_prepare(
     result["started_at"] = json!(started_at);
     result["completed_at"] = json!(chrono::Utc::now());
     result["receipt_path"] = json!(receipt_path);
-    result["receipt_sha256"] = json!(hex::encode(Sha256::digest(serde_json::to_vec(&result)?)));
     // A final stdout failure cannot erase the already committed observation.
     // Preparation receipts are observations, never permission to start a scan.
-    let bytes = serde_json::to_vec_pretty(&result)?;
-    let mut temporary = tempfile::NamedTempFile::new_in(&receipt_dir)?;
-    temporary.write_all(&bytes)?;
-    temporary.as_file().sync_all()?;
-    temporary
-        .persist_noclobber(&receipt_path)
-        .map_err(|error| error.error)?;
-    #[cfg(unix)]
-    fs::File::open(&receipt_dir)?.sync_all()?;
+    let persisted = (|| -> AppResult<()> {
+        result["receipt_sha256"] = json!(hex::encode(Sha256::digest(serde_json::to_vec(&result)?)));
+        let bytes = serde_json::to_vec_pretty(&result)?;
+        let mut temporary = tempfile::NamedTempFile::new_in(&receipt_dir)?;
+        temporary.write_all(&bytes)?;
+        temporary.as_file().sync_all()?;
+        temporary
+            .persist_noclobber(&receipt_path)
+            .map_err(|error| error.error)?;
+        #[cfg(unix)]
+        fs::File::open(&receipt_dir)?.sync_all()?;
+        Ok(())
+    })();
+    if let Err(error) = persisted {
+        result["receipt_path"] = Value::Null;
+        result["receipt_sha256"] = Value::Null;
+        result["receipt_error"] = json!(error.to_string().chars().take(2_000).collect::<String>());
+        result["error_code"] = json!("receipt_persistence_failed");
+        result["command_outcome"] = json!("failed");
+        let signal = exit_signal.load(Ordering::Acquire);
+        if signal != 0 || cancelled.load(Ordering::Acquire) {
+            result["runtime_unavailable_reason"] = Value::Null;
+        }
+        result["exit_code"] = json!(if matches!(signal, 130 | 143) {
+            signal
+        } else {
+            4
+        });
+    }
     Ok(result)
 }
 
@@ -239,4 +328,37 @@ fn deliver(result: Value, json_output: bool) -> u8 {
         return 4;
     }
     exit_code
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn cancelled_before_resolution_has_no_unavailable_reason() {
+        let root = tempfile::tempdir().unwrap();
+        let request = Request {
+            id: new_id(),
+            args: PrepareArgs {
+                engine: vec!["gitleaks".into()],
+                offline: false,
+                bootstrap_control_stdin: false,
+            },
+            data_dir: Some(root.path().join("data")),
+            managed_bundle: Some(root.path().join("missing-bundle")),
+            expected_managed_runtime_manifest_sha256: None,
+            local_images: None,
+        };
+        let plan = RuntimePreparationPlan::new(
+            &EngineRegistry::load_builtin().unwrap(),
+            &builtin_adapter_registry().unwrap(),
+            &request.args.engine,
+        )
+        .unwrap();
+        let cancelled = Arc::new(AtomicBool::new(true));
+        let result = owned_prepare(&request, &plan, &cancelled, &AtomicU8::new(130)).unwrap();
+        assert_eq!(result.get("runtime_unavailable_reason"), Some(&Value::Null));
+        assert_eq!(result["command_outcome"], "cancelled");
+        assert!(!request.data_dir.unwrap().join("managed-runtime").exists());
+    }
 }

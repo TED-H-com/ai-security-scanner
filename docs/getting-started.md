@@ -48,7 +48,7 @@ Launch **ai-security-scanner** after installation. The app prepares its own scan
 
 Scans run in the desktop app on your own computer, and **Start** is a button in the app window. An agent on the same computer can install the app, check that the computer is ready to scan, guide you through the app, explain the results, and save the HTML report through the app's CLI. It installs the release above; it does not build this repository.
 
-Open this checkout in **Claude Code** or **Codex** and use the repository's `ai-security-scanner` skill: [Claude Code instructions](../.claude/skills/ai-security-scanner/SKILL.md) · [Codex instructions](../.codex/skills/ai-security-scanner/SKILL.md). Both copies are generated from the [canonical skill](../skills/ai-security-scanner/SKILL.md). If your host does not discover the repository copy, explicitly open the linked instructions. Keep the checkout available: the skill depends on its product guides. Publishing these instructions is separate from releasing the new skill-first core or listing a plugin.
+Open this checkout in **Claude Code** or **Codex** and use the repository's `ai-security-scanner` skill: [Claude Code instructions](../.claude/skills/ai-security-scanner/SKILL.md) · [Codex instructions](../.codex/skills/ai-security-scanner/SKILL.md). Both copies are generated from the [canonical skill](../skills/ai-security-scanner/SKILL.md). If your host does not discover the repository copy, explicitly open the linked instructions. Keep the checkout available: the skill depends on its product guides.
 
 Ask the agent:
 
@@ -69,7 +69,7 @@ npm run tauri dev
 
 These commands have been exercised on Linux.
 
-The current Grype image pin is `0.117.0-4` (`sha256:56b0d675…`), with local repository vulnerability results recorded. See [the exact pin and result](engine-catalog.md#grype-repository-support).
+The current Grype image pin is `0.121.2-1` (`sha256:80b8f128…`). See [the exact pin and its verification](engine-catalog.md#grype-repository-support).
 
 ## Choose the first scan
 

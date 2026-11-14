@@ -4,6 +4,26 @@ use crate::cloudflare_provider::audit::record::*;
 use crate::cloudflare_provider::audit::{PreparationReceipt, PreparationResult, RECEIPT_EVENT};
 use crate::cloudflare_provider::source_view::canonical_bytes;
 
+fn invalid_record(error: impl std::fmt::Display) -> AppError {
+    let message = error.to_string();
+    AppError::InvalidCloudflareRecord(
+        message
+            .strip_prefix("storage error: ")
+            .unwrap_or(&message)
+            .to_owned(),
+    )
+}
+
+fn record_row_error(error: rusqlite::Error) -> AppError {
+    match error {
+        rusqlite::Error::FromSqlConversionFailure(..)
+        | rusqlite::Error::IntegralValueOutOfRange(..)
+        | rusqlite::Error::Utf8Error(..)
+        | rusqlite::Error::InvalidColumnType(..) => invalid_record(error),
+        other => other.into(),
+    }
+}
+
 // Inspect SQLite's borrowed value before copying or decoding committed JSON.
 fn bounded_payload(row: &rusqlite::Row<'_>, index: usize) -> rusqlite::Result<String> {
     let bytes = row.get_ref(index)?.as_str()?;
@@ -56,14 +76,14 @@ fn read(
     })?;
     let mut found = None;
     for row in rows {
-        let (time, bytes) = row?;
+        let (time, bytes) = row.map_err(record_row_error)?;
         if bytes.len() > 1024 * 1024 {
-            return Err(AppError::Storage("oversized audit receipt".into()));
+            return Err(invalid_record("oversized audit receipt"));
         }
-        let receipt: PreparationReceipt = serde_json::from_str(&bytes)?;
-        receipt.verify()?;
+        let receipt: PreparationReceipt = serde_json::from_str(&bytes).map_err(invalid_record)?;
+        receipt.verify().map_err(invalid_record)?;
         if receipt.case_id != case_id || receipt.occurred_at != time {
-            return Err(AppError::Storage("audit event identity mismatch".into()));
+            return Err(invalid_record("audit event identity mismatch"));
         }
         if if by_session {
             receipt.session_id() == Some(id)
@@ -71,7 +91,7 @@ fn read(
             receipt.request_id == id
         } {
             if found.is_some() {
-                return Err(AppError::Storage("duplicate audit receipt".into()));
+                return Err(invalid_record("duplicate audit receipt"));
             }
             found = Some(receipt);
         }
@@ -85,26 +105,26 @@ fn record(connection: &Connection, receipt: &PreparationReceipt) -> AppResult<Re
         Ok((row.get::<_, String>(0)?, bounded_payload(row, 1)?))
     })?;
     for row in rows {
-        let (time, bytes) = row?;
+        let (time, bytes) = row.map_err(record_row_error)?;
         if bytes.len() > MAX_ENTRY {
-            return Err(AppError::Storage("oversized audit entry".into()));
+            return Err(invalid_record("oversized audit entry"));
         }
-        let entry: Entry = serde_json::from_str(&bytes)?;
+        let entry: Entry = serde_json::from_str(&bytes).map_err(invalid_record)?;
         if entry.case_id != receipt.case_id
             || entry.occurred_at != time
-            || entry.content_digest()? != entry.entry_sha256
+            || entry.content_digest().map_err(invalid_record)? != entry.entry_sha256
         {
-            return Err(AppError::Storage(
-                "audit entry identity/digest mismatch".into(),
-            ));
+            return Err(invalid_record("audit entry identity/digest mismatch"));
         }
         if !runs.contains_key(&entry.session_id) {
             let parent = read(connection, &receipt.case_id, &entry.session_id, true)?
-                .ok_or_else(|| AppError::Storage("audit entry has no preparation".into()))?;
+                .ok_or_else(|| invalid_record("audit entry has no preparation"))?;
             runs.insert(entry.session_id.clone(), (parent, Record::default()));
         }
         let (parent, chain) = runs.get_mut(&entry.session_id).unwrap();
-        chain.push(parent, entry, bytes.len())?;
+        chain
+            .push(parent, entry, bytes.len())
+            .map_err(invalid_record)?;
     }
     Ok(runs
         .remove(receipt.session_id().unwrap_or_default())
@@ -181,7 +201,7 @@ impl Storage {
         Ok(receipt)
     }
     pub fn cloudflare_audit_record(&self, receipt: &PreparationReceipt) -> AppResult<Record> {
-        receipt.verify()?;
+        receipt.verify().map_err(invalid_record)?;
         record(&*self.connection()?, receipt)
     }
     pub(crate) fn append_cloudflare_record(

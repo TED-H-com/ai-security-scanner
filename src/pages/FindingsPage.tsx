@@ -1674,8 +1674,8 @@ function BeginnerReportOverview({ report, run }: { report: BeginnerMasterReport;
   // space in Traditional Chinese (an ASCII colon plus space is not how a
   // Chinese-reading label ends). Every other label on this page keeps its
   // literal ": " regardless of locale.
-  const firstLayerLabelColon = locale !== "zh-TW" ? ":" : "：";
-  const firstLayerLabelGap = locale !== "zh-TW" ? " " : "";
+  const firstLayerLabelColon = locale !== "zh-TW" && locale !== "ja" ? ":" : "：";
+  const firstLayerLabelGap = locale !== "zh-TW" && locale !== "ja" ? " " : "";
   const firstLayerLabelSeparator = `${firstLayerLabelColon}${firstLayerLabelGap}`;
   const securityFindingIds = new Set(
     report.findings.filter(isSecurityFinding).map((finding) => finding.findingId),
@@ -2036,7 +2036,7 @@ function BeginnerReportOverview({ report, run }: { report: BeginnerMasterReport;
         key={check.taskId} className="section-block source-audit-failure">
         <h2>{localizedCheckName(check.checkId, locale, engineByTaskId.get(check.taskId))}</h2>
         <p>{[check.outcome!.summary, check.outcome!.reason, check.outcome!.nextAction]
-          .map((sentence) => coverageGapProse(locale, sentence)).join(locale === "zh-TW" ? "" : " ")}</p>
+          .map((sentence) => coverageGapProse(locale, sentence)).join(locale === "en" ? " " : "")}</p>
       </section>)}
       <SourceAuditResults audits={report.sourceAudits ?? []} />
       {report.incidentFocus && <IncidentFocusReport report={report.incidentFocus} targets={report.requested.targets} />}

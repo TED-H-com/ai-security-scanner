@@ -393,6 +393,14 @@ fn escape(value: &str) -> String {
         .replace('\'', "&#39;")
 }
 
+fn html_time(value: &DateTime<Utc>) -> String {
+    format!(
+        "<time datetime=\"{}\">{}</time>",
+        escape(&value.to_rfc3339()),
+        value.format("%Y-%m-%d %H:%M UTC")
+    )
+}
+
 fn text<'a>(locale: ReportLocale, english: &'a str, chinese: &'a str) -> &'a str {
     if locale == ReportLocale::ZhHant {
         chinese
@@ -412,6 +420,22 @@ fn origin_label(origin: SelectedRunOrigin, locale: ReportLocale) -> &'static str
             "已記錄的檢查與匯入發現",
         ),
         SelectedRunOrigin::NoChecks => text(locale, "No checks recorded", "未記錄檢查"),
+    }
+}
+
+fn source_check_names(source: &SelectedRunSource, locale: ReportLocale) -> String {
+    let catalog = crate::report_renderer::HtmlReportCatalog::new(locale);
+    let mut names = Vec::new();
+    for check in &source.report.actual.checks {
+        let name = crate::report_renderer::report_check_label(&check.check_id, catalog);
+        if !names.contains(&name) {
+            names.push(name);
+        }
+    }
+    if names.is_empty() {
+        origin_label(source.origin, locale).to_owned()
+    } else {
+        names.join(" / ")
     }
 }
 
@@ -441,6 +465,10 @@ fn severity_label(severity: &Severity, locale: ReportLocale) -> &str {
 
 pub(crate) fn render_html(report: &SelectedRunReport, locale: ReportLocale) -> AppResult<String> {
     let t = |en, zh| text(locale, en, zh);
+    let title = crate::report_renderer::localized_case_title(
+        &report.project_title,
+        crate::report_renderer::HtmlReportCatalog::new(locale),
+    );
     let source_indices: BTreeMap<_, _> = report
         .sources
         .iter()
@@ -450,12 +478,12 @@ pub(crate) fn render_html(report: &SelectedRunReport, locale: ReportLocale) -> A
     let mut html = format!(
         "<!doctype html><html lang=\"{}\"><head><meta charset=\"utf-8\"><meta name=\"viewport\" content=\"width=device-width, initial-scale=1\"><meta http-equiv=\"Content-Security-Policy\" content=\"default-src 'none'; style-src 'unsafe-inline'; base-uri 'none'; form-action 'none'\"><title>{}</title><style>{}</style></head><body><main><header><p class=\"eyebrow\">ai-security-scanner</p><h1>{}</h1><p>{}</p><p class=\"muted\">{} {}</p></header>",
         locale.as_str(),
-        escape(&report.project_title),
+        escape(title),
         STYLE,
         t("Combined security report", "整合安全報告"),
-        escape(&report.project_title),
+        escape(title),
         t("Generated", "產生時間"),
-        escape(&report.generated_at.to_rfc3339())
+        html_time(&report.generated_at)
     );
     if report.is_demo {
         html.push_str(&format!(
@@ -486,7 +514,7 @@ pub(crate) fn render_html(report: &SelectedRunReport, locale: ReportLocale) -> A
             "<p>{}</p>",
             escape(&t(
                 "The selected reports contain no problem observations. Validate the {validation_count} source-audit item{suffix} under To validate first, then review each source's completed checks and coverage limits below.",
-                "所選報告沒有問題觀察紀錄；請先驗證下方「待驗證」中的 {validation_count} 個原始碼稽核項目，再查看各來源完成的檢查與涵蓋限制。",
+                "所選報告沒有問題觀察紀錄；請先驗證「待驗證」中的 {validation_count} 個原始碼稽核項目，再查看各來源完成的檢查與涵蓋限制。",
             ).replace("{validation_count}", &validation_count.to_string()).replace("{suffix}", suffix))
         ));
     } else if report.problems.is_empty() {
@@ -604,10 +632,10 @@ pub(crate) fn render_html(report: &SelectedRunReport, locale: ReportLocale) -> A
             ));
             for evidence in &original.evidence_references {
                 html.push_str(&format!(
-                    "<p>{} · {} · <time>{}</time></p><p>{}: <code>{}</code></p>",
+                    "<p>{} · {} · {}</p><p>{}: <code>{}</code></p>",
                     escape(&evidence.engine_id),
                     escape(evidence.source_rule.as_deref().unwrap_or("—")),
-                    escape(&evidence.observed_at.to_rfc3339()),
+                    html_time(&evidence.observed_at),
                     t("Evidence SHA-256", "證據 SHA-256"),
                     escape(&evidence.artifact_sha256)
                 ));
@@ -632,7 +660,7 @@ pub(crate) fn render_html(report: &SelectedRunReport, locale: ReportLocale) -> A
             "<p>{}</p>",
             escape(&t(
                 "Also validate the {validation_count} source-audit item{suffix} under To validate.",
-                "另請驗證下方「待驗證」中的 {validation_count} 個原始碼稽核項目。",
+                "另請驗證「待驗證」中的 {validation_count} 個原始碼稽核項目。",
             ).replace("{validation_count}", &validation_count.to_string()).replace("{suffix}", suffix))
         ));
     }
@@ -643,7 +671,7 @@ pub(crate) fn render_html(report: &SelectedRunReport, locale: ReportLocale) -> A
             let index = source_indices[occurrence.run_id.as_str()];
             let source = &report.sources[index];
             html.push_str(&format!("<tr><td>{}</td><td><a href=\"#source-{}\">#{}</a> · {}</td><td>{}</td><td>{}</td><td>{}</td></tr>",
-            escape(occurrence.label.as_deref().unwrap_or(&asset.asset_id)),index+1,source.sequence,origin_label(source.origin,locale),escape(&source.completed_at.to_rfc3339()),occurrence.problem_observation_count,occurrence.coverage_gap_count));
+            escape(occurrence.label.as_deref().unwrap_or(&asset.asset_id)),index+1,source.sequence,escape(&source_check_names(source, locale)),html_time(&source.completed_at),occurrence.problem_observation_count,occurrence.coverage_gap_count));
         }
     }
     html.push_str("</tbody></table></div></section>");
@@ -652,28 +680,46 @@ pub(crate) fn render_html(report: &SelectedRunReport, locale: ReportLocale) -> A
         t("Source coverage and outcomes", "來源涵蓋範圍與結果")
     ));
     for (index, source) in report.sources.iter().enumerate() {
-        html.push_str(&format!("<article class=\"source\" id=\"source-{}\"><h3>{} #{} · {}</h3><p>{} {} → {}</p><details><summary>{}</summary><p>{}: <code>{}</code></p><div class=\"table-wrap\"><table><thead><tr><th>{}</th><th>{}</th><th>{}</th></tr></thead><tbody>",
-            index+1,t("Report", "報告"),source.sequence,origin_label(source.origin,locale),t("Source record period", "來源紀錄期間"),escape(&source.created_at.to_rfc3339()),escape(&source.completed_at.to_rfc3339()),
-            t("Recorded checks and limits", "已記錄的檢查與限制"),t("Source run", "來源輪次"),escape(&source.run_id),t("Check", "檢查"),t("Outcome in source", "來源結果"),t("Recorded end", "記錄的結束時間")));
+        let catalog = crate::report_renderer::HtmlReportCatalog::new(locale);
+        html.push_str(&format!(
+            "<article class=\"source\" id=\"source-{}\"><h3>{} #{} · {}</h3><ul>",
+            index + 1,
+            t("Report", "報告"),
+            source.sequence,
+            escape(&source_check_names(source, locale))
+        ));
         for check in &source.report.actual.checks {
+            let name = crate::report_renderer::report_check_label(&check.check_id, catalog);
+            let version = crate::report_renderer::tested_check_version_line(
+                &source.report.technical_details.tasks,
+                &check.task_id,
+                &catalog,
+            )
+            .map(|line| format!(" / {line}"))
+            .unwrap_or_default();
             html.push_str(&format!(
-                "<tr><td>{}</td><td>{}</td><td>{}</td></tr>",
-                escape(if check.check_id == "Cloudflare source audit" {
-                    t("Cloudflare source audit", "Cloudflare 原始碼稽核")
-                } else {
-                    &check.check_id
-                }),
-                status_label(check.status, locale),
-                escape(
-                    &check
-                        .finished_at
-                        .map(|date| date.to_rfc3339())
-                        .unwrap_or_else(|| "—".into())
-                )
+                "<li>{}{version}{}{}",
+                escape(&name),
+                t(": ", "："),
+                status_label(check.status, locale)
             ));
+            if let Some(outcome) = &check.outcome {
+                for sentence in [&outcome.summary, &outcome.reason, &outcome.next_action] {
+                    let sentence = if locale == ReportLocale::ZhHant {
+                        crate::agent_audit_failure::wording::translate(sentence).unwrap_or(sentence)
+                    } else {
+                        sentence
+                    };
+                    html.push_str(&format!("<p>{}</p>", escape(sentence)));
+                }
+            }
+            html.push_str("</li>");
         }
-        html.push_str("</tbody></table></div><ul>");
-        for gap in &source.report.coverage_gaps {
+        html.push_str(&format!(
+            "</ul><h4>{}</h4><ul>",
+            t("What was not tested", "未測試的內容")
+        ));
+        let render_gap = |gap: &crate::beginner_report::CoverageGap| {
             let reason = if locale == ReportLocale::ZhHant {
                 crate::finding_narrative::coverage_gap_prose_zh_hant(&gap.reason)
                     .unwrap_or_else(|| gap.reason.clone())
@@ -686,9 +732,63 @@ pub(crate) fn render_html(report: &SelectedRunReport, locale: ReportLocale) -> A
             } else {
                 gap.next_action.clone()
             };
-            html.push_str(&format!("<li>{} {}</li>", escape(&reason), escape(&action)));
+            format!(
+                "<li>{}{}{}</li>",
+                escape(&reason),
+                t(" ", ""),
+                escape(&action)
+            )
+        };
+        let mut gaps = source
+            .report
+            .coverage_gaps
+            .iter()
+            .filter(|gap| gap.class == crate::beginner_report::CoverageGapClass::CoverageLoss)
+            .peekable();
+        if gaps.peek().is_none() {
+            html.push_str(&format!(
+                "<li>{}</li>",
+                t(
+                    "No known coverage gap was recorded.",
+                    "未記錄已知的涵蓋缺口。"
+                )
+            ));
         }
-        html.push_str("</ul></details>");
+        for gap in gaps {
+            html.push_str(&render_gap(gap));
+        }
+        html.push_str("</ul>");
+        let notes: Vec<_> = source
+            .report
+            .coverage_gaps
+            .iter()
+            .filter(|gap| gap.class == crate::beginner_report::CoverageGapClass::RecordNote)
+            .collect();
+        if !notes.is_empty() {
+            html.push_str(&format!("<h4>{}</h4><ul>", t("Record notes", "記錄備註")));
+            for note in notes {
+                html.push_str(&render_gap(note));
+            }
+            html.push_str("</ul>");
+        }
+        html.push_str(&format!("<details><summary>{}</summary><p>{}{} → {}</p><p>{}<code>{}</code></p><div class=\"table-wrap\"><table><thead><tr><th>{}</th><th>{}</th></tr></thead><tbody>",
+            t("Recorded checks and limits", "已記錄的檢查與限制"),t("Source record period: ", "來源紀錄期間："),html_time(&source.created_at),html_time(&source.completed_at),
+            t("Source run: ", "來源輪次："),escape(&source.run_id),t("Check", "檢查"),t("Recorded end", "記錄的結束時間")));
+        for check in &source.report.actual.checks {
+            html.push_str(&format!(
+                "<tr><td>{}</td><td>{}</td></tr>",
+                escape(&crate::report_renderer::report_check_label(
+                    &check.check_id,
+                    catalog
+                )),
+                check
+                    .finished_at
+                    .as_ref()
+                    .map(html_time)
+                    .unwrap_or_else(|| "—".into())
+            ));
+        }
+        html.push_str("</tbody></table></div></details>");
         html.push_str(&crate::report_renderer::html_source_audits(
             &source.report,
             crate::report_renderer::HtmlReportCatalog::new(locale),
@@ -765,6 +865,14 @@ pub(crate) fn render_html(report: &SelectedRunReport, locale: ReportLocale) -> A
                 .collect::<Vec<_>>(),
             report.redaction_profile == "standard",
         )?;
+    } else if locale == ReportLocale::ZhHant {
+        if report.redaction_profile == "standard" {
+            html = html
+                .replace("[redacted]", "（已遮蔽）")
+                .replace("[redacted location]", "（已遮蔽位置）");
+        }
+        // Every other named marker reads as it does in a single report.
+        html = crate::report_renderer::localize_redaction_markers(&html);
     }
     Ok(html)
 }
@@ -822,6 +930,74 @@ mod tests {
 
     fn ids(case: &AssessmentCase) -> Vec<String> {
         case.scan_runs.iter().map(|run| run.id.clone()).collect()
+    }
+
+    #[test]
+    fn chinese_combined_standard_localizes_bare_redaction_marker_in_html() {
+        let (_temp, _storage, case, _request) = fixture();
+        let mut options = ExportOptions {
+            locale: ReportLocale::ZhHant,
+            ..ExportOptions::default()
+        };
+        let report = preview_selected_run_report(&case, &ids(&case), &options).unwrap();
+        let json = serde_json::to_string(&report).unwrap();
+        assert!(json.contains("[redacted]"));
+        let html = render_html(&report, options.locale).unwrap();
+        assert!(html.contains("（已遮蔽）"));
+        assert!(!html.contains("[redacted]"));
+
+        options.redaction = RedactionProfile::None;
+        let report = preview_selected_run_report(&case, &ids(&case), &options).unwrap();
+        let html = render_html(&report, options.locale).unwrap();
+        assert!(html.contains("Synthetic demo builder"));
+    }
+
+    #[test]
+    fn chinese_combined_standard_localizes_redacted_location_in_html() {
+        let (_temp, _storage, case, _request) = fixture();
+        let options = ExportOptions {
+            locale: ReportLocale::ZhHant,
+            ..ExportOptions::default()
+        };
+        let mut report = preview_selected_run_report(&case, &ids(&case), &options).unwrap();
+        let evidence = report
+            .sources
+            .iter_mut()
+            .flat_map(|source| &mut source.report.findings)
+            .flat_map(|finding| &mut finding.evidence_references)
+            .next()
+            .unwrap();
+        evidence.location = Some("[redacted location]".into());
+        let json = serde_json::to_string(&report).unwrap();
+        assert!(json.contains("[redacted location]"));
+        let html = render_html(&report, options.locale).unwrap();
+        assert!(html.contains("（已遮蔽位置）"));
+        assert!(!html.contains("[redacted location]"));
+    }
+
+    #[test]
+    fn chinese_combined_report_localizes_named_redaction_markers_in_html() {
+        let (_temp, _storage, case, _request) = fixture();
+        for redaction in [RedactionProfile::Standard, RedactionProfile::None] {
+            let options = ExportOptions {
+                locale: ReportLocale::ZhHant,
+                redaction,
+                ..ExportOptions::default()
+            };
+            let mut report = preview_selected_run_report(&case, &ids(&case), &options).unwrap();
+            let evidence = report
+                .sources
+                .iter_mut()
+                .flat_map(|source| &mut source.report.findings)
+                .flat_map(|finding| &mut finding.evidence_references)
+                .next()
+                .unwrap();
+            evidence.location = Some("[redacted endpoint] and [redacted snapshot hash]".into());
+            let html = render_html(&report, options.locale).unwrap();
+            assert!(html.contains("（端點） and （快照雜湊）"));
+            assert!(!html.contains("[redacted endpoint]"));
+            assert!(!html.contains("[redacted snapshot hash]"));
+        }
     }
 
     #[test]

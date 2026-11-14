@@ -615,6 +615,29 @@ pub struct DataDirectoryExclusiveLease {
 impl DataDirectoryExclusiveLease {
     pub fn acquire(data_directory: &Path) -> AppResult<Self> {
         fs::create_dir_all(data_directory)?;
+        #[cfg(unix)]
+        let original_metadata = {
+            let metadata = fs::symlink_metadata(data_directory)?;
+            if metadata.file_type().is_symlink() || !metadata.is_dir() {
+                return Err(AppError::NotAuthorized(
+                    "process lease data directory must be a real directory".into(),
+                ));
+            }
+            metadata
+        };
+        #[cfg(windows)]
+        let original_path = std::path::absolute(data_directory)?;
+        #[cfg(windows)]
+        let original_parent = {
+            let path = original_path.parent().ok_or_else(|| {
+                AppError::NotAuthorized("process lease data directory has no real parent".into())
+            })?;
+            open_windows_directory_no_follow(path, false)?
+        };
+        #[cfg(windows)]
+        let original_directory = open_windows_directory_no_follow(&original_path, false)?;
+        let canonical_directory = crate::internal_paths::canonicalize(data_directory)?;
+        let data_directory = canonical_directory.as_path();
         #[cfg(windows)]
         let parent_path = data_directory.parent().ok_or_else(|| {
             AppError::NotAuthorized("process lease data directory has no real parent".into())
@@ -625,6 +648,14 @@ impl DataDirectoryExclusiveLease {
         let data_directory_guard = open_windows_directory_no_follow(data_directory, false)?;
         #[cfg(windows)]
         let data_directory_identity = windows_file_id(&data_directory_guard)?;
+        #[cfg(windows)]
+        if windows_file_id(&original_directory)? != data_directory_identity {
+            return Err(AppError::NotAuthorized(
+                "process lease data-directory namespace changed during acquisition".into(),
+            ));
+        }
+        #[cfg(windows)]
+        drop((original_parent, original_directory));
         #[cfg(windows)]
         let windows_mutex = WindowsOwnedMutex::acquire(&parent, &data_directory_guard)?;
         let path = data_directory.join(LEASE_FILENAME);
@@ -648,8 +679,14 @@ impl DataDirectoryExclusiveLease {
         }
         #[cfg(unix)]
         let file = {
+            use std::os::unix::fs::MetadataExt;
+
             let metadata = fs::symlink_metadata(data_directory)?;
-            if metadata.file_type().is_symlink() || !metadata.is_dir() {
+            if metadata.file_type().is_symlink()
+                || !metadata.is_dir()
+                || (metadata.dev(), metadata.ino())
+                    != (original_metadata.dev(), original_metadata.ino())
+            {
                 return Err(AppError::NotAuthorized(
                     "process lease data directory must be a real directory".into(),
                 ));
@@ -991,13 +1028,56 @@ mod tests {
     fn exclusive_lease_blocks_a_second_process_and_releases_on_drop() {
         let temporary = tempfile::tempdir().unwrap();
         let first = DataDirectoryExclusiveLease::acquire(temporary.path()).unwrap();
-        assert_eq!(first.path(), temporary.path().join(LEASE_FILENAME));
+        assert_eq!(
+            first.path(),
+            crate::internal_paths::canonicalize(temporary.path())
+                .unwrap()
+                .join(LEASE_FILENAME)
+        );
         assert!(matches!(
             DataDirectoryExclusiveLease::acquire(temporary.path()),
             Err(AppError::DataDirectoryBusy(_))
         ));
         drop(first);
         DataDirectoryExclusiveLease::acquire(temporary.path()).unwrap();
+    }
+
+    #[test]
+    fn relative_data_dir_acquires_the_same_lease() {
+        const CHILD_ENV: &str = "AI_SECURITY_SCANNER_RELATIVE_LEASE_CHILD";
+        if std::env::var_os(CHILD_ENV).is_some() {
+            let absolute = std::env::current_dir().unwrap().join("d");
+            let first = DataDirectoryExclusiveLease::acquire(Path::new("d")).unwrap();
+            assert_eq!(
+                first.path(),
+                crate::internal_paths::canonicalize(&absolute)
+                    .unwrap()
+                    .join(LEASE_FILENAME)
+            );
+            assert!(matches!(
+                DataDirectoryExclusiveLease::acquire(&absolute),
+                Err(AppError::DataDirectoryBusy(_))
+            ));
+            drop(first);
+            return;
+        }
+        let temporary = tempfile::tempdir().unwrap();
+        let output = std::process::Command::new(std::env::current_exe().unwrap())
+            .args([
+                "--exact",
+                "process_lease::tests::relative_data_dir_acquires_the_same_lease",
+                "--nocapture",
+            ])
+            .env(CHILD_ENV, "1")
+            .current_dir(temporary.path())
+            .output()
+            .unwrap();
+        assert!(
+            output.status.success(),
+            "relative lease child failed: stdout={} stderr={}",
+            String::from_utf8_lossy(&output.stdout),
+            String::from_utf8_lossy(&output.stderr)
+        );
     }
 
     #[cfg(windows)]
@@ -1212,6 +1292,22 @@ mod tests {
 
         DataDirectoryExclusiveLease::acquire(temporary.path()).unwrap();
         drop(inherited_descriptor);
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn lease_refuses_a_symlink_data_directory() {
+        use std::os::unix::fs::symlink;
+
+        let temporary = tempfile::tempdir().unwrap();
+        let real = temporary.path().join("real");
+        fs::create_dir(&real).unwrap();
+        let link = temporary.path().join("link");
+        symlink(&real, &link).unwrap();
+        assert!(matches!(
+            DataDirectoryExclusiveLease::acquire(&link),
+            Err(AppError::NotAuthorized(_))
+        ));
     }
 
     #[cfg(unix)]

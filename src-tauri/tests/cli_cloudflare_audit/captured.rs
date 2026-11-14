@@ -348,6 +348,27 @@ fn existing_linked_special_and_product_storage_destinations_are_refused() {
     assert_eq!(fs::read(existing).unwrap(), b"preserve");
     assert!(!c.f.data.join("inside").exists());
 }
+
+#[test]
+fn missing_retrieve_parent_is_a_non_retryable_request_error() {
+    let c = Captured::new();
+    let destination = c.destination("missing").join("output");
+    let result = terminal(
+        c.command(
+            &["--document", "REPORT.md", "--revision", "1"],
+            &destination,
+        )
+        .output()
+        .unwrap(),
+        2,
+    );
+    assert_eq!(result["error_code"], "invalid_request");
+    assert_eq!(result["retryable"], false);
+    let message = result["error"].as_str().unwrap();
+    assert!(message.contains("retrieve destination"), "{message}");
+    assert!(!message.contains("case archive:"), "{message}");
+    assert!(!destination.exists());
+}
 #[test]
 fn committed_missing_corrupt_and_oversized_objects_fail_as_storage() {
     for kind in ["missing", "corrupt", "oversized", "descriptor"] {

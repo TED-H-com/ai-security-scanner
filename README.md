@@ -38,7 +38,7 @@ These features are implemented in source on this branch and are not in any relea
 
 - Real-host acceptance has covered one Linux host on a synthetic repository, from an empty pinned-bootstrap cache through restore; a second host, several assets and macOS/Windows hosts remain.
 - The default skill has not switched from the released desktop.
-- Automatic managed-bundle acquisition and verification across the declared platforms remain unfinished. On macOS and Windows, CI covers the bootstrap, Cloudflare audits, saved reports and archives; foreground scans and engine preparation are not yet fully covered there.
+- Automatic managed-bundle acquisition on a machine without the desktop app remains unfinished. CI on macOS and Windows now also runs the library tests and the foreground-scan and engine-preparation fixture suites, but real scanner execution on those hosts has not yet been verified.
 
 [Development status](docs/development-status.md)
 
@@ -162,7 +162,9 @@ The app brings together 25 open-source tools. Each keeps its own detection rules
 
 **[Syft](https://github.com/anchore/syft)** — Syft, from Anchore, is a widely used open-source tool that builds a software bill of materials, or SBOM: a list of the software components inside a project or container image, such as libraries and operating-system packages. It records the name, version, and type of each component it recognizes. We include it in this app because it helps you quickly see which software the selected project or image contains, so you know what the vulnerability checks are looking at. The list shows what is there; it is not a vulnerability report. Here it reads a read-only copy with no network connection and does not download images from a registry. Known vulnerabilities are left to Trivy and Grype.
 
-The released catalog pins the Grype image to **`0.117.0-4`**, digest `sha256:56b0d675…`. It can scan local repository dependencies for known vulnerabilities; a controlled repository scan recorded **81 Grype findings**. That is a fixture result, not an expected count for every project. See the [exact pin and recorded result](docs/engine-catalog.md#grype-repository-support).
+The current catalog pins the Grype image to **`0.121.2-1`**, digest `sha256:80b8f128…`. It can scan local repository dependencies for known vulnerabilities. See the [exact current pin and historical scan record](docs/engine-catalog.md#grype-repository-support).
+
+A controlled repository scan on **2026-09-20** using the earlier image **`0.117.0-4`** recorded **81 Grype findings**. That historical fixture result does not measure the current image or predict the count for another project.
 
 ### Websites and internal systems
 
@@ -221,7 +223,7 @@ Tools still under evaluation are tracked separately and are not available for sc
 - [Scan coverage](docs/scanning-scope.md)
 - [Reading and sharing results](docs/results-and-exports.md)
 - [Current development status](docs/development-status.md)
-- [Changes in v0.5.2](docs/release/v0.5.2.md) · [Changes in v0.5.1](docs/release/v0.5.1.md) · [Changes in v0.5.0](docs/release/v0.5.0.md) · [Earlier changes in v0.3.1](docs/release/v0.3.1.md)
+- [Changes in v0.6.2](docs/release/v0.6.2.md) · [Changes in v0.6.1](docs/release/v0.6.1.md) · [Changes in v0.6.0](docs/release/v0.6.0.md) · [Changes in v0.5.3](docs/release/v0.5.3.md) · [Changes in v0.5.2](docs/release/v0.5.2.md) · [Changes in v0.5.1](docs/release/v0.5.1.md) · [Changes in v0.5.0](docs/release/v0.5.0.md) · [Earlier changes in v0.3.1](docs/release/v0.3.1.md)
 - [Contributing](CONTRIBUTING.md) · [Contributors](CONTRIBUTORS.md) · [Security policy](SECURITY.md)
 
 ## Development

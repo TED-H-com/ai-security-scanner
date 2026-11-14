@@ -22,7 +22,7 @@ See the [image build index](image-build-index.md) for the repeatable local build
 ## How it is wired
 
 - **Input.** One asset: a `repository` (`repository_working_tree`) or a `container_image` (`container_image_oci_layout`). The launcher refuses IaC and every other profile. Networking is disabled. Catalog resources: 1024 MB memory, 3000 MB disk, 1000 CPU millis, 3600 s.
-- **Database.** The build decompresses the archive into `/opt/ai-security-scanner/grype-db/6`, checks the archive and `vulnerability.db` (SHA-256 `20a73158…` and `db6f5904…`), adds `import.json` (the import metadata Grype requires), and makes the directory read-only. Before every run `verifyEngineInputs` hashes `vulnerability.db` against `grypeDBSHA256`, at most 2 GiB.
+- **Database.** The build decompresses the archive into `/opt/ai-security-scanner/grype-db/6`, checks the archive and `vulnerability.db` against [the Dockerfile's pinned SHA-256 values](../../engines/images/grype/Dockerfile), adds `import.json` (the import metadata Grype requires), and makes the directory read-only. Before every run `verifyEngineInputs` hashes `vulnerability.db` against `grypeDBSHA256`, bounded by `grypeDBMaxBytes` in [the launcher](../../engines/images/local-launcher/main.go).
 - **Invocation.** `grype dir:/workspace --output json --file /output/grype.json`, with `oci-dir:/workspace` for an OCI layout. The environment sets:
   - `GRYPE_CHECK_FOR_APP_UPDATE=false`, `GRYPE_DB_AUTO_UPDATE=false` and `GRYPE_DB_CACHE_DIR=/opt/ai-security-scanner/grype-db`;
   - `GRYPE_DB_REQUIRE_UPDATE_CHECK=false`, so the scan does not fail when it cannot check for updates;
@@ -58,12 +58,12 @@ See the [image build index](image-build-index.md) for the repeatable local build
 
 Follow [section 4](../engine-maintenance.md#4-updating-an-engine), then:
 
-- **Build.** Update in step: the archive URL and checksum, the `go.sum` digest, the four `main.*` ldflags (`version`, `gitCommit`, `buildDate`, `gitDescription`), the labels and `SOURCE_DATE_EPOCH`; the plan's `source` and `build_recipe`; and the catalog `engine_version`, `source_revision`, `rule_version` (the upstream revision) and `provenance.engine` and `provenance.rules`. The workflow `version` (`0.120.1`) must appear in `grype version`.
+- **Build.** Update in step: the archive URL and checksum, the `go.sum` digest, the four `main.*` ldflags (`version`, `gitCommit`, `buildDate`, `gitDescription`), the labels and `SOURCE_DATE_EPOCH`; the plan's `source` and `build_recipe`; and the catalog `engine_version`, `source_revision`, `rule_version` (the upstream revision) and `provenance.engine` and `provenance.rules`. The workflow `version` must match the catalog's `engine_version` and appear in `grype version`.
 - **Database.** A refresh changes all of these together:
   - the URL, digest and size in `scripts/prepare-offline-engine-data.mjs`;
   - `import.json` (`digest`, `source`, `client_version`);
   - the archive and `vulnerability.db` checks in the Dockerfile, and the `io.ai-security-scanner.database-archive` label;
-  - `grypeDBSHA256` in the launcher (a launcher change retags all six local images);
+  - `grypeDBSHA256` and `grypeDBMaxBytes` in the launcher (a launcher change retags all six local images);
   - `DATABASE-NOTICE.md`, plan and catalog `knowledge_date`, and catalog `provenance.data` and `compatibility.knowledge_input`.
 - **CLI and output shape.** Re-check the `dir:` and `oci-dir:` schemes, `--output json --file`, and the six variables (option names in upstream `cmd/grype/cli/options/database.go`). Re-check `matches[].vulnerability.{id,severity,description,fix.versions,cvss,dataSource,urls}` and `artifact.{name,version,locations}`.
 - **Mapping.** `mappings/control-mappings.json` maps only the `CVE-` prefix, and `grype_weakness` reads no CWE, so a match keyed on any other advisory id reaches no control. Grouping with Trivy needs the same CVE or GHSA id, package and asset (`src-tauri/src/correlation.rs`).
@@ -76,11 +76,11 @@ Follow [section 4](../engine-maintenance.md#4-updating-an-engine), then:
   - Count with `jq '.matches | length' grype.json`.
   - List with `jq -r '.matches[] | [.vulnerability.id, .artifact.name, .artifact.version, (.artifact.locations[0].path // .artifact.name)] | @tsv' grype.json | sort | uniq -c`.
   - Rows that share an id and location are one finding. Check that the severity, `fix.versions` and CVSS scores arrived unchanged.
-- **Publishing.** The current 0.120.1-1 image has verified workflow provenance, signed SBOMs and anonymous index/platform/config retrieval. The older 0.117.0-4 pin had inconsistent publication metadata (3990168); retain that history without reusing its receipts for the replacement. Changes require a new immutable tag.
+- **Publishing.** The current `0.121.2-1` image has verified workflow provenance, signed SBOMs and anonymous index/platform/config retrieval; see [the publication record](updates/2026-11-06-publications.json). The older `0.117.0-4` pin had inconsistent publication metadata (3990168); retain that history without reusing its receipts for the replacement. Changes require a new immutable tag.
 
 ## 2026-10-14 source update
 
-The replacement recipe targets `0.120.1-1` at upstream commit `6f8d854af29d3a3086b11a84afa51554a2a245fe`. The replacement is now published and pinned in the current catalog; the verified publication is recorded below. See the [batch update record](updates/2026-10-14.md) for changed inputs, retained rules and verification.
+The replacement recipe targeted `0.120.1-1` at upstream commit `6f8d854af29d3a3086b11a84afa51554a2a245fe`. That image was published and activated in the catalog on 2026-10-15; the historical publication is recorded below. See the [batch update record](updates/2026-10-14.md) for changed inputs, retained rules and verification. The current image is listed at the top of this page.
 
 ## 2026-10-15 verified publication
 

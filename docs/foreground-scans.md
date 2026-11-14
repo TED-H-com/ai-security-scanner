@@ -4,13 +4,22 @@ This source checkout adds foreground execution through the same coordinator and
 scanner adapters as the desktop. The published desktop remains the default
 operator entry. The [pinned development bootstrap](skill-bootstrap.md) now builds
 the core and prepares selected scanner images through the same runtime resolver.
-Cloudflare orchestration and automatic managed-bundle acquisition remain pending. See [publication status](release-model.md); the repository operator skill being public does not release these newer commands.
+Automatic managed-bundle acquisition remains pending; Cloudflare source audits follow the [host procedure](cloudflare-provider.md). See [publication status](release-model.md); the repository operator skill being public does not release these newer commands.
 
 Use an existing case with reviewed assets and effective scope grants. A run does
 not create or widen authorization. Provider and model credentials remain bound
 to their supported local authorization flows; do not put credentials in command
 arguments. Select the intended data directory explicitly when working alongside
 an installed desktop.
+
+To set up a case in a new skill data directory, the user runs
+`case create --title TITLE`, then
+`source attach-workspace --case-id CASE_ID --label LABEL --path ABSOLUTE_DIR --profile repository-working-tree`,
+reviews the asset in `case show CASE_ID` and records their own decision with
+`scope approve --case-id CASE_ID --asset-id ASSET_ID --permission local-artifact-read --confirmed-by NAME`
+(network permissions also need `--external-scope FILE`). `scope list CASE_ID`
+shows the result. An agent may prepare these commands but never confirms scope
+for the user.
 
 For lost Cloudflare host copies, use `provider cloudflare status`, then the read-only
 `provider cloudflare retrieve-captured` command with a recorded document revision
@@ -20,7 +29,12 @@ authority; retrieval creates no scan, event or permission.
 
 Before scanning, `runtime prepare --engine semgrep,gitleaks` can prepare those
 exact pinned images with the same explicit `--data-dir` and optional
-`--managed-runtime-bundle`. It records readiness without creating a case or scan.
+`--managed-runtime-bundle`. It reports per-image readiness without creating a case
+or scan and saves a receipt when possible.
+For `runtime prepare` and `scan run`, add `--expected-managed-runtime-manifest-sha256`
+with the bundle manifest's lowercase SHA-256 to require that exact bundle.
+`runtime_unavailable_reason` is `managed_bundle_rejected`, `no_runtime`, or
+`managed_runtime_unavailable` when runtime resolution fails, and `null` otherwise.
 Its `--offline` mode uses only running runtimes and existing or verified local
 images; it does not change the later scan's scope or network behavior.
 
@@ -55,8 +69,8 @@ checks. A report-save failure keeps the findings and returns
 `terminal_report_snapshot_failed`; `result.report_snapshot_retry_command` selects the
 same run for recovery without a fresh scanner execution.
 
-Once `scan run` has saved a run, `retryable` is false: repeating that command
-would create another scan. Use `result.recovery.status_command` to inspect it;
+Once `scan run` has saved or may have saved a run, `retryable` is false: repeating
+that command could create another scan. Use `scan status` to inspect saved runs;
 `result.recovery.next_command` is present only for supported captured-result or
 cleanup recovery. A failed `scan recover` is retryable only while that same
 recovery remains supported.
@@ -67,6 +81,11 @@ waits for the owned work to settle. Output failure follows the same ownership
 path. Saved evidence and completed sibling results remain available. A command
 receipt is stored in case history before successful delivery; it travels with a
 complete case archive.
+
+For foreground scans and runtime preparation, Unix handles SIGINT (130) and
+SIGTERM or SIGHUP (143). Windows handles Ctrl+C or Ctrl+Break (130) and console
+close, logoff or shutdown (143). The first interruption sets the exit code;
+later events are absorbed while work settles.
 
 When started through the development bootstrap, the parent uses a fixed private
 pipe to request cancellation for both `scan run` and `scan recover`. The core also
@@ -116,16 +135,16 @@ Run/recover use these exit codes; older command conventions remain unchanged:
 | 2 | Invalid or unsupported request |
 | 3 | Another owner holds the data directory, or an optimistic revision conflicts |
 | 4 | Execution coordination, persistence, output or unresolved cleanup requires attention |
-| 130 | Interrupted by Ctrl+C, after settling owned work |
-| 143 | Termination requested by SIGTERM or the bootstrap control pipe, after settling owned work |
+| 130 | Interrupted by SIGINT, Ctrl+C, Ctrl+Break or bootstrap cancellation, after settling owned work |
+| 143 | Termination requested by SIGTERM, SIGHUP, a Windows close, logoff or shutdown event, or the bootstrap control pipe, after settling owned work |
 
 Findings alone never select an error exit code. Reopen status after a lost output
 acknowledgement instead of immediately repeating `scan run`.
 
-Use the existing [report snapshot commands](report-snapshots.md) to preserve a
-terminal report and [private archives](case-archives.md) to restore a complete
-case elsewhere. Foreground execution does not yet automatically create report
-snapshots or archives. Platform and end-to-end acceptance are tracked in the
+A finished run saves its report automatically (see `result.report_snapshot`
+above); use the [report snapshot commands](report-snapshots.md) to retrieve or
+replay it. Create a [private archive](case-archives.md) when the case must be
+restored elsewhere; archives are never created automatically. Platform and end-to-end acceptance are tracked in the
 [development status](development-status.md) and [migration specification](plans/skill-first-cloudflare-migration.md).
 
 For an audit that cannot be sealed and will not continue, use

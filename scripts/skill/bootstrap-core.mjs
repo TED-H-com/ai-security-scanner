@@ -2,12 +2,13 @@ import { createHash, randomBytes, randomUUID } from 'node:crypto';
 import { spawn } from 'node:child_process';
 import { constants } from 'node:fs';
 import {
-  lstat, mkdir, open, realpath, rename, rm, rmdir, unlink, writeFile,
+  access, lstat, mkdir, open, readdir, realpath, rename, rm, rmdir, stat, unlink, writeFile,
 } from 'node:fs/promises';
 import { dirname, isAbsolute, join, parse, relative, resolve, sep } from 'node:path';
-import { homedir } from 'node:os';
+import { homedir, hostname } from 'node:os';
 import { fileURLToPath } from 'node:url';
 import { collectInputManifest, stageInputSnapshot } from './input-manifest.mjs';
+import { RECOGNIZED_MANAGED_RUNTIME_BUNDLES } from './managed-runtime-bundles.mjs';
 
 export const RECIPE = 'skill-bootstrap-v1';
 export const RUST_VERSION = '1.98.0';
@@ -131,12 +132,13 @@ export async function auditWindowsCachePaths(requests, environment = process.env
 }
 
 export class BootstrapError extends Error {
-  constructor(code, message, exitCode = 4, details) {
+  constructor(code, message, exitCode = 4, details, nextStep) {
     super(message);
     this.name = 'BootstrapError';
     this.code = code;
     this.exitCode = exitCode;
     if (details !== undefined) this.details = details;
+    if (nextStep !== undefined) this.nextStep = nextStep;
   }
 }
 
@@ -223,11 +225,82 @@ function dependencies(overrides) {
     build: buildSnapshot,
     readIdentity: readBuildIdentity,
     prepareRuntime: invokeRuntimePreparation,
+    recognizedManagedRuntimeBundles: RECOGNIZED_MANAGED_RUNTIME_BUNDLES,
+    stderr: process.stderr,
     platform: process.platform,
     arch: process.arch,
     environment: process.env,
+    nodeVersion: process.versions.node,
     ...overrides,
   };
+}
+
+async function unlinkedDirectoryPath(path) {
+  const { root } = parse(path);
+  let current = root;
+  for (const part of path.slice(root.length).split(sep).filter(Boolean)) {
+    if (part === '.' || part === '..') return false;
+    current = join(current, part);
+    const entry = await lstat(current);
+    if (!entry.isDirectory() || entry.isSymbolicLink()) return false;
+  }
+  return true;
+}
+
+export async function locateInstalledManagedRuntimeBundle(deps) {
+  const entry = deps.recognizedManagedRuntimeBundles.find(item => item.platform === deps.platform && item.arch.includes(deps.arch));
+  if (!entry || entry.installed_paths.length === 0) return { state: 'unsupported' };
+  for (const path of entry.installed_paths) {
+    if (!isAbsolute(path)) continue;
+    try {
+      if (!(await unlinkedDirectoryPath(path))) continue;
+      const manifestPath = join(path, 'manifest.json');
+      const before = await lstat(manifestPath);
+      if (!before.isFile() || before.isSymbolicLink() || before.size > 262144) continue;
+      const handle = await open(manifestPath, constants.O_RDONLY | (constants.O_NOFOLLOW ?? 0));
+      let manifestSha256;
+      try {
+        const opened = await handle.stat();
+        if (!opened.isFile() || opened.dev !== before.dev || opened.ino !== before.ino || opened.size !== before.size) continue;
+        const bytes = Buffer.alloc(opened.size + 1);
+        let count = 0;
+        while (count < bytes.length) {
+          const { bytesRead } = await handle.read(bytes, count, bytes.length - count, count);
+          if (!bytesRead) break;
+          count += bytesRead;
+        }
+        const after = await handle.stat();
+        const current = await lstat(manifestPath);
+        if (count !== opened.size || after.size !== opened.size || after.mtimeMs !== opened.mtimeMs || after.ctimeMs !== opened.ctimeMs
+          || current.isSymbolicLink() || current.dev !== opened.dev || current.ino !== opened.ino || !(await unlinkedDirectoryPath(path))) continue;
+        manifestSha256 = hash(bytes.subarray(0, count));
+      } finally { await handle.close(); }
+      return manifestSha256 === entry.manifest_sha256
+        ? { state: 'recognized', path, manifest_sha256: manifestSha256, product_version: entry.product_version }
+        : { state: 'unrecognized', path };
+    } catch { /* An inaccessible, replaced or missing path is not a candidate. */ }
+  }
+  return { state: 'absent' };
+}
+
+async function compatibilityCommandsOnPath(deps) {
+  const path = deps.environment.PATH ?? deps.environment.Path;
+  if (!path) return [];
+  const windows = deps.platform === 'win32';
+  const directories = path.split(windows ? ';' : ':').map(directory => directory || '.');
+  const extensions = windows ? ['', ...(deps.environment.PATHEXT ?? '.COM;.EXE;.BAT;.CMD').split(';').filter(Boolean)] : [''];
+  const found = [];
+  for (const command of ['docker', 'podman']) {
+    let exists = false;
+    for (const directory of directories) {
+      for (const extension of extensions) {
+        try { if ((await stat(join(directory, `${command}${extension}`))).isFile()) { exists = true; break; } } catch { /* Not a file on PATH. */ }
+      }
+      if (exists) break;
+    }
+    if (exists) found.push(command);
+  }
+  return found;
 }
 
 async function safeStat(path) {
@@ -244,7 +317,7 @@ async function directoryChain(path, create = false) {
     let stat = await safeStat(current);
     if (!stat && create) {
       if (process.platform === 'win32') await auditWindowsCachePaths(windowsRequests);
-      try { await mkdir(current, { mode: 0o700 }); } catch (error) { if (error.code !== 'EEXIST') throw error; }
+      try { await mkdir(current, { mode: 0o700 }); } catch (error) { if (['EACCES', 'EPERM'].includes(error.code)) fail('cache_parent_not_writable', `Cannot create cache directory: ${current}`); if (error.code !== 'EEXIST') throw error; }
       stat = await lstat(current);
     }
     if (!stat) {
@@ -336,10 +409,17 @@ async function acquireLock(root, key) {
   const path = join(root, 'locks', key);
   try { await mkdir(path, { mode: 0o700 }); }
   catch (error) {
-    if (error.code === 'EEXIST') fail('cache_busy', 'This build cache entry is locked. Active or interrupted locks are never taken over automatically.', 3);
+    if (error.code === 'EEXIST') {
+      const owner = await readJson(join(path, 'owner.json')).catch(() => null);
+      let ownerRunning = 'unknown';
+      if (owner?.hostname === hostname() && Number.isInteger(owner.pid) && owner.pid > 0) {
+        try { process.kill(owner.pid, 0); ownerRunning = true; } catch (err) { if (err.code === 'ESRCH') ownerRunning = false; }
+      }
+      throw new BootstrapError('cache_busy', `This build cache entry is locked. After confirming its owner is no longer running, remove the lock by hand: ${path}`, 3, { lock: path, owner, owner_running: ownerRunning });
+    }
     throw error;
   }
-  const owner = { schema_version: 'ai-security-scanner.bootstrap-lock/v1', token: randomUUID(), pid: process.pid, created_at: new Date().toISOString() };
+  const owner = { schema_version: 'ai-security-scanner.bootstrap-lock/v1', token: randomUUID(), pid: process.pid, hostname: hostname(), created_at: new Date().toISOString() };
   await writeFile(join(path, 'owner.json'), `${JSON.stringify(owner)}\n`, { flag: 'wx', mode: 0o600 });
   return async () => {
     await privateDirectory(path);
@@ -350,9 +430,17 @@ async function acquireLock(root, key) {
   };
 }
 
-async function runCommand(program, args, { cwd, env, capture = true, timeout = 30_000, input } = {}) {
+async function runCommand(program, args, { cwd, env, capture = true, timeout = 30_000, input, signal } = {}) {
   return await new Promise((resolvePromise, reject) => {
-    const child = spawn(program, args, { cwd, env, shell: false, windowsHide: true, stdio: capture ? [input === undefined ? 'ignore' : 'pipe', 'pipe', 'pipe'] : ['ignore', process.stderr, process.stderr] });
+    // A command that can be interrupted leads its own process group on Unix, so
+    // stopping it also stops the compilers it started.
+    const grouped = Boolean(signal) && process.platform !== 'win32';
+    const child = spawn(program, args, { cwd, env, shell: false, windowsHide: true, detached: grouped, stdio: capture ? [input === undefined ? 'ignore' : 'pipe', 'pipe', 'pipe'] : ['ignore', process.stderr, process.stderr] });
+    const abort = () => {
+      const name = signal.reason?.signal || 'SIGTERM';
+      try { if (grouped && child.pid) process.kill(-child.pid, name); else child.kill(name); } catch { child.kill(name); }
+    };
+    if (signal?.aborted) abort(); else signal?.addEventListener('abort', abort, { once: true });
     let stdout = '';
     let stderr = '';
     let oversized = false;
@@ -368,11 +456,12 @@ async function runCommand(program, args, { cwd, env, capture = true, timeout = 3
         if (stdout.length + stderr.length > MAX_RECEIPT_BYTES) { oversized = true; child.kill(); }
       });
     }
-    child.once('error', error => { clearTimeout(timer); reject(error); });
-    child.once('close', (code, signal) => {
+    child.once('error', error => { clearTimeout(timer); signal?.removeEventListener('abort', abort); reject(error.code === 'ENOENT' ? new BootstrapError('tool_unavailable', `${program} was not found on PATH.`) : error); });
+    child.once('close', (code, childSignal) => {
       clearTimeout(timer);
+      signal?.removeEventListener('abort', abort);
       if (oversized) reject(new BootstrapError('tool_output_limit', 'Tool output exceeded the bootstrap limit.'));
-      else resolvePromise({ code, signal, stdout: stdout.trim(), stderr: stderr.trim() });
+      else resolvePromise({ code, signal: childSignal, stdout: stdout.trim(), stderr: stderr.trim() });
     });
   });
 }
@@ -380,7 +469,8 @@ async function runCommand(program, args, { cwd, env, capture = true, timeout = 3
 async function inspectSource(sourceRoot, revision) {
   const gitEnvironment = Object.fromEntries(Object.entries(process.env).filter(([key]) => !key.startsWith('GIT_')));
   const prefix = ['-c', 'core.fsmonitor=false', '-c', 'core.untrackedCache=false', '-C', sourceRoot];
-  const head = await runCommand('git', [...prefix, 'rev-parse', '--verify', 'HEAD'], { env: gitEnvironment });
+  let head;
+  try { head = await runCommand('git', [...prefix, 'rev-parse', '--verify', 'HEAD'], { env: gitEnvironment }); } catch (error) { if (error.code === 'tool_unavailable') fail('source_unavailable', 'Install Git and run from a Git clone of the product.'); throw error; }
   if (head.code !== 0 || !REVISION.test(head.stdout)) fail('source_unavailable', 'The bootstrap must run from its fixed Git source checkout.');
   if (head.stdout !== revision) fail('revision_mismatch', 'The requested revision does not match this bootstrap checkout HEAD.', 2);
   const status = await runCommand('git', [...prefix, 'status', '--porcelain=v1', '--untracked-files=normal'], { env: gitEnvironment });
@@ -390,7 +480,7 @@ async function inspectSource(sourceRoot, revision) {
 
 async function validatePinnedInputs(sourceRoot, revision, manifest) {
   const files = new Map([...manifest.files, ...(manifest.metadataFiles ?? [])].map(file => [file.path, file]));
-  for (const path of ['scripts/skill/bootstrap.mjs', 'scripts/skill/bootstrap-core.mjs', 'scripts/skill/input-manifest.mjs']) {
+  for (const path of ['scripts/skill/bootstrap.mjs', 'scripts/skill/bootstrap-core.mjs', 'scripts/skill/input-manifest.mjs', 'scripts/skill/managed-runtime-bundles.mjs']) {
     if (!files.has(path)) files.set(path, { path });
   }
   const gitEnvironment = Object.fromEntries(Object.entries(process.env).filter(([key]) => !key.startsWith('GIT_')));
@@ -445,18 +535,22 @@ async function auditCargoConfiguration(cwd, environment) {
   paths.add(join(cargoHome, 'config'));
   paths.add(join(cargoHome, 'config.toml'));
   for (const path of paths) {
-    if (await safeStat(path)) fail('cargo_configuration_override', `Uncontrolled Cargo configuration is present: ${path}`);
+    if (await safeStat(path)) fail('cargo_configuration_override', `Uncontrolled Cargo configuration is present: ${path}. The bootstrap does not use personal Cargo settings. Temporarily rename this file, or set CARGO_HOME to a directory without config and choose a cache directory outside the file's parent tree.`);
   }
 }
 
 async function inspectToolchain({ environment, platform }) {
   const env = controlledBuildEnvironment(environment);
-  const rustc = await runCommand('rustc', ['--version', '--verbose'], { env });
-  const cargo = await runCommand('cargo', ['--version'], { env });
+  const rustMessage = `Install Rust ${RUST_VERSION} with rustup (rustup toolchain install ${RUST_VERSION}), then run doctor again.`;
+  let rustc, cargo;
+  try {
+    rustc = await runCommand('rustc', ['--version', '--verbose'], { env });
+    cargo = await runCommand('cargo', ['--version'], { env });
+  } catch (error) { if (error.code === 'tool_unavailable') fail('rust_toolchain_unavailable', rustMessage); throw error; }
   if (rustc.code !== 0 || !new RegExp(`^release: ${RUST_VERSION.replaceAll('.', '\\.')}\\r?$`, 'm').test(rustc.stdout)) {
-    fail('rust_toolchain_unavailable', `Rust ${RUST_VERSION} is required; bootstrap does not install toolchains.`);
+    fail('rust_toolchain_unavailable', rustMessage);
   }
-  if (cargo.code !== 0 || !cargo.stdout.startsWith(`cargo ${RUST_VERSION} `)) fail('cargo_toolchain_unavailable', `Cargo ${RUST_VERSION} is required.`);
+  if (cargo.code !== 0 || !cargo.stdout.startsWith(`cargo ${RUST_VERSION} `)) fail('rust_toolchain_unavailable', rustMessage);
   const target = /^host: (.+)$/m.exec(rustc.stdout)?.[1]?.trim();
   if (!target || !/^[a-zA-Z0-9_-]+$/.test(target)) fail('invalid_toolchain_identity', 'Rust did not report a valid native target.');
   const rustIdentity = {
@@ -481,6 +575,7 @@ async function inspectToolchain({ environment, platform }) {
     linker: { ...await executableIdentity(linkerName, env), version: linker.stdout || linker.stderr },
   };
   } catch (error) {
+    if (error.code === 'tool_unavailable' || error.code === 'native_linker_unavailable') error = new BootstrapError('native_compiler_unavailable', platform === 'win32' ? 'Open x64 Native Tools/Developer PowerShell for VS, then run doctor again.' : platform === 'darwin' ? 'Run xcode-select --install, then run doctor again.' : 'Install the system C compiler (cc), then run doctor again.');
     error.rustIdentity = rustIdentity;
     throw error;
   }
@@ -517,13 +612,13 @@ function buildConfiguration(options) {
 
 async function recipeDigest(sourceRoot) {
   const inputs = [];
-  for (const path of ['scripts/skill/bootstrap.mjs', 'scripts/skill/bootstrap-core.mjs', 'scripts/skill/input-manifest.mjs']) {
+  for (const path of ['scripts/skill/bootstrap.mjs', 'scripts/skill/bootstrap-core.mjs', 'scripts/skill/input-manifest.mjs', 'scripts/skill/managed-runtime-bundles.mjs']) {
     inputs.push({ path, sha256: hash(await regularBytes(join(sourceRoot, path), 2 * 1024 * 1024)) });
   }
   return hash(canonical({ version: RECIPE, inputs }));
 }
 
-async function buildSnapshot({ snapshot, targetDirectory, configuration, toolchain, manifest, environment, offline }) {
+async function buildSnapshot({ snapshot, targetDirectory, configuration, toolchain, manifest, environment, offline, signal }) {
   const env = controlledBuildEnvironment(environment);
   await auditCargoConfiguration(snapshot, env);
   env.CARGO_TARGET_DIR = targetDirectory;
@@ -533,7 +628,7 @@ async function buildSnapshot({ snapshot, targetDirectory, configuration, toolcha
   if (configuration.profile === 'release') args.push('--release');
   if (offline) args.push('--offline');
   for (const binary of configuration.binaries) args.push('--bin', binary);
-  const outcome = await runCommand('cargo', args, { cwd: snapshot, env, capture: false, timeout: 0 });
+  const outcome = await runCommand('cargo', args, { cwd: snapshot, env, capture: false, timeout: 0, signal });
   if (outcome.code !== 0) fail('build_failed', `The fixed core build failed${outcome.signal ? ` (${outcome.signal})` : ` (exit ${outcome.code})`}; the prior ready entry is preserved.`);
 }
 
@@ -602,6 +697,47 @@ async function publishReady(root, expected, receipt) {
   try { await rename(temporary, destination); } finally { await rm(temporary, { force: true }); }
 }
 
+export async function loadPreparedBootstrap(options, overrides = {}) {
+  validateOptions(options);
+  const deps = dependencies(overrides);
+  const sourceRoot = await realpath(deps.sourceRoot);
+  const configuration = buildConfiguration(options);
+  const source = await deps.inspectSource(sourceRoot, options.revision);
+  const manifest = await deps.collectInputManifest(sourceRoot);
+  if (!SHA256.test(manifest.inputDigest ?? '')) fail('invalid_input_manifest', 'The controlled source input manifest has no valid digest.');
+  source.input_dirty = await deps.validatePinnedInputs(sourceRoot, options.revision, manifest);
+  source.dirty ||= source.input_dirty;
+  if (source.dirty && !options.allowDirty) fail('dirty_source', 'The source checkout differs from the pinned Git tree; use a clean checkout or explicitly choose --allow-dirty for development.', 2);
+  const notPrepared = () => fail('core_not_prepared', 'No prepared scanner core matches this checkout. Run prepare with the same --revision, --cache-dir and --profile first.', 2);
+  // Looking for a prepared core never creates a cache.
+  if (!(await safeStat(validateCacheLocation(options.cacheDir, sourceRoot)))) notPrepared();
+  const root = await initializeCache(options.cacheDir, sourceRoot);
+  const prefix = `${configuration.capability}-${configuration.profile}-`;
+  const names = (await readdir(join(root, 'ready'))).filter(name => name.startsWith(prefix) && /^[a-zA-Z0-9_-]+\.json$/.test(name.slice(prefix.length))).sort();
+  if (!names.length) notPrepared();
+  if (names.length > 1) fail('ambiguous_ready_pointer', `Multiple prepared scanner cores match: ${names.join(', ')}. Keep one Rust target per cache directory: run prepare again with a new --cache-dir.`, 2);
+  const pointer = await readJson(join(root, 'ready', names[0]));
+  if (pointer.schema_version !== 'ai-security-scanner.bootstrap-ready/v1' || !SHA256.test(pointer.cache_key ?? '') || !SHA256.test(pointer.receipt_sha256 ?? '')) fail('invalid_cache_metadata', 'Invalid ready pointer.');
+  const entry = join(root, 'entries', pointer.cache_key);
+  await privateDirectory(entry);
+  const receipt = await readJson(join(entry, 'receipt.json'));
+  const identity = receipt.cache_identity;
+  if (!identity || receipt.receipt_sha256 !== pointer.receipt_sha256) fail('cache_receipt_mismatch', 'The ready pointer does not match its receipt.');
+  const requested = {
+    input_sha256: manifest.inputDigest, cargo_lock_sha256: manifest.files.find(file => file.path === 'Cargo.lock')?.sha256,
+    recipe: RECIPE, recipe_sha256: await recipeDigest(sourceRoot), platform: deps.platform, architecture: deps.arch, ...configuration,
+  };
+  // The receipt names the revision that first built these inputs. A later
+  // revision with identical build inputs reuses the entry, exactly as prepare does.
+  if (Object.entries(requested).some(([key, value]) => canonical(identity[key]) !== canonical(value))
+    || names[0] !== `${prefix}${identity.toolchain?.target}.json`) notPrepared();
+  const expected = { key: pointer.cache_key, cacheIdentity: identity, configuration, toolchain: identity.toolchain, manifest };
+  const verified = await verifyEntry(entry, expected, { ...deps, environment: withoutProductSourceOverrides(deps.environment) });
+  return { schema_version: RESULT_SCHEMA, cache_hit: true, cache_key: pointer.cache_key, requested_source: source,
+    requested_capability: options.capability ?? 'core', entry_directory: entry, receipt_path: join(entry, 'receipt.json'),
+    executable: verified.executable, receipt: verified.receipt };
+}
+
 export async function prepareBootstrap(options, overrides = {}) {
   validateOptions(options);
   const deps = dependencies(overrides);
@@ -644,6 +780,9 @@ export async function prepareBootstrap(options, overrides = {}) {
   const release = await acquireLock(root, key);
   let staging;
   let result;
+  const controller = new AbortController();
+  const handlers = new Map([['SIGINT', 130], ['SIGTERM', 143], ['SIGHUP', 129]].map(([signal, exitCode]) => [signal, () => controller.abort({ signal, exitCode })]));
+  for (const [signal, handler] of handlers) process.on(signal, handler);
   try {
     let verified;
     const cacheHit = Boolean(await safeStat(entry));
@@ -661,7 +800,12 @@ export async function prepareBootstrap(options, overrides = {}) {
       await deps.stageInputSnapshot(sourceRoot, snapshot, manifest);
       const targetDirectory = join(staging, 'target');
       await privateDirectory(targetDirectory, true);
-      await deps.build({ snapshot, targetDirectory, configuration, toolchain, manifest, environment: deps.environment, offline: options.offline === true });
+      try {
+        await deps.build({ snapshot, targetDirectory, configuration, toolchain, manifest, environment: deps.environment, offline: options.offline === true, signal: controller.signal });
+      } catch (error) {
+        if (!controller.signal.aborted) throw error;
+      }
+      if (controller.signal.aborted) throw new BootstrapError('interrupted', 'Core preparation was interrupted.', controller.signal.reason.exitCode);
       const complete = join(staging, 'entry');
       await privateDirectory(join(complete, 'bin'), true);
       for (const binary of configuration.binaries) {
@@ -696,6 +840,7 @@ export async function prepareBootstrap(options, overrides = {}) {
       await rename(complete, entry);
       verified = await verifyEntry(entry, expected, deps);
     }
+    if (controller.signal.aborted) throw new BootstrapError('interrupted', 'Core preparation was interrupted.', controller.signal.reason.exitCode);
     await publishReady(root, expected, verified.receipt);
     result = {
       schema_version: RESULT_SCHEMA,
@@ -710,16 +855,51 @@ export async function prepareBootstrap(options, overrides = {}) {
       receipt: verified.receipt,
     };
   } finally {
-    if (staging) await rm(staging, { recursive: true, force: true });
-    await release();
+    try {
+      // Tools stopped by an interruption can still be closing files here.
+      if (staging) await rm(staging, { recursive: true, force: true, maxRetries: 10, retryDelay: 200 });
+    } finally {
+      try { await release(); } finally { for (const [signal, handler] of handlers) process.off(signal, handler); }
+    }
   }
   if (options.capability === 'scan') {
     // Runtime preparation owns its own data-directory lease and receipt. It
     // must not hold the unrelated core build lock while starting or fetching.
     const verified = await verifyEntry(entry, expected, deps);
-    result.runtime_preparation = await deps.prepareRuntime(verified.executable, options, { environment: deps.environment });
-    validateRuntimePreparation(result.runtime_preparation, options);
-    if (!result.runtime_preparation.ready) throw new BootstrapError('runtime_preparation_failed', 'Selected scanner resources are not ready.', 4, result.runtime_preparation);
+    const prepareSelectedRuntime = async request => {
+      const preparation = await deps.prepareRuntime(verified.executable, request, { environment: deps.environment });
+      validateRuntimePreparation(preparation, request);
+      if (!preparation.ready) throw new BootstrapError('runtime_preparation_failed', 'Selected scanner resources are not ready.', 4, preparation);
+      return preparation;
+    };
+    let failure;
+    let failed = false;
+    let location;
+    let bundleSource = options.managedRuntimeBundle ? 'explicit' : 'none';
+    try { result.runtime_preparation = await prepareSelectedRuntime(options); } catch (error) { failed = true; failure = error; }
+    if (failed && !options.managedRuntimeBundle && !options.offline
+      && failure instanceof BootstrapError && failure.code === 'runtime_preparation_failed'
+      && failure.details?.schema_version === 'ai-security-scanner.runtime-preparation/v1'
+      && failure.details.ready === false && failure.details.runtime_unavailable_reason === 'no_runtime') {
+      location = await locateInstalledManagedRuntimeBundle(deps);
+      if (location.state === 'recognized') {
+        deps.stderr.write('No Docker or Podman found. Using the scan runtime of the installed desktop app; its first start downloads a machine image and can take several minutes.\n');
+        try {
+          result.runtime_preparation = await prepareSelectedRuntime({ ...options, managedRuntimeBundle: location.path, expectedManagedRuntimeManifestSha256: location.manifest_sha256 });
+          bundleSource = 'installed_desktop';
+          failed = false;
+        } catch (error) { failure = error; }
+      }
+    }
+    if (failed) {
+      const nextStep = await runtimePreparationNextStep(failure, options, deps, location);
+      if (nextStep !== undefined) failure.nextStep = nextStep;
+      throw failure;
+    }
+    result.runtime_bundle_source = bundleSource;
+    if (bundleSource === 'installed_desktop') {
+      result.runtime_bundle = { path: location.path, manifest_sha256: location.manifest_sha256, product_version: location.product_version };
+    }
   }
   return result;
 }
@@ -730,11 +910,11 @@ export async function doctorBootstrap(options, overrides = {}) {
   const checks = [];
   async function check(name, action) {
     try { const detail = await action(); checks.push({ name, ready: true, detail }); }
-    catch (error) { checks.push({ name, ready: false, reason: error.message }); }
+    catch (error) { checks.push({ name, ready: false, reason: error.message, ...(error instanceof BootstrapError ? { error: error.code } : {}) }); }
   }
   await check('node', async () => {
-    if (Number(process.versions.node.split('.')[0]) < 22) fail('node_version', 'Node.js 22 or newer is required.');
-    return process.version;
+    if (Number(deps.nodeVersion.split('.')[0]) < 24) fail('node_version', 'Node.js 24 or newer is required.');
+    return `v${deps.nodeVersion}`;
   });
   await check('source', async () => {
     const source = await deps.inspectSource(await realpath(deps.sourceRoot), options.revision);
@@ -756,7 +936,12 @@ export async function doctorBootstrap(options, overrides = {}) {
   }
   await check('cache', async () => {
     const cacheDir = validateCacheLocation(options.cacheDir, await realpath(deps.sourceRoot));
-    await directoryChain(dirname(cacheDir));
+    let ancestor = dirname(cacheDir);
+    while (!(await safeStat(ancestor))) ancestor = dirname(ancestor);
+    await directoryChain(ancestor);
+    if (process.platform !== 'win32') {
+      try { await access(ancestor, constants.W_OK | constants.X_OK); } catch { fail('cache_parent_not_writable', `Cache parent is not writable: ${ancestor}`); }
+    }
     await auditCargoConfiguration(cacheDir, controlledBuildEnvironment(deps.environment));
     const stat = await safeStat(cacheDir);
     if (stat) {
@@ -781,7 +966,32 @@ export async function doctorBootstrap(options, overrides = {}) {
     ready: checks.every(item => item.ready),
     checks,
     execution: { native_core: 'build identity is verified during prepare', scanner_runtime: 'not prepared', cloudflare_delegation: 'not assessed', dynamic_sandbox: 'not assessed' },
+    ...(options.capability === 'scan' ? { runtime_sources: {
+      compatibility_commands_on_path: await compatibilityCommandsOnPath(deps),
+      installed_desktop_bundle: (await locateInstalledManagedRuntimeBundle(deps)).state,
+    } } : {}),
   };
+}
+
+async function runtimePreparationNextStep(error, options, deps, location) {
+  if (!(error instanceof BootstrapError) || error.code !== 'runtime_preparation_failed'
+    || error.details?.schema_version !== 'ai-security-scanner.runtime-preparation/v1' || error.details.ready !== false) return undefined;
+  switch (error.details.runtime_unavailable_reason) {
+    case 'no_runtime': {
+      if (options.offline) return 'Offline preparation needs a runtime that is already running. Start Docker or Podman, or run prepare once without --offline.';
+      const state = (location ?? await locateInstalledManagedRuntimeBundle(deps)).state;
+      if (state === 'unrecognized') return "The installed desktop app's scan runtime is not one this source revision recognizes. Use a newer source revision, or start Docker or Podman, then run prepare again.";
+      if (state === 'absent') return 'Start Docker or Podman, or install the desktop app for this computer, then run prepare again.';
+      if (state === 'unsupported') return 'Start Docker or Podman, then run prepare again.';
+      return undefined;
+    }
+    case 'managed_runtime_unavailable':
+      return 'The managed scan runtime could not start; the image errors in detail say why. Fix that, or start Docker or Podman, then run prepare again.';
+    case 'managed_bundle_rejected':
+      return 'The selected runtime bundle was refused; the image errors in detail say why. Select the bundle that ships with the desktop app, or start Docker or Podman.';
+    default:
+      return undefined;
+  }
 }
 
 function validateRuntimePreparation(value, options) {
@@ -813,25 +1023,26 @@ function validateRuntimePreparation(value, options) {
 export function runtimePreparationArguments(options) {
   const args = ['--json', '--data-dir', resolve(options.dataDir)];
   if (options.managedRuntimeBundle) args.push('--managed-runtime-bundle', resolve(options.managedRuntimeBundle));
+  if (options.expectedManagedRuntimeManifestSha256 !== undefined) {
+    if (!options.managedRuntimeBundle) fail('invalid_request', 'An expected managed-runtime manifest digest requires a bundle.', 2);
+    args.push('--expected-managed-runtime-manifest-sha256', options.expectedManagedRuntimeManifestSha256);
+  }
   if (options.localImageDirectory) args.push('--release-approved-local-image-directory', resolve(options.localImageDirectory));
   args.push('runtime', 'prepare', '--engine', options.engineIds.join(','), '--bootstrap-control-stdin');
   if (options.offline) args.push('--offline');
   return args;
 }
 
-export async function invokeRuntimePreparation(executable, options, { environment = process.env, timeoutMs = 30 * 60 * 1000 } = {}) {
+function withoutProductSourceOverrides(environment) {
+  const sourceOverrides = new Set(['AI_SECURITY_SCANNER_DATA_DIR', 'AI_SECURITY_SCANNER_MANAGED_RUNTIME_BUNDLE', 'AI_SECURITY_SCANNER_RELEASE_APPROVED_LOCAL_IMAGE_DIRECTORY']);
+  return Object.fromEntries(Object.entries(environment).filter(([key]) => !sourceOverrides.has(key.toUpperCase())));
+}
+
+export async function invokeRuntimePreparation(executable, options, { environment = process.env, timeoutMs = 30 * 60 * 1000, argvPrefix = [] } = {}) {
   const args = runtimePreparationArguments(options);
-  // This command's inputs come from the explicit preparation request. Do not
-  // let a desktop/previous-session environment silently select another source.
-  // Environment variable names are case-insensitive on Windows.
-  const sourceOverrides = new Set([
-    'AI_SECURITY_SCANNER_DATA_DIR',
-    'AI_SECURITY_SCANNER_MANAGED_RUNTIME_BUNDLE',
-    'AI_SECURITY_SCANNER_RELEASE_APPROVED_LOCAL_IMAGE_DIRECTORY',
-  ]);
-  const env = Object.fromEntries(Object.entries(environment).filter(([key]) => !sourceOverrides.has(key.toUpperCase())));
+  const env = withoutProductSourceOverrides(environment);
   const outcome = await new Promise((resolvePromise, reject) => {
-    const child = spawn(executable, args, { shell: false, stdio: ['pipe', 'pipe', process.stderr], env, windowsHide: true, detached: process.platform !== 'win32' });
+    const child = spawn(executable, [...argvPrefix, ...args], { shell: false, stdio: ['pipe', 'pipe', process.stderr], env, windowsHide: true, detached: process.platform !== 'win32' });
     const chunks = [];
     let size = 0;
     let stop;
@@ -896,17 +1107,17 @@ export async function runPrepared(result, argv, overrides = {}) {
     toolchain: result.receipt.cache_identity.toolchain,
     manifest: { inputDigest: result.receipt.cache_identity.input_sha256 },
   };
-  const verified = await verifyEntry(result.entry_directory, expected, deps);
-  return invokeCoreCommand(verified.executable, args, { environment: deps.environment, parentControl });
+  const verified = await verifyEntry(result.entry_directory, expected, { ...deps, environment: withoutProductSourceOverrides(deps.environment) });
+  return invokeCoreCommand(overrides.commandExecutable ?? verified.executable, args, { environment: withoutProductSourceOverrides(deps.environment), parentControl, argvPrefix: overrides.argvPrefix ?? [] });
 }
 
-export function invokeCoreCommand(executable, args, { environment = process.env, parentControl = false } = {}) {
+export function invokeCoreCommand(executable, args, { environment = process.env, parentControl = false, argvPrefix = [] } = {}) {
   // Keep output connected to the consumer, preserving the core's bounded output
   // delivery. Only stdin is private. Detach owning commands on every platform
   // so parent death closes the pipe instead of killing the child (including
   // Windows job teardown). The child stays referenced until close.
   return new Promise((resolvePromise, reject) => {
-    const child = spawn(executable, args, {
+    const child = spawn(executable, [...argvPrefix, ...args], {
       shell: false, env: environment, windowsHide: true,
       stdio: parentControl ? ['pipe', 'inherit', 'inherit'] : 'inherit',
       detached: parentControl,
@@ -974,6 +1185,8 @@ export function validateRunArguments(argv) {
     if (argument.startsWith('--managed-runtime-bundle=') || argument.startsWith('--release-approved-local-image-directory=')) continue;
     break;
   }
+  const tail = argv.slice(globalOptionEnd(argv));
+  if (tail[0] === 'archive' && ['verify', 'restore-preview', 'restore'].includes(tail[1])) return tail;
   if (!explicitData) fail('explicit_data_directory_required', 'Pass --data-dir DIR before the CLI subcommand to select its data explicitly; bootstrap does not default to existing desktop data.', 2);
   return argv.slice(globalOptionEnd(argv));
 }

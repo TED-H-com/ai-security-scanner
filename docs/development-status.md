@@ -2,7 +2,7 @@
 
 [繁體中文](development-status.zh-TW.md) · [Documentation](README.md)
 
-_Updated 2026-11-13._
+_Updated 2026-11-14._
 
 **The latest release is desktop v0.6.2 for Linux, macOS and Windows.** It remains the default for beginners. Its public operator skill helps install the app, check readiness, guide scans in the app window and save reports.
 
@@ -11,6 +11,7 @@ _Updated 2026-11-13._
 These features are implemented in source on this branch and are not in any release:
 
 - [Skill-first execution](skill-bootstrap.md): pinned source bootstrap and preparation of selected scanner engines.
+- [Installed desktop runtime reuse](skill-bootstrap.md): prepare scans without Docker or Podman using a recognized desktop runtime on Linux x86_64 and macOS.
 - [Foreground scans and recovery](foreground-scans.md): run approved checks, read saved status and recover captured results.
 - [Cloudflare source audits](cloudflare-provider.md): host-led preparation, recorded assignments and outputs, checkpoints, validation, sealing, case admission and shared reporting, with explicit termination when an audit will not continue.
 - [Unfinished audit checks](results-and-exports.md#source-audits-that-did-not-finish): blocked preparation and terminated audits appear as not-started or failed check rows in the case, desktop Results and shared report.
@@ -21,11 +22,23 @@ These features are implemented in source on this branch and are not in any relea
 
 - Real-host acceptance has covered one Linux host on a synthetic repository, from an empty pinned-bootstrap cache through restore; a second host, several assets and macOS/Windows hosts remain.
 - The default skill has not switched from the released desktop.
-- Automatic managed-bundle acquisition and verification across the declared platforms remain unfinished. On macOS and Windows, CI covers the bootstrap, Cloudflare audits, saved reports and archives; foreground scans and engine preparation are not yet fully covered there.
+- Automatic managed-bundle acquisition on a machine without the desktop app remains unfinished. CI on macOS and Windows now also runs the library tests and the foreground-scan and engine-preparation fixture suites, but real scanner execution on those hosts has not yet been verified.
 
 The dated sections below preserve observations at each milestone. [The product specification](product-spec.md) defines product behavior; [the migration plan](plans/skill-first-cloudflare-migration.md) and [report and archive contract](specs/report-fidelity-and-archive.md) describe the accepted work. See [publication status](release-model.md) for availability.
 
-CI document and contract tests: 114 tests cover the current source boundaries.
+CI document and contract tests: 124 tests cover the current source boundaries.
+
+## November 14 cross-platform checks and runtime reuse — 30
+
+Without Docker or Podman, `prepare --capability scan` can reuse an installed desktop app's scan runtime on Linux x86_64 and macOS when this source revision recognizes its manifest; detection on Windows is not implemented. The core checks the manifest digest again. If preparation cannot find a usable runtime, it stops with one `next_step` for the operator to relay; it never downloads or installs a runtime. `doctor --capability scan` lists the runtime sources it can see without running them.
+
+The preparation flow was verified end to end on a Linux host without Docker or Podman on `PATH`; no bundle was installed there, so reuse itself is covered by tests only. Foreground commands report what was actually saved, cancellation stops a managed-runtime start, and every console interruption ends with a settled outcome.
+
+Source-audit and combined reports say what each source checked in the reader's language. The desktop app also shows source-audit counts, coverage details, finding explanations and next steps in Japanese.
+
+Archives refuse files owned by the restore workspace. Cloudflare source audits state refusal reasons and archive limits; checks of bundle directories also notice entries added or removed within one clock tick.
+
+CI now runs library tests on macOS and Windows and foreground-scan and engine-preparation fixture suites on Linux, macOS and Windows. Every file a test reads schedules an appropriate CI lane. Real scanner execution on macOS and Windows remains unverified.
 
 ## November 13 report and archive gates — 27
 

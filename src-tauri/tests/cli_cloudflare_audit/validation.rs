@@ -488,11 +488,41 @@ fn historical_attempt_and_check_owners_are_checked_too() {
 #[test]
 fn invalid_record_is_a_typed_refusal_and_validation_requires_the_writer_lease() {
     let run = RunFixture::new("quick");
+    let finalize = super::finalize::request(&run);
     let lease = DataDirectoryExclusiveLease::acquire(&run.f.data).unwrap();
-    assert_eq!(run.validate(3)["error_code"], "data_directory_busy");
+    let busy = run.validate(3);
+    assert_eq!(busy["error_code"], "data_directory_busy");
+    assert_eq!(busy["retryable"], true);
+    let busy = super::finalize::finalize(&run, &finalize, 3);
+    assert_eq!(busy["error_code"], "data_directory_busy");
+    assert_eq!(busy["retryable"], true);
     drop(lease);
     rusqlite::Connection::open(run.f.data.join("casework.db")).unwrap().execute(
         "UPDATE case_events SET payload_json='{}' WHERE event_type='cloudflare_audit.record_entry'",[]).unwrap();
     assert_eq!(run.validate(2)["error_code"], "record_invalid");
+    assert_eq!(
+        super::finalize::finalize(&run, &finalize, 2)["error_code"],
+        "record_invalid"
+    );
     run.assert_no_temporary();
+}
+
+#[test]
+fn record_load_database_errors_keep_their_retryable_class() {
+    let run = RunFixture::new("quick");
+    let finalize = super::finalize::request(&run);
+    let db = rusqlite::Connection::open(run.f.data.join("casework.db")).unwrap();
+    db.execute(
+        "ALTER TABLE case_events RENAME COLUMN payload_json TO unavailable_payload",
+        [],
+    )
+    .unwrap();
+    for result in [
+        run.validate(4),
+        super::finalize::finalize(&run, &finalize, 4),
+    ] {
+        assert_eq!(result["error_code"], "storage_failed");
+        assert_eq!(result["retryable"], true);
+    }
+    assert!(!run.directory().join("sealed").exists());
 }

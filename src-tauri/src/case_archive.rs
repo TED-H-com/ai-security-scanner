@@ -174,8 +174,10 @@ struct Builder {
 impl Builder {
     fn new() -> AppResult<Self> {
         let parent = crate::internal_paths::canonicalize(std::env::temp_dir())?;
-        let parent_guard = transport::guard_archive_parent(&parent)?;
-        let directory = transport::private_tempdir_in(&parent, "ai-scanner-archive-")?;
+        let parent_guard = transport::guard_archive_parent(&parent)
+            .map_err(transport::temporary_directory_error)?;
+        let directory = transport::private_tempdir_in(&parent, "ai-scanner-archive-")
+            .map_err(transport::temporary_directory_error)?;
         Ok(Self {
             directory,
             _parent_guard: parent_guard,
@@ -1344,6 +1346,18 @@ enum RestoreFault {
     AfterPublish,
 }
 
+/// Restore always builds the workspace database itself. Nothing staged from
+/// the archive may already sit beside it for SQLite to adopt or replay.
+fn refuse_staged_database(stage: &Path) -> AppResult<()> {
+    for entry in fs::read_dir(stage)? {
+        let name = entry?.file_name().to_string_lossy().to_lowercase();
+        if name.starts_with("casework.db") {
+            return Err(invalid("archive supplied a workspace database file"));
+        }
+    }
+    Ok(())
+}
+
 fn restore_impl(
     archive: &Path,
     destination: &Path,
@@ -1459,6 +1473,7 @@ fn restore_impl(
         }
     }
     case.storage_revision = loaded.package.manifest.source_case_revision;
+    refuse_staged_database(stage.path())?;
     let storage = Storage::open(stage.path().join("casework.db"))?;
     storage.import_archived_case_with_provider(
         &mut case,

@@ -14,7 +14,7 @@ permissions:
 
 concurrency:
   group: ci-${{ github.ref }}
-  cancel-in-progress: true
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
   changes:
@@ -148,13 +148,18 @@ jobs:
         env:
           SKILL_SMOKE_RESULT: ${{ runner.temp }}/skill-bootstrap-native.json
         run: node scripts/ci/skill-bootstrap-smoke.mjs
-      - name: Replay reports and round-trip archives without scanner runtime
+      - name: Run foreground scans, runtime preparation, reports and archives with a fixture runtime
         if: ${{ !cancelled() }}
         run: >-
           cargo test --locked --no-fail-fast --package ai-security-scanner --no-default-features
           --features cli --test cli_build_identity --test cli_report_snapshot --test cli_case_archive
-          --test cli_runtime_prepare --test cli_cloudflare_provider --test report_fidelity_baseline
+          --test cli_foreground_scan --test cli_runtime_prepare --test cli_cloudflare_provider --test report_fidelity_baseline
           --test cli_cloudflare_bundle --test cli_cloudflare_source_view --test cli_cloudflare_audit
+      - name: Run the library unit tests on macOS and Windows
+        if: ${{ !cancelled() && runner.os != 'Linux' && needs.changes.outputs.rust_core == 'true' }}
+        run: >-
+          cargo test --locked --no-fail-fast --package ai-security-scanner --no-default-features
+          --features cli --lib
       - name: Retain native bootstrap evidence
         if: ${{ !cancelled() && steps.native-smoke.outcome == 'success' }}
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
@@ -197,6 +202,15 @@ jobs:
       - run: node --check scripts/engine-image-evidence.mjs
       - run: node --check scripts/generate-oci-layout-fixture.mjs
 
+  engine-launchers:
+    name: Engine launcher tests
+    needs: changes
+    if: needs.changes.outputs.engine == 'true'
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - run: bash scripts/ci/engine-launcher-tests.sh
+
   framework-contract:
     name: Framework mapping contracts
     needs: changes
@@ -224,6 +238,7 @@ jobs:
       - run: npm run release:validate
       - run: npm run release:self-test
       - run: npm run test:release-evidence
+      - run: npm run test:usability-evidence
 
   rust-core:
     name: Rust core and CLI
@@ -391,6 +406,7 @@ jobs:
       - changes
       - frontend
       - engine-admission
+      - engine-launchers
       - framework-contract
       - release-contract
       - rust-core
@@ -405,6 +421,8 @@ jobs:
       FRONTEND_RESULT: ${{ needs.frontend.result }}
       ENGINE_EXPECTED: ${{ needs.changes.outputs.engine }}
       ENGINE_RESULT: ${{ needs['engine-admission'].result }}
+      ENGINE_LAUNCHERS_EXPECTED: ${{ needs.changes.outputs.engine }}
+      ENGINE_LAUNCHERS_RESULT: ${{ needs['engine-launchers'].result }}
       FRAMEWORK_EXPECTED: ${{ needs.changes.outputs.framework }}
       FRAMEWORK_RESULT: ${{ needs['framework-contract'].result }}
       RELEASE_EXPECTED: ${{ needs.changes.outputs.release_contract }}

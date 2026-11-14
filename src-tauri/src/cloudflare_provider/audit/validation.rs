@@ -126,7 +126,10 @@ pub(super) fn assemble(
     let (receipt, record) = match loaded {
         Ok(Some(pair)) => pair,
         Ok(None) => return Ok(Err(ValidationOutcome::refused(Refusal::UnknownPreparation))),
-        Err(_) => return Ok(Err(ValidationOutcome::refused(Refusal::RecordInvalid))),
+        Err(AppError::InvalidCloudflareRecord(_)) => {
+            return Ok(Err(ValidationOutcome::refused(Refusal::RecordInvalid)));
+        }
+        Err(error) => return Err(error),
     };
     record.ensure_active()?;
     if record.sealed().is_some() {
@@ -250,14 +253,22 @@ pub(super) fn assemble(
         "counts_by_role":record.counts(),"counts_by_state":record.counts_by_state(),
         "run_status":metadata["run_status"],"incomplete_reason":metadata["incomplete_reason"]});
     root.verify_unchanged()?;
-    Ok(Ok(Staged {
+    let mut staged = Staged {
         temporary,
         result,
         receipt,
         record,
         view,
         revision: case.storage_revision,
-    }))
+    };
+    if let Some(code) = finalize::seal_headroom(&staged)? {
+        staged.result["sealable"] = json!(false);
+        staged.result["record_errors"]
+            .as_array_mut()
+            .unwrap()
+            .push(json!(code));
+    }
+    Ok(Ok(staged))
 }
 
 fn record_errors(

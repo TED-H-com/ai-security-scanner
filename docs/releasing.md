@@ -1,6 +1,6 @@
 # Release operations
 
-[Documentation](README.md)
+[繁體中文](releasing.zh-TW.md) · [Documentation](README.md)
 
 This page describes **desktop installer delivery**. For repository skills, skill preview/stable and source publication, see [Release definitions](release-model.md). A skill release does not require this installer pipeline.
 

@@ -856,6 +856,66 @@ fn invalid_archive_payloads_fail_verify_preview_and_restore_before_publication()
 }
 
 #[test]
+fn archives_cannot_supply_files_the_restored_workspace_owns() {
+    let directory = test_directory();
+    let fixture = fixture(directory.path());
+    let archive_path = directory.path().join("valid.tar.gz");
+    success(create(&fixture, &archive_path).output().unwrap());
+    let original = entries(&archive_path);
+    let no_data = directory.path().join("never-initialized");
+    for (index, name) in [
+        "casework.db",
+        "casework.db-wal",
+        "CaseWork.DB",
+        "restore-receipt.json",
+        "managed-runtime/versions/one/manifest.json",
+    ]
+    .into_iter()
+    .enumerate()
+    {
+        let payload = b"supplied by the archive".to_vec();
+        let mut changed = original.clone();
+        let mut manifest: Value = serde_json::from_slice(&changed[0].1).unwrap();
+        manifest["entries"].as_array_mut().unwrap().push(json!({
+            "path": name,
+            "sha256": digest(&payload),
+            "byte_length": payload.len(),
+        }));
+        changed[0].1 = serde_json::to_vec(&manifest).unwrap();
+        changed.push((name.to_owned(), payload));
+        let crafted = directory.path().join(format!("crafted-{index}.tar.gz"));
+        write_entries(&crafted, &changed);
+        let error = failure(
+            archive_command(&no_data, "verify", &crafted)
+                .output()
+                .unwrap(),
+        );
+        assert!(
+            error.contains("outside the archive layout"),
+            "{name}: {error}"
+        );
+        let destination = directory.path().join(format!("restore-{index}"));
+        failure(
+            archive_command(&no_data, "restore-preview", &crafted)
+                .arg("--destination")
+                .arg(&destination)
+                .output()
+                .unwrap(),
+        );
+        failure(restore(&no_data, &crafted, &destination));
+        assert!(!destination.exists(), "{name} published a workspace");
+        assert!(!no_data.exists());
+    }
+    assert!(!fs::read_dir(directory.path()).unwrap().any(|entry| {
+        entry
+            .unwrap()
+            .file_name()
+            .to_string_lossy()
+            .starts_with(".scanner-restore-")
+    }));
+}
+
+#[test]
 fn selecting_source_snapshots_refuses_historical_identity_without_a_retained_reference() {
     let directory = test_directory();
     let fixture = fixture(directory.path());
@@ -1118,6 +1178,44 @@ fn connector_capture_history_requires_complete_references_only_when_sources_are_
         assert!(!destination_parent.exists());
         assert!(!no_data.exists());
     }
+}
+
+#[cfg(unix)]
+#[test]
+fn archive_operations_report_unsafe_temporary_directory() {
+    use std::os::unix::fs::PermissionsExt;
+
+    let root = test_directory();
+    let fixture = fixture(root.path());
+    let archive = root.path().join("valid.tar.gz");
+    success(create(&fixture, &archive).output().unwrap());
+    let shared = root.path().join("shared");
+    let temporary = shared.join("private");
+    fs::create_dir_all(&temporary).unwrap();
+    fs::set_permissions(&shared, fs::Permissions::from_mode(0o777)).unwrap();
+    fs::set_permissions(&temporary, fs::Permissions::from_mode(0o700)).unwrap();
+    let destination = root.path().join("restored");
+    let mut restore = archive_command(&fixture.data_dir, "restore", &archive);
+    restore
+        .arg("--destination")
+        .arg(&destination)
+        .arg("--acknowledge-sensitive-data");
+    for mut command in [
+        create(&fixture, &root.path().join("refused.tar.gz")),
+        archive_command(&fixture.data_dir, "verify", &archive),
+        restore,
+    ] {
+        let output = command.env("TMPDIR", &temporary).output().unwrap();
+        assert_eq!(output.status.code(), Some(1));
+        let error: Value = serde_json::from_slice(&output.stderr).unwrap();
+        assert_eq!(error["error_code"], "unsafe_temporary_directory");
+        assert_eq!(
+            error["error"],
+            "temporary directory has an untrusted writable ancestor; point TMPDIR at a private directory"
+        );
+    }
+    assert!(!destination.exists());
+    assert_eq!(fs::read_dir(&temporary).unwrap().count(), 0);
 }
 
 #[test]

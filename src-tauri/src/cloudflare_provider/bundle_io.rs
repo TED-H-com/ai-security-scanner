@@ -1,6 +1,7 @@
 //! Root-relative reads. Every ancestor is opened without following links.
 use crate::case_archive_io::validate_path;
 use crate::error::{AppError, AppResult};
+use sha2::{Digest, Sha256};
 use std::collections::BTreeMap;
 use std::fs::{File, OpenOptions};
 use std::io::Read;
@@ -72,6 +73,19 @@ fn stamp(file: &File, directory: bool) -> AppResult<Stamp> {
     })
 }
 
+/// Digest of one directory's entry names, independent of listing order. A
+/// directory timestamp cannot show an entry added or removed within one clock
+/// tick of the previous change, so every inventory also keeps its names.
+fn listing_digest(mut names: Vec<String>) -> String {
+    names.sort_unstable();
+    let mut hasher = Sha256::new();
+    for name in &names {
+        hasher.update((name.len() as u64).to_le_bytes());
+        hasher.update(name.as_bytes());
+    }
+    hex::encode(hasher.finalize())
+}
+
 // On Unix, openat anchors every lookup to the already opened directory. On
 // Windows, held directory handles deny deletion/rename while child paths open.
 fn open_child(
@@ -139,7 +153,7 @@ pub(crate) struct BundleRoot {
     ancestors: Vec<File>,
     root_identity: (u64, u64),
     reads: BTreeMap<String, Stamp>,
-    inventories: BTreeMap<String, Stamp>,
+    inventories: BTreeMap<String, (Stamp, String)>,
     read_identities: BTreeMap<(u64, u64), String>,
 }
 
@@ -301,11 +315,42 @@ impl BundleRoot {
     ) -> AppResult<()> {
         let (file, _guards) = self.open_directory(relative)?;
         let before = stamp(&file, true)?;
+        let mut names = Vec::new();
+        self.list(&file, relative, &mut |name| {
+            names.push(name.to_owned());
+            visit(name)
+        })?;
+        if stamp(&file, true)? != before {
+            return Err(invalid());
+        }
+        let inventory = (before, listing_digest(names));
+        if self
+            .inventories
+            .get(relative)
+            .is_some_and(|old| old != &inventory)
+        {
+            return Err(invalid());
+        }
+        self.inventories.insert(relative.into(), inventory);
+        Ok(())
+    }
+
+    /// Visits every entry name of an opened directory of this root.
+    fn list(
+        &self,
+        file: &File,
+        relative: &str,
+        visit: &mut dyn FnMut(&str) -> AppResult<()>,
+    ) -> AppResult<()> {
+        #[cfg(windows)]
+        let _ = file;
+        #[cfg(unix)]
+        let _ = relative;
         #[cfg(unix)]
         {
             use std::os::fd::{AsRawFd, IntoRawFd};
             // A separate open description avoids sharing the enumeration offset.
-            let directory = open_child(&file, &self.path, std::ffi::OsStr::new("."), true)?;
+            let directory = open_child(file, &self.path, std::ffi::OsStr::new("."), true)?;
             let fd = directory.as_raw_fd();
             // SAFETY: fd is a live directory; ownership transfers only on success.
             let stream = unsafe { libc::fdopendir(fd) };
@@ -355,17 +400,6 @@ impl BundleRoot {
             let name = entry?.file_name();
             visit(name.to_str().ok_or_else(invalid)?)?;
         }
-        if stamp(&file, true)? != before {
-            return Err(invalid());
-        }
-        if self
-            .inventories
-            .get(relative)
-            .is_some_and(|old| old != &before)
-        {
-            return Err(invalid());
-        }
-        self.inventories.insert(relative.into(), before);
         Ok(())
     }
 
@@ -405,9 +439,17 @@ impl BundleRoot {
         if current_root.root_identity != self.root_identity {
             return Err(invalid());
         }
-        for (relative, before) in &self.inventories {
+        for (relative, (before, listing)) in &self.inventories {
             let (file, _guards) = self.open_directory(relative)?;
             if &stamp(&file, true)? != before {
+                return Err(invalid());
+            }
+            let mut names = Vec::new();
+            self.list(&file, relative, &mut |name| {
+                names.push(name.to_owned());
+                Ok(())
+            })?;
+            if &listing_digest(names) != listing {
                 return Err(invalid());
             }
         }

@@ -386,6 +386,7 @@ impl HtmlReportCatalog {
             "preflight_preparing" => "前置檢查準備中".into(),
             "queued_for_next_phase" => "已排入下一階段佇列".into(),
             "queued_for_resume" => "已排入接續佇列".into(),
+            "source audit sealed" => "原始碼稽核已封存".into(),
             "results_partial" => "結果只有一部分".into(),
             "cancelled_before_dispatch" => "派送前已取消".into(),
             "cancelled_without_observation" => "取消時尚未產生任何觀察".into(),
@@ -1265,20 +1266,50 @@ pub(crate) fn html_executive_summary(
         })
     };
 
+    let validation_count: usize = report
+        .source_audits
+        .iter()
+        .map(|a| a.to_validate.len())
+        .sum();
     let first_action = report.next_steps.first().map(|step| {
         // A gap-derived step names the coverage it closes, as the step list
         // does: "Retry this check." was the only mention of a check in the
         // summary of a run whose one check failed.
-        let action = html_action_about(
-            &beginner_step_action(report, step, catalog),
-            &html_step_closes(
-                report,
-                step,
+        let step_action = beginner_step_action(report, step, catalog);
+        let audit_only = step.finding_id.is_none()
+            && report.coverage_gaps.iter().any(|gap| {
+                gap.next_action == step.action && gap.dimension == "Source audit coverage"
+            })
+            && report.coverage_gaps.iter().all(|gap| {
+                gap.next_action != step.action || gap.dimension == "Source audit coverage"
+            });
+        let action = if audit_only {
+            step_action
+        } else {
+            html_action_about(
+                &step_action,
+                &html_step_closes(
+                    report,
+                    step,
+                    catalog,
+                    &readable_target_labels(report, catalog),
+                ),
                 catalog,
-                &readable_target_labels(report, catalog),
-            ),
-            catalog,
-        );
+            )
+        };
+        if problem_count == 0 && validation_count > 0 {
+            return match (catalog.locale, action.as_str()) {
+                (
+                    crate::export::ReportLocale::En,
+                    "Continue the source audit from the listed paths.",
+                ) => "Then continue the source audit from the listed paths.".to_owned(),
+                (crate::export::ReportLocale::ZhHant, "請從列出的路徑繼續原始碼稽核。") => {
+                    "接著請從列出的路徑繼續原始碼稽核。".to_owned()
+                }
+                (crate::export::ReportLocale::ZhHant, _) => format!("接著：{action}"),
+                _ => format!("Then: {action}"),
+            };
+        }
         // A finding's fix is often shared -- one real project scan put 28
         // findings behind the same template instruction -- so the action on
         // its own said what to do but not to which problem. The step names
@@ -1390,11 +1421,6 @@ pub(crate) fn html_executive_summary(
 
     let mut sentences = vec![scanned];
     sentences.extend(found);
-    let validation_count: usize = report
-        .source_audits
-        .iter()
-        .map(|a| a.to_validate.len())
-        .sum();
     let validation_action = if validation_count > 0 {
         let suffix = if validation_count == 1 { "" } else { "s" };
         let (en, zh) = if problem_count == 0 {
@@ -1402,14 +1428,14 @@ pub(crate) fn html_executive_summary(
                 format!(
                     "Validate the {validation_count} source-audit item{suffix} under To validate first."
                 ),
-                format!("請先驗證下方「待驗證」中的 {validation_count} 個原始碼稽核項目。"),
+                format!("請先驗證「待驗證」中的 {validation_count} 個原始碼稽核項目。"),
             )
         } else {
             (
                 format!(
                     "Also validate the {validation_count} source-audit item{suffix} under To validate."
                 ),
-                format!("另請驗證下方「待驗證」中的 {validation_count} 個原始碼稽核項目。"),
+                format!("另請驗證「待驗證」中的 {validation_count} 個原始碼稽核項目。"),
             )
         };
         Some(catalog.text(&en, &zh).to_owned())
@@ -1679,7 +1705,11 @@ pub(crate) fn html_page_rule(report: &BeginnerMasterReport, catalog: HtmlReportC
 /// to join across exports. There is one case, so there is nothing to tell it
 /// apart from, and no number to keep.
 fn html_case_title(report: &BeginnerMasterReport, catalog: HtmlReportCatalog) -> &str {
-    match report.project_title.as_str() {
+    localized_case_title(&report.project_title, catalog)
+}
+
+pub(crate) fn localized_case_title(title: &str, catalog: HtmlReportCatalog) -> &str {
+    match title {
         crate::export::REDACTED_CASE_TITLE => {
             catalog.text(crate::export::REDACTED_CASE_TITLE, "已遮蔽的評估案件")
         }
@@ -3896,7 +3926,7 @@ fn html_typed_inventory_section(
 /// go in in English. Left that way, a Chinese standard-redacted report carried
 /// three hundred and fifty-three English brackets sitting under translated
 /// labels, in the one export a reader is most likely to hand to someone else.
-const REDACTION_MARKERS: [(&str, &str); 50] = [
+const REDACTION_MARKERS: [(&str, &str); 51] = [
     ("authority assertion", "授權陳述"),
     ("cleanup detail", "清理細節"),
     ("comparison completeness reason", "比對完整性原因"),
@@ -3942,6 +3972,7 @@ const REDACTION_MARKERS: [(&str, &str); 50] = [
     ("scanner-provided remediation", "掃描工具提供的修復資訊"),
     ("scope limit", "範圍限制"),
     ("service endpoint", "服務端點"),
+    ("snapshot hash", "快照雜湊"),
     ("software component", "軟體元件"),
     ("target", "目標"),
     ("version", "版本"),
@@ -4285,7 +4316,7 @@ fn html_original_report_attachments(
 ///
 /// Values are escaped here because the caller inserts the line into HTML.
 /// Neither value known means the row header stays the check name alone.
-fn tested_check_version_line(
+pub(crate) fn tested_check_version_line(
     tasks: &[crate::beginner_report::TechnicalTaskDetails],
     task_id: &str,
     catalog: &HtmlReportCatalog,
@@ -5713,7 +5744,7 @@ pub fn render_html(
             record_note_items,
         )
     };
-    let next_step_items = report
+    let mut next_step_items = report
         .next_steps
         .iter()
         .map(|step| {
@@ -5946,7 +5977,7 @@ pub fn render_html(
                     .unwrap_or_default(),
             )
         })
-        .collect::<String>();
+        .collect::<Vec<_>>();
     // Said once, above the steps, when any finding carries it.
     let any_shared_safety = report.findings.iter().any(|finding| {
         finding
@@ -5985,13 +6016,21 @@ pub fn render_html(
         &display_time(report.actual.observed_until.as_ref()),
     );
 
+    let framework_section = if report.source_audits.is_empty() {
+        html_framework_section(&exported, run_id, catalog)
+    } else {
+        String::new()
+    };
+    let has_framework_section = !framework_section.is_empty();
+
     // A hundred and forty-nine copies of one sentence. Every coordinate in a
     // run comes from the same embedded catalog, so the version and digest
     // beside each reference were the same hundred-odd characters repeated
     // once per reference, inside the cards a reader opens to see a
     // coordinate. Compared rather than assumed: a run that really did draw on
     // more than one catalog keeps the identity where a reader can tell them
-    // apart, and only a run with exactly one moves it to the report's terms.
+    // apart. A run with exactly one moves it to the report's terms when the
+    // framework section is present; otherwise it stays with each reference.
     let mut mapping_identities: Vec<String> = Vec::new();
     for finding in &report.findings {
         for reference in &finding.framework_references {
@@ -6241,11 +6280,11 @@ pub fn render_html(
                     }
                     _ => reference.rationale.clone(),
                 };
-                // Said once in the report's terms when every reference says
-                // the same thing, and here when they do not.
-                let mapping = match shared_mapping {
-                    Some(_) => String::new(),
-                    None => format!(
+                // Keep provenance beside the reference when there is no
+                // framework section, or when references use different catalogs.
+                let mapping = match (&shared_mapping, has_framework_section) {
+                    (Some(_), true) => String::new(),
+                    _ => format!(
                         "<br>{}{}",
                         catalog.label(catalog.text("Mapping version", "對照版本")),
                         html_escape(&html_mapping_identity(reference, catalog)),
@@ -6533,11 +6572,49 @@ pub fn render_html(
         (findings, index_rows, problem_count) =
             html_grouped_problem_cards(&report, &original_finding_cards, &target_labels, catalog);
     }
+    let validation_count: usize = report
+        .source_audits
+        .iter()
+        .map(|a| a.to_validate.len())
+        .sum();
+    if validation_count > 0 {
+        let action = match catalog.locale {
+            crate::export::ReportLocale::En => format!(
+                "Validate the {validation_count} source-audit item{} under To validate.",
+                if validation_count == 1 { "" } else { "s" }
+            ),
+            crate::export::ReportLocale::ZhHant => {
+                format!("請驗證「待驗證」中的 {validation_count} 個原始碼稽核項目。")
+            }
+        };
+        let position = usize::from(problem_count > 0 && !next_step_items.is_empty());
+        next_step_items.insert(
+            position,
+            format!("<li><strong>{}</strong></li>", html_escape(&action)),
+        );
+    }
+    let next_step_items = next_step_items.concat();
     if findings.is_empty() {
-        findings.push_str(catalog.text(
-            "<p>No vulnerability finding was retained for this run.</p>",
-            "<p>本輪未保留任何漏洞問題。</p>",
-        ));
+        let completed_security_check = report.actual.checks.iter().any(|check| {
+            check.effective_result_kind() == CheckResultKind::SecurityCheck
+                && (check.status == CoverageDimensionStatus::TestedComplete
+                    || report.requested.targets.iter().any(|target| {
+                        check.target_asset_ids.contains(&target.asset_id)
+                            && html_check_status_on_asset(&report, check, &target.asset_id)
+                                == CoverageDimensionStatus::TestedComplete
+                    }))
+        });
+        findings.push_str(if completed_security_check {
+            catalog.text(
+                "<p>No problems were found in the completed checks.</p>",
+                "<p>已完成的檢查沒有發現問題。</p>",
+            )
+        } else {
+            catalog.text(
+                "<p>No confirmed problems were recorded for this run.</p>",
+                "<p>本輪未記錄已確認的問題。</p>",
+            )
+        });
     }
     let observation_section = if observations.is_empty() {
         String::new()
@@ -6820,10 +6897,13 @@ pub fn render_html(
                 admission_id,
             } => {
                 format!(
-                    "{}: {}; {}: {}",
+                    "{}{}{}{}{}{}{}",
                     catalog.text("Source audit", "原始碼稽核"),
+                    catalog.text(": ", "："),
                     provider_id,
+                    catalog.text("; ", "；"),
                     catalog.text("Admission", "納入紀錄"),
+                    catalog.text(": ", "："),
                     admission_id
                 )
             }
@@ -7496,6 +7576,14 @@ pub fn render_html(
     ));
     document.push_str(&html_asset_result_section(&report, &target_labels, catalog));
     document.push_str(&html_source_audits(&report, catalog));
+    let problem_explanation = if problem_count > 0 {
+        format!("<p>{}</p>", catalog.text(
+            "Problems follow the report order. Severity is the scanner's rating of possible impact (this product rates it only when the scanner did not), confidence describes evidence strength, and priority is this product's recommended order. When this product places a problem lower than its severity suggests, the card says why.",
+            "問題依報告順序排列。嚴重程度是掃描工具對可能影響的評級（掃描工具未評級時才由本產品評定），信心程度描述證據強度，優先順序則是本產品建議的處理次序。若本產品把某項問題排得比嚴重程度所示更後面，問題卡會說明原因。",
+        ))
+    } else {
+        String::new()
+    };
     document.push_str(&format!(
         concat!(
             "<section class=\"report-grid\"><div class=\"report-card\">",
@@ -7512,7 +7600,7 @@ pub fn render_html(
             "<div class=\"report-card\"><h2>{}</h2><ul>{}</ul>{}</div></section>",
             "<section><h2>{}</h2>{}<ol>{}</ol></section>",
             "<h2>{}</h2>",
-            "<p>{}</p>{}{}{}"
+            "{}{}{}{}"
         ),
         catalog.text("What you asked to scan", "你要求掃描的內容"),
         scan_depth_paragraph,
@@ -7543,10 +7631,7 @@ pub fn render_html(
         shared_safety_note,
         next_step_items,
         catalog.text("Problems found", "發現的問題"),
-        catalog.text(
-            "Problems follow the report order. Severity is the scanner's rating of possible impact (this product rates it only when the scanner did not), confidence describes evidence strength, and priority is this product's recommended order. When this product places a problem lower than its severity suggests, the card says why.",
-            "問題依報告順序排列。嚴重程度是掃描工具對可能影響的評級（掃描工具未評級時才由本產品評定），信心程度描述證據強度，優先順序則是本產品建議的處理次序。若本產品把某項問題排得比嚴重程度所示更後面，問題卡會說明原因。",
-        ),
+        problem_explanation,
         finding_index,
         findings,
         observation_section,
@@ -7554,9 +7639,7 @@ pub fn render_html(
     // Framework coordinates and inventory are context for the problems
     // above, so they follow them (spec §6.3 and §6.1).
     document.push_str(&typed_inventory_section);
-    if report.source_audits.is_empty() {
-        document.push_str(&html_framework_section(&exported, run_id, catalog));
-    }
+    document.push_str(&framework_section);
     document.push_str(&format!(
         concat!(
             "<details class=\"technical\"{}><summary><strong>{}</strong></summary>",
@@ -7614,20 +7697,24 @@ pub fn render_html(
     // Where the coordinates came from, once, at the end. It is a formal term
     // about this report rather than anything to do next, and it used to be
     // repeated beside every coordinate in every card.
-    let mapping_terms = shared_mapping
-        .map(|identity| {
-            format!(
-                "{}{}{}{}",
-                catalog.text(
-                    "Framework references come from mapping catalog ",
-                    "框架參考來自對照目錄 ",
-                ),
-                html_escape(&identity),
-                catalog.text(".", "。"),
-                catalog.text(" ", ""),
-            )
-        })
-        .unwrap_or_default();
+    let mapping_terms = if has_framework_section {
+        shared_mapping
+            .map(|identity| {
+                format!(
+                    "{}{}{}{}",
+                    catalog.text(
+                        "Framework references come from mapping catalog ",
+                        "框架參考來自對照目錄 ",
+                    ),
+                    html_escape(&identity),
+                    catalog.text(".", "。"),
+                    catalog.text(" ", ""),
+                )
+            })
+            .unwrap_or_default()
+    } else {
+        String::new()
+    };
     // Said once, and only where it is true. Every evidence summary this build
     // writes ended with it, so fifty-one records carried the same statement
     // about how the product keeps target text.
@@ -7648,10 +7735,13 @@ pub fn render_html(
             "</body></html>"
         ),
         catalog.text("Report terms", "報告條款"),
-        catalog.text(
+        if has_framework_section { catalog.text(
             "Framework references are informational navigation. AIDEFEND references are an independent, unofficial mapping unless the framework owner states otherwise. This report is not an audit, certification, compliance decision, security guarantee, or automatic remediation.",
             "框架參照只供資訊導航。除非框架擁有者另有聲明，AIDEFEND 參照屬於獨立、非官方的對照。本報告不是稽核、認證、合規判定、資安保證或自動修復。",
-        ),
+        ) } else { catalog.text(
+            "This report is not an audit, certification, compliance decision, security guarantee, or automatic remediation.",
+            "本報告不是稽核、認證、合規判定、資安保證或自動修復。",
+        ) },
         mapping_terms,
         // This one line is the report's own sentence rather than a label and
         // its value, and it was punctuated as English in both languages: the
@@ -7689,12 +7779,12 @@ pub fn render_html(
         untrusted_evidence_terms,
         // The inventory prints regardless of its disclosure state; the
         // technical record prints only if a reader opened it.
-        if report.source_audits.is_empty() { catalog.text(
+        if has_framework_section { catalog.text(
             "Framework sources and attribution are shown in the framework section. The complete asset inventory is collapsed on screen and printed in full. Per-finding evidence, source rules, framework references and the run's task records stay collapsed technical detail; a printed copy carries those only where a reader opened them before printing.",
             "框架來源與出處聲明顯示於框架區塊。完整資產清單在畫面上收合，列印時會完整輸出。各問題的證據、來源規則、框架參考與本輪工作紀錄仍屬收合的技術細節；列印出來的版本只會包含列印前已展開的部分。",
         ) } else { catalog.text(
-            "The complete asset inventory is collapsed on screen and printed in full. Per-finding evidence, source rules, framework references and the run's task records stay collapsed technical detail; a printed copy carries those only where a reader opened them before printing.",
-            "完整資產清單在畫面上收合，列印時會完整輸出。各問題的證據、來源規則、框架參考與本輪工作紀錄仍屬收合的技術細節；列印出來的版本只會包含列印前已展開的部分。",
+            "The complete asset inventory is collapsed on screen and printed in full. Per-finding evidence, source rules and the run's task records stay collapsed technical detail; a printed copy carries those only where a reader opened them before printing.",
+            "完整資產清單在畫面上收合，列印時會完整輸出。各問題的證據、來源規則與本輪工作紀錄仍屬收合的技術細節；列印出來的版本只會包含列印前已展開的部分。",
         ) },
     ));
     if catalog.locale == crate::export::ReportLocale::ZhHant {
@@ -7764,7 +7854,12 @@ pub(crate) fn localize_report_markers(
     standard: bool,
 ) -> AppResult<String> {
     if reports.iter().all(|r| r.source_audits.is_empty()) {
-        return Ok(localize_redaction_markers(document));
+        let localized = localize_redaction_markers(document);
+        return Ok(if standard {
+            localized.replace("[redacted]", "（已遮蔽）")
+        } else {
+            localized
+        });
     }
     fn collect(value: &serde_json::Value, key: &str, standard: bool, strings: &mut Vec<String>) {
         match value {
@@ -7803,6 +7898,11 @@ pub(crate) fn localize_report_markers(
     let mut protected = document.to_owned();
     for s in strings {
         protected = protected.replace(&s, &s.replace('[', "&#91;"));
+    }
+    if standard {
+        protected = protected
+            .replace("[redacted location]", "（已遮蔽位置）")
+            .replace("[redacted]", "（已遮蔽）");
     }
     Ok(localize_redaction_markers(&protected)
         .replace(
@@ -7927,30 +8027,35 @@ pub(crate) fn html_source_audits(
                 html_escape(native["title"].as_str().unwrap_or_default())
             ));
             let withheld = audit.withheld_text_fields > 0 || audit.withheld_code_fields > 0;
-            html.push_str(&format!(
-                "<h5>{}</h5>",
-                catalog.text("Evidence locations", "證據位置")
-            ));
-            for location in native["evidence"].as_array().into_iter().flatten() {
-                let file = location["file"].as_str().unwrap_or_default();
-                let line = &location["line"];
-                let description = location["description"].as_str().unwrap_or_default();
-                let text = if withheld {
-                    format!("{file}:{line}")
-                } else {
-                    format!("{file}:{line} — {description}")
-                };
-                html.push_str(&html_provider_value(&serde_json::json!(text), catalog));
-            }
             if withheld {
+                let count = native["evidence"].as_array().map_or(0, Vec::len);
+                let locations = match catalog.locale {
+                    ReportLocale::En => format!(
+                        "{count} evidence location{} (hidden in this profile)",
+                        if count == 1 { "" } else { "s" }
+                    ),
+                    ReportLocale::ZhHant => format!("{count} 個證據位置（此設定下已隱藏）"),
+                };
+                html.push_str(&format!("<p>{}</p>", html_escape(&locations)));
                 html.push_str(&format!(
                     "<p>{}</p>",
                     catalog.text(
-                        "Details withheld in the standard profile.",
-                        "詳細內容已在標準設定檔中隱藏。"
+                        "Ask the code owner to check whether this behavior can occur, using the claim and validation plan in the unredacted report or the app.",
+                        "請程式碼負責人依照未遮蔽報告或應用程式中的主張與驗證計畫，確認這個行為是否可能發生。"
                     )
                 ));
             } else {
+                html.push_str(&format!(
+                    "<h5>{}</h5>",
+                    catalog.text("Evidence locations", "證據位置")
+                ));
+                for location in native["evidence"].as_array().into_iter().flatten() {
+                    let file = location["file"].as_str().unwrap_or_default();
+                    let line = &location["line"];
+                    let description = location["description"].as_str().unwrap_or_default();
+                    let text = format!("{file}:{line} — {description}");
+                    html.push_str(&html_provider_value(&serde_json::json!(text), catalog));
+                }
                 for (key, en, zh) in [
                     ("description", "Description", "說明"),
                     ("claimed_root_cause", "Claim", "待驗證主張"),
@@ -8014,8 +8119,9 @@ pub(crate) fn html_source_audits(
             catalog.text("Source audit technical details", "原始碼稽核技術詳細資料")
         ));
         html.push_str(&format!(
-            "<p>{}: {}</p>",
+            "<p>{}{}{}</p>",
             catalog.text("Issued invocations", "已發出的呼叫次數"),
+            catalog.text(": ", "："),
             audit.method.issued_invocations
         ));
         for (en, zh, value) in [
@@ -8080,21 +8186,23 @@ pub(crate) fn html_source_audits(
         }
         if audit.withheld_code_fields > 0 {
             html.push_str(&format!(
-                "<p>{}: {}</p>",
+                "<p>{}{}{}</p>",
                 catalog.text(
                     "Code fields withheld in the standard profile",
                     "標準設定檔中隱藏的程式碼欄位"
                 ),
+                catalog.text(": ", "："),
                 audit.withheld_code_fields
             ));
         }
         if audit.withheld_text_fields > 0 {
             html.push_str(&format!(
-                "<p>{}: {}</p>",
+                "<p>{}{}{}</p>",
                 catalog.text(
                     "Text fields withheld in the standard profile",
                     "標準設定檔中隱藏的文字欄位"
                 ),
+                catalog.text(": ", "："),
                 audit.withheld_text_fields
             ));
         }

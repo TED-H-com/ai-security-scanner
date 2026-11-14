@@ -112,6 +112,12 @@ const RUST_PATHS = [
   /^engines\/catalog\.json$/,
   /^engines\/campaigns\/october-2026\.json$/,
   /^docs\/research\/(?:augustus-single-destination-profile\.json|patches\/augustus-0\.14\.29-machine-json\.patch)$/,
+  // Rust fixture and cross-language parity tests read these inputs directly.
+  /^docs\/research\/fixtures\/(?:augustus|agentic-radar|mcp-armor)\//,
+  /^src\/services\/nativeAdapter\.ts$/,
+  /^schemas\/provider-archive-history\.schema\.json$/,
+  /^tests\/fixtures\/external-scanners\/strix-vulnerabilities\.json$/,
+  /^engines\/images\/(?:cloud-launcher\/main\.go|scubagear\/run-scubagear\.ps1|maester\/run-maester\.ps1|mcp-armor\/testdata\/workspace\/mcp\.json|external-launcher\/(?:main_test\.go|testdata\/naabu-launcher-plan-v[23]\.json)|kube-bench\/testdata\/node-snapshot\/)/,
   /^mappings\/control-mappings\.json$/,
   /^mappings\/control-mappings\.schema\.json$/,
   /^schemas\/master-framework-report\.schema\.json$/,
@@ -133,8 +139,10 @@ const DESKTOP_PATHS = [
 ];
 
 const ENGINE_PATHS = [
+  /^scripts\/ci\/engine-launcher-tests\.sh$/,
   /^scripts\/engine-image-replacement\.mjs$/,
   /^scripts\/select-local-engine-publication\.mjs$/,
+  /^scripts\/semgrep-native-publication-contract\.mjs$/,
   // Engine evidence and catalog validation read the shared publication origins.
   /^scripts\/publication-origins\.(?:mjs|d\.mts)$/,
   /^engines\//,
@@ -158,6 +166,10 @@ const RELEASE_CONTRACT_PATHS = [
   /^scripts\/verify-vendored-glib\.sh$/,
   /^scripts\/release\//,
   /^tests\/release\//,
+  /^docs\/incident-pack\.(?:js|json)$/,
+  /^\.github\/workflows\/engine-images-local-k8s\.yml$/,
+  /^scripts\/semgrep-native-publication-contract\.mjs$/,
+  /^(?:tests\/usability\/|scripts\/validate-usability-evidence\.mjs$|docs\/usability\/session-evidence\.schema\.json$)/,
   // Release scripts and tests read the shared publication origins.
   /^scripts\/publication-origins\.(?:mjs|d\.mts)$/,
   /^\.github\/workflows\/(?:release|promote-release|windows-external-evidence)\.ya?ml$/,
@@ -226,6 +238,7 @@ const SHARED_NODE_FILES = new Set(["package.json", "package-lock.json"]);
 const CI_RESULT_LANES = Object.freeze([
   Object.freeze({ label: "Frontend", expected: "FRONTEND_EXPECTED", result: "FRONTEND_RESULT" }),
   Object.freeze({ label: "Engine admission", expected: "ENGINE_EXPECTED", result: "ENGINE_RESULT" }),
+  Object.freeze({ label: "Engine launcher tests", expected: "ENGINE_LAUNCHERS_EXPECTED", result: "ENGINE_LAUNCHERS_RESULT" }),
   Object.freeze({ label: "Framework mapping", expected: "FRAMEWORK_EXPECTED", result: "FRAMEWORK_RESULT" }),
   Object.freeze({ label: "Release contract", expected: "RELEASE_EXPECTED", result: "RELEASE_RESULT" }),
   Object.freeze({ label: "Rust core", expected: "RUST_EXPECTED", result: "RUST_RESULT" }),

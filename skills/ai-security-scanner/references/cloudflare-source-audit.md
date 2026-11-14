@@ -141,7 +141,9 @@ A properly captured incomplete run can still pass terminal validation and seal.
    `provider cloudflare checkpoint`, action `submit_output`. Require the recorded
    disposition, not just exit 0. Recon outputs are nonempty text (1 MiB maximum);
    hunters/critics return one JSON object, verifiers their exact method object
-   (5 MiB maximum). Keep original outputs even when shared documents are revised.
+   (5 MiB maximum). Output capture refusals identify the submitted path in `output`;
+   document capture refusals use `document`. Keep original outputs even when shared
+   documents are revised.
 4. The parent alone synthesizes shared documents from accepted results. Capture
    changed documents with `provider cloudflare checkpoint`, action
    `submit_documents`, at each checkpoint below. This runs the pinned validators
@@ -306,6 +308,8 @@ These statements do not establish that an agent ran, a model was independent or
 a finding is true. The retained reported-only bundle keeps its own false flags.
 
 ## Failures and recovery
+
+A stderr line with `schema_version` `ai-security-scanner.bootstrap-error/v1` means the core did not run. Handle its `error` without applying the CLI exit table or replaying the request.
 
 `unsafe_temporary_directory`: stop, tell the user the temporary-directory setting is unsafe, and do not change permissions yourself.
 

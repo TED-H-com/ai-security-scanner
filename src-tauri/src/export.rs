@@ -1452,6 +1452,13 @@ fn redact_beginner_master_report(
     let aliases = IamAliases::of(case);
     for audit in &mut report.source_audits {
         let count = redact_provider(audit, &provider_replacements)?;
+        for pointer in ["/source_view_request_id", "/source/source_view_request_id"] {
+            if let Some(serde_json::Value::String(id)) =
+                audit.technical_detail.lineage.pointer_mut(pointer)
+            {
+                *id = provider_pseudonym("req", id);
+            }
+        }
         for gap in &mut audit.coverage_gaps {
             gap.label = gap.coverage_id.clone();
         }

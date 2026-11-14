@@ -155,6 +155,43 @@ fn bad_output_paths_declarations_and_unknown_fields_leave_assignment_open() {
         "assignment_closed"
     );
 }
+
+#[test]
+fn output_capture_refusals_identify_the_output_without_a_document_field() {
+    let (f, prep) = Fixture::setup(true);
+    let prepared = f.audit(&prep, 0);
+    let issued = issue(&f, &prepared, json!([{"role":"hunter","wave":1}]));
+    let request = output(&f, &prep, &prepared, &issued, 0, b"{}");
+    let path = request["action"]["output"]["path"].as_str().unwrap();
+    let mut mismatch = request.clone();
+    mismatch["action"]["output"]["sha256"] = json!("a".repeat(64));
+    let mut unknown = request.clone();
+    unknown["action"]["assignment_id"] = json!("unknown");
+    let mut invalid = request.clone();
+    invalid["action"]["output"]["path"] = json!("invalid");
+    for (bad, code) in [
+        (&mismatch, "output_mismatch"),
+        (&unknown, "unknown_assignment"),
+        (&invalid, "output_invalid"),
+    ] {
+        let result = f.checkpoint(bad, 2);
+        assert_eq!(result["error_code"], code);
+        assert_eq!(result["output"], bad["action"]["output"]["path"]);
+        assert!(result.get("document").is_none(), "{result}");
+    }
+    fs::remove_file(host(&prep).join(path)).unwrap();
+    let unreadable = f.checkpoint(&request, 2);
+    assert_eq!(unreadable["error_code"], "output_unreadable");
+    assert_eq!(unreadable["output"], path);
+    assert!(unreadable.get("document").is_none());
+    fs::write(host(&prep).join(path), b"{}").unwrap();
+    let saved = f.checkpoint(&request, 0);
+    let again = next(&f, &prepared, &saved, "again", request["action"].clone());
+    let closed = f.checkpoint(&again, 2);
+    assert_eq!(closed["error_code"], "assignment_closed");
+    assert_eq!(closed["output"], path);
+    assert!(closed.get("document").is_none());
+}
 #[test]
 fn nonverifier_contract_failures_are_retryable_submissions() {
     for role in [

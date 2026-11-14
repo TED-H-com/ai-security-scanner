@@ -38,7 +38,7 @@ v0.6.2 安裝版包含日文介面，可在 **設定 → 日本語** 選擇，�
 
 - 真實宿主驗收已在一個 Linux 宿主以合成專案完成，從空的固定版本 bootstrap 快取一路到還原；第二個宿主、多資產與 macOS／Windows 宿主仍待完成。
 - 預設 skill 仍使用已發布桌面版，尚未切換。
-- 受管理執行環境套件的自動取得與宣稱平台驗證尚未完成。macOS 與 Windows 的 CI 已涵蓋 bootstrap、Cloudflare 原始碼稽核、報告保存與案件封存；前景掃描與掃描引擎準備在這兩個平台的測試尚不完整。
+- 沒有安裝桌面程式的電腦仍無法自動取得受管理執行環境套件。macOS 與 Windows 的 CI 現在也會執行程式庫測試，以及使用測試替身的前景掃描與引擎準備測試；在這兩種系統上執行實際掃描工具仍未驗證。
 
 [開發狀態](docs/development-status.zh-TW.md)
 
@@ -162,7 +162,9 @@ Windows 使用者現在可以啟動網站掃描的**頁面回應檢查（ZAP）*
 
 **[Syft](https://github.com/anchore/syft)** — Syft 來自 Anchore，是一套廣泛使用的開源工具，用來建立軟體物料清單（SBOM），也就是列出專案或容器映像裡有哪些軟體元件的清單，例如函式庫與作業系統套件。它會記下每個認得出的元件名稱、版本與類型。我們把它放進本程式，是因為它能幫你很快看清所選專案或映像裡有哪些軟體，也就知道漏洞檢查看的是哪些東西。這份清單只說明有什麼，不是漏洞報告。這裡只讀取唯讀副本、不連網路，也不會從 registry 下載映像；已知漏洞交給 Trivy 與 Grype 檢查。
 
-本版目錄將 Grype 映像固定為 **`0.117.0-4`**，digest 為 `sha256:56b0d675…`，可檢查本機專案相依套件的已知弱點；受控專案掃描曾記錄 **81 筆 Grype 問題**。這是測試專案的實測結果，各專案筆數會不同。詳見[完整釘選與實測紀錄](docs/engine-catalog.md#grype-repository-support)。
+目前目錄將 Grype 映像固定為 **`0.121.2-1`**，digest 為 `sha256:80b8f128…`，可檢查本機專案相依套件的已知弱點。詳見[目前完整釘選與歷史實測紀錄](docs/engine-catalog.md#grype-repository-support)。
+
+**2026-09-20** 使用舊版映像 **`0.117.0-4`** 的受控專案掃描曾記錄 **81 筆 Grype 問題**。這是歷史測試專案的實測結果，不代表目前映像的實測結果，也不能預測其他專案的筆數。
 
 ### 網站與內部系統
 
@@ -221,7 +223,7 @@ Windows 使用者現在可以啟動網站掃描的**頁面回應檢查（ZAP）*
 - [掃描範圍](docs/scanning-scope.zh-TW.md)
 - [閱讀與分享結果](docs/results-and-exports.zh-TW.md)
 - [目前開發狀態](docs/development-status.zh-TW.md)
-- [v0.5.2 更新](docs/release/v0.5.2.zh-TW.md) · [v0.5.1 更新](docs/release/v0.5.1.zh-TW.md) · [v0.5.0 更新](docs/release/v0.5.0.zh-TW.md) · [v0.3.1 更新](docs/release/v0.3.1.md)
+- [v0.6.2 更新](docs/release/v0.6.2.md#繁體中文) · [v0.6.1 更新](docs/release/v0.6.1.md#繁體中文) · [v0.6.0 更新](docs/release/v0.6.0.md#繁體中文) · [v0.5.3 更新](docs/release/v0.5.3.md#繁體中文) · [v0.5.2 更新](docs/release/v0.5.2.zh-TW.md) · [v0.5.1 更新](docs/release/v0.5.1.zh-TW.md) · [v0.5.0 更新](docs/release/v0.5.0.zh-TW.md) · [v0.3.1 更新](docs/release/v0.3.1.md)
 - [參與開發](CONTRIBUTING.md) · [貢獻者](CONTRIBUTORS.md) · [安全政策](SECURITY.md)
 
 ## 開發

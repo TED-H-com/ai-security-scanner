@@ -11,7 +11,7 @@ The backend logic is divided into several core modules:
 *   **`core_state` / `scan_coordinator`**: Shared headless state and foreground worker ownership, cancellation, receipts and captured-evidence recovery.
 *   **`report_renderer` / `report_snapshot`**: Shared rendering, saved report bytes and exact-compatible offline replay.
 *   **`case_archive`**: Private portable case preservation and restore into a new workspace.
-*   **`cloudflare_provider` / `provider_report`**: Pinned document/bundle validation, reported-only projections and private offline retention; no audit execution or case import yet.
+*   **`cloudflare_provider` / `provider_report` / `agent_audit_admission`**: Pinned document/bundle validation, host-led audit custody through sealing, case admission into the shared report, and private offline retention.
 *   **`case_service`**: Manages the lifecycle of assessment cases, including creation, updates, and state transitions.
 *   **`orchestrator`**: Coordinates the execution of various scanning engines, handling dependencies and concurrency.
 *   **`managed_runtime`**: Responsible for the setup and teardown of isolated runtime environments for scanning engines (e.g., containers, dedicated network namespaces).
@@ -62,7 +62,7 @@ Resumes a previously paused or interrupted scan.
 **Arguments:**
 
 *   `case_id`: (string) The ID of the assessment case.
-*   `run_id`: (string) The ID of the scan run to resume.
+*   `run_id`: (string, optional) The scan run to resume; defaults to the latest run.
 
 **Returns:**
 
@@ -116,29 +116,12 @@ async function exportReport() {
 
 ### `execute_provider_bootstrap`
 
-Executes the setup process for cloud provider read-only access (e.g., AWS, Azure).
+Executes the reviewed setup for cloud provider read-only access (e.g., AWS, Azure) for one case source.
 
 **Arguments:**
 
-*   `input`: (ProviderBootstrapInput) Configuration for the provider setup.
+*   `input`: (ExecuteProviderBootstrapInput) `operationId`, the reviewed `execution` request, `sourceId`, `allowedEngineIds` and `maxCheckouts`. Unknown fields are rejected. Credentials never pass through this call; administrator sign-in happens in the provider's own flow.
 
 **Returns:**
 
-Returns the status of the bootstrap process.
-
-**Usage Example:**
-
-```typescript
-import { invoke } from "@tauri-apps/api/core";
-
-async function setupProvider() {
-  const status = await invoke("execute_provider_bootstrap", {
-    input: {
-      provider: "aws",
-      method: "read_only",
-      credentials: { /* ... */ }
-    }
-  });
-  console.log("Bootstrap status:", status);
-}
-```
+Returns the installed source authorization for that operation.

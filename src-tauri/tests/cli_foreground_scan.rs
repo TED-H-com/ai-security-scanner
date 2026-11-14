@@ -1,6 +1,13 @@
-//! Unix subprocess coverage for foreground ownership. The executable named
+//! Subprocess coverage for foreground ownership. The executable named
 //! docker below is a private fixture, never a container service or scanner.
-#![cfg(all(feature = "cli", unix))]
+#![cfg(feature = "cli")]
+
+#[path = "support/fixture_runtime.rs"]
+mod fixture_runtime;
+
+#[cfg(target_os = "linux")]
+#[path = "support/managed_runtime_bundle.rs"]
+mod managed_runtime_bundle;
 
 #[allow(dead_code)]
 #[path = "../src/test_temp.rs"]
@@ -24,77 +31,10 @@ use chrono::Utc;
 use serde_json::{Value, json};
 use std::fs;
 use std::io::{Read, Write};
-use std::os::unix::fs::PermissionsExt;
 use std::path::{Path, PathBuf};
-use std::process::{Child, ChildStdout, Command, Output, Stdio};
+use std::process::{Child, Command, Output, Stdio};
 use std::thread::{self, JoinHandle};
 use std::time::{Duration, Instant};
-
-const FAKE_DOCKER: &str = r#"#!/usr/bin/python3
-import hashlib, json, os, pathlib, sys, time
-root = pathlib.Path(__file__).parent
-args = sys.argv[1:]
-with (root / 'calls.jsonl').open('a') as log:
-    log.write(json.dumps(args) + '\n')
-mode = (root / 'mode').read_text().strip()
-if mode == 'deny':
-    print('fixture forbids every runtime operation', file=sys.stderr)
-    sys.exit(91)
-if args[0] == 'version':
-    print('99.0.0-offline-fixture')
-elif args[0] == 'info':
-    security = ['name=seccomp,profile=builtin', 'name=rootless']
-    print(json.dumps({'serverVersion':'99.0.0-offline-fixture','securityOptions':security}
-                    if 'serverVersion' in args[-1] else security))
-elif args[:2] == ['image', 'inspect']:
-    print('[]')
-elif args[0] == 'run':
-    def option(name): return args[args.index(name) + 1]
-    labels = dict(args[i + 1].split('=', 1) for i, value in enumerate(args) if value == '--label')
-    mounts = [dict(piece.split('=',1) for piece in args[i + 1].split(',') if '=' in piece)
-              for i, value in enumerate(args) if value == '--mount']
-    output = pathlib.Path(next(m.get('src',m.get('source')) for m in mounts
-                               if m.get('dst',m.get('target',m.get('destination'))) == '/output'))
-    name = option('--name')
-    identity = hashlib.sha256(name.encode()).hexdigest()
-    image = next(value for value in args if '@sha256:' in value)
-    state = {'Id':identity,'Name':name,'Config':{'Image':image,'Labels':labels}}
-    state_file = root / (identity + '.json')
-    state_file.write_text(json.dumps(state))
-    pathlib.Path(option('--cidfile')).write_text(identity + '\n')
-    (root / 'running.json').write_text(json.dumps({'pid':os.getpid(),'id':identity,'name':name}))
-    if mode == 'block':
-        deadline = time.monotonic() + 20
-        while not (root / 'release').exists() and not (root / (identity + '.stopped')).exists():
-            if time.monotonic() > deadline:
-                print('fixture watchdog expired', file=sys.stderr)
-                sys.exit(92)
-            time.sleep(0.01)
-    if labels['ai.security-scanner.engine'] == 'semgrep':
-        print('synthetic scanner failure', file=sys.stderr)
-        sys.exit(9)
-    (output / 'gitleaks.json').write_bytes((root / 'gitleaks.json').read_bytes())
-    print('offline fixture output captured')
-elif args[:2] == ['container', 'inspect']:
-    query = args[-1]
-    states = [json.loads(path.read_text()) for path in root.glob('*.json') if len(path.stem) == 64]
-    selected = [state for state in states if query in (state['Id'], state['Name'])]
-    if len(selected) != 1:
-        print('No such container', file=sys.stderr)
-        sys.exit(1)
-    print(json.dumps(selected))
-elif args[0] in ('stop', 'rm'):
-    identity = args[-1]
-    if len(identity) != 64:
-        print('fixture refuses control by mutable name', file=sys.stderr)
-        sys.exit(93)
-    (root / (identity + '.stopped')).write_text('stopped')
-    if args[0] == 'rm':
-        (root / (identity + '.json')).unlink(missing_ok=True)
-else:
-    print('unexpected fixture runtime operation: ' + repr(args), file=sys.stderr)
-    sys.exit(94)
-"#;
 
 struct Fixture {
     _root: test_temp::TempDir,
@@ -112,13 +52,7 @@ impl Fixture {
         let binary_directory = root.path().join("fake-runtime");
         fs::create_dir_all(&artifacts).unwrap();
         fs::create_dir(&binary_directory).unwrap();
-        fs::write(binary_directory.join("docker"), FAKE_DOCKER).unwrap();
-        fs::set_permissions(
-            binary_directory.join("docker"),
-            fs::Permissions::from_mode(0o700),
-        )
-        .unwrap();
-        fs::write(binary_directory.join("mode"), runtime_mode).unwrap();
+        fixture_runtime::install(&binary_directory, "foreground", runtime_mode);
         let storage = Storage::open(data.join("casework.db")).unwrap();
         let mut case = AssessmentCase::new(
             "Foreground subprocess fixture".into(),
@@ -381,7 +315,7 @@ impl Fixture {
 
 struct Running {
     child: Option<Child>,
-    unread_stdout: Option<ChildStdout>,
+    unread_stdout: Option<Box<dyn std::any::Any + Send>>,
     stdout: Option<JoinHandle<Vec<u8>>>,
     stderr: Option<JoinHandle<Vec<u8>>>,
 }
@@ -392,19 +326,6 @@ fn read_pipe(mut reader: impl Read + Send + 'static) -> JoinHandle<Vec<u8>> {
         reader.read_to_end(&mut bytes).unwrap();
         bytes
     })
-}
-
-fn make_fixture_directories_removable(path: &Path) {
-    let metadata = fs::symlink_metadata(path).unwrap();
-    assert!(!metadata.file_type().is_symlink());
-    if metadata.is_dir() {
-        // Production snapshots are intentionally read-only. Restore write
-        // permission only on this test's private copy so it can be removed.
-        fs::set_permissions(path, fs::Permissions::from_mode(0o700)).unwrap();
-        for entry in fs::read_dir(path).unwrap() {
-            make_fixture_directories_removable(&entry.unwrap().path());
-        }
-    }
 }
 
 impl Running {
@@ -418,7 +339,7 @@ impl Running {
         let (stdout, unread_stdout) = if read_stdout {
             (Some(read_pipe(pipe)), None)
         } else {
-            (None, Some(pipe))
+            (None, Some(Box::new(pipe) as Box<dyn std::any::Any + Send>))
         };
         let stderr = Some(read_pipe(child.stderr.take().unwrap()));
         Self {
@@ -694,6 +615,58 @@ fn foreground_persists_real_adapter_finding_and_failed_sibling_before_returning(
     assert!(!fixture.calls().iter().any(|call| call[0] == "pull"));
 }
 
+fn assert_saved_run_read_failure(event: &str, admitted_worker: bool) {
+    let fixture = Fixture::new(true, if admitted_worker { "block" } else { "complete" });
+    let connection = rusqlite::Connection::open(fixture.data.join("casework.db")).unwrap();
+    connection.execute_batch(&format!(
+            "CREATE TABLE fixture_saved_document (document TEXT NOT NULL);
+             CREATE TRIGGER fixture_fail_case_read AFTER INSERT ON case_events
+             WHEN NEW.event_type = '{event}' BEGIN
+               INSERT INTO fixture_saved_document SELECT document_json FROM cases WHERE id = NEW.case_id;
+               UPDATE cases SET document_json = 'unreadable fixture' WHERE id = NEW.case_id;
+             END;"
+        )).unwrap();
+    let mut process = Running::spawn(fixture.run_command(true, "gitleaks"), true);
+    let known_run = if admitted_worker {
+        process.await_runtime(&fixture);
+        let id = fixture.case().scan_runs.last().unwrap().id.clone();
+        fs::write(fixture.binary_directory.join("release"), b"release").unwrap();
+        Some(id)
+    } else {
+        None
+    };
+    let output = process.wait();
+    let result = terminal(&output, 4);
+    let document: String = connection
+        .query_row("SELECT document FROM fixture_saved_document", [], |row| {
+            row.get(0)
+        })
+        .unwrap();
+    let saved: Value = serde_json::from_str(&document).unwrap();
+    let saved_run = saved["scan_runs"].as_array().unwrap().last().unwrap()["id"]
+        .as_str()
+        .unwrap();
+    if let Some(id) = known_run {
+        assert_eq!(id, saved_run);
+        assert_eq!(result["run_id"], saved_run);
+    }
+    assert_eq!(result["retryable"], false, "{event}: {result}");
+    assert!(
+        result["receipt"].is_object() || result["error_code"] == "receipt_persistence_failed",
+        "{event}: {result}"
+    );
+}
+
+#[test]
+fn saved_run_read_failure_after_worker_does_not_invite_a_second_scan() {
+    assert_saved_run_read_failure("report.terminal_snapshot_saved", true);
+}
+
+#[test]
+fn saved_run_read_failure_after_admission_does_not_invite_a_second_scan() {
+    assert_saved_run_read_failure("scan.requested", false);
+}
+
 fn assert_cancelled_owner(fixture: &Fixture, runtime: &Value, result: &Value) {
     fixture.assert_saved_terminal(result);
     assert_eq!(result["command_outcome"], "interrupted");
@@ -722,13 +695,88 @@ fn assert_cancelled_owner(fixture: &Fixture, runtime: &Value, result: &Value) {
     )
     .unwrap();
     assert!(checkpoint.cleanup_completed);
-    assert_eq!(
-        unsafe { libc::kill(runtime["pid"].as_i64().unwrap() as libc::pid_t, 0) },
-        -1,
+    assert!(
+        fixture_runtime::process_is_gone(runtime["pid"].as_u64().unwrap() as u32),
         "the controlled runtime process must be reaped before CLI exit"
     );
 }
 
+#[cfg(any(unix, windows))]
+fn await_blocked_cleanup(process: &mut Running, fixture: &Fixture) {
+    let deadline = Instant::now() + Duration::from_secs(10);
+    while !fixture.binary_directory.join("cleanup.json").exists() {
+        assert!(
+            process
+                .child
+                .as_mut()
+                .unwrap()
+                .try_wait()
+                .unwrap()
+                .is_none(),
+            "CLI exited before cleanup started"
+        );
+        assert!(Instant::now() < deadline, "cleanup did not start");
+        thread::sleep(Duration::from_millis(10));
+    }
+}
+
+#[cfg(unix)]
+#[test]
+fn sighup_then_sigint_waits_for_cleanup_and_saves_receipt() {
+    let fixture = Fixture::new(true, "block-cleanup");
+    let mut process = Running::spawn(fixture.run_command(false, "gitleaks"), true);
+    let _release = fixture_runtime::ReleaseOnDrop(fixture.binary_directory.join("release"));
+    let runtime = process.await_runtime(&fixture);
+    let pid = process.child.as_ref().unwrap().id();
+    assert_eq!(unsafe { libc::kill(pid as libc::pid_t, libc::SIGHUP) }, 0);
+    await_blocked_cleanup(&mut process, &fixture);
+    assert_eq!(unsafe { libc::kill(pid as libc::pid_t, libc::SIGINT) }, 0);
+    thread::sleep(Duration::from_millis(50));
+    assert!(
+        process
+            .child
+            .as_mut()
+            .unwrap()
+            .try_wait()
+            .unwrap()
+            .is_none()
+    );
+    fs::write(fixture.binary_directory.join("release"), "finish cleanup").unwrap();
+    let result = terminal(&process.wait(), 143);
+    assert_cancelled_owner(&fixture, &runtime, &result);
+}
+
+#[cfg(windows)]
+#[test]
+fn repeated_ctrl_break_settles_scan_and_saves_receipt() {
+    let fixture = Fixture::new(true, "block-cleanup");
+    let mut command = fixture.run_command(false, "gitleaks");
+    fixture_runtime::new_console_process_group(&mut command);
+    let mut process = Running::spawn(command, true);
+    let _release = fixture_runtime::ReleaseOnDrop(fixture.binary_directory.join("release"));
+    let runtime = process.await_runtime(&fixture);
+    let pid = process.child.as_ref().unwrap().id();
+    let first = Instant::now();
+    fixture_runtime::send_ctrl_break(pid);
+    await_blocked_cleanup(&mut process, &fixture);
+    thread::sleep(Duration::from_millis(200).saturating_sub(first.elapsed()));
+    fixture_runtime::send_ctrl_break(pid);
+    thread::sleep(Duration::from_millis(50));
+    assert!(
+        process
+            .child
+            .as_mut()
+            .unwrap()
+            .try_wait()
+            .unwrap()
+            .is_none()
+    );
+    fs::write(fixture.binary_directory.join("release"), "finish cleanup").unwrap();
+    let result = terminal(&process.wait(), 130);
+    assert_cancelled_owner(&fixture, &runtime, &result);
+}
+
+#[cfg(unix)]
 #[test]
 fn sigint_and_sigterm_wait_for_exact_cancellation_cleanup_and_saved_receipt() {
     for (signal, expected_exit) in [(libc::SIGINT, 130), (libc::SIGTERM, 143)] {
@@ -809,17 +857,27 @@ fn open_parent_control_does_not_delay_normal_completion() {
 
 #[test]
 fn bootstrap_process_cancellation_and_parent_death_settle_the_actual_cli_owner() {
-    let node = std::env::split_paths(&std::env::var_os("PATH").unwrap())
-        .map(|directory| directory.join("node"))
-        .find(|path| path.is_file())
-        .expect("bootstrap integration requires Node.js");
+    let node = fixture_runtime::node();
     let bootstrap =
         Path::new(env!("CARGO_MANIFEST_DIR")).join("../scripts/skill/bootstrap-core.mjs");
-    for (signal, code) in [
-        (libc::SIGINT, 130),
-        (libc::SIGTERM, 143),
-        (libc::SIGKILL, 130),
-    ] {
+    #[cfg(unix)]
+    let cases = [
+        (libc::SIGINT, 130, false),
+        (libc::SIGTERM, 143, false),
+        (libc::SIGKILL, 130, true),
+    ];
+    #[cfg(windows)]
+    let cases = [(0, 130, true)];
+    fn deliver(child: &mut Child, signal: i32) {
+        #[cfg(unix)]
+        assert_eq!(unsafe { libc::kill(child.id() as libc::pid_t, signal) }, 0);
+        #[cfg(windows)]
+        {
+            let _ = signal;
+            child.kill().unwrap();
+        }
+    }
+    for (signal, code, parent_death) in cases {
         let fixture = Fixture::new(true, "block");
         let cli = fixture.run_command(false, "gitleaks");
         let mut command = Command::new(&node);
@@ -846,10 +904,9 @@ fn bootstrap_process_cancellation_and_parent_death_settle_the_actual_cli_owner()
         }
         let mut process = Running::spawn(command, true);
         let runtime = process.await_runtime(&fixture);
-        let pid = process.child.as_ref().unwrap().id();
-        assert_eq!(unsafe { libc::kill(pid as libc::pid_t, signal) }, 0);
+        deliver(process.child.as_mut().unwrap(), signal);
         let output = process.wait();
-        let result = if signal == libc::SIGKILL {
+        let result = if parent_death {
             // The killed parent cannot acknowledge an exit code. Its child's
             // inherited output pipe closes only after cleanup and persistence.
             let documents = String::from_utf8(output.stdout).unwrap();
@@ -927,9 +984,8 @@ fn broken_stdout_still_saves_terminal_outcome_and_releases_execution_ownership()
         )
         .unwrap();
         assert!(checkpoint.cleanup_completed);
-        assert_eq!(
-            unsafe { libc::kill(runtime["pid"].as_i64().unwrap() as libc::pid_t, 0) },
-            -1,
+        assert!(
+            fixture_runtime::process_is_gone(runtime["pid"].as_u64().unwrap() as u32),
             "final delivery failure must not leave a runtime process alive"
         );
         let status_output = fixture
@@ -960,16 +1016,68 @@ fn open_unread_stdout_cannot_keep_scan_ownership_or_a_runtime_alive() {
     // Their event payload fills the stdout pipe without any extra executions.
     // Each identifier stays below the planner's 200-character input bound, and
     // the single --engine argument stays below Linux's per-argument byte bound.
+    #[cfg(unix)]
     let engines = std::iter::once("gitleaks".to_owned())
         .chain((0..255).map(|index| format!("fixture-missing-{index:03}-{}", "x".repeat(160))))
         .collect::<Vec<_>>()
         .join(",");
     let started = Instant::now();
+    #[cfg(unix)]
     let process = Running::spawn(fixture.run_command(false, &engines), false);
+    #[cfg(windows)]
+    let process = {
+        use std::sync::{
+            Arc,
+            atomic::{AtomicU64, Ordering},
+        };
+        let (reader, writer) = std::io::pipe().unwrap();
+        let mut filler = writer.try_clone().unwrap();
+        let count = Arc::new(AtomicU64::new(0));
+        let progress = Arc::clone(&count);
+        thread::spawn(move || {
+            while filler.write_all(&[b'x'; 4096]).is_ok() {
+                progress.fetch_add(1, Ordering::Relaxed);
+            }
+        });
+        let deadline = Instant::now() + Duration::from_secs(10);
+        let mut previous = count.load(Ordering::Relaxed);
+        let mut stable = Instant::now();
+        loop {
+            thread::sleep(Duration::from_millis(10));
+            let current = count.load(Ordering::Relaxed);
+            if current != previous {
+                previous = current;
+                stable = Instant::now();
+            }
+            if current > 0 && stable.elapsed() >= Duration::from_millis(300) {
+                break;
+            }
+            assert!(Instant::now() < deadline, "pipe did not fill");
+        }
+        let mut child = fixture
+            .run_command(false, "gitleaks")
+            .stdout(Stdio::from(writer))
+            .stderr(Stdio::piped())
+            .spawn()
+            .unwrap();
+        let stderr = Some(read_pipe(child.stderr.take().unwrap()));
+        Running {
+            child: Some(child),
+            unread_stdout: Some(Box::new(reader)),
+            stdout: None,
+            stderr,
+        }
+    };
     #[cfg(target_os = "linux")]
     {
         use std::os::fd::AsRawFd;
-        let pipe = process.unread_stdout.as_ref().unwrap().as_raw_fd();
+        let pipe = process
+            .unread_stdout
+            .as_ref()
+            .unwrap()
+            .downcast_ref::<std::process::ChildStdout>()
+            .unwrap()
+            .as_raw_fd();
         // A child already writing may make shrinking return EBUSY. Its existing
         // capacity must still be below the intentionally oversized event.
         unsafe { libc::fcntl(pipe, libc::F_SETPIPE_SZ, 4096) };
@@ -993,7 +1101,10 @@ fn open_unread_stdout_cannot_keep_scan_ownership_or_a_runtime_alive() {
     assert_eq!(case.scan_runs.len(), 1);
     let run = &case.scan_runs[0];
     assert!(run.completed_at.is_some());
+    #[cfg(unix)]
     assert_eq!(run.engine_runs.len(), 256);
+    #[cfg(windows)]
+    assert_eq!(run.engine_runs.len(), 1);
     assert!(run.engine_runs.iter().all(|task| !matches!(
         task.status,
         EngineRunStatus::Queued
@@ -1022,9 +1133,8 @@ fn open_unread_stdout_cannot_keep_scan_ownership_or_a_runtime_alive() {
                 .any(|call| call[0] == "rm"
                     && call.as_array().unwrap().last() == Some(&runtime["id"]))
         );
-        assert_eq!(
-            unsafe { libc::kill(runtime["pid"].as_i64().unwrap() as libc::pid_t, 0) },
-            -1,
+        assert!(
+            fixture_runtime::process_is_gone(runtime["pid"].as_u64().unwrap() as u32),
             "blocked stdout must not leave the controlled runtime process alive"
         );
     }
@@ -1068,7 +1178,7 @@ fn captured_recovery_parses_retained_evidence_without_runtime_or_source_access()
             .join("artifacts")
             .join(&fixture.case_id)
             .join("workspace-snapshots");
-        make_fixture_directories_removable(&snapshots);
+        fixture_runtime::make_tree_removable(&snapshots);
         fs::remove_dir_all(snapshots).unwrap();
         let mut command = fixture.command();
         command.args([
@@ -1171,6 +1281,48 @@ fn unknown_case_and_missing_wait_are_refused_without_starting_any_runtime() {
             serde_json::to_value(&before).unwrap()
         );
     }
+    assert!(fixture.calls().is_empty());
+}
+
+#[cfg(target_os = "linux")]
+#[test]
+fn managed_runtime_digest_mismatch_refuses_foreground_scan_without_saving_a_run() {
+    let baseline = Fixture::new(true, "complete");
+    let mut command = baseline.run_command(true, "gitleaks");
+    command
+        .arg("--managed-runtime-bundle")
+        .arg(baseline._root.path().join("missing"));
+    let original = Running::spawn(command, true).wait();
+    let original_result = terminal(&original, 0);
+    assert_eq!(
+        original_result["result"]["tasks"][0]["error_code"],
+        "runtime_unavailable"
+    );
+    assert_eq!(baseline.case().scan_runs.len(), 1);
+    assert!(baseline.calls().is_empty());
+
+    let fixture = Fixture::new(true, "complete");
+    let (bundle, digest) = managed_runtime_bundle::create(fixture._root.path());
+    let wrong = if digest == "0".repeat(64) {
+        "1".repeat(64)
+    } else {
+        "0".repeat(64)
+    };
+    let mut command = fixture.run_command(true, "gitleaks");
+    command
+        .arg("--managed-runtime-bundle")
+        .arg(bundle)
+        .args(["--expected-managed-runtime-manifest-sha256", &wrong]);
+    let output = Running::spawn(command, true).wait();
+    let value = terminal(&output, 2);
+    assert_eq!(value["error_code"], "not_authorized");
+    assert_eq!(value["command_outcome"], "rejected");
+    assert!(
+        String::from_utf8_lossy(&output.stderr)
+            .contains("the managed-runtime bundle manifest differs from the expected digest")
+    );
+    assert!(fixture.case().scan_runs.is_empty());
+    assert!(!fixture.data.join("managed-runtime/versions").exists());
     assert!(fixture.calls().is_empty());
 }
 

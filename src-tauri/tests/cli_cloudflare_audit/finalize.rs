@@ -50,6 +50,81 @@ fn assert_unsealed(run: &RunFixture, before: &Value) {
     no_temporary(run);
 }
 #[test]
+fn record_without_seal_headroom_is_refused_before_publication() {
+    use ai_security_scanner_lib::cloudflare_provider::audit::record::{
+        MAX_ENTRY, MAX_RECORD, RECORD_EVENT,
+    };
+
+    let run = RunFixture::new("quick");
+    let req = request(&run);
+    let mut db = rusqlite::Connection::open(run.f.data.join("casework.db")).unwrap();
+    let tx = db.transaction().unwrap();
+    let rows: Vec<(i64, String)> = {
+        let mut statement = tx
+            .prepare("SELECT sequence, payload_json FROM case_events WHERE case_id=?1 AND event_type=?2 ORDER BY sequence")
+            .unwrap();
+        statement
+            .query_map(rusqlite::params![run.f.case_id, RECORD_EVENT], |row| {
+                Ok((row.get(0)?, row.get(1)?))
+            })
+            .unwrap()
+            .map(Result::unwrap)
+            .collect()
+    };
+    let mut remaining = MAX_RECORD - 1 - rows.iter().map(|(_, p)| p.len()).sum::<usize>();
+    for (sequence, mut payload) in rows {
+        let padding = remaining.min(MAX_ENTRY - payload.len());
+        payload.push_str(&" ".repeat(padding));
+        tx.execute(
+            "UPDATE case_events SET payload_json=?1 WHERE sequence=?2",
+            rusqlite::params![payload, sequence],
+        )
+        .unwrap();
+        remaining -= padding;
+    }
+    assert_eq!(remaining, 0);
+    tx.commit().unwrap();
+
+    let validation = run.validate(0);
+    assert_eq!(validation["result"]["sealable"], false);
+    assert!(
+        validation["result"]["record_errors"]
+            .as_array()
+            .unwrap()
+            .contains(&json!("record_bytes_limit"))
+    );
+    assert_eq!(finalize(&run, &req, 2)["error_code"], "record_bytes_limit");
+    assert!(!run.directory().join("sealed").exists());
+}
+
+#[test]
+fn oversized_unresolved_projection_is_refused_before_publication() {
+    let run = RunFixture::with_records("quick", &[], |_, ledger, metadata| {
+        let fingerprints = ledger[0]["result_fingerprints"].as_array_mut().unwrap();
+        fingerprints.extend((0..995).map(|i| json!(format!("candidate-{i}-{}", "a".repeat(1200)))));
+        ledger[0]["unresolved"] = json!(["Validation budget exhausted"]);
+        metadata["run_status"] = json!("incomplete");
+        metadata["incomplete_reason"] = json!("Validation budget exhausted");
+    });
+    let validation = run.validate(0);
+    assert_eq!(validation["result"]["bundle_receipt"]["valid"], true);
+    assert_eq!(validation["result"]["sealable"], false);
+    assert!(
+        validation["result"]["record_errors"]
+            .as_array()
+            .unwrap()
+            .contains(&json!("entry_bytes_limit"))
+    );
+    let request = json!({"schema_version":"ai-security-scanner.cloudflare-audit-finalize-request/v1",
+        "request_id":"seal-large","case_id":run.f.case_id,"session_id":run.prepared["session_id"],
+        "expected_head_sha256":run.head,"expected_bundle_sha256":validation["result"]["bundle_sha256"]});
+    assert_eq!(
+        finalize(&run, &request, 2)["error_code"],
+        "entry_bytes_limit"
+    );
+    assert!(!run.directory().join("sealed").exists());
+}
+#[test]
 fn quick_and_standard_seal_custody_with_exact_record_projection_and_retention() {
     for profile in ["quick", "standard"] {
         let run = RunFixture::new(profile);

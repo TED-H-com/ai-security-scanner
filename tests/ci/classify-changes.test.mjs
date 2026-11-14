@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { spawnSync } from "node:child_process";
 import { readFileSync } from "node:fs";
 import test from "node:test";
 import { CORE_RESOURCE_PATHS } from "../../scripts/skill/input-manifest.mjs";
@@ -41,6 +42,7 @@ function assertRequiredCheckContract(source) {
     "changes",
     "frontend",
     "engine-admission",
+    "engine-launchers",
     "framework-contract",
     "release-contract",
     "rust-core",
@@ -56,6 +58,7 @@ function assertRequiredCheckContract(source) {
   for (const expected of [
     "FRONTEND_EXPECTED",
     "ENGINE_EXPECTED",
+    "ENGINE_LAUNCHERS_EXPECTED",
     "FRAMEWORK_EXPECTED",
     "RELEASE_EXPECTED",
     "RUST_EXPECTED",
@@ -127,6 +130,7 @@ test("skill prompts, metadata, provider methods and sync changes avoid core rebu
 test("bootstrap recipes and input changes exercise native bootstrap without installers", () => {
   for (const path of [
     "scripts/skill/bootstrap.mjs",
+    "scripts/skill/bootstrap-core.mjs",
     "scripts/skill/build-inputs.mjs",
     "tests/skill/bootstrap.test.mjs",
     "scripts/ci/skill-bootstrap-smoke.mjs",
@@ -174,12 +178,19 @@ test("Cloudflare executable inputs and fixtures run native checks; method prose 
 });
 
 test("native skill lanes execute cache reuse, core identity, reports and archives on each OS", () => {
-  const native = ciJobSteps("skill-native").join("\n");
+  const nativeSteps = ciJobSteps("skill-native");
+  const native = nativeSteps.join("\n");
   assert.match(ciWorkflow, /skill-native:[\s\S]*?if: needs\.changes\.outputs\.skill_native == 'true'[\s\S]*?os: \[ubuntu-24\.04, macos-15, windows-2025\]/u);
   assert.match(native, /node scripts\/ci\/skill-bootstrap-smoke\.mjs/u);
-  assert.match(native, /--no-default-features[\s\S]*?--features cli --test cli_build_identity --test cli_report_snapshot --test cli_case_archive[\s\S]*?--test cli_runtime_prepare --test cli_cloudflare_provider --test report_fidelity_baseline/u);
+  assert.match(native, /--no-default-features[\s\S]*?--features cli --test cli_build_identity --test cli_report_snapshot --test cli_case_archive[\s\S]*?--test cli_foreground_scan --test cli_runtime_prepare --test cli_cloudflare_provider --test report_fidelity_baseline/u);
   assert.match(native, /--test cli_cloudflare_bundle/u);
   assert.match(native, /--test cli_cloudflare_source_view --test cli_cloudflare_audit/u);
+  const libraryTests = nativeSteps.findIndex((step) => step.startsWith("name: Run the library unit tests on macOS and Windows"));
+  const foregroundTests = nativeSteps.findIndex((step) => step.startsWith("name: Run foreground scans, runtime preparation, reports and archives with a fixture runtime"));
+  const evidence = nativeSteps.findIndex((step) => step.startsWith("name: Retain native bootstrap evidence"));
+  assert.ok(foregroundTests >= 0 && libraryTests > foregroundTests && evidence > libraryTests);
+  assert.match(nativeSteps[libraryTests], /^ {8}if: \$\{\{ !cancelled\(\) && runner\.os != 'Linux' && needs\.changes\.outputs\.rust_core == 'true' \}\}$/mu);
+  assert.match(nativeSteps[libraryTests], /run: >-\s+cargo test --locked --no-fail-fast --package ai-security-scanner --no-default-features\s+--features cli --lib\s*$/u);
   assert.doesNotMatch(native, /installer-runtime-cache|desktop:prepare|bundles (?:nsis|msi|dmg|deb)|npm run tauri/u);
   assert.doesNotMatch(ciWorkflow, /skill-runtime-smoke\.py/u);
   const contracts = ciJobSteps("skill-bootstrap").join("\n");
@@ -566,6 +577,24 @@ test("every frozen-release workflow and release schema schedules release-contrac
   );
 });
 
+test("release and usability test inputs schedule the contracts that read them", () => {
+  for (const path of [
+    "docs/incident-pack.js",
+    "docs/incident-pack.json",
+    ".github/workflows/engine-images-local-k8s.yml",
+    "scripts/semgrep-native-publication-contract.mjs",
+    "tests/usability/evidenceValidator.test.mjs",
+    "scripts/validate-usability-evidence.mjs",
+    "docs/usability/session-evidence.schema.json",
+  ]) {
+    const result = classifyChangedPaths([path]);
+    assert.equal(result.release_contract, true, `${path}: release_contract`);
+    assert.equal(result.docs_only, false, `${path}: docs_only`);
+  }
+  assert.equal(classifyChangedPaths(["scripts/semgrep-native-publication-contract.mjs"]).engine, true);
+  assert.ok(ciJobSteps("release-contract").some((step) => step.trim() === "run: npm run test:usability-evidence"));
+});
+
 test("CI classifier changes rely on the always-run classifier test, not heavyweight lanes", () => {
   assert.deepEqual(classifyChangedPaths([
     ".github/workflows/ci.yml",
@@ -625,6 +654,10 @@ test("an unavailable push base schedules every lane instead of silently omitting
   assert.match(ciWorkflow, /if git cat-file -e "\$\{base_sha\}\^\{commit\}"; then[\s\S]*Base commit is not present[\s\S]*classify-changes\.mjs --all/);
 });
 
+test("only pull requests cancel an in-progress run on the same ref", () => {
+  assert.match(ciWorkflow, /\nconcurrency:\n  group: ci-\$\{\{ github\.ref \}\}\n  cancel-in-progress: \$\{\{ github\.event_name == 'pull_request' \}\}\n/u);
+});
+
 test("heavyweight commands stay behind their focused job conditions", () => {
   const frontendBlock = ciWorkflow.split("\n  engine-admission:", 1)[0].split("\n  frontend:")[1];
   assert.ok(frontendBlock, "frontend job block is missing");
@@ -640,6 +673,38 @@ test("heavyweight commands stay behind their focused job conditions", () => {
     ciWorkflow,
     /windows-managed-runtime:[\s\S]*?if: needs\.changes\.outputs\.windows_runtime == 'true'[\s\S]*?vendor-managed-runtime[\s\S]*?desktop:prepare-sidecar[\s\S]*?cli,installer-runtime-cache[\s\S]*?bundles nsis/,
   );
+});
+
+test("engine launcher changes schedule the dedicated job and aggregate its result", () => {
+  assert.equal(classifyChangedPaths(["scripts/ci/engine-launcher-tests.sh"]).engine, true);
+  const block = ciWorkflow.match(/\n  engine-launchers:\n([\s\S]*?)(?=\n  [\w-]+:\n|$)/u)?.[1];
+  assert.ok(block, "engine-launchers job must exist");
+  assert.match(block, /\n    needs: changes\n    if: needs\.changes\.outputs\.engine == 'true'\n    runs-on: ubuntu-24\.04\n/u);
+  const steps = ciJobSteps("engine-launchers").map((step) => step.trim());
+  assert.equal(steps.length, 2);
+  assert.match(steps[0], /^uses: actions\/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1/u);
+  assert.equal(steps[1], "run: bash scripts/ci/engine-launcher-tests.sh");
+  assert.match(ciWorkflow, /ENGINE_LAUNCHERS_EXPECTED: \$\{\{ needs\.changes\.outputs\.engine \}\}/u);
+  assert.match(ciWorkflow, /ENGINE_LAUNCHERS_RESULT: \$\{\{ needs\['engine-launchers'\]\.result \}\}/u);
+});
+
+test("the aggregate rejects incomplete launcher results", () => {
+  const environment = { ...process.env, CHANGES_RESULT: "success" };
+  for (const lane of ["FRONTEND", "ENGINE", "ENGINE_LAUNCHERS", "FRAMEWORK", "RELEASE", "RUST", "WINDOWS", "DESKTOP", "SKILL_BOOTSTRAP", "SKILL_NATIVE"]) {
+    environment[`${lane}_EXPECTED`] = "true";
+    environment[`${lane}_RESULT`] = "success";
+  }
+  const verify = () => spawnSync(process.execPath, ["scripts/ci/classify-changes.mjs", "--verify-results"], {
+    cwd: new URL("../../", import.meta.url), env: environment, encoding: "utf8",
+  });
+  assert.equal(verify().status, 0);
+  environment.ENGINE_LAUNCHERS_RESULT = "failure";
+  const failed = verify();
+  assert.equal(failed.status, 1);
+  assert.match(failed.stderr, /Engine launcher tests was scheduled but finished as failure/u);
+  environment.ENGINE_LAUNCHERS_EXPECTED = "false";
+  environment.ENGINE_LAUNCHERS_RESULT = "skipped";
+  assert.equal(verify().status, 0);
 });
 
 test("existing required-check names remain stable and one aggregate verifies scheduled lanes", () => {

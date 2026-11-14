@@ -4492,6 +4492,79 @@ mod tests {
     }
 
     #[test]
+    fn captured_checkpoints_follow_completed_container_cleanup() {
+        for fail_cleanup in [false, true] {
+            let temp = tempfile::tempdir().unwrap();
+            let workspace = temp.path().join("workspace");
+            std::fs::create_dir(&workspace).unwrap();
+            let store = ArtifactStore::open(temp.path().join("artifacts")).unwrap();
+            let runtime = FakeContainerRuntime::default();
+            runtime.set_fail_cleanup(fail_cleanup);
+            runtime.set_behavior(FakeRunBehavior {
+                exit_code: Some(0),
+                stdout: b"fixture".to_vec(),
+                stderr: vec![],
+                output_files: BTreeMap::from([("result.json".into(), b"{}".to_vec())]),
+            });
+            let adapters = AdapterRegistry::default();
+            let orchestrator = Orchestrator::new(&runtime, &store, &adapters);
+            let manifest = manifest(false);
+            let assets = vec![asset("asset-1", false)];
+            let grants = vec![grant("asset-1", ScanPermission::LocalArtifactRead, false)];
+            let policy = NetworkPolicy::Disabled;
+            let limits = ResourceLimits::default();
+            let credentials = ScannerCredentialSet::default();
+            let request = EngineExecutionRequest {
+                case_id: "case-1",
+                scan_run_id: "run-1",
+                engine_run_id: "engine-run-1",
+                manifest: &manifest,
+                ai_system_applicable: false,
+                ai_generated_artifact_applicable: false,
+                assets: &assets,
+                scope_grants: &grants,
+                frozen_destinations: None,
+                naabu_launcher_plan: None,
+                expected_naabu_launcher_plan_sha256: None,
+                workspace: Some(&workspace),
+                network_policy: &policy,
+                resource_limits: &limits,
+                credentials: &credentials,
+                attempt: 1,
+            };
+            let mut checkpoints = Vec::new();
+            let report = orchestrator
+                .execute_with_observer(&request, &CancellationToken::default(), |report| {
+                    checkpoints.push(report.checkpoint.clone());
+                    Ok(())
+                })
+                .unwrap();
+            checkpoints.push(report.checkpoint.clone());
+            assert!(checkpoints.iter().all(|checkpoint| {
+                !matches!(
+                    checkpoint.stage,
+                    ExecutionStage::CapturedAwaitingAdapter | ExecutionStage::AdaptingArtifacts
+                ) || checkpoint.cleanup_completed
+            }));
+            if fail_cleanup {
+                assert_eq!(report.checkpoint.stage, ExecutionStage::CleanupPending);
+                assert!(!report.checkpoint.cleanup_completed);
+                assert!(report.checkpoint.container_name.is_some());
+                assert!(!checkpoints.iter().any(|checkpoint| matches!(
+                    checkpoint.stage,
+                    ExecutionStage::CapturedAwaitingAdapter | ExecutionStage::AdaptingArtifacts
+                )));
+            } else {
+                assert_eq!(
+                    report.checkpoint.stage,
+                    ExecutionStage::CapturedAwaitingAdapter
+                );
+                assert!(report.checkpoint.cleanup_completed);
+            }
+        }
+    }
+
+    #[test]
     fn cleanup_failure_is_a_distinct_resumable_state() {
         let temp = tempfile::tempdir().expect("temp directory");
         let workspace = temp.path().join("workspace");

@@ -1952,9 +1952,10 @@ const mapEngineTaskKind = (taskKind: NativeEngineRun["task_kind"]): EngineTaskKi
     && isAuditFailureOutcome(taskKind.outcome)
     ? { kind: "agent_audit_failure", providerId: taskKind.provider_id, outcome: structuredClone(taskKind.outcome) }
     : { kind: "invalid_task" };
-  if (taskKind.kind === "agent_audit") return {
-    kind: "agent_audit", providerId: taskKind.provider_id!, admissionId: taskKind.admission_id!,
-  };
+  if (taskKind.kind === "agent_audit") return taskKind.provider_id === "cloudflare-security-audit"
+    && typeof taskKind.admission_id === "string" && taskKind.admission_id.length > 0
+    ? { kind: "agent_audit", providerId: taskKind.provider_id, admissionId: taskKind.admission_id }
+    : { kind: "invalid_task" };
   if (taskKind.kind === "external_report_import") {
     return typeof taskKind.source_format === "string" && taskKind.source_format === "strix-vulnerabilities-json/v1"
       && typeof taskKind.source_sha256 === "string" && /^[0-9a-f]{64}$/u.test(taskKind.source_sha256)

@@ -1451,6 +1451,14 @@ fn recover_windows_interrupted_all_data_stage(
     Ok(())
 }
 
+/// The lease records the canonical directory, so compare it with the canonical
+/// form of the root: a root reached through a link or short name is the same
+/// directory and holds the same lease.
+fn holds_exact_data_root_lease(data_root: &Path, lease: &DataDirectoryExclusiveLease) -> bool {
+    crate::internal_paths::canonicalize(data_root)
+        .is_ok_and(|root| lease.path() == root.join(DATA_DIRECTORY_LEASE_FILE))
+}
+
 pub fn stage_all_data_root_for_finalization(
     data_root: &Path,
     lease: &DataDirectoryExclusiveLease,
@@ -1464,7 +1472,7 @@ fn stage_all_data_root_for_finalization_with_id(
     lease: &DataDirectoryExclusiveLease,
     staging_id: uuid::Uuid,
 ) -> AppResult<StagedAllDataRoot> {
-    if lease.path() != data_root.join(DATA_DIRECTORY_LEASE_FILE) {
+    if !holds_exact_data_root_lease(data_root, lease) {
         return Err(AppError::NotAuthorized(
             "all-data finalization requires the exact product-directory lease".into(),
         ));
@@ -1593,7 +1601,7 @@ fn stage_all_data_root_for_finalization_with_id(
     lease: &DataDirectoryExclusiveLease,
     _staging_id: uuid::Uuid,
 ) -> AppResult<StagedAllDataRoot> {
-    if lease.path() != data_root.join(DATA_DIRECTORY_LEASE_FILE) {
+    if !holds_exact_data_root_lease(data_root, lease) {
         return Err(AppError::NotAuthorized(
             "all-data finalization requires the exact product-directory lease".into(),
         ));

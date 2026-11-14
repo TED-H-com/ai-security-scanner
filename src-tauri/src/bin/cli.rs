@@ -121,6 +121,10 @@ struct Cli {
     )]
     managed_runtime_bundle: Option<PathBuf>,
 
+    /// Require the explicit managed-runtime bundle's exact manifest SHA-256.
+    #[arg(long, global = true, value_parser = parse_managed_runtime_manifest_sha256)]
+    expected_managed_runtime_manifest_sha256: Option<String>,
+
     /// Use digest-keyed OCI archives from a release-approved local image directory.
     #[arg(
         long,
@@ -1224,6 +1228,32 @@ async fn main() {
 
 fn parse_cli_matches(matches: &clap::ArgMatches) -> Result<Cli, clap::Error> {
     let cli = Cli::from_arg_matches(matches)?;
+    if cli.expected_managed_runtime_manifest_sha256.is_some() {
+        if cli.managed_runtime_bundle.is_none() {
+            return Err(Cli::command().error(
+                clap::error::ErrorKind::MissingRequiredArgument,
+                "--expected-managed-runtime-manifest-sha256 requires --managed-runtime-bundle",
+            ));
+        }
+        // These commands use fixed package resources or a runtime identified by
+        // an existing cleanup checkpoint, rather than this bundle override.
+        let uses_another_runtime_source = match &cli.command {
+            Command::ProductUninstall(_)
+            | Command::WindowsInstallerPrerequisite
+            | Command::Runtime {
+                command: RuntimeCommand::Cleanup { .. },
+            } => true,
+            #[cfg(feature = "installer-runtime-cache")]
+            Command::WindowsInstallerRuntimeCache => true,
+            _ => false,
+        };
+        if uses_another_runtime_source {
+            return Err(Cli::command().error(
+                clap::error::ErrorKind::ArgumentConflict,
+                "this command refuses --expected-managed-runtime-manifest-sha256",
+            ));
+        }
+    }
     let ndjson = match &cli.command {
         Command::Scan {
             command: ScanCommand::Run(args),
@@ -1245,6 +1275,18 @@ fn parse_cli_matches(matches: &clap::ArgMatches) -> Result<Cli, clap::Error> {
     Ok(cli)
 }
 
+fn parse_managed_runtime_manifest_sha256(value: &str) -> Result<String, &'static str> {
+    if value.len() == 64
+        && value
+            .bytes()
+            .all(|byte| byte.is_ascii_digit() || (b'a'..=b'f').contains(&byte))
+    {
+        Ok(value.to_owned())
+    } else {
+        Err("expected exactly 64 lowercase hexadecimal characters")
+    }
+}
+
 #[derive(Debug, Clone, Copy, Default)]
 struct GlobalOptionSources {
     data_dir: Option<ValueSource>,
@@ -1254,6 +1296,7 @@ struct GlobalOptionSources {
 #[derive(Debug, Clone, Copy)]
 struct RuntimeSourceOverrides<'a> {
     managed_runtime_bundle: Option<&'a Path>,
+    expected_managed_runtime_manifest_sha256: Option<&'a str>,
     release_approved_local_image_directory: Option<&'a Path>,
 }
 
@@ -1317,6 +1360,7 @@ struct ForegroundRequest {
     plan: ScanPlanRequest,
     data_dir: Option<PathBuf>,
     managed_runtime_bundle: Option<PathBuf>,
+    expected_managed_runtime_manifest_sha256: Option<String>,
     release_approved_local_image_directory: Option<PathBuf>,
 }
 
@@ -1574,6 +1618,25 @@ fn foreground_terminal(
     })
 }
 
+/// Terminal record for an owner that stopped without returning one. What it saved
+/// is unknown, so `scan run` is never offered for an automatic repeat; repeating
+/// `scan recover` selects the same run and cannot start another scan.
+fn foreground_owner_failed(
+    request: &ForegroundRequest,
+    known_run: Option<&str>,
+    detail: String,
+) -> Value {
+    foreground_terminal(
+        request,
+        known_run,
+        4,
+        "failed",
+        Some("owner_failed"),
+        request.operation != "scan.run",
+        json!({"detail": detail}),
+    )
+}
+
 fn foreground_rejected(request: &ForegroundRequest, error: AppError) -> Value {
     let (code, name, retryable) = foreground_error_class(&error);
     eprintln!("error: {error}");
@@ -1622,6 +1685,9 @@ async fn execute_foreground_scan(cli: &Cli) -> u8 {
         plan,
         data_dir: cli.data_dir.clone(),
         managed_runtime_bundle: cli.managed_runtime_bundle.clone(),
+        expected_managed_runtime_manifest_sha256: cli
+            .expected_managed_runtime_manifest_sha256
+            .clone(),
         release_approved_local_image_directory: cli.release_approved_local_image_directory.clone(),
     };
     let stop = Arc::new(AtomicU8::new(0));
@@ -1649,10 +1715,11 @@ async fn execute_foreground_scan(cli: &Cli) -> u8 {
         Ok((
             tokio::signal::unix::signal(tokio::signal::unix::SignalKind::interrupt())?,
             tokio::signal::unix::signal(tokio::signal::unix::SignalKind::terminate())?,
+            tokio::signal::unix::signal(tokio::signal::unix::SignalKind::hangup())?,
         ))
     })();
     #[cfg(unix)]
-    let (mut interrupt, mut terminate) = match signals {
+    let (mut interrupt, mut terminate, mut hangup) = match signals {
         Ok(signals) => signals,
         Err(error) => {
             let terminal = foreground_rejected(
@@ -1665,9 +1732,33 @@ async fn execute_foreground_scan(cli: &Cli) -> u8 {
             return 4;
         }
     };
-    #[cfg(not(unix))]
+    #[cfg(windows)]
+    let signals = (|| -> io::Result<_> {
+        Ok((
+            tokio::signal::windows::ctrl_c()?,
+            tokio::signal::windows::ctrl_break()?,
+            tokio::signal::windows::ctrl_close()?,
+            tokio::signal::windows::ctrl_logoff()?,
+            tokio::signal::windows::ctrl_shutdown()?,
+        ))
+    })();
+    #[cfg(windows)]
+    let (mut interrupt, mut break_signal, mut close, mut logoff, mut shutdown) = match signals {
+        Ok(signals) => signals,
+        Err(error) => {
+            let terminal = foreground_rejected(
+                &request,
+                AppError::Internal(format!(
+                    "cannot install foreground signal handlers: {error}"
+                )),
+            );
+            let _ = output.finish(&terminal);
+            return 4;
+        }
+    };
+    #[cfg(not(any(unix, windows)))]
     let interrupt = tokio::signal::ctrl_c();
-    #[cfg(not(unix))]
+    #[cfg(not(any(unix, windows)))]
     tokio::pin!(interrupt);
 
     let worker_request = request.clone();
@@ -1677,13 +1768,14 @@ async fn execute_foreground_scan(cli: &Cli) -> u8 {
     let mut owner = tokio::task::spawn_blocking(move || {
         foreground_owned_operation(&worker_request, &worker_output).unwrap_or_else(|error| {
             let mut terminal = foreground_rejected(&worker_request, error);
-            terminal["run_id"] = json!(
-                worker_output
-                    .run_id
-                    .lock()
-                    .unwrap_or_else(std::sync::PoisonError::into_inner)
-                    .as_deref()
-            );
+            let run_id = worker_output
+                .run_id
+                .lock()
+                .unwrap_or_else(std::sync::PoisonError::into_inner);
+            terminal["run_id"] = json!(run_id.as_deref());
+            if worker_request.operation == "scan.run" && run_id.is_some() {
+                terminal["retryable"] = json!(false);
+            }
             terminal
         })
     });
@@ -1693,8 +1785,18 @@ async fn execute_foreground_scan(cli: &Cli) -> u8 {
             completed = &mut owner => break completed,
             _ = interrupt.recv() => { let _ = stop.compare_exchange(0, 130, Ordering::AcqRel, Ordering::Acquire); },
             _ = terminate.recv() => { let _ = stop.compare_exchange(0, 143, Ordering::AcqRel, Ordering::Acquire); },
+            _ = hangup.recv() => { let _ = stop.compare_exchange(0, 143, Ordering::AcqRel, Ordering::Acquire); },
         }
-        #[cfg(not(unix))]
+        #[cfg(windows)]
+        tokio::select! {
+            completed = &mut owner => break completed,
+            _ = interrupt.recv() => { let _ = stop.compare_exchange(0, 130, Ordering::AcqRel, Ordering::Acquire); },
+            _ = break_signal.recv() => { let _ = stop.compare_exchange(0, 130, Ordering::AcqRel, Ordering::Acquire); },
+            _ = close.recv() => { let _ = stop.compare_exchange(0, 143, Ordering::AcqRel, Ordering::Acquire); },
+            _ = logoff.recv() => { let _ = stop.compare_exchange(0, 143, Ordering::AcqRel, Ordering::Acquire); },
+            _ = shutdown.recv() => { let _ = stop.compare_exchange(0, 143, Ordering::AcqRel, Ordering::Acquire); },
+        }
+        #[cfg(not(any(unix, windows)))]
         tokio::select! {
             completed = &mut owner => break completed,
             signal = &mut interrupt, if stop.load(Ordering::Acquire) == 0 => {
@@ -1707,15 +1809,14 @@ async fn execute_foreground_scan(cli: &Cli) -> u8 {
     };
     let terminal = match joined {
         Ok(terminal) => terminal,
-        Err(error) => foreground_terminal(
-            &request,
-            request.run_id.as_deref(),
-            4,
-            "failed",
-            Some("owner_failed"),
-            true,
-            json!({"detail": error.to_string()}),
-        ),
+        Err(error) => {
+            let saved_run = output
+                .run_id
+                .lock()
+                .unwrap_or_else(std::sync::PoisonError::into_inner)
+                .clone();
+            foreground_owner_failed(&request, saved_run.as_deref(), error.to_string())
+        }
     };
     let exit_code = terminal["exit_code"].as_u64().unwrap_or(4) as u8;
     if let Err(error) = output.finish(&terminal) {
@@ -1780,11 +1881,32 @@ fn foreground_owned_operation(
                 &request.case_id,
                 run_id,
             );
-        return Ok(match retained {
+        let (terminal, retryable, case_revision) = match retained {
             Ok(case) => {
-                let (mut result, _) = foreground_result(&case, run_id)?;
-                result["report_snapshot_state"] = json!("retained");
-                foreground_terminal(request, Some(run_id), 0, "completed", None, false, result)
+                let revision = Some(case.storage_revision());
+                match foreground_result(&case, run_id) {
+                    Ok((mut result, _)) => {
+                        result["report_snapshot_state"] = json!("retained");
+                        (
+                            foreground_terminal(
+                                request,
+                                Some(run_id),
+                                0,
+                                "completed",
+                                None,
+                                false,
+                                result,
+                            ),
+                            false,
+                            revision,
+                        )
+                    }
+                    Err(error) => {
+                        let terminal = foreground_rejected(request, error);
+                        let retryable = terminal["retryable"].as_bool().unwrap_or(false);
+                        (terminal, retryable, revision)
+                    }
+                }
             }
             Err(error) => {
                 let (exit_code, code, retryable) = foreground_error_class(&error);
@@ -1793,7 +1915,7 @@ fn foreground_owned_operation(
                     &mut result,
                     &error,
                 );
-                foreground_terminal(
+                let terminal = foreground_terminal(
                     request,
                     Some(run_id),
                     exit_code,
@@ -1801,9 +1923,18 @@ fn foreground_owned_operation(
                     Some(code),
                     retryable,
                     result,
-                )
+                );
+                (terminal, retryable, Some(before.storage_revision()))
             }
-        });
+        };
+        return Ok(foreground_record_receipt(
+            &storage,
+            request,
+            run_id,
+            terminal,
+            retryable,
+            case_revision,
+        ));
     }
     let before_runs = before
         .scan_runs
@@ -1820,8 +1951,15 @@ fn foreground_owned_operation(
         data_dir.join("integrity-signing-key"),
     )
     .with_process_lease(lease);
-    match open_managed_runtime_manager(&data_dir, request.managed_runtime_bundle.as_deref()) {
+    match open_managed_runtime_manager(
+        &data_dir,
+        request.managed_runtime_bundle.as_deref(),
+        request.expected_managed_runtime_manifest_sha256.as_deref(),
+    ) {
         Ok(manager) => state = state.with_managed_runtime(manager),
+        Err(error) if request.expected_managed_runtime_manifest_sha256.is_some() => {
+            return Err(error);
+        }
         Err(error) if request.managed_runtime_bundle.is_some() => {
             state = state.with_runtime_initialization_error(error.to_string())
         }
@@ -1882,7 +2020,26 @@ fn foreground_owned_operation(
             // Admission may have persisted a run before a later local failure.
             // Preserve that exact run instead of confusing it with an older run.
             let _ = coordinator.join_preparers();
-            let after = state.storage.get_case(&request.case_id)?;
+            let after = match state.storage.get_case(&request.case_id) {
+                Ok(after) => after,
+                Err(read_error) if request.operation == "scan.run" => {
+                    // A failed admission can follow a committed scan. Retry the
+                    // read once to identify it; never suggest starting another
+                    // scan while that identity remains unknown.
+                    match state.storage.get_case(&request.case_id) {
+                        Ok(after) => after,
+                        Err(_) => {
+                            let mut terminal = foreground_rejected(request, read_error);
+                            terminal["retryable"] = json!(false);
+                            terminal["exit_code"] = json!(4);
+                            terminal["command_outcome"] = json!("failed");
+                            terminal["error_code"] = json!("receipt_persistence_failed");
+                            return Ok(terminal);
+                        }
+                    }
+                }
+                Err(read_error) => return Err(read_error),
+            };
             let created = after
                 .scan_runs
                 .iter()
@@ -1895,9 +2052,17 @@ fn foreground_owned_operation(
             (created, None)
         }
     };
-    let run_id = run_id.ok_or_else(|| {
-        AppError::Internal("foreground admission returned no exact run identity".into())
-    })?;
+    let Some(run_id) = run_id else {
+        let mut terminal = foreground_rejected(
+            request,
+            AppError::Internal("foreground admission returned no exact run identity".into()),
+        );
+        if request.operation == "scan.run" {
+            terminal["retryable"] = json!(false);
+            terminal["error_code"] = json!("receipt_persistence_failed");
+        }
+        return Ok(terminal);
+    };
     *output
         .run_id
         .lock()
@@ -1983,39 +2148,72 @@ fn foreground_owned_operation(
     {
         failure = Some(("terminal_report_snapshot_failed", error.to_string()));
     }
-    let case = state.storage.get_case(&request.case_id)?;
-    let (result, recovery_required) = foreground_result(&case, &run_id)?;
-    let stop = output.stop.load(Ordering::Acquire);
-    let recovery_retryable = request.operation == "scan.recover"
-        && (result["recovery"]["available_without_target_contact"]
-            .as_bool()
-            .unwrap_or(false)
-            || result["report_snapshot_retry_command"].is_array());
-    let (exit_code, outcome, error_code, retryable) = if matches!(stop, 130 | 143) {
-        (stop, "interrupted", Some("interrupted"), true)
-    } else if output.failed.load(Ordering::Acquire) {
-        (4, "failed", Some("output_failed"), true)
-    } else if stop == 4 {
-        (4, "failed", Some("cancellation_control_failed"), true)
-    } else if recovery_required {
-        (4, "recovery_required", Some("recovery_required"), true)
-    } else if let Some((code, _)) = &failure {
-        (4, "failed", Some(*code), true)
-    } else {
-        (0, "completed", None, false)
+    let computed = (|| -> AppResult<_> {
+        let case = state.storage.get_case(&request.case_id)?;
+        let (result, recovery_required) = foreground_result(&case, &run_id)?;
+        let stop = output.stop.load(Ordering::Acquire);
+        let recovery_retryable = request.operation == "scan.recover"
+            && (result["recovery"]["available_without_target_contact"]
+                .as_bool()
+                .unwrap_or(false)
+                || result["report_snapshot_retry_command"].is_array());
+        let (exit_code, outcome, error_code, retryable) = if matches!(stop, 130 | 143) {
+            (stop, "interrupted", Some("interrupted"), true)
+        } else if output.failed.load(Ordering::Acquire) {
+            (4, "failed", Some("output_failed"), true)
+        } else if stop == 4 {
+            (4, "failed", Some("cancellation_control_failed"), true)
+        } else if recovery_required {
+            (4, "recovery_required", Some("recovery_required"), true)
+        } else if let Some((code, _)) = &failure {
+            (4, "failed", Some(*code), true)
+        } else {
+            (0, "completed", None, false)
+        };
+        if let Some((_, detail)) = failure {
+            eprintln!("foreground scan: {detail}");
+        }
+        let terminal = foreground_terminal(
+            request,
+            Some(&run_id),
+            exit_code,
+            outcome,
+            error_code,
+            retryable && recovery_retryable,
+            result,
+        );
+        Ok((terminal, recovery_retryable, Some(case.storage_revision())))
+    })();
+    let (terminal, recovery_retryable, case_revision) = match computed {
+        Ok(computed) => computed,
+        Err(error) => {
+            let mut terminal = foreground_rejected(request, error);
+            terminal["run_id"] = json!(run_id);
+            if request.operation == "scan.run" {
+                terminal["retryable"] = json!(false);
+            }
+            let retryable = terminal["retryable"].as_bool().unwrap_or(false);
+            (terminal, retryable, None)
+        }
     };
-    if let Some((_, detail)) = failure {
-        eprintln!("foreground scan: {detail}");
-    }
-    let mut terminal = foreground_terminal(
+    Ok(foreground_record_receipt(
+        &state.storage,
         request,
-        Some(&run_id),
-        exit_code,
-        outcome,
-        error_code,
-        retryable && recovery_retryable,
-        result,
-    );
+        &run_id,
+        terminal,
+        recovery_retryable,
+        case_revision,
+    ))
+}
+
+fn foreground_record_receipt(
+    storage: &Storage,
+    request: &ForegroundRequest,
+    run_id: &str,
+    mut terminal: Value,
+    recovery_retryable: bool,
+    case_revision: Option<i64>,
+) -> Value {
     let mut payload = terminal.clone();
     payload
         .as_object_mut()
@@ -2025,15 +2223,15 @@ fn foreground_owned_operation(
         .as_object_mut()
         .expect("terminal object")
         .remove("case_revision");
-    match state.storage.record_scan_command_receipt(
+    match storage.record_scan_command_receipt(
         &request.case_id,
-        &run_id,
+        run_id,
         &request.request_id,
         &payload,
     ) {
         Ok(receipt) => {
             terminal["case_revision"] = json!(receipt.case_revision);
-            terminal["receipt"] = serde_json::to_value(receipt)?;
+            terminal["receipt"] = json!(receipt);
         }
         Err(error) => {
             eprintln!("foreground command receipt could not be saved: {error}");
@@ -2041,10 +2239,10 @@ fn foreground_owned_operation(
             terminal["command_outcome"] = json!("failed");
             terminal["error_code"] = json!("receipt_persistence_failed");
             terminal["retryable"] = json!(recovery_retryable);
-            terminal["case_revision"] = json!(case.storage_revision());
+            terminal["case_revision"] = json!(case_revision);
         }
     }
-    Ok(terminal)
+    terminal
 }
 
 fn foreground_result(case: &AssessmentCase, run_id: &str) -> AppResult<(Value, bool)> {
@@ -2430,6 +2628,7 @@ async fn execute(cli: Cli, option_sources: GlobalOptionSources) -> AppResult<u8>
     }
 
     let managed_runtime_bundle = cli.managed_runtime_bundle;
+    let expected_managed_runtime_manifest_sha256 = cli.expected_managed_runtime_manifest_sha256;
     let release_approved_local_image_directory = cli.release_approved_local_image_directory;
     let data_dir_was_overridden = cli.data_dir.is_some();
     let data_dir = resolve_data_dir(cli.data_dir)?;
@@ -2469,6 +2668,7 @@ async fn execute(cli: Cli, option_sources: GlobalOptionSources) -> AppResult<u8>
             &data_dir,
             &data_dir.join("artifacts"),
             managed_runtime_bundle.as_deref(),
+            expected_managed_runtime_manifest_sha256.as_deref(),
             release_approved_local_image_directory.as_deref(),
             ManagedRuntimeCliCommand::Status,
             cli.json,
@@ -2587,6 +2787,8 @@ async fn execute(cli: Cli, option_sources: GlobalOptionSources) -> AppResult<u8>
                 &artifact_root,
                 RuntimeSourceOverrides {
                     managed_runtime_bundle: managed_runtime_bundle.as_deref(),
+                    expected_managed_runtime_manifest_sha256:
+                        expected_managed_runtime_manifest_sha256.as_deref(),
                     release_approved_local_image_directory: release_approved_local_image_directory
                         .as_deref(),
                 },
@@ -2623,8 +2825,12 @@ async fn execute(cli: Cli, option_sources: GlobalOptionSources) -> AppResult<u8>
             }
         }
         Command::Doctor => {
-            let managed_runtime =
-                inspect_managed_runtime(&data_dir, managed_runtime_bundle.as_deref()).await;
+            let managed_runtime = inspect_managed_runtime(
+                &data_dir,
+                managed_runtime_bundle.as_deref(),
+                expected_managed_runtime_manifest_sha256.as_deref(),
+            )
+            .await?;
             let compatibility_runtime = detect_runtime().await;
             let cleanup = inspect_cleanup(&service.list_cases()?, &service, None, None)?;
             let report = json!({
@@ -4009,6 +4215,7 @@ async fn execute_runtime(
                 data_dir,
                 artifact_root,
                 source_overrides.managed_runtime_bundle,
+                source_overrides.expected_managed_runtime_manifest_sha256,
                 source_overrides.release_approved_local_image_directory,
                 command,
                 json_output,
@@ -4023,8 +4230,12 @@ async fn execute_runtime(
                 args.case_id.as_deref(),
                 args.run_id.as_deref(),
             )?;
-            let managed_runtime =
-                inspect_managed_runtime(data_dir, source_overrides.managed_runtime_bundle).await;
+            let managed_runtime = inspect_managed_runtime(
+                data_dir,
+                source_overrides.managed_runtime_bundle,
+                source_overrides.expected_managed_runtime_manifest_sha256,
+            )
+            .await?;
             let compatibility_runtime = detect_runtime().await;
             print_value(
                 &json!({
@@ -4304,6 +4515,7 @@ async fn execute_managed_runtime_cli_command(
     data_dir: &Path,
     artifact_root: &Path,
     managed_runtime_bundle: Option<&Path>,
+    expected_managed_runtime_manifest_sha256: Option<&str>,
     release_approved_local_image_directory: Option<&Path>,
     command: ManagedRuntimeCliCommand,
     json_output: bool,
@@ -4311,12 +4523,14 @@ async fn execute_managed_runtime_cli_command(
     let data_dir = data_dir.to_path_buf();
     let artifact_root = artifact_root.to_path_buf();
     let bundle = managed_runtime_bundle.map(Path::to_path_buf);
+    let expected = expected_managed_runtime_manifest_sha256.map(str::to_owned);
     let local_images = release_approved_local_image_directory.map(Path::to_path_buf);
     let value = tokio::task::spawn_blocking(move || {
         execute_managed_runtime_command(
             &data_dir,
             &artifact_root,
             bundle.as_deref(),
+            expected.as_deref(),
             local_images.as_deref(),
             command,
         )
@@ -4537,9 +4751,16 @@ fn restrict_private_directory(_path: &Path) -> AppResult<()> {
 fn open_managed_runtime_manager(
     data_dir: &Path,
     bundle_override: Option<&Path>,
+    expected_manifest_sha256: Option<&str>,
 ) -> AppResult<ManagedRuntimeManager> {
     if let Some(bundle) = bundle_override {
-        return ManagedRuntimeManager::open(data_dir, bundle, &bundle.join("manifest.json"));
+        let manager = ManagedRuntimeManager::open(data_dir, bundle, &bundle.join("manifest.json"))?;
+        if expected_manifest_sha256.is_some_and(|expected| manager.manifest_sha256() != expected) {
+            return Err(AppError::NotAuthorized(
+                "the managed-runtime bundle manifest differs from the expected digest".into(),
+            ));
+        }
+        return Ok(manager);
     }
 
     let mut bundles = std::collections::BTreeSet::new();
@@ -4679,10 +4900,12 @@ fn execute_managed_runtime_command(
     data_dir: &Path,
     artifact_root: &Path,
     bundle_override: Option<&Path>,
+    expected_manifest_sha256: Option<&str>,
     release_approved_local_image_directory: Option<&Path>,
     command: ManagedRuntimeCliCommand,
 ) -> AppResult<Value> {
-    let manager = open_managed_runtime_manager(data_dir, bundle_override)?;
+    let manager =
+        open_managed_runtime_manager(data_dir, bundle_override, expected_manifest_sha256)?;
     let value = match command {
         ManagedRuntimeCliCommand::Status => serde_json::to_value(manager.status()?),
         ManagedRuntimeCliCommand::Install => serde_json::to_value(manager.install()?),
@@ -5295,38 +5518,48 @@ fn perform_exact_runtime_cleanup(
     })
 }
 
-async fn inspect_managed_runtime(data_dir: &Path, bundle_override: Option<&Path>) -> Value {
+async fn inspect_managed_runtime(
+    data_dir: &Path,
+    bundle_override: Option<&Path>,
+    expected_manifest_sha256: Option<&str>,
+) -> AppResult<Value> {
     let data_dir = data_dir.to_path_buf();
     let bundle = bundle_override.map(Path::to_path_buf);
+    let expected = expected_manifest_sha256.map(str::to_owned);
     match tokio::task::spawn_blocking(move || {
-        inspect_managed_runtime_blocking(&data_dir, bundle.as_deref())
+        inspect_managed_runtime_blocking(&data_dir, bundle.as_deref(), expected.as_deref())
     })
     .await
     {
         Ok(value) => value,
-        Err(error) => json!({
+        Err(error) => Ok(json!({
             "configured": false,
             "available": false,
             "error": format!("managed runtime status worker failed: {error}"),
-        }),
+        })),
     }
 }
 
-fn inspect_managed_runtime_blocking(data_dir: &Path, bundle_override: Option<&Path>) -> Value {
-    match open_managed_runtime_manager(data_dir, bundle_override) {
-        Ok(manager) => match manager.status() {
+fn inspect_managed_runtime_blocking(
+    data_dir: &Path,
+    bundle_override: Option<&Path>,
+    expected_manifest_sha256: Option<&str>,
+) -> AppResult<Value> {
+    match open_managed_runtime_manager(data_dir, bundle_override, expected_manifest_sha256) {
+        Ok(manager) => Ok(match manager.status() {
             Ok(status) => json!({ "configured": true, "status": status }),
             Err(error) => json!({
                 "configured": true,
                 "available": false,
                 "error": error.to_string(),
             }),
-        },
-        Err(error) => json!({
+        }),
+        Err(error) if expected_manifest_sha256.is_some() => Err(error),
+        Err(error) => Ok(json!({
             "configured": false,
             "available": false,
             "error": error.to_string(),
-        }),
+        })),
     }
 }
 
@@ -7608,6 +7841,39 @@ mod tests {
     }
 
     #[test]
+    fn foreground_owner_failure_never_invites_a_second_scan_run() {
+        let mut request = ForegroundRequest {
+            operation: "scan.run",
+            request_id: "request-1".into(),
+            case_id: "case-1".into(),
+            run_id: None,
+            plan: ScanPlanRequest::default(),
+            data_dir: None,
+            managed_runtime_bundle: None,
+            expected_managed_runtime_manifest_sha256: None,
+            release_approved_local_image_directory: None,
+        };
+        let unknown = foreground_owner_failed(&request, None, "owner stopped".into());
+        assert_eq!(unknown["retryable"], false);
+        assert_eq!(unknown["run_id"], Value::Null);
+        assert_eq!(unknown["error_code"], "owner_failed");
+        assert_eq!(unknown["command_outcome"], "failed");
+        assert_eq!(unknown["exit_code"], 4);
+        assert_eq!(unknown["result"]["detail"], "owner stopped");
+
+        let saved = foreground_owner_failed(&request, Some("run-1"), "owner stopped".into());
+        assert_eq!(saved["retryable"], false);
+        assert_eq!(saved["run_id"], "run-1");
+
+        request.operation = "scan.recover";
+        request.run_id = Some("run-1".into());
+        let recover = foreground_owner_failed(&request, Some("run-1"), "owner stopped".into());
+        assert_eq!(recover["retryable"], true);
+        assert_eq!(recover["run_id"], "run-1");
+        assert_eq!(recover["exit_code"], 4);
+    }
+
+    #[test]
     fn foreground_summary_retains_invalid_foreign_and_missing_recovery_proof() {
         let mut case = build_demo_case();
         case.scan_runs.truncate(1);
@@ -7746,6 +8012,54 @@ mod tests {
         );
     }
 
+    #[test]
+    fn fixed_package_coordinators_refuse_the_expected_bundle_digest() {
+        let check = |command: &[&str]| {
+            let mut args = vec![
+                "ai-security-scanner",
+                "--managed-runtime-bundle",
+                "/unused-bundle",
+                "--expected-managed-runtime-manifest-sha256",
+                "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            ];
+            args.extend_from_slice(command);
+            let matches = Cli::command().try_get_matches_from(args).unwrap();
+            assert_eq!(
+                parse_cli_matches(&matches).unwrap_err().kind(),
+                clap::error::ErrorKind::ArgumentConflict
+            );
+        };
+        check(&["windows-installer-prerequisite"]);
+        check(&["product-uninstall", "--mode", "app-only"]);
+        #[cfg(feature = "installer-runtime-cache")]
+        check(&["windows-installer-runtime-cache"]);
+    }
+
+    #[test]
+    fn exact_runtime_cleanup_refuses_an_unrelated_bundle_digest() {
+        let matches = Cli::command()
+            .try_get_matches_from([
+                "ai-security-scanner",
+                "--managed-runtime-bundle",
+                "/unused-bundle",
+                "--expected-managed-runtime-manifest-sha256",
+                "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+                "runtime",
+                "cleanup",
+                "--case-id",
+                "case-1",
+                "--run-id",
+                "run-1",
+                "--confirm-run-id",
+                "run-1",
+            ])
+            .unwrap();
+        assert_eq!(
+            parse_cli_matches(&matches).unwrap_err().kind(),
+            clap::error::ErrorKind::ArgumentConflict
+        );
+    }
+
     #[tokio::test]
     async fn cli_cancel_fails_closed_when_the_data_directory_lease_is_owned() {
         let temporary = test_temp::tempdir().expect("temporary data directory");
@@ -7756,6 +8070,7 @@ mod tests {
         let cli = Cli {
             data_dir: Some(temporary.path().to_path_buf()),
             managed_runtime_bundle: None,
+            expected_managed_runtime_manifest_sha256: None,
             release_approved_local_image_directory: None,
             json: true,
             command: Command::Scan {

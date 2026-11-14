@@ -4,7 +4,7 @@ use super::bundle::{
     AuditBinding, BundleFile, BundleManifest, check_manifest, file_index_digest, validate_bundle,
     verified_read,
 };
-use super::{bundle_io::BundleRoot, strict_json};
+use super::{MAX_SEALED_FILE_BYTES, bundle_io::BundleRoot, strict_json};
 use crate::case_archive_io::{
     guard_archive_parent, make_private, private_tempdir_in, publish_directory_no_replace,
     validate_path,
@@ -73,6 +73,29 @@ pub struct RetainedRetrieval {
 
 fn invalid(reason: &str) -> AppError {
     AppError::InvalidRequest(format!("retained Cloudflare bundle: {reason}"))
+}
+pub(crate) fn retrieve_error(error: AppError) -> AppError {
+    match error {
+        AppError::InvalidRequest(message) if message.starts_with("case archive: ") => {
+            AppError::InvalidRequest(message.replacen("case archive: ", "retrieve: ", 1))
+        }
+        AppError::UnsafeArchiveParent => {
+            invalid("retrieve destination has an untrusted writable ancestor")
+        }
+        other => other,
+    }
+}
+fn retrieve_destination_error(error: AppError) -> AppError {
+    match error {
+        AppError::InvalidRequest(message) if message.starts_with("case archive: ") => {
+            AppError::InvalidRequest(message.replacen(
+                "case archive: ",
+                "retrieve destination: ",
+                1,
+            ))
+        }
+        other => retrieve_error(other),
+    }
 }
 fn digest(bytes: &[u8]) -> String {
     hex::encode(Sha256::digest(bytes))
@@ -244,7 +267,7 @@ pub async fn retain_bundle(
         payload_index_sha256: file_index_digest(&all)?,
     };
     let retention_bytes = serde_json::to_vec(&retention)?;
-    if retention_bytes.len() as u64 > 8 * MIB {
+    if retention_bytes.len() as u64 > MAX_SEALED_FILE_BYTES {
         return Err(invalid("retention index exceeds 8 MiB"));
     }
     write_private(staging.path(), ENVELOPE, &retention_bytes)?;
@@ -281,7 +304,7 @@ pub(crate) fn load_archive_payload(
     omit_source_bodies: bool,
 ) -> AppResult<Loaded> {
     let mut root = BundleRoot::open(input)?;
-    let bytes = root.read(ENVELOPE, 8 * MIB)?;
+    let bytes = root.read(ENVELOPE, MAX_SEALED_FILE_BYTES)?;
     let retention_hash = digest(&bytes);
     if let Some(expected) = expected {
         require_hash(&retention_hash, expected)?;
@@ -493,6 +516,16 @@ pub fn retrieve_retained(
     member: &str,
     output: &Path,
 ) -> AppResult<RetainedRetrieval> {
+    retrieve_retained_inner(input, expected_retention_sha256, member, output)
+        .map_err(retrieve_error)
+}
+
+fn retrieve_retained_inner(
+    input: &Path,
+    expected_retention_sha256: &str,
+    member: &str,
+    output: &Path,
+) -> AppResult<RetainedRetrieval> {
     let mut loaded = load_retained(input, Some(expected_retention_sha256))?;
     let file = loaded
         .index
@@ -522,7 +555,18 @@ pub(crate) struct RetrievalDestination {
 }
 impl RetrievalDestination {
     pub(crate) fn prepare(output: &Path, forbidden_roots: &[PathBuf]) -> AppResult<Self> {
-        let (parent, output) = destination(output)?;
+        let absolute = std::path::absolute(output)?;
+        let parent = absolute
+            .parent()
+            .ok_or_else(|| invalid("retrieve destination needs a parent"))?;
+        match fs::symlink_metadata(parent) {
+            Err(error) if error.kind() == std::io::ErrorKind::NotFound => {
+                return Err(invalid("retrieve destination parent does not exist"));
+            }
+            Err(error) => return Err(error.into()),
+            Ok(_) => {}
+        }
+        let (parent, output) = destination(&absolute).map_err(retrieve_destination_error)?;
         for root in forbidden_roots {
             let root = match crate::internal_paths::canonicalize(root) {
                 Ok(root) => root,
@@ -549,19 +593,22 @@ impl RetrievalDestination {
         bytes: &[u8],
         recheck: impl FnOnce() -> AppResult<()>,
     ) -> AppResult<PathBuf> {
-        let parent = &self.parent;
-        let output = &self.output;
-        parent.verify_unchanged()?;
-        let staging = private_tempdir_in(parent.path(), ".scanner-cloudflare-retrieve-")?;
-        write_private(staging.path(), "document", bytes)?;
-        parent.verify_unchanged()?;
-        recheck()?;
-        parent.verify_unchanged()?;
-        parent.publish_private_file(
-            &staging.path().join("document"),
-            output.file_name().unwrap(),
-        )?;
-        Ok(self.output)
+        (|| {
+            let parent = &self.parent;
+            let output = &self.output;
+            parent.verify_unchanged()?;
+            let staging = private_tempdir_in(parent.path(), ".scanner-cloudflare-retrieve-")?;
+            write_private(staging.path(), "document", bytes)?;
+            parent.verify_unchanged()?;
+            recheck()?;
+            parent.verify_unchanged()?;
+            parent.publish_private_file(
+                &staging.path().join("document"),
+                output.file_name().unwrap(),
+            )?;
+            Ok(self.output)
+        })()
+        .map_err(retrieve_destination_error)
     }
 }
 
@@ -582,6 +629,23 @@ mod captured_publication_tests {
         assert!(matches!(result, Err(AppError::Conflict(_))), "{result:?}");
         assert!(!output.exists());
         assert_eq!(fs::read_dir(root.path()).unwrap().count(), 0);
+    }
+
+    #[test]
+    fn retrieve_publication_conflict_uses_retrieve_wording() {
+        let root = tempfile::tempdir().unwrap();
+        make_private(root.path(), true).unwrap();
+        let output = root.path().join("out");
+        let result = RetrievalDestination::prepare(&output, &[])
+            .unwrap()
+            .publish(b"private", || {
+                fs::write(&output, b"existing")?;
+                Ok(())
+            });
+        let error = result.unwrap_err().to_string();
+        assert!(error.contains("retrieve destination"), "{error}");
+        assert!(!error.contains("case archive:"), "{error}");
+        assert_eq!(fs::read(output).unwrap(), b"existing");
     }
 
     #[cfg(unix)]

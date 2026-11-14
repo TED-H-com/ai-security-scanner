@@ -34,7 +34,7 @@ OpenAI 官方文件將本機／儲存庫 skill 與透過 plugin 的廣泛分發�
 
 建議下一次交付稱為 **Skill 預覽版**：先將來源提交，讓別人能取得實測的精確 revision，再宣布發布。目前仍未發布。可先限於已驗證的 Linux 路徑，清楚列出 runtime 先決條件。[Bootstrap 驗證紀錄](skill-bootstrap.md#november-9-selected-engine-and-real-scan-validation)已有真正 pinned Gitleaks 掃描、秘密值遮蔽、報告交付與封存還原；這能支持有限範圍的預覽，尚不能證明全部掃描器、資產類型與平台。
 
-目前 source 已有前景執行／復原、所選引擎映像準備、共用報告快照、合併原始附件，以及既有案件 domain 的完整封存還原。Cloudflare 已可驗證文件及 reported bundle、私密保存原件與離線取回；尚未執行稽核，也還不能把 findings 正式納入案件／報告。完整能力與證據見[開發狀態](development-status.zh-TW.md)。
+目前 source 已有前景執行／復原、所選引擎映像準備、共用報告快照、合併原始附件，以及既有案件 domain 的完整封存還原。Cloudflare 原始碼稽核可由宿主從準備、定稿、案件入案一路完成並納入共用報告，已入案稽核也會保存在完整封存中。完整能力與證據見[開發狀態](development-status.zh-TW.md)。
 
 要把完整新 skill 流程稱為正式版，還需要：
 

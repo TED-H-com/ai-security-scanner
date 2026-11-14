@@ -609,6 +609,10 @@ fn record_response(mut value: Value, outcome: CheckpointOutcome, signal: u8) -> 
                 value["validation"] = json!(validation);
             }
         }
+        CheckpointOutcome::OutputRejected { error_code, output } => {
+            value = refused(value, error_code, None);
+            value["output"] = json!(output);
+        }
         CheckpointOutcome::Rejected { error_code, reason } => {
             value = refused(value, error_code, reason)
         }

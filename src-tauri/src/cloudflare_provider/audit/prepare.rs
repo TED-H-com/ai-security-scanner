@@ -120,7 +120,7 @@ pub(crate) fn prepare_with_clock(
             .cloudflare_audit_receipt(&request.case_id, &request.request_id, false)?;
     if let Some(saved) = &saved {
         if saved.request_sha256 != request_sha256 {
-            return Err(AppError::Conflict(
+            return Err(AppError::RequestConflict(
                 "audit request_id has different inputs".into(),
             ));
         }

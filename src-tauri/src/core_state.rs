@@ -155,6 +155,21 @@ impl CoreState {
         )
     }
 
+    pub fn runtime_for_execution_cancellable(
+        &self,
+        cancellation: &Arc<AtomicBool>,
+    ) -> AppResult<ProcessContainerRuntime> {
+        if let Some(error) = &self.runtime_initialization_error {
+            return Err(AppError::Runtime(error.clone()));
+        }
+        resolve_runtime(
+            self.managed_runtime.as_deref(),
+            self.release_approved_local_image_directory.as_deref(),
+            true,
+            Some(cancellation),
+        )
+    }
+
     /// Reopens the exact runtime recorded by a durable checkpoint. This is
     /// intentionally separate from new-execution provider selection: an app
     /// update may leave cleanup work in an older verified managed runtime.
@@ -162,6 +177,24 @@ impl CoreState {
         &self,
         provider: RuntimeProvider,
         provenance: &RuntimeCommandProvenance,
+    ) -> AppResult<ProcessContainerRuntime> {
+        self.resolve_recorded_execution(provider, provenance, None)
+    }
+
+    pub fn runtime_for_recorded_execution_cancellable(
+        &self,
+        provider: RuntimeProvider,
+        provenance: &RuntimeCommandProvenance,
+        cancellation: &Arc<AtomicBool>,
+    ) -> AppResult<ProcessContainerRuntime> {
+        self.resolve_recorded_execution(provider, provenance, Some(cancellation))
+    }
+
+    fn resolve_recorded_execution(
+        &self,
+        provider: RuntimeProvider,
+        provenance: &RuntimeCommandProvenance,
+        cancellation: Option<&Arc<AtomicBool>>,
     ) -> AppResult<ProcessContainerRuntime> {
         let runtime = match (provider, provenance) {
             (
@@ -177,7 +210,11 @@ impl CoreState {
                     app_data,
                     Some(manifest_sha256.as_str()),
                 )?;
-                ProcessContainerRuntime::from_managed(manager.start()?)?
+                let command = match cancellation {
+                    Some(token) => manager.start_cancellable(token),
+                    None => manager.start(),
+                }?;
+                ProcessContainerRuntime::from_managed(command)?
             }
             (RuntimeProvider::Docker, RuntimeCommandProvenance::Compatibility) => {
                 ProcessContainerRuntime::new(RuntimeProvider::Docker, "docker")?
@@ -395,13 +432,14 @@ fn resolve_runtime(
         None => ProcessContainerRuntime::detect(),
     };
     check_cancelled()?;
-    compatibility.map(configure).map_err(|compatibility| {
-        AppError::Runtime(match managed_error {
-            Some(managed) => format!(
-                "managed-local runtime was unavailable ({managed}); Docker/Podman compatibility detection also failed ({compatibility})"
-            ),
-            None => compatibility.to_string(),
-        })
+    compatibility.map(configure).map_err(|compatibility| match managed_error {
+        Some(managed) => AppError::Runtime(format!(
+            "managed-local runtime was unavailable ({managed}); Docker/Podman compatibility detection also failed ({compatibility})"
+        )),
+        None => match compatibility {
+            AppError::Runtime(message) => AppError::Runtime(message),
+            other => AppError::Runtime(other.to_string()),
+        },
     })
 }
 

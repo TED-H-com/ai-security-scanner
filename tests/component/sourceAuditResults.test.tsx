@@ -15,6 +15,75 @@ const show = (report: BeginnerMasterReport) => render(<I18nProvider><FindingsPag
   onOpenCoverage={vi.fn()} onOpenProgress={vi.fn()} onOpenExport={vi.fn()}
 /></I18nProvider>);
 
+const countCases = [
+  {
+    units: 3, candidates: 2,
+    en: ["Source audit incomplete: 3 units remain. Continue with the listed paths.", "2 candidate findings remain unresolved."],
+    "zh-TW": ["原始碼稽核未完成：尚有 3 個單元未完成。請從列出的路徑繼續。", "尚有 2 個候選問題未解決。"],
+    ja: ["ソースコード監査は未完了です。対象ユニットが 3 件残っています。記載されたパスから続行してください。", "検出結果の候補が 2 件未解決です。"],
+  },
+  {
+    units: 0, candidates: 2,
+    en: ["Source audit incomplete: 2 candidate findings remain unresolved.", "2 candidate findings remain unresolved."],
+    "zh-TW": ["原始碼稽核未完成：尚有 2 個候選問題未解決。", "尚有 2 個候選問題未解決。"],
+    ja: ["ソースコード監査は未完了です。検出結果の候補が 2 件未解決です。", "検出結果の候補が 2 件未解決です。"],
+  },
+  {
+    units: 1, candidates: 1,
+    en: ["Source audit incomplete: 1 unit remains. Continue with the listed paths.", "1 candidate finding remains unresolved."],
+    "zh-TW": ["原始碼稽核未完成：尚有 1 個單元未完成。請從列出的路徑繼續。", "尚有 1 個候選問題未解決。"],
+    ja: ["ソースコード監査は未完了です。対象ユニットが 1 件残っています。記載されたパスから続行してください。", "検出結果の候補が 1 件未解決です。"],
+  },
+  {
+    units: 0, candidates: 1,
+    en: ["Source audit incomplete: 1 candidate finding remains unresolved.", "1 candidate finding remains unresolved."],
+    "zh-TW": ["原始碼稽核未完成：尚有 1 個候選問題未解決。", "尚有 1 個候選問題未解決。"],
+    ja: ["ソースコード監査は未完了です。検出結果の候補が 1 件未解決です。", "検出結果の候補が 1 件未解決です。"],
+  },
+] as const;
+
+for (const locale of ["en", "zh-TW", "ja"] as const) {
+  for (const example of countCases) test(`${locale}: audit results localize ${example.units} remaining units and ${example.candidates} unresolved candidates`, () => {
+    localStorage.setItem(localeStorageKey, locale);
+    const audit = sourceAudit();
+    const [remaining, excluded] = audit.coverage_gaps;
+    audit.coverage_gaps = [
+      ...Array.from({ length: example.units }, (_, i) => ({ ...remaining!, coverage_id: `unit-${i}` })),
+      excluded!,
+    ];
+    audit.unresolved_candidates = Array.from({ length: example.candidates }, (_, i) => `candidate-${i}`);
+    audit.outcome.incomplete_reason = null;
+    audit.to_validate = [];
+    const { container } = render(<I18nProvider><SourceAuditResults audits={[audit]} /></I18nProvider>);
+    const paragraphs = [...container.querySelectorAll(".source-audit > p")].map((node) => node.textContent);
+    for (const expected of example[locale]) expect(paragraphs).toContain(expected);
+    if (locale === "ja") expect(paragraphs.join(" ")).not.toMatch(/Source audit incomplete|candidate findings? remain/u);
+  });
+}
+
+const coverageCountCases = [
+  { reason: "1 unit remains.", en: "1 unit remains.", "zh-TW": "尚有 1 個單元未完成。", ja: "対象ユニットが 1 件残っています。" },
+  { reason: "3 units remain.", en: "3 units remain.", "zh-TW": "尚有 3 個單元未完成。", ja: "対象ユニットが 3 件残っています。" },
+  { reason: "1 unit is outside the audit scope.", en: "1 unit is outside the audit scope.", "zh-TW": "有 1 個單元不在稽核範圍內。", ja: "対象ユニットが 1 件、監査の対象外です。" },
+  { reason: "2 units are outside the audit scope.", en: "2 units are outside the audit scope.", "zh-TW": "有 2 個單元不在稽核範圍內。", ja: "対象ユニットが 2 件、監査の対象外です。" },
+] as const;
+
+for (const locale of ["en", "zh-TW", "ja"] as const) {
+  for (const example of coverageCountCases) test(`${locale}: source audit coverage displays ${example.reason}`, () => {
+    localStorage.setItem(localeStorageKey, locale);
+    const report = auditReport();
+    report.coverageGaps[0]!.reason = example.reason;
+    if (example.reason.includes("outside the audit scope")) {
+      report.coverageGaps[0]!.kind = "excluded";
+    }
+    const { container } = show(report);
+    const reportText = [...container.querySelectorAll(".coverage-card, .report-outcome-strip")]
+      .map((node) => node.textContent).join(" ");
+    expect(reportText).toContain(example[locale]);
+    if (locale === "ja") expect(reportText).not.toContain(example.reason);
+  });
+}
+
 for (const locale of ["en", "zh-TW"]) {
   test(`${locale}: results show candidates separately, readable gaps, and collapsed native technical details`, () => {
     localStorage.setItem(localeStorageKey, locale);

@@ -47,6 +47,7 @@
 
 ## 開發與維護
 
+- [API 參考](api-reference.md)：核心模組、使用範例與前後端互動的 API 規格（英文）。
 - [目前開發狀態](development-status.zh-TW.md)：目前實作、已記錄的驗證與剩餘工作。
 - [參與開發](../CONTRIBUTING.md)：產品優先順序、實作規則與驗證方式。
 - [引擎維護](engine-maintenance.md)：上游更新、adapter 邊界與 patch 例外。
