@@ -856,6 +856,66 @@ fn invalid_archive_payloads_fail_verify_preview_and_restore_before_publication()
 }
 
 #[test]
+fn archives_cannot_supply_files_the_restored_workspace_owns() {
+    let directory = test_directory();
+    let fixture = fixture(directory.path());
+    let archive_path = directory.path().join("valid.tar.gz");
+    success(create(&fixture, &archive_path).output().unwrap());
+    let original = entries(&archive_path);
+    let no_data = directory.path().join("never-initialized");
+    for (index, name) in [
+        "casework.db",
+        "casework.db-wal",
+        "CaseWork.DB",
+        "restore-receipt.json",
+        "managed-runtime/versions/one/manifest.json",
+    ]
+    .into_iter()
+    .enumerate()
+    {
+        let payload = b"supplied by the archive".to_vec();
+        let mut changed = original.clone();
+        let mut manifest: Value = serde_json::from_slice(&changed[0].1).unwrap();
+        manifest["entries"].as_array_mut().unwrap().push(json!({
+            "path": name,
+            "sha256": digest(&payload),
+            "byte_length": payload.len(),
+        }));
+        changed[0].1 = serde_json::to_vec(&manifest).unwrap();
+        changed.push((name.to_owned(), payload));
+        let crafted = directory.path().join(format!("crafted-{index}.tar.gz"));
+        write_entries(&crafted, &changed);
+        let error = failure(
+            archive_command(&no_data, "verify", &crafted)
+                .output()
+                .unwrap(),
+        );
+        assert!(
+            error.contains("outside the archive layout"),
+            "{name}: {error}"
+        );
+        let destination = directory.path().join(format!("restore-{index}"));
+        failure(
+            archive_command(&no_data, "restore-preview", &crafted)
+                .arg("--destination")
+                .arg(&destination)
+                .output()
+                .unwrap(),
+        );
+        failure(restore(&no_data, &crafted, &destination));
+        assert!(!destination.exists(), "{name} published a workspace");
+        assert!(!no_data.exists());
+    }
+    assert!(!fs::read_dir(directory.path()).unwrap().any(|entry| {
+        entry
+            .unwrap()
+            .file_name()
+            .to_string_lossy()
+            .starts_with(".scanner-restore-")
+    }));
+}
+
+#[test]
 fn selecting_source_snapshots_refuses_historical_identity_without_a_retained_reference() {
     let directory = test_directory();
     let fixture = fixture(directory.path());

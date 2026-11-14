@@ -189,6 +189,10 @@ The existing signed `.case.tar.gz` report bundle keeps its separate meaning.
 
 The destination must be a new directory inside an existing real parent. Restore
 rejects a parent namespace that another untrusted local user could replace.
+An archive may hold only the case documents and the `artifacts/`, `exports/` and
+`report-snapshots/` folders that archive creation writes. Verify, restore preview
+and restore refuse any other top-level name, so an archive can never supply the
+restored workspace's database, receipt or runtime files.
 It validates into private staging on the destination filesystem, creates and closes
 the new database, saves the restore intent and receipt, then publishes the
 complete directory atomically without replacing another path. It retains the

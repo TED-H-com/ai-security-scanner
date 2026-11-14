@@ -233,6 +233,23 @@ fn modified_restore_intent_rejects_retry_without_repairing_or_overwriting_worksp
 }
 
 #[test]
+fn restore_refuses_a_database_file_that_is_already_staged() {
+    for name in [
+        "casework.db",
+        "casework.db-wal",
+        "casework.db-journal",
+        "CASEWORK.DB-shm",
+    ] {
+        let stage = tempfile::tempdir().unwrap();
+        fs::create_dir(stage.path().join("artifacts")).unwrap();
+        fs::write(stage.path().join("case.json"), b"case").unwrap();
+        refuse_staged_database(stage.path()).unwrap();
+        fs::write(stage.path().join(name), b"supplied").unwrap();
+        assert!(refuse_staged_database(stage.path()).is_err(), "{name}");
+    }
+}
+
+#[test]
 fn staging_budget_refuses_excess_before_creating_payload_or_parent_directories() {
     let mut builder = Builder::new().unwrap();
     builder.add("retained.json", b"existing payload").unwrap();

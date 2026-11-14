@@ -460,6 +460,25 @@ impl Paths {
     }
 }
 
+/// Everything an archive may place at its top level: exactly what the archive
+/// writer emits. Every other name in a restored workspace belongs to the
+/// restoring core, which creates its own database, receipt and runtime state,
+/// so an archive must never be able to supply one.
+const ARCHIVE_ROOT_FILES: [&str; 4] = [
+    "case.json",
+    "original-case.json",
+    "archive-index.json",
+    "provider-history.json",
+];
+const ARCHIVE_ROOT_DIRECTORIES: [&str; 3] = ["artifacts", "exports", "report-snapshots"];
+
+fn within_archive_layout(path: &str) -> bool {
+    match path.split_once('/') {
+        Some((directory, _)) => ARCHIVE_ROOT_DIRECTORIES.contains(&directory),
+        None => ARCHIVE_ROOT_FILES.contains(&path),
+    }
+}
+
 fn validate_manifest(manifest: &ArchiveManifest) -> AppResult<BTreeMap<&str, &ArchiveEntry>> {
     if manifest.required_capabilities.iter().any(|c| {
         !matches!(
@@ -496,6 +515,9 @@ fn validate_manifest(manifest: &ArchiveManifest) -> AppResult<BTreeMap<&str, &Ar
     let mut physical_entries = 1usize;
     for entry in &manifest.entries {
         paths.insert(&entry.path)?;
+        if !within_archive_layout(&entry.path) {
+            return Err(invalid("entry is outside the archive layout"));
+        }
         physical_entries += 1 + usize::from(needs_long_name(&entry.path));
         if physical_entries > MAX_ARCHIVE_ENTRIES {
             return Err(invalid(
@@ -2019,6 +2041,46 @@ mod tests {
     }
 
     #[test]
+    fn manifest_accepts_only_the_names_the_archive_writer_emits() {
+        for name in [
+            "original-case.json",
+            "archive-index.json",
+            "provider-history.json",
+            "artifacts/run/task/evidence.bin",
+            "exports/1/report.html",
+            "exports/combined-1/originals.case.tar.gz",
+            "report-snapshots/snapshot.json",
+        ] {
+            let candidate = manifest(vec![entry("case.json", b"case"), entry(name, b"payload")]);
+            assert!(validate_manifest(&candidate).is_ok(), "{name}");
+        }
+        // Names the restoring core writes or reads itself, in any letter case,
+        // and anything else outside the writer's folders.
+        for name in [
+            "casework.db",
+            "casework.db-wal",
+            "casework.db-shm",
+            "casework.db-journal",
+            "CaseWork.DB",
+            "restore-receipt.json",
+            "restore-intent.json",
+            "restore-intent.json/child",
+            "managed-runtime/versions/one/manifest.json",
+            "runtime-preparations/receipt.json",
+            "Artifacts/run/task/evidence.bin",
+            "artifacts",
+            "unexpected.json",
+        ] {
+            let candidate = manifest(vec![entry("case.json", b"case"), entry(name, b"payload")]);
+            let error = validate_manifest(&candidate).unwrap_err().to_string();
+            assert!(
+                error.contains("outside the archive layout"),
+                "{name}: {error}"
+            );
+        }
+    }
+
+    #[test]
     fn manifest_schema_unknown_fields_case_binding_and_size_limits_fail_closed() {
         let correct = manifest(vec![entry("case.json", b"case")]);
         let mut unknown_schema = correct.clone();
@@ -2045,14 +2107,14 @@ mod tests {
             &serde_json::to_vec(&nested_unknown).unwrap(),
             &[],
         )));
-        let missing_case = manifest(vec![entry("other.json", b"case")]);
+        let missing_case = manifest(vec![entry("original-case.json", b"case")]);
         assert!(validate_manifest(&missing_case).is_err());
         let mut too_many = correct.clone();
         too_many.entries = vec![entry("case.json", b"case"); MAX_ARCHIVE_ENTRIES];
         assert!(validate_manifest(&too_many).is_err());
         let mut total = correct.clone();
         total.entries.extend((0..100).map(|index| ArchiveEntry {
-            path: format!("blobs/{index}"),
+            path: format!("artifacts/{index}"),
             sha256: "0".repeat(64),
             byte_length: MAX_ARCHIVE_ENTRY_BYTES,
         }));
@@ -2123,9 +2185,12 @@ mod tests {
         let mut entries = vec![entry("case.json", b"case")];
         // Only 1,002 files and a small manifest, but each distinct branch would
         // otherwise create 101 directories even when every payload is empty.
-        entries.extend(
-            (0..1001).map(|index| entry(&format!("branch-{index}/{}empty", "p/".repeat(100)), b"")),
-        );
+        entries.extend((0..1001).map(|index| {
+            entry(
+                &format!("artifacts/branch-{index}/{}empty", "p/".repeat(100)),
+                b"",
+            )
+        }));
         let expanded = manifest(entries);
         let encoded = serde_json::to_vec(&expanded).unwrap();
         assert!(encoded.len() < MAX_ARCHIVE_MANIFEST_BYTES as usize);
@@ -2246,7 +2311,7 @@ mod tests {
     fn missing_extra_duplicate_mismatched_and_corrupt_entries_leave_no_staging() {
         let manifest = serde_json::to_vec(&manifest(vec![
             entry("case.json", b"case"),
-            entry("blobs/evidence", b"good"),
+            entry("artifacts/evidence", b"good"),
         ]))
         .unwrap();
         let regular = tar::EntryType::Regular;
@@ -2254,7 +2319,7 @@ mod tests {
             vec![("case.json", b"case".as_slice(), regular)],
             vec![
                 ("case.json", b"case".as_slice(), regular),
-                ("blobs/evidence", b"good".as_slice(), regular),
+                ("artifacts/evidence", b"good".as_slice(), regular),
                 ("unexpected", b"x".as_slice(), regular),
             ],
             vec![
@@ -2263,11 +2328,11 @@ mod tests {
             ],
             vec![
                 ("case.json", b"case".as_slice(), regular),
-                ("blobs/evidence", b"bad!".as_slice(), regular),
+                ("artifacts/evidence", b"bad!".as_slice(), regular),
             ],
             vec![
                 ("case.json", b"case".as_slice(), regular),
-                ("blobs/evidence", b"short".as_slice(), regular),
+                ("artifacts/evidence", b"short".as_slice(), regular),
             ],
         ] {
             reject(&compressed(&tar_bytes(&manifest, &entries)));
