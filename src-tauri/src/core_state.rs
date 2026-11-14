@@ -432,13 +432,14 @@ fn resolve_runtime(
         None => ProcessContainerRuntime::detect(),
     };
     check_cancelled()?;
-    compatibility.map(configure).map_err(|compatibility| {
-        AppError::Runtime(match managed_error {
-            Some(managed) => format!(
-                "managed-local runtime was unavailable ({managed}); Docker/Podman compatibility detection also failed ({compatibility})"
-            ),
-            None => compatibility.to_string(),
-        })
+    compatibility.map(configure).map_err(|compatibility| match managed_error {
+        Some(managed) => AppError::Runtime(format!(
+            "managed-local runtime was unavailable ({managed}); Docker/Podman compatibility detection also failed ({compatibility})"
+        )),
+        None => match compatibility {
+            AppError::Runtime(message) => AppError::Runtime(message),
+            other => AppError::Runtime(other.to_string()),
+        },
     })
 }
 

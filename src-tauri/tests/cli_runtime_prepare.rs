@@ -271,6 +271,14 @@ fn preparation_runtime_reason_no_runtime_online_and_offline() {
         );
         assert_eq!(value["ready"], false);
         assert!(value["runtime"].is_null());
+        let error = value["images"][0]["error"]
+            .as_str()
+            .expect("recorded image error");
+        assert!(
+            error.contains("no usable Docker or Podman service detected"),
+            "{error}"
+        );
+        assert!(!error.contains("runtime error: runtime error:"), "{error}");
         fixture.assert_receipt(&value);
     }
 }
