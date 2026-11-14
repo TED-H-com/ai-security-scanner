@@ -397,6 +397,10 @@ fn failure_rows_atomicity_pending_snapshot_repair_replay_and_format() {
 
 #[test]
 fn failure_only_archives_restore_inert_and_inventory_is_exact() {
+    use ai_security_scanner_lib::{
+        case_service::{CaseExportFormat, CaseService},
+        report_snapshot::{ReportDocumentFormat, ReportSnapshot, current_run_snapshot},
+    };
     for blocked in [false, true] {
         let (mut f, mut prep) = Fixture::setup(true);
         let end;
@@ -411,6 +415,95 @@ fn failure_only_archives_restore_inert_and_inventory_is_exact() {
             end = Some(request);
             saved
         };
+        let reference = &saved["result"]["outcome_run"];
+        let run_id = reference["run_id"].as_str().unwrap();
+        let task_id = reference["task_id"].as_str().unwrap();
+        let (ending, reason, heading) = if blocked {
+            (
+                "blocked",
+                "The invocation budget was too small for this audit.",
+                "Source audit did not start",
+            )
+        } else {
+            (
+                "terminated",
+                "The audit was stopped before completion.",
+                "Source audit ended before completion",
+            )
+        };
+        let assert_report = |html: &[u8], json: &[u8]| {
+            let document: Value = serde_json::from_slice(json).unwrap();
+            assert!(
+                document
+                    .to_string()
+                    .contains(&format!("\"ending\":\"{ending}\""))
+            );
+            assert_eq!(
+                document["report"]["actual"]["checks"][0]["outcome"]["reason"],
+                reason
+            );
+            let html = std::str::from_utf8(html).unwrap();
+            assert!(html.contains(reason), "missing reason: {reason}");
+            let disclosure = "<details class=\"technical\"><summary><strong>Technical details</strong></summary>";
+            let (first_layer, technical) = html.split_once(disclosure).unwrap();
+            let technical = technical.split("</details>").next().unwrap();
+            let task_heading = format!("<article><h3>Task <code>{task_id}</code>");
+            assert!(!first_layer.contains(&task_heading));
+            let task = technical
+                .split_once(&task_heading)
+                .unwrap()
+                .1
+                .split("</article>")
+                .next()
+                .unwrap();
+            assert!(task.contains(heading), "missing heading: {heading}");
+            assert!(task.contains("reason codes"));
+        };
+        let retrieve = |f: &Fixture, stage: &str| {
+            let case = f.storage().get_case(&f.case_id).unwrap();
+            let record = current_run_snapshot(&case, run_id).unwrap().unwrap();
+            let snapshot = ReportSnapshot::load(
+                &f.data
+                    .join("artifacts")
+                    .join(&record.snapshot.relative_path),
+            )
+            .unwrap();
+            let html = f.data.with_file_name(format!("{stage}-saved.html"));
+            let json = f.data.with_file_name(format!("{stage}-saved.json"));
+            snapshot
+                .retrieve(ReportDocumentFormat::Html, &html)
+                .unwrap();
+            snapshot
+                .retrieve(ReportDocumentFormat::Json, &json)
+                .unwrap();
+            (fs::read(html).unwrap(), fs::read(json).unwrap())
+        };
+        let export_current = |f: &Fixture, stage: &str| {
+            let storage = f.storage();
+            let engines = ai_security_scanner_lib::registry::EngineRegistry::empty();
+            let adapters = ai_security_scanner_lib::adapter::AdapterRegistry::default();
+            let service = CaseService::new(
+                &storage,
+                &engines,
+                &adapters,
+                f.data.join("artifacts"),
+                f.data.join("key"),
+            );
+            let html = f.data.with_file_name(format!("{stage}-current.html"));
+            let json = f.data.with_file_name(format!("{stage}-current.json"));
+            for (format, path) in [
+                (CaseExportFormat::Html, &html),
+                (CaseExportFormat::CanonicalJson, &json),
+            ] {
+                service
+                    .export_case(&f.case_id, run_id, format, path, ExportOptions::default())
+                    .unwrap();
+            }
+            assert_report(&fs::read(html).unwrap(), &fs::read(json).unwrap());
+        };
+        let (before_html, before_json) = retrieve(&f, "before");
+        assert_report(&before_html, &before_json);
+        export_current(&f, "reopened");
         let original = f.storage().get_case(&f.case_id).unwrap();
         let path = f.data.with_file_name("failure.tar.gz");
         case_archive::create_archive(&f.data, &f.case_id, &path, &ArchiveOptions::default())
@@ -433,6 +526,10 @@ fn failure_only_archives_restore_inert_and_inventory_is_exact() {
         let destination = f.data.with_file_name("restored-failure");
         case_archive::restore_archive(&path, &destination).unwrap();
         f.data = destination;
+        let (restored_html, restored_json) = retrieve(&f, "restored");
+        assert_eq!(restored_html, before_html);
+        assert_eq!(restored_json, before_json);
+        export_current(&f, "restored");
         assert_eq!(
             json!(original.scan_runs),
             json!(f.storage().get_case(&f.case_id).unwrap().scan_runs)
