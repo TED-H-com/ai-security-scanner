@@ -121,6 +121,10 @@ struct Cli {
     )]
     managed_runtime_bundle: Option<PathBuf>,
 
+    /// Require the explicit managed-runtime bundle's exact manifest SHA-256.
+    #[arg(long, global = true, value_parser = parse_managed_runtime_manifest_sha256)]
+    expected_managed_runtime_manifest_sha256: Option<String>,
+
     /// Use digest-keyed OCI archives from a release-approved local image directory.
     #[arg(
         long,
@@ -1224,6 +1228,32 @@ async fn main() {
 
 fn parse_cli_matches(matches: &clap::ArgMatches) -> Result<Cli, clap::Error> {
     let cli = Cli::from_arg_matches(matches)?;
+    if cli.expected_managed_runtime_manifest_sha256.is_some() {
+        if cli.managed_runtime_bundle.is_none() {
+            return Err(Cli::command().error(
+                clap::error::ErrorKind::MissingRequiredArgument,
+                "--expected-managed-runtime-manifest-sha256 requires --managed-runtime-bundle",
+            ));
+        }
+        // These commands use fixed package resources or a runtime identified by
+        // an existing cleanup checkpoint, rather than this bundle override.
+        let uses_another_runtime_source = match &cli.command {
+            Command::ProductUninstall(_)
+            | Command::WindowsInstallerPrerequisite
+            | Command::Runtime {
+                command: RuntimeCommand::Cleanup { .. },
+            } => true,
+            #[cfg(feature = "installer-runtime-cache")]
+            Command::WindowsInstallerRuntimeCache => true,
+            _ => false,
+        };
+        if uses_another_runtime_source {
+            return Err(Cli::command().error(
+                clap::error::ErrorKind::ArgumentConflict,
+                "this command refuses --expected-managed-runtime-manifest-sha256",
+            ));
+        }
+    }
     let ndjson = match &cli.command {
         Command::Scan {
             command: ScanCommand::Run(args),
@@ -1245,6 +1275,18 @@ fn parse_cli_matches(matches: &clap::ArgMatches) -> Result<Cli, clap::Error> {
     Ok(cli)
 }
 
+fn parse_managed_runtime_manifest_sha256(value: &str) -> Result<String, &'static str> {
+    if value.len() == 64
+        && value
+            .bytes()
+            .all(|byte| byte.is_ascii_digit() || (b'a'..=b'f').contains(&byte))
+    {
+        Ok(value.to_owned())
+    } else {
+        Err("expected exactly 64 lowercase hexadecimal characters")
+    }
+}
+
 #[derive(Debug, Clone, Copy, Default)]
 struct GlobalOptionSources {
     data_dir: Option<ValueSource>,
@@ -1254,6 +1296,7 @@ struct GlobalOptionSources {
 #[derive(Debug, Clone, Copy)]
 struct RuntimeSourceOverrides<'a> {
     managed_runtime_bundle: Option<&'a Path>,
+    expected_managed_runtime_manifest_sha256: Option<&'a str>,
     release_approved_local_image_directory: Option<&'a Path>,
 }
 
@@ -1317,6 +1360,7 @@ struct ForegroundRequest {
     plan: ScanPlanRequest,
     data_dir: Option<PathBuf>,
     managed_runtime_bundle: Option<PathBuf>,
+    expected_managed_runtime_manifest_sha256: Option<String>,
     release_approved_local_image_directory: Option<PathBuf>,
 }
 
@@ -1641,6 +1685,9 @@ async fn execute_foreground_scan(cli: &Cli) -> u8 {
         plan,
         data_dir: cli.data_dir.clone(),
         managed_runtime_bundle: cli.managed_runtime_bundle.clone(),
+        expected_managed_runtime_manifest_sha256: cli
+            .expected_managed_runtime_manifest_sha256
+            .clone(),
         release_approved_local_image_directory: cli.release_approved_local_image_directory.clone(),
     };
     let stop = Arc::new(AtomicU8::new(0));
@@ -1904,8 +1951,15 @@ fn foreground_owned_operation(
         data_dir.join("integrity-signing-key"),
     )
     .with_process_lease(lease);
-    match open_managed_runtime_manager(&data_dir, request.managed_runtime_bundle.as_deref()) {
+    match open_managed_runtime_manager(
+        &data_dir,
+        request.managed_runtime_bundle.as_deref(),
+        request.expected_managed_runtime_manifest_sha256.as_deref(),
+    ) {
         Ok(manager) => state = state.with_managed_runtime(manager),
+        Err(error) if request.expected_managed_runtime_manifest_sha256.is_some() => {
+            return Err(error);
+        }
         Err(error) if request.managed_runtime_bundle.is_some() => {
             state = state.with_runtime_initialization_error(error.to_string())
         }
@@ -2574,6 +2628,7 @@ async fn execute(cli: Cli, option_sources: GlobalOptionSources) -> AppResult<u8>
     }
 
     let managed_runtime_bundle = cli.managed_runtime_bundle;
+    let expected_managed_runtime_manifest_sha256 = cli.expected_managed_runtime_manifest_sha256;
     let release_approved_local_image_directory = cli.release_approved_local_image_directory;
     let data_dir_was_overridden = cli.data_dir.is_some();
     let data_dir = resolve_data_dir(cli.data_dir)?;
@@ -2613,6 +2668,7 @@ async fn execute(cli: Cli, option_sources: GlobalOptionSources) -> AppResult<u8>
             &data_dir,
             &data_dir.join("artifacts"),
             managed_runtime_bundle.as_deref(),
+            expected_managed_runtime_manifest_sha256.as_deref(),
             release_approved_local_image_directory.as_deref(),
             ManagedRuntimeCliCommand::Status,
             cli.json,
@@ -2731,6 +2787,8 @@ async fn execute(cli: Cli, option_sources: GlobalOptionSources) -> AppResult<u8>
                 &artifact_root,
                 RuntimeSourceOverrides {
                     managed_runtime_bundle: managed_runtime_bundle.as_deref(),
+                    expected_managed_runtime_manifest_sha256:
+                        expected_managed_runtime_manifest_sha256.as_deref(),
                     release_approved_local_image_directory: release_approved_local_image_directory
                         .as_deref(),
                 },
@@ -2767,8 +2825,12 @@ async fn execute(cli: Cli, option_sources: GlobalOptionSources) -> AppResult<u8>
             }
         }
         Command::Doctor => {
-            let managed_runtime =
-                inspect_managed_runtime(&data_dir, managed_runtime_bundle.as_deref()).await;
+            let managed_runtime = inspect_managed_runtime(
+                &data_dir,
+                managed_runtime_bundle.as_deref(),
+                expected_managed_runtime_manifest_sha256.as_deref(),
+            )
+            .await?;
             let compatibility_runtime = detect_runtime().await;
             let cleanup = inspect_cleanup(&service.list_cases()?, &service, None, None)?;
             let report = json!({
@@ -4153,6 +4215,7 @@ async fn execute_runtime(
                 data_dir,
                 artifact_root,
                 source_overrides.managed_runtime_bundle,
+                source_overrides.expected_managed_runtime_manifest_sha256,
                 source_overrides.release_approved_local_image_directory,
                 command,
                 json_output,
@@ -4167,8 +4230,12 @@ async fn execute_runtime(
                 args.case_id.as_deref(),
                 args.run_id.as_deref(),
             )?;
-            let managed_runtime =
-                inspect_managed_runtime(data_dir, source_overrides.managed_runtime_bundle).await;
+            let managed_runtime = inspect_managed_runtime(
+                data_dir,
+                source_overrides.managed_runtime_bundle,
+                source_overrides.expected_managed_runtime_manifest_sha256,
+            )
+            .await?;
             let compatibility_runtime = detect_runtime().await;
             print_value(
                 &json!({
@@ -4448,6 +4515,7 @@ async fn execute_managed_runtime_cli_command(
     data_dir: &Path,
     artifact_root: &Path,
     managed_runtime_bundle: Option<&Path>,
+    expected_managed_runtime_manifest_sha256: Option<&str>,
     release_approved_local_image_directory: Option<&Path>,
     command: ManagedRuntimeCliCommand,
     json_output: bool,
@@ -4455,12 +4523,14 @@ async fn execute_managed_runtime_cli_command(
     let data_dir = data_dir.to_path_buf();
     let artifact_root = artifact_root.to_path_buf();
     let bundle = managed_runtime_bundle.map(Path::to_path_buf);
+    let expected = expected_managed_runtime_manifest_sha256.map(str::to_owned);
     let local_images = release_approved_local_image_directory.map(Path::to_path_buf);
     let value = tokio::task::spawn_blocking(move || {
         execute_managed_runtime_command(
             &data_dir,
             &artifact_root,
             bundle.as_deref(),
+            expected.as_deref(),
             local_images.as_deref(),
             command,
         )
@@ -4681,9 +4751,16 @@ fn restrict_private_directory(_path: &Path) -> AppResult<()> {
 fn open_managed_runtime_manager(
     data_dir: &Path,
     bundle_override: Option<&Path>,
+    expected_manifest_sha256: Option<&str>,
 ) -> AppResult<ManagedRuntimeManager> {
     if let Some(bundle) = bundle_override {
-        return ManagedRuntimeManager::open(data_dir, bundle, &bundle.join("manifest.json"));
+        let manager = ManagedRuntimeManager::open(data_dir, bundle, &bundle.join("manifest.json"))?;
+        if expected_manifest_sha256.is_some_and(|expected| manager.manifest_sha256() != expected) {
+            return Err(AppError::NotAuthorized(
+                "the managed-runtime bundle manifest differs from the expected digest".into(),
+            ));
+        }
+        return Ok(manager);
     }
 
     let mut bundles = std::collections::BTreeSet::new();
@@ -4823,10 +4900,12 @@ fn execute_managed_runtime_command(
     data_dir: &Path,
     artifact_root: &Path,
     bundle_override: Option<&Path>,
+    expected_manifest_sha256: Option<&str>,
     release_approved_local_image_directory: Option<&Path>,
     command: ManagedRuntimeCliCommand,
 ) -> AppResult<Value> {
-    let manager = open_managed_runtime_manager(data_dir, bundle_override)?;
+    let manager =
+        open_managed_runtime_manager(data_dir, bundle_override, expected_manifest_sha256)?;
     let value = match command {
         ManagedRuntimeCliCommand::Status => serde_json::to_value(manager.status()?),
         ManagedRuntimeCliCommand::Install => serde_json::to_value(manager.install()?),
@@ -5439,38 +5518,48 @@ fn perform_exact_runtime_cleanup(
     })
 }
 
-async fn inspect_managed_runtime(data_dir: &Path, bundle_override: Option<&Path>) -> Value {
+async fn inspect_managed_runtime(
+    data_dir: &Path,
+    bundle_override: Option<&Path>,
+    expected_manifest_sha256: Option<&str>,
+) -> AppResult<Value> {
     let data_dir = data_dir.to_path_buf();
     let bundle = bundle_override.map(Path::to_path_buf);
+    let expected = expected_manifest_sha256.map(str::to_owned);
     match tokio::task::spawn_blocking(move || {
-        inspect_managed_runtime_blocking(&data_dir, bundle.as_deref())
+        inspect_managed_runtime_blocking(&data_dir, bundle.as_deref(), expected.as_deref())
     })
     .await
     {
         Ok(value) => value,
-        Err(error) => json!({
+        Err(error) => Ok(json!({
             "configured": false,
             "available": false,
             "error": format!("managed runtime status worker failed: {error}"),
-        }),
+        })),
     }
 }
 
-fn inspect_managed_runtime_blocking(data_dir: &Path, bundle_override: Option<&Path>) -> Value {
-    match open_managed_runtime_manager(data_dir, bundle_override) {
-        Ok(manager) => match manager.status() {
+fn inspect_managed_runtime_blocking(
+    data_dir: &Path,
+    bundle_override: Option<&Path>,
+    expected_manifest_sha256: Option<&str>,
+) -> AppResult<Value> {
+    match open_managed_runtime_manager(data_dir, bundle_override, expected_manifest_sha256) {
+        Ok(manager) => Ok(match manager.status() {
             Ok(status) => json!({ "configured": true, "status": status }),
             Err(error) => json!({
                 "configured": true,
                 "available": false,
                 "error": error.to_string(),
             }),
-        },
-        Err(error) => json!({
+        }),
+        Err(error) if expected_manifest_sha256.is_some() => Err(error),
+        Err(error) => Ok(json!({
             "configured": false,
             "available": false,
             "error": error.to_string(),
-        }),
+        })),
     }
 }
 
@@ -7761,6 +7850,7 @@ mod tests {
             plan: ScanPlanRequest::default(),
             data_dir: None,
             managed_runtime_bundle: None,
+            expected_managed_runtime_manifest_sha256: None,
             release_approved_local_image_directory: None,
         };
         let unknown = foreground_owner_failed(&request, None, "owner stopped".into());
@@ -7922,6 +8012,54 @@ mod tests {
         );
     }
 
+    #[test]
+    fn fixed_package_coordinators_refuse_the_expected_bundle_digest() {
+        let check = |command: &[&str]| {
+            let mut args = vec![
+                "ai-security-scanner",
+                "--managed-runtime-bundle",
+                "/unused-bundle",
+                "--expected-managed-runtime-manifest-sha256",
+                "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            ];
+            args.extend_from_slice(command);
+            let matches = Cli::command().try_get_matches_from(args).unwrap();
+            assert_eq!(
+                parse_cli_matches(&matches).unwrap_err().kind(),
+                clap::error::ErrorKind::ArgumentConflict
+            );
+        };
+        check(&["windows-installer-prerequisite"]);
+        check(&["product-uninstall", "--mode", "app-only"]);
+        #[cfg(feature = "installer-runtime-cache")]
+        check(&["windows-installer-runtime-cache"]);
+    }
+
+    #[test]
+    fn exact_runtime_cleanup_refuses_an_unrelated_bundle_digest() {
+        let matches = Cli::command()
+            .try_get_matches_from([
+                "ai-security-scanner",
+                "--managed-runtime-bundle",
+                "/unused-bundle",
+                "--expected-managed-runtime-manifest-sha256",
+                "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+                "runtime",
+                "cleanup",
+                "--case-id",
+                "case-1",
+                "--run-id",
+                "run-1",
+                "--confirm-run-id",
+                "run-1",
+            ])
+            .unwrap();
+        assert_eq!(
+            parse_cli_matches(&matches).unwrap_err().kind(),
+            clap::error::ErrorKind::ArgumentConflict
+        );
+    }
+
     #[tokio::test]
     async fn cli_cancel_fails_closed_when_the_data_directory_lease_is_owned() {
         let temporary = test_temp::tempdir().expect("temporary data directory");
@@ -7932,6 +8070,7 @@ mod tests {
         let cli = Cli {
             data_dir: Some(temporary.path().to_path_buf()),
             managed_runtime_bundle: None,
+            expected_managed_runtime_manifest_sha256: None,
             release_approved_local_image_directory: None,
             json: true,
             command: Command::Scan {

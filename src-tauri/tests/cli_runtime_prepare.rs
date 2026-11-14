@@ -5,6 +5,10 @@
 #[path = "support/fixture_runtime.rs"]
 mod fixture_runtime;
 
+#[cfg(target_os = "linux")]
+#[path = "support/managed_runtime_bundle.rs"]
+mod managed_runtime_bundle;
+
 use ai_security_scanner_lib::process_lease::DataDirectoryExclusiveLease;
 use ai_security_scanner_lib::registry::EngineRegistry;
 use serde_json::{Value, json};
@@ -98,7 +102,16 @@ impl Fixture {
         #[cfg(unix)]
         assert_eq!(fs::metadata(path).unwrap().permissions().mode() & 0o077, 0);
         let saved: Value = serde_json::from_slice(&fs::read(path).unwrap()).unwrap();
-        for field in ["schema_version", "engines", "offline", "ready", "images"] {
+        assert!(saved.get("runtime_unavailable_reason").is_some());
+        assert!(result.get("runtime_unavailable_reason").is_some());
+        for field in [
+            "schema_version",
+            "engines",
+            "offline",
+            "ready",
+            "images",
+            "runtime_unavailable_reason",
+        ] {
             assert_eq!(
                 saved[field], result[field],
                 "persisted receipt field {field}"
@@ -208,6 +221,221 @@ fn image_for(engine_id: &str) -> String {
             .as_ref()
             .expect("catalog image is digest pinned")
     )
+}
+
+#[test]
+fn managed_runtime_digest_usage_is_refused_before_creating_data() {
+    let valid = "a".repeat(64);
+    for (digest, with_bundle) in [
+        (valid.as_str(), false),
+        ("short", true),
+        (
+            "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
+            true,
+        ),
+        (
+            "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaag",
+            true,
+        ),
+    ] {
+        let fixture = Fixture::new("deny");
+        let mut command = fixture.prepare("gitleaks", true);
+        command.args(["--expected-managed-runtime-manifest-sha256", digest]);
+        if with_bundle {
+            command
+                .arg("--managed-runtime-bundle")
+                .arg(fixture.bin.join("bundle"));
+        }
+        let output = Running::spawn(command).wait();
+        assert_eq!(
+            output.status.code(),
+            Some(2),
+            "{}",
+            String::from_utf8_lossy(&output.stderr)
+        );
+        assert!(!fixture.data.exists());
+        assert!(fixture.calls().is_empty());
+    }
+}
+
+#[test]
+fn preparation_runtime_reason_no_runtime_online_and_offline() {
+    for offline in [false, true] {
+        let fixture = Fixture::new("deny");
+        let output = Running::spawn(fixture.prepare("gitleaks", offline)).wait();
+        let value = result(&output, 4);
+        assert_eq!(
+            value.get("runtime_unavailable_reason"),
+            Some(&json!("no_runtime")),
+            "{value}"
+        );
+        assert_eq!(value["ready"], false);
+        assert!(value["runtime"].is_null());
+        fixture.assert_receipt(&value);
+    }
+}
+
+#[test]
+fn preparation_runtime_reason_is_null_after_resolution_or_early_rejection() {
+    let fixture = Fixture::new("present");
+    let output = Running::spawn(fixture.prepare("gitleaks", true)).wait();
+    let value = result(&output, 0);
+    assert_eq!(value.get("runtime_unavailable_reason"), Some(&Value::Null));
+    fixture.assert_receipt(&value);
+
+    let fixture = Fixture::new("deny");
+    let output = Running::spawn(fixture.prepare("unknown-fixture-engine", true)).wait();
+    let value = result(&output, 2);
+    assert_eq!(value.get("runtime_unavailable_reason"), Some(&Value::Null));
+    assert!(!fixture.data.exists());
+}
+
+#[test]
+fn preparation_runtime_reason_rejects_an_unopenable_explicit_bundle() {
+    let fixture = Fixture::new("present");
+    let mut command = fixture.prepare("gitleaks", true);
+    command
+        .arg("--managed-runtime-bundle")
+        .arg(fixture.bin.join("missing-bundle"));
+    let output = Running::spawn(command).wait();
+    let value = result(&output, 4);
+    assert_eq!(
+        value.get("runtime_unavailable_reason"),
+        Some(&json!("managed_bundle_rejected"))
+    );
+    assert!(fixture.calls().is_empty());
+    fixture.assert_receipt(&value);
+}
+
+#[cfg(target_os = "linux")]
+#[test]
+fn managed_runtime_digest_mismatch_refuses_bundle_without_fallback() {
+    let fixture = Fixture::new("present");
+    let (bundle, digest) = managed_runtime_bundle::create(fixture._root.path());
+    let wrong = if digest == "0".repeat(64) {
+        "1".repeat(64)
+    } else {
+        "0".repeat(64)
+    };
+    let mut command = fixture.prepare("gitleaks", true);
+    command
+        .arg("--managed-runtime-bundle")
+        .arg(&bundle)
+        .args(["--expected-managed-runtime-manifest-sha256", &wrong]);
+    let output = Running::spawn(command).wait();
+    let value = result(&output, 4);
+    assert_eq!(
+        value["runtime_unavailable_reason"],
+        "managed_bundle_rejected"
+    );
+    assert_eq!(value["ready"], false);
+    assert!(value["runtime"].is_null());
+    assert!(value["images"].as_array().unwrap().iter().all(|image| {
+        image["error"]
+            .as_str()
+            .unwrap()
+            .contains("the managed-runtime bundle manifest differs from the expected digest")
+    }));
+    assert!(!fixture.data.join("managed-runtime/versions").exists());
+    assert!(
+        fixture.calls().is_empty(),
+        "no compatibility runtime detection"
+    );
+    fixture.assert_receipt(&value);
+}
+
+#[cfg(target_os = "linux")]
+#[test]
+fn managed_runtime_digest_mismatch_refuses_runtime_inspection_and_management() {
+    for args in [
+        vec!["doctor"],
+        vec!["runtime", "inspect"],
+        vec!["runtime", "managed", "status"],
+        vec!["runtime", "managed", "install"],
+    ] {
+        let fixture = Fixture::new("present");
+        let (bundle, digest) = managed_runtime_bundle::create(fixture._root.path());
+        let wrong = if digest == "0".repeat(64) {
+            "1".repeat(64)
+        } else {
+            "0".repeat(64)
+        };
+        let mut command = fixture.command(true);
+        command
+            .arg("--managed-runtime-bundle")
+            .arg(bundle)
+            .args(["--expected-managed-runtime-manifest-sha256", &wrong])
+            .args(&args);
+        let output = Running::spawn(command).wait();
+        assert_eq!(
+            output.status.code(),
+            Some(1),
+            "{args:?}: {}",
+            String::from_utf8_lossy(&output.stderr)
+        );
+        assert!(
+            String::from_utf8_lossy(&output.stderr)
+                .contains("the managed-runtime bundle manifest differs from the expected digest")
+        );
+        assert!(!fixture.data.join("managed-runtime/versions").exists());
+        assert!(
+            fixture.calls().is_empty(),
+            "{args:?} tried a compatibility runtime"
+        );
+    }
+}
+
+#[cfg(target_os = "linux")]
+#[test]
+fn managed_runtime_digest_match_preserves_preparation_result_and_env_bundle() {
+    let fixture = Fixture::new("present");
+    let (bundle, digest) = managed_runtime_bundle::create(fixture._root.path());
+    let mut baseline = fixture.prepare("gitleaks", true);
+    baseline.arg("--managed-runtime-bundle").arg(&bundle);
+    baseline.env(
+        "AI_SECURITY_SCANNER_EXPECTED_MANAGED_RUNTIME_MANIFEST_SHA256",
+        "invalid-and-ignored",
+    );
+    let mut matched = fixture.prepare("gitleaks", true);
+    matched
+        .env("AI_SECURITY_SCANNER_MANAGED_RUNTIME_BUNDLE", &bundle)
+        .args(["--expected-managed-runtime-manifest-sha256", &digest]);
+    let mut baseline = result(&Running::spawn(baseline).wait(), 0);
+    let mut matched = result(&Running::spawn(matched).wait(), 0);
+    fixture.assert_receipt(&baseline);
+    fixture.assert_receipt(&matched);
+    for value in [&mut baseline, &mut matched] {
+        for field in [
+            "request_id",
+            "started_at",
+            "completed_at",
+            "receipt_path",
+            "receipt_sha256",
+        ] {
+            value.as_object_mut().unwrap().remove(field);
+        }
+    }
+    assert_eq!(matched, baseline);
+    assert_eq!(
+        matched.get("runtime_unavailable_reason"),
+        Some(&Value::Null)
+    );
+}
+
+#[cfg(target_os = "linux")]
+#[test]
+fn preparation_runtime_reason_managed_runtime_unavailable_offline() {
+    let fixture = Fixture::new("deny");
+    let (bundle, _) = managed_runtime_bundle::create(fixture._root.path());
+    let mut command = fixture.prepare("gitleaks", true);
+    command.arg("--managed-runtime-bundle").arg(bundle);
+    let value = result(&Running::spawn(command).wait(), 4);
+    assert_eq!(
+        value.get("runtime_unavailable_reason"),
+        Some(&json!("managed_runtime_unavailable"))
+    );
+    assert!(value["runtime"].is_null());
+    fixture.assert_receipt(&value);
 }
 
 #[test]

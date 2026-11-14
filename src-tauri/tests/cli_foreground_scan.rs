@@ -5,6 +5,10 @@
 #[path = "support/fixture_runtime.rs"]
 mod fixture_runtime;
 
+#[cfg(target_os = "linux")]
+#[path = "support/managed_runtime_bundle.rs"]
+mod managed_runtime_bundle;
+
 #[allow(dead_code)]
 #[path = "../src/test_temp.rs"]
 mod test_temp;
@@ -1277,6 +1281,48 @@ fn unknown_case_and_missing_wait_are_refused_without_starting_any_runtime() {
             serde_json::to_value(&before).unwrap()
         );
     }
+    assert!(fixture.calls().is_empty());
+}
+
+#[cfg(target_os = "linux")]
+#[test]
+fn managed_runtime_digest_mismatch_refuses_foreground_scan_without_saving_a_run() {
+    let baseline = Fixture::new(true, "complete");
+    let mut command = baseline.run_command(true, "gitleaks");
+    command
+        .arg("--managed-runtime-bundle")
+        .arg(baseline._root.path().join("missing"));
+    let original = Running::spawn(command, true).wait();
+    let original_result = terminal(&original, 0);
+    assert_eq!(
+        original_result["result"]["tasks"][0]["error_code"],
+        "runtime_unavailable"
+    );
+    assert_eq!(baseline.case().scan_runs.len(), 1);
+    assert!(baseline.calls().is_empty());
+
+    let fixture = Fixture::new(true, "complete");
+    let (bundle, digest) = managed_runtime_bundle::create(fixture._root.path());
+    let wrong = if digest == "0".repeat(64) {
+        "1".repeat(64)
+    } else {
+        "0".repeat(64)
+    };
+    let mut command = fixture.run_command(true, "gitleaks");
+    command
+        .arg("--managed-runtime-bundle")
+        .arg(bundle)
+        .args(["--expected-managed-runtime-manifest-sha256", &wrong]);
+    let output = Running::spawn(command, true).wait();
+    let value = terminal(&output, 2);
+    assert_eq!(value["error_code"], "not_authorized");
+    assert_eq!(value["command_outcome"], "rejected");
+    assert!(
+        String::from_utf8_lossy(&output.stderr)
+            .contains("the managed-runtime bundle manifest differs from the expected digest")
+    );
+    assert!(fixture.case().scan_runs.is_empty());
+    assert!(!fixture.data.join("managed-runtime/versions").exists());
     assert!(fixture.calls().is_empty());
 }
 

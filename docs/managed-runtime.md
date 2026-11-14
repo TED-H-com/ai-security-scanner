@@ -9,6 +9,7 @@ The managed runtime executes containerized scanners without turning runtime admi
 ## Development skill preparation
 
 The [pinned bootstrap](skill-bootstrap.md) and development CLI `runtime prepare` can prepare selected pinned scanner images through an existing compatible runtime or an explicitly selected verified managed-runtime bundle. Automatic acquisition of that bundle on a cold host is still pending; the desktop setup behavior below does not establish that the new skill entry already provisions it. [Publication status](release-model.md) separates the two deliveries.
+Use `--expected-managed-runtime-manifest-sha256` with an explicit bundle to require its exact manifest SHA-256.
 
 ## Product-facing runtime contract
 

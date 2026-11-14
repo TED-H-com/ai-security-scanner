@@ -31,6 +31,10 @@ Before scanning, `runtime prepare --engine semgrep,gitleaks` can prepare those
 exact pinned images with the same explicit `--data-dir` and optional
 `--managed-runtime-bundle`. It reports per-image readiness without creating a case
 or scan and saves a receipt when possible.
+For `runtime prepare` and `scan run`, add `--expected-managed-runtime-manifest-sha256`
+with the bundle manifest's lowercase SHA-256 to require that exact bundle.
+`runtime_unavailable_reason` is `managed_bundle_rejected`, `no_runtime`, or
+`managed_runtime_unavailable` when runtime resolution fails, and `null` otherwise.
 Its `--offline` mode uses only running runtimes and existing or verified local
 images; it does not change the later scan's scope or network behavior.
 
