@@ -14775,6 +14775,14 @@ mod tests {
     use std::sync::Mutex;
     use tempfile::TempDir;
 
+    #[cfg(unix)]
+    fn short_runtime_test_tempdir() -> TempDir {
+        tempfile::Builder::new()
+            .prefix("asst-")
+            .tempdir_in(fs::canonicalize("/tmp").expect("canonical temporary base"))
+            .expect("short temporary root")
+    }
+
     #[cfg(windows)]
     fn windows_test_nofollow_security_file(path: &Path) -> File {
         use std::os::windows::fs::OpenOptionsExt;
@@ -18888,7 +18896,7 @@ mod tests {
         use std::os::unix::ffi::OsStrExt;
         use std::os::unix::fs::MetadataExt;
 
-        let temp = TempDir::new().expect("temporary root");
+        let temp = short_runtime_test_tempdir();
         let base = temp.path().join("short-runtimes");
         let first_state = temp.path().join("first-state");
         let second_state = temp.path().join("second-state");
@@ -18965,7 +18973,7 @@ mod tests {
         use std::os::unix::fs::{MetadataExt, PermissionsExt, symlink};
         use std::os::unix::net::UnixListener;
 
-        let temp = TempDir::new().expect("temporary root");
+        let temp = short_runtime_test_tempdir();
         let base = temp.path().join("short-runtimes");
         let state = temp.path().join("state");
         ensure_private_directory(&base).unwrap();
@@ -19256,7 +19264,7 @@ mod tests {
         use std::os::unix::fs::{PermissionsExt, symlink};
         use std::os::unix::net::UnixListener;
 
-        let temp = TempDir::new().expect("temporary root");
+        let temp = short_runtime_test_tempdir();
         let base = temp.path().join("s");
         let state = temp.path().join("state");
         ensure_private_directory(&base).unwrap();

@@ -8979,7 +8979,9 @@ mod tests {
     fn static_gateway_inspection_never_makes_a_sidecar_executable() {
         use std::os::unix::fs::PermissionsExt;
         let temporary = tempfile::tempdir().expect("temporary directory");
-        let gateway = temporary.path().join("ai-security-scanner-egress-gateway");
+        let gateway = fs::canonicalize(temporary.path())
+            .expect("canonical temporary directory")
+            .join("ai-security-scanner-egress-gateway");
         fs::write(&gateway, b"not executable").expect("gateway fixture");
         fs::set_permissions(&gateway, fs::Permissions::from_mode(0o600)).expect("gateway mode");
 

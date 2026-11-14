@@ -174,12 +174,19 @@ test("Cloudflare executable inputs and fixtures run native checks; method prose 
 });
 
 test("native skill lanes execute cache reuse, core identity, reports and archives on each OS", () => {
-  const native = ciJobSteps("skill-native").join("\n");
+  const nativeSteps = ciJobSteps("skill-native");
+  const native = nativeSteps.join("\n");
   assert.match(ciWorkflow, /skill-native:[\s\S]*?if: needs\.changes\.outputs\.skill_native == 'true'[\s\S]*?os: \[ubuntu-24\.04, macos-15, windows-2025\]/u);
   assert.match(native, /node scripts\/ci\/skill-bootstrap-smoke\.mjs/u);
   assert.match(native, /--no-default-features[\s\S]*?--features cli --test cli_build_identity --test cli_report_snapshot --test cli_case_archive[\s\S]*?--test cli_foreground_scan --test cli_runtime_prepare --test cli_cloudflare_provider --test report_fidelity_baseline/u);
   assert.match(native, /--test cli_cloudflare_bundle/u);
   assert.match(native, /--test cli_cloudflare_source_view --test cli_cloudflare_audit/u);
+  const libraryTests = nativeSteps.findIndex((step) => step.startsWith("name: Run the library unit tests on macOS and Windows"));
+  const foregroundTests = nativeSteps.findIndex((step) => step.startsWith("name: Run foreground scans, runtime preparation, reports and archives with a fixture runtime"));
+  const evidence = nativeSteps.findIndex((step) => step.startsWith("name: Retain native bootstrap evidence"));
+  assert.ok(foregroundTests >= 0 && libraryTests > foregroundTests && evidence > libraryTests);
+  assert.match(nativeSteps[libraryTests], /^ {8}if: \$\{\{ !cancelled\(\) && runner\.os != 'Linux' && needs\.changes\.outputs\.rust_core == 'true' \}\}$/mu);
+  assert.match(nativeSteps[libraryTests], /run: >-\s+cargo test --locked --no-fail-fast --package ai-security-scanner --no-default-features\s+--features cli --lib\s*$/u);
   assert.doesNotMatch(native, /installer-runtime-cache|desktop:prepare|bundles (?:nsis|msi|dmg|deb)|npm run tauri/u);
   assert.doesNotMatch(ciWorkflow, /skill-runtime-smoke\.py/u);
   const contracts = ciJobSteps("skill-bootstrap").join("\n");
