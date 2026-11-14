@@ -16,6 +16,25 @@ assert.equal(receipt.schemaVersion, 1);
 assert.equal(receipt.liveTargetContact, false);
 assert.equal(receipt.baselineCoreRevision, '6e259b497b87fb8aa2ece1f3b512cc29c9ea5af7');
 assert.equal(receipt.scenarios.length, 2);
+if (Object.hasOwn(receipt, 'replaces')) {
+  const replacement = receipt.replaces;
+  assert(replacement && typeof replacement === 'object' && !Array.isArray(replacement));
+  const revision = /^[0-9a-f]{40}$/;
+  assert.match(receipt.baselineCoreRevision, revision);
+  assert.match(replacement.baselineCoreRevision, revision);
+  assert.notEqual(receipt.baselineCoreRevision, replacement.baselineCoreRevision);
+  assert(typeof replacement.productVersion === 'string' && replacement.productVersion.trim());
+  assert.match(replacement.receiptSha256, /^[0-9a-fA-F]{64}$/);
+  assert(typeof replacement.reason === 'string' && replacement.reason.trim());
+  assert.equal(replacement.inputs, 'carried over byte-identical');
+  assert(Array.isArray(replacement.changedDocuments));
+  const documents = new Set(receipt.scenarios.flatMap((scenario) =>
+    Object.keys(scenario.documents).map((document) => `${scenario.name}/${document}`)));
+  for (const document of replacement.changedDocuments) {
+    assert(typeof document === 'string' && /^[^/]+\/[^/]+$/.test(document) && documents.has(document));
+  }
+  assert.deepEqual(replacement.changedDocuments, [...new Set(replacement.changedDocuments)].sort());
+}
 let documentCount = 0;
 for (const scenario of receipt.scenarios) {
   const input = gunzipSync(await readFile(path.join(directory, scenario.name, 'case.json.gz')));
@@ -60,3 +79,6 @@ for (const capture of visual.captures) {
   assert.equal(capture.fontsReady, true, capture.file);
 }
 console.log(`Verified 2 frozen cases, ${documentCount} document snapshots, 36 signed-bundle payload hashes, and ${visual.captures.length} screenshots.`);
+if (Object.hasOwn(receipt, 'replaces')) {
+  console.log(`Replaced revision ${receipt.replaces.baselineCoreRevision}; ${receipt.replaces.changedDocuments.length} changed documents.`);
+}

@@ -1,7 +1,10 @@
 import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
-import { readFileSync } from "node:fs";
+import { cpSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import path from "node:path";
 import test from "node:test";
+import { fileURLToPath } from "node:url";
 import { CORE_RESOURCE_PATHS } from "../../scripts/skill/input-manifest.mjs";
 
 import {
@@ -276,7 +279,7 @@ test("ordinary frontend changes schedule only the fast frontend lane", () => {
   });
 });
 
-test("frozen report inputs schedule Rust replay and the corpus verifier is always run", () => {
+test("frozen report inputs schedule Rust replay and the corpus verifier is always run", (t) => {
   for (const path of [
     "tests/fixtures/report-fidelity/all-detectors/case.json.gz",
     "tests/fixtures/report-fidelity/mixed-terminal/en-standard.html.gz",
@@ -289,6 +292,61 @@ test("frozen report inputs schedule Rust replay and the corpus verifier is alway
   }
   assert.ok(ciJobSteps("changes").some((step) =>
     step.includes("run: node scripts/verify-report-fidelity-baseline.mjs") && !/\n\s+if:/.test(step)));
+
+  const root = fileURLToPath(new URL("../../", import.meta.url));
+  const directory = mkdtempSync(path.join(tmpdir(), "report-fidelity-verifier-"));
+  t.after(() => rmSync(directory, { recursive: true, force: true }));
+  mkdirSync(path.join(directory, "scripts"));
+  cpSync(path.join(root, "scripts/verify-report-fidelity-baseline.mjs"),
+    path.join(directory, "scripts/verify-report-fidelity-baseline.mjs"));
+  const corpus = path.join(directory, "tests/fixtures/report-fidelity");
+  cpSync(path.join(root, "tests/fixtures/report-fidelity"), corpus, { recursive: true });
+  const receiptPath = path.join(corpus, "receipt.json");
+  const receipt = JSON.parse(readFileSync(receiptPath, "utf8"));
+  const run = () => spawnSync(process.execPath, [path.join(directory, "scripts/verify-report-fidelity-baseline.mjs")], {
+    encoding: "utf8",
+  });
+  const replacement = () => ({
+    baselineCoreRevision: "0123456789abcdef0123456789abcdef01234567",
+    productVersion: "0.5.0",
+    receiptSha256: "a".repeat(64),
+    reason: "Reviewed report wording",
+    inputs: "carried over byte-identical",
+    changedDocuments: ["all-detectors/en-standard.html", "mixed-terminal/report.case.tar.gz"],
+  });
+
+  let result = run();
+  assert.equal(result.status, 0, result.stderr);
+  assert.doesNotMatch(result.stdout, /Replaced revision/);
+  receipt.replaces = replacement();
+  writeFileSync(receiptPath, JSON.stringify(receipt));
+  result = run();
+  assert.equal(result.status, 0, result.stderr);
+  assert.match(result.stdout, /Replaced revision 0123456789abcdef0123456789abcdef01234567.*2 changed documents/);
+
+  for (const value of [
+    null,
+    [],
+    { ...replacement(), baselineCoreRevision: "A".repeat(40) },
+    { ...replacement(), baselineCoreRevision: receipt.baselineCoreRevision },
+    { ...replacement(), productVersion: "" },
+    { ...replacement(), receiptSha256: "g".repeat(64) },
+    { ...replacement(), receiptSha256: "a".repeat(63) },
+    { ...replacement(), reason: "" },
+    { ...replacement(), reason: "   " },
+    { ...replacement(), inputs: "recreated" },
+    { ...replacement(), changedDocuments: "all-detectors/en-standard.html" },
+    { ...replacement(), changedDocuments: ["all-detectors/en-standard.html", "all-detectors/en-standard.html"] },
+    { ...replacement(), changedDocuments: ["mixed-terminal/en-standard.html", "all-detectors/en-standard.html"] },
+    { ...replacement(), changedDocuments: ["all-detectors/unknown.html"] },
+    { ...replacement(), changedDocuments: ["all-detectors/extra/en-standard.html"] },
+    { ...replacement(), changedDocuments: [42] },
+  ]) {
+    receipt.replaces = value;
+    writeFileSync(receiptPath, JSON.stringify(receipt));
+    result = run();
+    assert.notEqual(result.status, 0, `accepted invalid replacement: ${JSON.stringify(value)}`);
+  }
 });
 
 test("component render tests and their runner config reach the frontend lane", () => {

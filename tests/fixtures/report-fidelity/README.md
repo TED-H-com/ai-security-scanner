@@ -83,6 +83,20 @@ Capture refuses a nonempty destination and changes to the named baseline core.
 Do not update expected outputs to make a renderer extraction pass. Intentional
 product changes need a separately reviewed replacement corpus and receipt.
 
+To prepare a reviewed replacement from a clean committed production core:
+
+```sh
+AI_SCANNER_REPORT_BASELINE_REPLACE=/tmp/ai-scanner-report-fidelity-replacement \
+AI_SCANNER_REPORT_BASELINE_REPLACE_REASON='Describe the reviewed product change' \
+  cargo test --locked --manifest-path src-tauri/Cargo.toml --no-default-features \
+  --test report_fidelity_baseline report_fidelity::replace_report_fidelity_outputs \
+  -- --exact --ignored --nocapture
+```
+
+Input files are carried over byte-identical. Output snapshots are the exact
+bytes of the exporters at the named revision. The receipt's `replaces` object
+names the replaced revision, the reason, and the changed documents.
+
 ## Rendered evidence
 
 `visual/` contains 20 fresh Chromium screenshots: both scenarios and locales at
@@ -107,3 +121,7 @@ The script opens local files and blocks HTTP(S) page requests. It preserves the
 report HTML, opens one existing evidence disclosure for the expanded view, and
 uses Chromium print media for the print view. Screenshots do not imply that a
 new scanner, provider, or restore workflow has been executed.
+
+## Replacement history
+
+None yet.
