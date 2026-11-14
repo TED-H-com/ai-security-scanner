@@ -34,7 +34,7 @@ Without Docker or Podman, `prepare --capability scan` can reuse an installed des
 
 The preparation flow was verified end to end on a Linux host without Docker or Podman on `PATH`; no bundle was installed there, so reuse itself is covered by tests only. Foreground commands report what was actually saved, cancellation stops a managed-runtime start, and every console interruption ends with a settled outcome.
 
-Source-audit and combined reports say what each source checked in the reader's language. The desktop app also shows source-audit counts and coverage gaps in Japanese.
+Source-audit and combined reports say what each source checked in the reader's language. The desktop app also shows source-audit counts, coverage details, finding explanations and next steps in Japanese.
 
 Archives refuse files owned by the restore workspace. Cloudflare source audits state refusal reasons and archive limits; checks of bundle directories also notice entries added or removed within one clock tick.
 
