@@ -5024,10 +5024,37 @@ test("imported Strix tasks retain file provenance without inventing scanner runt
   assert.equal(workspace.runs[0]!.coveredAssetCount, 0);
 });
 
+for (const [label, taskKind] of [
+  ["missing provider and admission", { kind: "agent_audit" }],
+  ["another provider", { kind: "agent_audit", provider_id: "other", admission_id: "a" }],
+  ["empty admission", { kind: "agent_audit", provider_id: "cloudflare-security-audit", admission_id: "" }],
+  ["non-string admission", { kind: "agent_audit", provider_id: "cloudflare-security-audit", admission_id: 42 }],
+] as const) {
+  test(`source audit task rejects ${label}`, () => {
+    const run = adaptLocalhostCoverageFixture({ task_kind: taskKind }).runs[0]!;
+    assert.deepEqual(run.engineRuns[0]!.taskKind, { kind: "invalid_task" });
+    assert.equal(run.engineRuns[0]!.status, "not_executed");
+    assert.equal(run.coveredAssetCount, 0);
+  });
+}
+
+test("source audit task accepts an admitted Cloudflare record", () => {
+  const run = adaptLocalhostCoverageFixture({
+    task_kind: { kind: "agent_audit", provider_id: "cloudflare-security-audit", admission_id: "a" },
+  }).runs[0]!;
+  assert.deepEqual(run.engineRuns[0]!.taskKind, {
+    kind: "agent_audit", providerId: "cloudflare-security-audit", admissionId: "a",
+  });
+});
+
 test("admitted audit wire tasks, native reports, evidence, and technical execution survive the desktop snapshot", async () => {
   const { nativeAuditReport, nativeAuditCase } = await import("../support/sourceAudit.ts");
   const report = nativeAuditReport();
   const nativeCase = nativeAuditCase();
+  nativeCase.scan_runs[0]!.engine_runs[0]!.task_kind!.provider_id = "cloudflare-security-audit";
+  report.technical_details.tasks[0]!.execution = {
+    kind: "agent_audit", provider_id: "cloudflare-security-audit", admission_id: "admission-one",
+  };
   nativeCase.assets.push({ id: "asset-status", kind: "repository", name: "Example project", provider: null, region: null,
     identifiers: [], discovered_from: [], candidate: false, owner_confirmed: true });
   nativeCase.findings.push({ id: "confirmed-one", case_id: "audit-case", fingerprint: "native-one", title: "Native title",
@@ -5050,7 +5077,7 @@ test("admitted audit wire tasks, native reports, evidence, and technical executi
   assert.deepEqual(adapted.sourceAudits, report.source_audits);
   assert.equal(adapted.findings[0].sourceAudit, true);
   assert.deepEqual(adapted.findings[0].evidenceReferences[0].providerRecord, report.findings[0]!.evidence_references[0]!.provider_record);
-  assert.deepEqual(adapted.technicalDetails.tasks[0].execution, { kind: "agent_audit", providerId: "cloudflare", admissionId: "admission-one" });
+  assert.deepEqual(adapted.technicalDetails.tasks[0].execution, { kind: "agent_audit", providerId: "cloudflare-security-audit", admissionId: "admission-one" });
   const task = workspace.runs[0].engineRuns[0];
   assert.deepEqual(task.taskKind, adapted.technicalDetails.tasks[0].execution);
   assert.equal(task.status, "partial");
