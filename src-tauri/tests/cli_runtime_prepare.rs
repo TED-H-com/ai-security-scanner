@@ -1,62 +1,21 @@
 //! Runtime preparation uses a private executable fixture. No container service,
 //! registry, scan target, or real scanner is contacted by these tests.
-#![cfg(all(feature = "cli", unix))]
+#![cfg(feature = "cli")]
+
+#[path = "support/fixture_runtime.rs"]
+mod fixture_runtime;
 
 use ai_security_scanner_lib::process_lease::DataDirectoryExclusiveLease;
 use ai_security_scanner_lib::registry::EngineRegistry;
 use serde_json::{Value, json};
 use std::fs;
 use std::io::{Read, Write};
+#[cfg(unix)]
 use std::os::unix::fs::PermissionsExt;
 use std::path::{Path, PathBuf};
 use std::process::{Child, Command, Output, Stdio};
 use std::thread::{self, JoinHandle};
 use std::time::{Duration, Instant};
-
-const FAKE_DOCKER: &str = r#"#!/usr/bin/python3
-import hashlib, json, os, pathlib, sys, time
-root = pathlib.Path(__file__).parent
-args = sys.argv[1:]
-with (root / 'calls.jsonl').open('a') as log:
-    log.write(json.dumps(args) + '\n')
-mode = (root / 'mode').read_text().strip()
-if mode == 'deny':
-    print('fixture refuses runtime contact', file=sys.stderr)
-    sys.exit(91)
-if args[0] == 'version':
-    print('99.0.0-preparation-fixture')
-elif args[0] == 'info':
-    security = ['name=seccomp,profile=builtin', 'name=rootless']
-    print(json.dumps({'serverVersion':'99.0.0-preparation-fixture','securityOptions':security}
-                    if 'serverVersion' in args[-1] else security))
-elif args[:2] == ['image', 'inspect']:
-    image = args[-1]
-    if mode == 'block':
-        (root / 'blocked.json').write_text(json.dumps({'pid':os.getpid(),'image':image}))
-        deadline = time.monotonic() + 12
-        while not (root / 'release').exists():
-            if time.monotonic() > deadline:
-                print('fixture watchdog expired', file=sys.stderr)
-                sys.exit(92)
-            time.sleep(0.01)
-    if mode in ('missing', 'mixed') and not (root / hashlib.sha256(image.encode()).hexdigest()).exists():
-        print('No such image', file=sys.stderr)
-        sys.exit(1)
-    print(json.dumps([{'Id':'sha256:' + hashlib.sha256(image.encode()).hexdigest(), 'RepoDigests':[image]}]))
-elif args[0] == 'pull':
-    image = args[-1]
-    if '@sha256:' not in image:
-        print('fixture refuses unpinned pull', file=sys.stderr)
-        sys.exit(93)
-    if mode == 'mixed' and 'engine-gitleaks@' in image:
-        print('synthetic registry failure', file=sys.stderr)
-        sys.exit(9)
-    (root / hashlib.sha256(image.encode()).hexdigest()).write_text('present')
-    print('pinned image retrieved')
-else:
-    print('preparation must not create containers or networks: ' + repr(args), file=sys.stderr)
-    sys.exit(94)
-"#;
 
 struct Fixture {
     _root: tempfile::TempDir,
@@ -70,9 +29,7 @@ impl Fixture {
         let directory = paths::canonical(root.path());
         let bin = directory.join("fake-runtime");
         fs::create_dir(&bin).unwrap();
-        fs::write(bin.join("docker"), FAKE_DOCKER).unwrap();
-        fs::set_permissions(bin.join("docker"), fs::Permissions::from_mode(0o700)).unwrap();
-        fs::write(bin.join("mode"), mode).unwrap();
+        fixture_runtime::install(&bin, "preparation", mode);
         Self {
             data: directory.join("data"),
             _root: root,
@@ -138,6 +95,7 @@ impl Fixture {
                 .unwrap()
                 .starts_with(self.data.canonicalize().unwrap())
         );
+        #[cfg(unix)]
         assert_eq!(fs::metadata(path).unwrap().permissions().mode() & 0o077, 0);
         let saved: Value = serde_json::from_slice(&fs::read(path).unwrap()).unwrap();
         for field in ["schema_version", "engines", "offline", "ready", "images"] {
@@ -368,6 +326,7 @@ fn held_writer_lease_rejects_preparation_before_runtime_contact() {
     assert!(fixture.calls().is_empty());
 }
 
+#[cfg(unix)]
 #[test]
 fn sigint_waits_for_the_bounded_runtime_operation_then_saves_cancellation_and_releases_lease() {
     let fixture = Fixture::new("block");
@@ -403,9 +362,8 @@ fn sigint_waits_for_the_bounded_runtime_operation_then_saves_cancellation_and_re
             .any(|image| image["status"] == "cancelled")
     );
     fixture.assert_receipt(&value);
-    assert_eq!(
-        unsafe { libc::kill(blocked["pid"].as_i64().unwrap() as libc::pid_t, 0) },
-        -1,
+    assert!(
+        fixture_runtime::process_is_gone(blocked["pid"].as_u64().unwrap() as u32),
         "runtime child must exit before preparation releases ownership"
     );
     DataDirectoryExclusiveLease::acquire(&fixture.data).unwrap();
@@ -462,13 +420,40 @@ fn bootstrap_control_pipe_eof_cancel_and_terminate_preserve_owned_cleanup_and_re
                 .any(|image| image["status"] == "cancelled")
         );
         fixture.assert_receipt(&value);
-        assert_eq!(
-            unsafe { libc::kill(blocked["pid"].as_i64().unwrap() as libc::pid_t, 0) },
-            -1,
+        assert!(
+            fixture_runtime::process_is_gone(blocked["pid"].as_u64().unwrap() as u32),
             "parent control must not orphan the runtime operation"
         );
         DataDirectoryExclusiveLease::acquire(&fixture.data).unwrap();
     }
+}
+
+#[test]
+fn bootstrap_runtime_preparation_returns_the_core_receipt_for_the_selected_engine() {
+    let fixture = Fixture::new("present");
+    let bootstrap =
+        Path::new(env!("CARGO_MANIFEST_DIR")).join("../scripts/skill/bootstrap-core.mjs");
+    let output = Command::new(fixture_runtime::node())
+        .args(["--input-type=module", "-e", r#"
+            import { pathToFileURL } from 'node:url';
+            const [module, executable, dataDir] = process.argv.slice(1);
+            const { invokeRuntimePreparation } = await import(pathToFileURL(module));
+            const result = await invokeRuntimePreparation(executable, { dataDir, engineIds: ['gitleaks'], offline: true }, { environment: process.env });
+            process.stdout.write(JSON.stringify(result));
+        "#])
+        .arg(bootstrap)
+        .arg(env!("CARGO_BIN_EXE_ai-security-scanner-cli"))
+        .arg(&fixture.data)
+        .env("PATH", &fixture.bin)
+        .env_remove("AI_SECURITY_SCANNER_MANAGED_RUNTIME_BUNDLE")
+        .env_remove("AI_SECURITY_SCANNER_RELEASE_APPROVED_LOCAL_IMAGE_DIRECTORY")
+        .output().unwrap();
+    let value = result(&output, 0);
+    assert_eq!(value["ready"], true);
+    assert_eq!(value["engines"], json!(["gitleaks"]));
+    fixture.assert_receipt(&value);
+    fixture.assert_no_execution();
+    assert!(fixture.calls().iter().all(|call| call[0] != "pull"));
 }
 
 #[path = "support/paths.rs"]

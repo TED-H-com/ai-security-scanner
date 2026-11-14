@@ -148,12 +148,12 @@ jobs:
         env:
           SKILL_SMOKE_RESULT: ${{ runner.temp }}/skill-bootstrap-native.json
         run: node scripts/ci/skill-bootstrap-smoke.mjs
-      - name: Replay reports and round-trip archives without scanner runtime
+      - name: Run foreground scans, runtime preparation, reports and archives with a fixture runtime
         if: ${{ !cancelled() }}
         run: >-
           cargo test --locked --no-fail-fast --package ai-security-scanner --no-default-features
           --features cli --test cli_build_identity --test cli_report_snapshot --test cli_case_archive
-          --test cli_runtime_prepare --test cli_cloudflare_provider --test report_fidelity_baseline
+          --test cli_foreground_scan --test cli_runtime_prepare --test cli_cloudflare_provider --test report_fidelity_baseline
           --test cli_cloudflare_bundle --test cli_cloudflare_source_view --test cli_cloudflare_audit
       - name: Retain native bootstrap evidence
         if: ${{ !cancelled() && steps.native-smoke.outcome == 'success' }}
