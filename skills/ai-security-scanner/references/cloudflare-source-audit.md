@@ -307,6 +307,8 @@ a finding is true. The retained reported-only bundle keeps its own false flags.
 
 ## Failures and recovery
 
+A stderr line with `schema_version` `ai-security-scanner.bootstrap-error/v1` means the core did not run. Handle its `error` without applying the CLI exit table or replaying the request.
+
 `unsafe_temporary_directory`: stop, tell the user the temporary-directory setting is unsafe, and do not change permissions yourself.
 
 For source-view and audit custody commands, handle exit 0 as a returned outcome

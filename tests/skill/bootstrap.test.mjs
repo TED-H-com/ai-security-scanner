@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { createHash } from 'node:crypto';
-import { execFileSync } from 'node:child_process';
+import { execFileSync, spawn } from 'node:child_process';
 import { chmod, link, lstat, mkdir, mkdtemp, readFile, readdir, realpath, rm, symlink, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { basename, dirname, join } from 'node:path';
@@ -67,7 +67,7 @@ async function fixture(t) {
         target: toolchain.target, rustc_version: toolchain.rustc_version, features: configuration.features,
         bootstrap_input_sha256: manifest.inputDigest, bootstrap_recipe: RECIPE, report_source_sha256: 'd'.repeat(64),
       };
-      const bytes = `#!/usr/bin/env node\n// IDENTITY ${JSON.stringify(identity)}\nprocess.exit(Number(process.argv.at(-1) ?? 0));\n`;
+      const bytes = `#!/usr/bin/env node\n// IDENTITY ${JSON.stringify(identity)}\n${state.runtimeScript ?? 'process.exit(Number(process.argv.at(-1) ?? 0));'}\n`;
       await writeFile(join(output, `ai-security-scanner-cli${process.platform === 'win32' ? '.exe' : ''}`), bytes, { mode: 0o700 });
     },
     readIdentity: async executable => {
@@ -215,7 +215,7 @@ test('dedicated cache refuses existing user directory and insecure permissions',
   }
 });
 
-test('cache refuses symbolic link traversal and artifact replacement', { skip: process.platform === 'win32' }, async t => {
+test('cache refuses symbolic link traversal and artifact replacement', { skip: process.platform === 'win32' ? 'Symbolic link creation requires Windows privileges' : false }, async t => {
   const f = await fixture(t);
   const outside = join(f.root, 'outside');
   await mkdir(outside, { mode: 0o700 });
@@ -233,7 +233,7 @@ test('Cargo configuration in the cache ancestry or Cargo home is refused', async
   const f = await fixture(t);
   await mkdir(join(f.root, '.cargo'));
   await writeFile(join(f.root, '.cargo', 'config.toml'), '[build]\nrustc-wrapper="evil"\n');
-  await assert.rejects(prepareBootstrap(f.options, f.deps), { code: 'cargo_configuration_override' });
+  await assert.rejects(prepareBootstrap(f.options, f.deps), { code: 'cargo_configuration_override', message: /Temporarily rename this file.*CARGO_HOME/ });
   assert.equal(f.state.builds, 0);
   await rm(join(f.root, '.cargo'), { recursive: true });
   await mkdir(join(f.root, 'cargo'));
@@ -340,9 +340,9 @@ async function runtimeChild(t, script) {
   return { root, executable, options: { capability: 'scan', engineIds: ['gitleaks'], dataDir: join(root, 'data'), offline: true } };
 }
 
-test('runtime child keeps fixed argv literal and removes ambient product source overrides', { skip: process.platform === 'win32' }, async t => {
+test('runtime child keeps fixed argv literal and removes ambient product source overrides', async t => {
   const f = await runtimeChild(t, `process.stdout.write(JSON.stringify({schema_version:'ai-security-scanner.runtime-preparation/v1',ready:true,offline:true,engines:['gitleaks'],runtime:{args:process.argv.slice(2),ambient:Object.keys(process.env).filter(key=>['AI_SECURITY_SCANNER_DATA_DIR','AI_SECURITY_SCANNER_MANAGED_RUNTIME_BUNDLE','AI_SECURITY_SCANNER_RELEASE_APPROVED_LOCAL_IMAGE_DIRECTORY'].includes(key.toUpperCase()))},images:[{role:'engine',engine_ids:['gitleaks'],image:'fixture@sha256:${'a'.repeat(64)}',status:'ready',error:null}],receipt_path:'fixture-receipt'}));`);
-  const result = await invokeRuntimePreparation(f.executable, f.options, { environment: {
+  const result = await invokeRuntimePreparation(process.execPath, f.options, { argvPrefix: [f.executable], environment: {
     ...process.env,
     AI_SECURITY_SCANNER_MANAGED_RUNTIME_BUNDLE: '/ambient/unselected',
     ai_security_scanner_managed_runtime_bundle: '/ambient/lowercase-bundle',
@@ -353,25 +353,25 @@ test('runtime child keeps fixed argv literal and removes ambient product source 
   assert.deepEqual(result.runtime.ambient, []);
 });
 
-test('runtime child preserves failed receipts and refuses successful malformed or mismatched JSON', { skip: process.platform === 'win32' }, async t => {
+test('runtime child preserves failed receipts and refuses successful malformed or mismatched JSON', async t => {
   const f = await runtimeChild(t, `process.stdout.write(JSON.stringify({schema_version:'ai-security-scanner.runtime-preparation/v1',ready:false,offline:true,engines:['gitleaks'],runtime:null,images:[{status:'failed',error:'Unavailable'}],receipt_path:'preserved-receipt'}));process.exitCode=3;`);
-  await assert.rejects(invokeRuntimePreparation(f.executable, f.options), error => {
+  await assert.rejects(invokeRuntimePreparation(process.execPath, f.options, { argvPrefix: [f.executable] }), error => {
     assert.equal(error.exitCode, 3);
     assert.equal(error.details.receipt_path, 'preserved-receipt');
     assert.equal(error.details.ready, false);
     return true;
   });
   await writeFile(f.executable, `#!${process.execPath}\nprocess.stdout.write('not JSON');\n`, { mode: 0o700 });
-  await assert.rejects(invokeRuntimePreparation(f.executable, f.options), { code: 'invalid_runtime_preparation_result' });
+  await assert.rejects(invokeRuntimePreparation(process.execPath, f.options, { argvPrefix: [f.executable] }), { code: 'invalid_runtime_preparation_result' });
   await writeFile(f.executable, `#!${process.execPath}\nprocess.stdout.write(JSON.stringify(${JSON.stringify(runtimeResult(f.options, { engines: ['semgrep'] }))}));\n`, { mode: 0o700 });
-  await assert.rejects(invokeRuntimePreparation(f.executable, f.options), { code: 'invalid_runtime_preparation_result' });
+  await assert.rejects(invokeRuntimePreparation(process.execPath, f.options, { argvPrefix: [f.executable] }), { code: 'invalid_runtime_preparation_result' });
 });
 
-test('runtime preparation cancellation waits for the child owner to settle before returning', { skip: process.platform === 'win32' }, async t => {
+test('runtime preparation cancellation waits for the child owner to settle before returning', async t => {
   const f = await runtimeChild(t, `import fs from 'node:fs';process.stdin.on('data',bytes=>{if(bytes.toString()!=='terminate\\n')process.exit(2);setTimeout(()=>{fs.writeFileSync(process.env.SETTLED,'done');process.stdout.write(JSON.stringify({schema_version:'ai-security-scanner.runtime-preparation/v1',ready:false,offline:true,engines:['gitleaks'],runtime:null,images:[],receipt_path:'cancelled-receipt'}));process.exit(143);},80)});`);
   const settled = join(f.root, 'settled');
   const listeners = process.listenerCount('SIGTERM');
-  await assert.rejects(invokeRuntimePreparation(f.executable, f.options, { environment: { ...process.env, SETTLED: settled }, timeoutMs: 50 }), error => {
+  await assert.rejects(invokeRuntimePreparation(process.execPath, f.options, { argvPrefix: [f.executable], environment: { ...process.env, SETTLED: settled }, timeoutMs: 50 }), error => {
     assert.equal(error.code, 'runtime_preparation_deadline');
     assert.equal(error.exitCode, 4);
     assert.equal(error.details.receipt_path, 'cancelled-receipt');
@@ -381,19 +381,19 @@ test('runtime preparation cancellation waits for the child owner to settle befor
   assert.equal(process.listenerCount('SIGTERM'), listeners);
 });
 
-test('runtime output limit cancels and joins the owner without retaining unbounded JSON', { skip: process.platform === 'win32' }, async t => {
+test('runtime output limit cancels and joins the owner without retaining unbounded JSON', async t => {
   const f = await runtimeChild(t, `import fs from 'node:fs';process.stdin.on('data',bytes=>{if(bytes.toString()!=='terminate\\n')process.exit(2);setTimeout(()=>{fs.writeFileSync(process.env.SETTLED,'done');process.exit(143)},40)});process.stdout.write('x'.repeat(2*1024*1024));`);
   const settled = join(f.root, 'settled');
-  await assert.rejects(invokeRuntimePreparation(f.executable, f.options, { environment: { ...process.env, SETTLED: settled } }), { code: 'runtime_preparation_output_limit' });
+  await assert.rejects(invokeRuntimePreparation(process.execPath, f.options, { argvPrefix: [f.executable], environment: { ...process.env, SETTLED: settled } }), { code: 'runtime_preparation_output_limit' });
   assert.equal(await readFile(settled, 'utf8'), 'done');
 });
 
-test('SIGINT reaches the runtime owner through its control pipe and preserves its cancelled receipt', { skip: process.platform === 'win32' }, async t => {
+test('SIGINT reaches the runtime owner through its control pipe and preserves its cancelled receipt', async t => {
   const f = await runtimeChild(t, `import fs from 'node:fs';process.stdin.on('data',bytes=>{if(bytes.toString()!=='cancel\\n')process.exit(2);setTimeout(()=>{fs.writeFileSync(process.env.SETTLED,'done');process.stdout.write(JSON.stringify({schema_version:'ai-security-scanner.runtime-preparation/v1',ready:false,offline:true,engines:['gitleaks'],runtime:null,images:[],receipt_path:'interrupted-receipt'}));process.exit(130)},40)});fs.writeFileSync(process.env.READY,'ready');`);
   const ready = join(f.root, 'ready');
   const settled = join(f.root, 'settled');
   const before = process.listenerCount('SIGINT');
-  const completion = invokeRuntimePreparation(f.executable, f.options, { environment: { ...process.env, READY: ready, SETTLED: settled }, timeoutMs: 5000 }).then(
+  const completion = invokeRuntimePreparation(process.execPath, f.options, { argvPrefix: [f.executable], environment: { ...process.env, READY: ready, SETTLED: settled }, timeoutMs: 5000 }).then(
     () => assert.fail('interruption must not report ready'), error => error,
   );
   let announced = false;
@@ -426,10 +426,10 @@ test('ready runtime results must cover exactly the selected engines with pinned 
   assert.equal(f.state.builds, 1);
 });
 
-test('run rechecks artifacts and propagates child exit without shell evaluation', { skip: process.platform === 'win32' }, async t => {
+test('run rechecks artifacts and propagates child exit without shell evaluation', async t => {
   const f = await fixture(t);
   const result = await prepareBootstrap(f.options, f.deps);
-  assert.equal(await runPrepared(result, ['--data-dir', join(f.root, 'data'), '17'], f.deps), 17);
+  assert.equal(await runPrepared(result, ['--data-dir', join(f.root, 'data'), '17'], { ...f.deps, commandExecutable: process.execPath, argvPrefix: [result.executable] }), 17);
   await writeFile(result.executable, 'corrupted between prepare and run');
   await assert.rejects(runPrepared(result, ['build-identity'], f.deps), { code: 'artifact_digest_mismatch' });
 });
@@ -443,7 +443,7 @@ test('run requires an explicit data namespace before ordinary commands', () => {
   }
 });
 
-test('unsafe writable ancestors and caches inside source are refused before creating entries', { skip: process.platform === 'win32' }, async t => {
+test('unsafe writable ancestors and caches inside source are refused before creating entries', { skip: process.platform === 'win32' ? 'POSIX permission modes are required' : false }, async t => {
   const f = await fixture(t);
   const writable = join(f.root, 'writable');
   await mkdir(writable);
@@ -565,7 +565,7 @@ test('Windows ACL verification fails closed for missing paths, unknown ACEs, and
   assert.throws(() => assertWindowsAclSnapshot(reparse, request), { code: 'unsafe_windows_cache_acl' });
 });
 
-test('native Windows ACL verifier accepts private directories and rejects a broad writable ACE', { skip: process.platform !== 'win32' }, async t => {
+test('native Windows ACL verifier accepts private directories and rejects a broad writable ACE', { skip: process.platform !== 'win32' ? 'Windows ACL verification requires Windows' : false }, async t => {
   const root = await realpath(await mkdtemp(join(tmpdir(), 'scanner-native-acl-test-')));
   t.after(() => rm(root, { recursive: true, force: true }));
   const powershell = join(process.env.SystemRoot || process.env.SYSTEMROOT, 'System32', 'WindowsPowerShell', 'v1.0', 'powershell.exe');
@@ -597,4 +597,182 @@ $acl.AddAccessRule($rule)
   execFileSync(powershell, ['-NoProfile', '-NonInteractive', '-Command', broaden], { env, timeout: 15_000 });
   await assert.rejects(auditWindowsCachePaths(request), { code: 'unsafe_windows_cache_acl' });
   await assert.rejects(auditWindowsCachePaths([{ ...request[0], access: 'ancestor' }]), { code: 'unsafe_windows_cache_acl' });
+});
+
+test('run selects a prepared core without inspecting or building a toolchain', async t => {
+  const f = await fixture(t);
+  const { loadPreparedBootstrap } = await import('../../scripts/skill/bootstrap-core.mjs');
+  await assert.rejects(loadPreparedBootstrap(f.options, f.deps), { code: 'core_not_prepared' });
+  await prepareBootstrap(f.options, f.deps);
+  const result = await loadPreparedBootstrap(f.options, { ...f.deps, inspectToolchain: () => { throw Error('toolchain'); }, build: () => { throw Error('build'); } });
+  assert.equal(result.cache_hit, true);
+  assert.equal(f.state.builds, 1);
+  await writeFile(join(f.source, 'core.rs'), 'changed');
+  await assert.rejects(loadPreparedBootstrap(f.options, f.deps), { code: 'core_not_prepared' });
+});
+
+test('archive operations that do not read data accept no data directory', () => {
+  for (const action of ['verify', 'restore-preview', 'restore']) assert.deepEqual(validateRunArguments(['--json', 'archive', action, '--archive', '/x']), ['archive', action, '--archive', '/x']);
+  assert.throws(() => validateRunArguments(['--json', 'archive', 'create']), { code: 'explicit_data_directory_required' });
+});
+
+test('doctor gives a Rust installation step when tools are missing', async t => {
+  const f = await fixture(t);
+  const deps = { ...f.deps, inspectToolchain: undefined, environment: { PATH: join(f.root, 'missing'), HOME: join(f.root, 'home') } };
+  delete deps.inspectToolchain;
+  const result = await doctorBootstrap(f.options, deps);
+  assert.match(result.checks.find(c => c.name === 'rust_toolchain').reason, /rustup toolchain install 1\.98\.0/);
+  await assert.rejects(prepareBootstrap(f.options, deps), { code: 'rust_toolchain_unavailable', exitCode: 4 });
+});
+
+test('bootstrap error schema is documented before CLI recovery', async () => {
+  for (const path of ['docs/skill-bootstrap.md', 'skills/ai-security-scanner/references/cloudflare-source-audit.md']) {
+    assert.match(await readFile(path, 'utf8'), /ai-security-scanner\.bootstrap-error\/v1/);
+  }
+});
+
+
+test('prepared selection refuses mismatches, tampering and ambiguous pointers', async t => {
+  const f = await fixture(t);
+  const { loadPreparedBootstrap } = await import('../../scripts/skill/bootstrap-core.mjs');
+  const result = await prepareBootstrap(f.options, f.deps);
+  await assert.rejects(loadPreparedBootstrap({ ...f.options, profile: 'release' }, f.deps), { code: 'core_not_prepared' });
+  const pointer = join(f.options.cacheDir, 'ready', 'core-dev-fixture-native.json');
+  const original = await readFile(pointer);
+  await writeFile(join(f.options.cacheDir, 'ready', 'core-dev-another.json'), original);
+  await assert.rejects(loadPreparedBootstrap(f.options, f.deps), { code: 'ambiguous_ready_pointer' });
+  await rm(join(f.options.cacheDir, 'ready', 'core-dev-another.json'));
+  const value = JSON.parse(original); value.receipt_sha256 = '0'.repeat(64);
+  await writeFile(pointer, JSON.stringify(value));
+  await assert.rejects(loadPreparedBootstrap(f.options, f.deps), { code: 'cache_receipt_mismatch' });
+  await writeFile(pointer, original);
+  const receipt = JSON.parse(await readFile(result.receipt_path)); receipt.build_outcome = 'failed';
+  await writeFile(result.receipt_path, JSON.stringify(receipt));
+  await assert.rejects(loadPreparedBootstrap(f.options, f.deps), { code: 'cache_receipt_mismatch' });
+  assert.equal(f.state.builds, 1);
+});
+
+test('a later revision with identical build inputs runs the core that was already prepared', async t => {
+  const f = await fixture(t);
+  const { loadPreparedBootstrap } = await import('../../scripts/skill/bootstrap-core.mjs');
+  const first = await prepareBootstrap(f.options, f.deps);
+  f.state.revision = 'b'.repeat(40);
+  const later = { ...f.options, revision: f.state.revision };
+  assert.equal((await prepareBootstrap(later, f.deps)).cache_hit, true);
+  const selected = await loadPreparedBootstrap(later, f.deps);
+  assert.equal(selected.cache_key, first.cache_key);
+  assert.equal(selected.requested_source.revision, f.state.revision);
+  assert.equal(f.state.builds, 1);
+});
+
+test('looking for a prepared core does not create a cache directory', async t => {
+  const f = await fixture(t);
+  const { loadPreparedBootstrap } = await import('../../scripts/skill/bootstrap-core.mjs');
+  await assert.rejects(loadPreparedBootstrap(f.options, f.deps), { code: 'core_not_prepared', exitCode: 2 });
+  await assert.rejects(lstat(f.options.cacheDir), { code: 'ENOENT' });
+});
+
+test('an interrupted build stops the compilers it started and releases its lock', { skip: process.platform === 'win32' ? 'POSIX process groups are required for this interruption test' : false }, async t => {
+  const f = await fixture(t);
+  const tools = join(f.root, 'tools');
+  await mkdir(tools);
+  const pids = join(f.root, 'build-pids');
+  // Stands in for Cargo: starts a compiler-like child, then waits for it.
+  await writeFile(join(tools, 'cargo'), `#!/bin/sh\nsleep 300 &\necho "$$ $!" > ${JSON.stringify(pids)}\nwait\n`, { mode: 0o755 });
+  const helper = join(f.root, 'interrupt-build.mjs');
+  const moduleUrl = new URL('../../scripts/skill/bootstrap-core.mjs', import.meta.url).href;
+  await writeFile(helper, `import { prepareBootstrap } from ${JSON.stringify(moduleUrl)};
+const options = ${JSON.stringify(f.options)};
+const deps = { sourceRoot: ${JSON.stringify(f.source)}, environment: ${JSON.stringify({ ...f.deps.environment, PATH: `${tools}:${process.env.PATH}` })},
+ inspectSource: async () => ({revision: options.revision, dirty: false}), validatePinnedInputs: async () => false,
+ collectInputManifest: async () => (${JSON.stringify(await f.deps.collectInputManifest())}), inspectToolchain: async () => (${JSON.stringify(toolchain)}),
+ stageInputSnapshot: async () => {} };
+try { await prepareBootstrap(options, deps); } catch (error) { console.error(error.code); process.exitCode = error.exitCode || 4; }
+`);
+  const child = spawn(process.execPath, [helper], { stdio: ['ignore', 'ignore', 'pipe'] });
+  let stderr = '';
+  child.stderr.on('data', bytes => { stderr += bytes; });
+  // Wait for the exit itself: a compiler left running would keep the output pipe open.
+  const exited = new Promise(resolve => child.once('exit', (code, signal) => resolve({ code, signal })));
+  let started;
+  t.after(() => { for (const pid of started ?? []) { try { process.kill(pid, 'SIGKILL'); } catch { /* already gone */ } } });
+  for (let i = 0; i < 500 && !started; i += 1) {
+    started = await readFile(pids, 'utf8').then(text => (/^\d+ \d+\n$/.test(text) ? text.trim().split(' ').map(Number) : undefined), () => undefined);
+    if (!started) await new Promise(resolve => setTimeout(resolve, 10));
+  }
+  assert.ok(started, stderr);
+  child.kill('SIGTERM');
+  assert.deepEqual(await exited, { code: 143, signal: null }, stderr);
+  assert.match(stderr, /interrupted/);
+  const running = pid => { try { process.kill(pid, 0); return true; } catch { return false; } };
+  for (let i = 0; i < 500 && started.some(running); i += 1) await new Promise(resolve => setTimeout(resolve, 10));
+  assert.deepEqual(started.map(running), [false, false]);
+  assert.deepEqual(await readdir(join(f.options.cacheDir, 'locks')), []);
+  assert.deepEqual(await readdir(join(f.options.cacheDir, 'staging')), []);
+});
+
+test('interrupted preparation releases staging and its lock', { skip: process.platform === 'win32' ? 'POSIX signals are required for this interruption test' : false }, async t => {
+  const f = await fixture(t);
+  const helper = join(f.root, 'interrupt.mjs');
+  const moduleUrl = new URL('../../scripts/skill/bootstrap-core.mjs', import.meta.url).href;
+  await writeFile(helper, `import { prepareBootstrap } from ${JSON.stringify(moduleUrl)};
+import { writeFile } from 'node:fs/promises';
+import { spawn } from 'node:child_process';
+const options = ${JSON.stringify(f.options)};
+const toolchain = ${JSON.stringify(toolchain)};
+const deps = { sourceRoot: ${JSON.stringify(f.source)}, environment: ${JSON.stringify(f.deps.environment)},
+ inspectSource: async () => ({revision: options.revision, dirty: false}), validatePinnedInputs: async () => false,
+ collectInputManifest: async () => (${JSON.stringify(await f.deps.collectInputManifest())}), inspectToolchain: async () => toolchain,
+ stageInputSnapshot: async () => {}, build: async ({signal}) => {
+  const child = spawn(process.execPath, ['-e', 'setInterval(()=>{},1000)']);
+  signal.addEventListener('abort', () => child.kill('SIGTERM'), {once:true});
+  await writeFile(${JSON.stringify(join(f.root, 'ready-signal'))}, 'ready');
+  await new Promise(resolve => child.once('close', resolve));
+ }};
+try { await prepareBootstrap(options, deps); } catch (error) { console.error(error); process.exitCode = error.exitCode || 4; }
+`);
+  const child = spawn(process.execPath, [helper], { stdio: ['ignore', 'ignore', 'pipe'] });
+  let stderr = '';
+  child.stderr.on('data', bytes => { stderr += bytes; });
+  const closed = new Promise(resolve => child.once('close', (code, signal) => resolve({ code, signal })));
+  let ready = false;
+  for (let i = 0; i < 300; i += 1) {
+    if (await readFile(join(f.root, 'ready-signal')).then(() => true, () => false)) { ready = true; break; }
+    await new Promise(resolve => setTimeout(resolve, 10));
+  }
+  assert.equal(ready, true, stderr);
+  child.kill('SIGINT');
+  assert.deepEqual(await closed, { code: 130, signal: null });
+  assert.deepEqual(await readdir(join(f.options.cacheDir, 'locks')), []);
+  assert.deepEqual(await readdir(join(f.options.cacheDir, 'staging')), []);
+  await prepareBootstrap(f.options, f.deps);
+});
+
+
+test('run children cannot inherit ambient product source overrides', async t => {
+  const f = await fixture(t);
+  const output = join(f.root, 'environment.json');
+  f.state.runtimeScript = `require('node:fs').writeFileSync(process.env.OUTPUT, JSON.stringify(Object.keys(process.env).filter(k => k.toUpperCase().startsWith('AI_SECURITY_SCANNER_'))));`;
+  const result = await prepareBootstrap(f.options, f.deps);
+  const environment = { ...f.deps.environment, OUTPUT: output, Ai_Security_Scanner_Data_Dir: 'ambient', AI_SECURITY_SCANNER_MANAGED_RUNTIME_BUNDLE: 'ambient', ai_security_scanner_release_approved_local_image_directory: 'ambient' };
+  assert.equal(await runPrepared(result, ['--data-dir', join(f.root, 'data'), 'case', 'list'], { ...f.deps, environment, commandExecutable: process.execPath, argvPrefix: [result.executable] }), 0);
+  assert.deepEqual(JSON.parse(await readFile(output)), []);
+});
+
+test('doctor requires Node.js 24', async t => {
+  const f = await fixture(t);
+  const result = await doctorBootstrap(f.options, { ...f.deps, nodeVersion: '22.0.0' });
+  assert.match(result.checks.find(c => c.name === 'node').reason, /Node.js 24 or newer/);
+});
+
+test('doctor checks the nearest existing cache ancestor for writability', { skip: process.platform === 'win32' ? 'POSIX permission modes are required' : false }, async t => {
+  const f = await fixture(t);
+  const parent = join(f.root, 'no-write');
+  await mkdir(parent, { mode: 0o500 });
+  try {
+    const result = await doctorBootstrap({ ...f.options, cacheDir: join(parent, 'missing', 'cache') }, f.deps);
+    const check = result.checks.find(c => c.name === 'cache');
+    assert.equal(check.ready, false);
+    assert.equal(check.error, 'cache_parent_not_writable');
+  } finally { await chmod(parent, 0o700); }
 });

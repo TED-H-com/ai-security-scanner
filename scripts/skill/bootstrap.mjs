@@ -5,6 +5,7 @@ import { realpath } from 'node:fs/promises';
 import {
   BootstrapError,
   doctorBootstrap,
+  loadPreparedBootstrap,
   parseBootstrapArguments,
   prepareBootstrap,
   runPrepared,
@@ -24,7 +25,7 @@ export async function main(argv = process.argv.slice(2)) {
       return result.ready ? 0 : 4;
     }
     if (options.command === 'run') validateRunArguments(options.cliArguments);
-    const result = await prepareBootstrap(options);
+    const result = options.command === 'run' ? await loadPreparedBootstrap(options) : await prepareBootstrap(options);
     if (options.command === 'prepare') {
       process.stdout.write(`${JSON.stringify(result)}\n`);
       return 0;
