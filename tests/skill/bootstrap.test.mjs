@@ -794,8 +794,9 @@ async function installedBundleFixture(t) {
   const manifest = '{"fixture":"installed desktop"}\n';
   await mkdir(bundle);
   await writeFile(join(bundle, 'manifest.json'), manifest);
-  const entry = { platform: 'fixture', arch: ['fixture-arch'], product_version: '0.6.2', manifest_sha256: digest(manifest), installed_paths: [bundle] };
-  const deps = { ...f.deps, platform: entry.platform, arch: 'fixture-arch', recognizedManagedRuntimeBundles: [entry] };
+  // The host's own platform keeps the fixture core's file name (.exe on Windows) the one the build wrote.
+  const entry = { platform: process.platform, arch: [process.arch], product_version: '0.6.2', manifest_sha256: digest(manifest), installed_paths: [bundle] };
+  const deps = { ...f.deps, platform: entry.platform, arch: process.arch, recognizedManagedRuntimeBundles: [entry] };
   const options = { ...f.options, capability: 'scan', engineIds: ['gitleaks'], dataDir: join(f.root, 'data') };
   return { ...f, bundle, entry, deps, options };
 }
@@ -969,7 +970,7 @@ test('scan doctor reports runtime sources without executing commands or changing
   await mkdir(bin);
   await writeFile(join(bin, 'docker'), 'must not execute');
   await mkdir(join(bin, 'podman'));
-  const deps = { ...f.deps, platform: 'linux', recognizedManagedRuntimeBundles: [{ ...f.entry, platform: 'linux' }], environment: { ...f.deps.environment, PATH: bin } };
+  const deps = { ...f.deps, environment: { ...f.deps.environment, PATH: bin } };
   const scan = await doctorBootstrap(f.options, deps);
   assert.deepEqual(scan.runtime_sources, { compatibility_commands_on_path: ['docker'], installed_desktop_bundle: 'recognized' });
   const core = await doctorBootstrap({ ...f.options, capability: 'core', engineIds: undefined, dataDir: undefined }, deps);
@@ -982,7 +983,8 @@ test('scan doctor reports runtime sources without executing commands or changing
   await mkdir(windowsBin);
   await writeFile(join(windowsBin, 'docker.EXE'), 'must not execute');
   await writeFile(join(windowsBin, 'podman.CMD'), 'must not execute');
-  const windows = await doctorBootstrap(f.options, { ...deps, platform: 'win32', environment: { ...deps.environment, PATH: windowsBin, PATHEXT: '.EXE;.CMD' } });
+  const windows = await doctorBootstrap(f.options, { ...deps, platform: 'win32', recognizedManagedRuntimeBundles: [{ ...f.entry, platform: 'win32', installed_paths: [] }],
+    environment: { ...deps.environment, PATH: windowsBin, PATHEXT: '.EXE;.CMD' } });
   assert.deepEqual(windows.runtime_sources, { compatibility_commands_on_path: ['docker', 'podman'], installed_desktop_bundle: 'unsupported' });
   assert.equal(windows.ready, scan.ready);
 });
