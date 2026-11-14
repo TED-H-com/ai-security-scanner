@@ -474,7 +474,22 @@ pub(crate) fn render_html(report: &SelectedRunReport, locale: ReportLocale) -> A
         "<section><h2>{}</h2>",
         t("Priorities and next actions", "優先事項與下一步")
     ));
-    if report.problems.is_empty() {
+    let validation_count: usize = report
+        .sources
+        .iter()
+        .flat_map(|source| &source.report.source_audits)
+        .map(|audit| audit.to_validate.len())
+        .sum();
+    let suffix = if validation_count == 1 { "" } else { "s" };
+    if report.problems.is_empty() && validation_count > 0 {
+        html.push_str(&format!(
+            "<p>{}</p>",
+            escape(&t(
+                "The selected reports contain no problem observations. Validate the {validation_count} source-audit item{suffix} under To validate first, then review each source's completed checks and coverage limits below.",
+                "所選報告沒有問題觀察紀錄；請先驗證下方「待驗證」中的 {validation_count} 個原始碼稽核項目，再查看各來源完成的檢查與涵蓋限制。",
+            ).replace("{validation_count}", &validation_count.to_string()).replace("{suffix}", suffix))
+        ));
+    } else if report.problems.is_empty() {
         html.push_str(&format!("<p>{}</p>",t("The selected reports contain no problem observations. Review each source's completed checks and coverage limits below.", "所選報告沒有問題觀察紀錄；請查看下方各來源完成的檢查與涵蓋限制。")));
     }
     for (index, problem) in report.problems.iter().enumerate() {
@@ -611,6 +626,15 @@ pub(crate) fn render_html(report: &SelectedRunReport, locale: ReportLocale) -> A
             }
         }
         html.push_str("</details></article>");
+    }
+    if !report.problems.is_empty() && validation_count > 0 {
+        html.push_str(&format!(
+            "<p>{}</p>",
+            escape(&t(
+                "Also validate the {validation_count} source-audit item{suffix} under To validate.",
+                "另請驗證下方「待驗證」中的 {validation_count} 個原始碼稽核項目。",
+            ).replace("{validation_count}", &validation_count.to_string()).replace("{suffix}", suffix))
+        ));
     }
     html.push_str(&format!("</section><section><h2>{}</h2><div class=\"table-wrap\"><table><thead><tr><th>{}</th><th>{}</th><th>{}</th><th>{}</th><th>{}</th></tr></thead><tbody>",
         t("Assets across selected reports", "各報告的資產"),t("Asset in source", "來源中的資產"),t("Report", "報告"),t("Source finished", "來源結束時間"),t("Problem observations", "問題觀察紀錄"),t("Coverage gaps", "涵蓋缺口")));

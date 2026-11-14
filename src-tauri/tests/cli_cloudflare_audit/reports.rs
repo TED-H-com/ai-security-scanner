@@ -146,6 +146,60 @@ fn quick_incomplete_audit_has_one_product_continuation_step_in_both_locales_and_
 }
 
 #[test]
+fn complete_audit_with_only_validation_records_has_validation_asset_action() {
+    let run = RunFixture::with_records("standard", &[], |records, ledger, _| {
+        *records = json!([records[1].clone()]);
+        ledger[0]["result_fingerprints"] = json!([records[0]["fingerprint"]]);
+        ledger[0]["excluded_blocks"] = json!([]);
+    });
+    finalize::finalize(&run, &finalize::request(&run), 0);
+    let storage = run.f.storage();
+    let verified = ai_security_scanner_lib::cloudflare_provider::audit::sealed::verify(
+        &run.f.data,
+        &storage,
+        &run.f.case_id,
+        run.prepared["session_id"].as_str().unwrap(),
+    )
+    .unwrap();
+    let request = json!({
+        "schema_version":"ai-security-scanner.cloudflare-audit-admit-request/v1",
+        "request_id":"admit-validation-only", "case_id":run.f.case_id,
+        "session_id":run.prepared["session_id"],
+        "expected_sealed_entry_sha256":verified.digests.sealed_entry_sha256,
+        "expected_bundle_sha256":verified.digests.bundle_sha256,
+        "expected_projection_sha256":verified.digests.projection_sha256,
+    });
+    drop(verified);
+    drop(storage);
+    let saved = admit::admit(&run, &request, 0);
+    let case = admit::case(&run);
+    let run_id = saved["run_id"].as_str().unwrap();
+    let report = build_beginner_master_report(&case, run_id).unwrap();
+    assert!(report.findings.is_empty());
+    assert_eq!(report.source_audits[0].to_validate.len(), 1);
+    assert!(report.source_audits[0].unresolved_candidates.is_empty());
+    assert!(report.source_audits[0].coverage_gaps.is_empty());
+    assert!(report.coverage_gaps.is_empty());
+    for (locale, action) in [
+        (
+            ReportLocale::En,
+            "validate the listed source-audit items first",
+        ),
+        (ReportLocale::ZhHant, "請先驗證列出的原始碼稽核項目"),
+    ] {
+        let (html, _) = render(&case, run_id, &options(locale, RedactionProfile::None));
+        let card = html
+            .split("<tr class=\"asset-result asset-result--no-problems-completed\">")
+            .nth(1)
+            .unwrap()
+            .split("</tr>")
+            .next()
+            .unwrap();
+        assert!(card.contains(action));
+    }
+}
+
+#[test]
 fn admitted_reports_keep_native_sections_counts_and_localized_first_layer() {
     for profile in ["standard", "quick"] {
         let (run, request) = admit::sealed(profile);
@@ -221,6 +275,40 @@ fn admitted_reports_keep_native_sections_counts_and_localized_first_layer() {
             ),
         ] {
             let (html, json) = render(&case, run_id, &options(locale, RedactionProfile::None));
+            let first_layer = html.split("<details class=\"technical\">").next().unwrap();
+            let expected = match (locale, profile) {
+                (ReportLocale::En, "quick") => {
+                    "Validate the 1 source-audit item under To validate first."
+                }
+                (ReportLocale::En, _) => "Also validate the 1 source-audit item under To validate.",
+                (ReportLocale::ZhHant, "quick") => {
+                    "請先驗證下方「待驗證」中的 1 個原始碼稽核項目。"
+                }
+                (ReportLocale::ZhHant, _) => "另請驗證下方「待驗證」中的 1 個原始碼稽核項目。",
+            };
+            assert!(first_layer.contains(expected));
+            if profile == "standard" {
+                let first_action = if locale == ReportLocale::En {
+                    "Start with “"
+                } else {
+                    "最先處理「"
+                };
+                assert!(
+                    first_layer.find(first_action).unwrap() < first_layer.find(expected).unwrap()
+                );
+            }
+            // Quick remains incomplete; standard has a confirmed problem.
+            // Neither status is eligible for the clean-asset action override.
+            assert!(html.contains(if profile == "quick" {
+                "<tr class=\"asset-result asset-result--incomplete-failed\">"
+            } else {
+                "<tr class=\"asset-result asset-result--problems-found\">"
+            }));
+            assert!(!html.contains(if locale == ReportLocale::En {
+                "validate the listed source-audit items first"
+            } else {
+                "請先驗證列出的原始碼稽核項目"
+            }));
             assert!(html.contains(validate));
             assert!(html.contains("src/a.rs"));
             assert!(html.contains("<details class=\"technical\"><summary>"));
@@ -250,6 +338,7 @@ fn admitted_reports_keep_native_sections_counts_and_localized_first_layer() {
                 .split("<details")
                 .next()
                 .unwrap();
+            assert!(validation.contains(a.to_validate[0].native_record["title"].as_str().unwrap()));
             assert!(!validation.contains("pill--"));
         }
     }
@@ -1470,4 +1559,100 @@ fn incomplete_audit_asset_actions_distinguish_app_checks_and_count_audit_once() 
     let report = build_beginner_master_report(&case, run_id).unwrap();
     assert_eq!(report.coverage_counts.tested_partial, 0);
     assert_eq!(report.coverage_counts.not_tested, 1);
+}
+
+#[test]
+fn validation_next_steps_in_combined_reports_and_zero_lead_regression() {
+    let (run, request) = admit::sealed("quick");
+    let saved = admit::admit(&run, &request, 0);
+    let mut case = admit::case(&run);
+    let audit_run = saved["run_id"].as_str().unwrap().to_owned();
+    let scanner_run = append_scanner_run(&mut case);
+    let mut second_scanner = case
+        .scan_runs
+        .iter()
+        .find(|r| r.id == scanner_run)
+        .unwrap()
+        .clone();
+    second_scanner.id = "scanner-without-audit".to_owned();
+    let second_scanner_run = second_scanner.id.clone();
+    case.scan_runs.push(second_scanner);
+    for locale in [ReportLocale::En, ReportLocale::ZhHant] {
+        for problems in [true, false] {
+            let mut selected_case = case.clone();
+            if !problems {
+                selected_case.findings.clear();
+                selected_case.finding_observations.clear();
+            }
+            for leads in [true, false] {
+                let selected = if leads {
+                    vec![scanner_run.clone(), audit_run.clone()]
+                } else {
+                    vec![scanner_run.clone(), second_scanner_run.clone()]
+                };
+                let snapshot = ReportSnapshot::capture_combined(
+                    &selected_case,
+                    &selected,
+                    options(locale, RedactionProfile::None),
+                )
+                .unwrap();
+                let dest = run.f.data.with_file_name("validation-priorities.html");
+                snapshot.replay(ReportDocumentFormat::Html, &dest).unwrap();
+                let html = fs::read_to_string(&dest).unwrap();
+                fs::remove_file(dest).unwrap();
+                let heading = if locale == ReportLocale::En {
+                    "Priorities and next actions"
+                } else {
+                    "優先事項與下一步"
+                };
+                let priorities = html
+                    .split(&format!("<h2>{heading}</h2>"))
+                    .nth(1)
+                    .unwrap()
+                    .split("</section>")
+                    .next()
+                    .unwrap();
+                let expected = match (locale, problems, leads) {
+                    (ReportLocale::En, false, true) => {
+                        "The selected reports contain no problem observations. Validate the 1 source-audit item under To validate first, then review each source&#39;s completed checks and coverage limits below."
+                    }
+                    (ReportLocale::ZhHant, false, true) => {
+                        "所選報告沒有問題觀察紀錄；請先驗證下方「待驗證」中的 1 個原始碼稽核項目，再查看各來源完成的檢查與涵蓋限制。"
+                    }
+                    (ReportLocale::En, true, true) => {
+                        "Also validate the 1 source-audit item under To validate."
+                    }
+                    (ReportLocale::ZhHant, true, true) => {
+                        "另請驗證下方「待驗證」中的 1 個原始碼稽核項目。"
+                    }
+                    (ReportLocale::En, false, false) => {
+                        "The selected reports contain no problem observations. Review each source's completed checks and coverage limits below."
+                    }
+                    (ReportLocale::ZhHant, false, false) => {
+                        "所選報告沒有問題觀察紀錄；請查看下方各來源完成的檢查與涵蓋限制。"
+                    }
+                    (_, true, false) => "",
+                };
+                assert!(priorities.contains(expected), "{priorities}");
+                if !leads {
+                    assert!(!priorities.contains("source-audit item"));
+                    assert!(!priorities.contains("原始碼稽核項目"));
+                    let (single, _) = render(
+                        &selected_case,
+                        &scanner_run,
+                        &options(locale, RedactionProfile::None),
+                    );
+                    assert!(!single.contains("source-audit item"));
+                    assert!(!single.contains("原始碼稽核項目"));
+                    if !problems {
+                        assert!(single.contains(if locale == ReportLocale::En {
+                            "The checks that completed reported no problems."
+                        } else {
+                            "已完成的檢查沒有發現問題。"
+                        }));
+                    }
+                }
+            }
+        }
+    }
 }

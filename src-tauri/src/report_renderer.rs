@@ -1390,7 +1390,39 @@ pub(crate) fn html_executive_summary(
 
     let mut sentences = vec![scanned];
     sentences.extend(found);
-    sentences.extend(first_action);
+    let validation_count: usize = report
+        .source_audits
+        .iter()
+        .map(|a| a.to_validate.len())
+        .sum();
+    let validation_action = if validation_count > 0 {
+        let suffix = if validation_count == 1 { "" } else { "s" };
+        let (en, zh) = if problem_count == 0 {
+            (
+                format!(
+                    "Validate the {validation_count} source-audit item{suffix} under To validate first."
+                ),
+                format!("請先驗證下方「待驗證」中的 {validation_count} 個原始碼稽核項目。"),
+            )
+        } else {
+            (
+                format!(
+                    "Also validate the {validation_count} source-audit item{suffix} under To validate."
+                ),
+                format!("另請驗證下方「待驗證」中的 {validation_count} 個原始碼稽核項目。"),
+            )
+        };
+        Some(catalog.text(&en, &zh).to_owned())
+    } else {
+        None
+    };
+    if problem_count == 0 {
+        sentences.extend(validation_action);
+        sentences.extend(first_action);
+    } else {
+        sentences.extend(first_action);
+        sentences.extend(validation_action);
+    }
     sentences.extend(not_covered);
     sentences.extend(record_notes);
     format!(
@@ -2722,6 +2754,18 @@ pub(crate) fn html_asset_result_section(
                     "另有檢查尚未完成；請在應用程式中完成或重試。",
                 ));
             }
+        }
+        if status == HtmlAssetResultStatus::NoProblemsInCompletedChecks
+            && report.source_audits.iter().any(|audit| {
+                audit.asset_ids.contains(&target.asset_id) && !audit.to_validate.is_empty()
+            })
+        {
+            action = catalog
+                .text(
+                    "validate the listed source-audit items first",
+                    "請先驗證列出的原始碼稽核項目",
+                )
+                .to_owned();
         }
         if action.is_empty() && !states_taking_their_own_step.contains(&status) {
             states_taking_their_own_step.push(status);
