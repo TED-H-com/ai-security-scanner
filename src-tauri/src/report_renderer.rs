@@ -109,11 +109,20 @@ pub(crate) fn readable_report_time(value: &DateTime<Utc>) -> String {
 #[derive(Clone, Copy)]
 pub(crate) struct HtmlReportCatalog {
     pub(crate) locale: crate::export::ReportLocale,
+    standard_redaction: bool,
 }
 
 impl HtmlReportCatalog {
     pub(crate) fn new(locale: crate::export::ReportLocale) -> Self {
-        Self { locale }
+        Self {
+            locale,
+            standard_redaction: false,
+        }
+    }
+
+    fn with_standard_redaction(mut self, standard_redaction: bool) -> Self {
+        self.standard_redaction = standard_redaction;
+        self
     }
 
     pub(crate) fn text<'a>(&self, en: &'a str, zh_hant: &'a str) -> &'a str {
@@ -562,6 +571,25 @@ fn displayed_dimension(
     }
 }
 
+fn asset_alias_number(label: &str) -> Option<&str> {
+    let number = label.strip_prefix("Asset ")?;
+    (!number.is_empty() && number.bytes().all(|byte| byte.is_ascii_digit())).then_some(number)
+}
+
+pub(crate) fn localized_asset_label(
+    label: &str,
+    locale: ReportLocale,
+    standard_redaction: bool,
+) -> String {
+    if standard_redaction
+        && locale == ReportLocale::ZhHant
+        && let Some(number) = asset_alias_number(label)
+    {
+        return format!("資產 {number}");
+    }
+    label.to_owned()
+}
+
 pub(crate) fn readable_target_labels(
     report: &BeginnerMasterReport,
     catalog: HtmlReportCatalog,
@@ -573,7 +601,7 @@ pub(crate) fn readable_target_labels(
             .label
             .as_deref()
             .filter(|label| !label.trim().is_empty())
-            .map(str::to_owned)
+            .map(|label| localized_asset_label(label, catalog.locale, catalog.standard_redaction))
             .unwrap_or_else(|| format!("{} {next_number}", catalog.text("Target", "目標")));
         labels.entry(target.asset_id.clone()).or_insert(label);
         next_number += 1;
@@ -3040,6 +3068,14 @@ pub(crate) fn html_asset_result_section(
 }
 
 pub(crate) fn replace_target_ids(value: &str, labels: &BTreeMap<Id, String>) -> String {
+    replace_target_ids_in_context(value, labels, false)
+}
+
+fn replace_target_ids_in_context(
+    value: &str,
+    labels: &BTreeMap<Id, String>,
+    asset_noun_already_present: bool,
+) -> String {
     let mut identities = labels
         .iter()
         .filter(|(id, _)| !id.is_empty())
@@ -3059,7 +3095,11 @@ pub(crate) fn replace_target_ids(value: &str, labels: &BTreeMap<Id, String>) -> 
             .iter()
             .find(|(id, _)| remaining.starts_with(id.as_str()))
         {
-            display.push_str(label);
+            if asset_noun_already_present && display.ends_with("資產 ") {
+                display.push_str(label.strip_prefix("資產 ").unwrap_or(label));
+            } else {
+                display.push_str(label);
+            }
             cursor += id.len();
             continue;
         }
@@ -5380,7 +5420,8 @@ pub fn render_html(
 ) -> AppResult<Vec<u8>> {
     let exported = case_for_document_export(case, options)?;
     let report = beginner_report_for_export(case, run_id, options.redaction)?;
-    let catalog = HtmlReportCatalog::new(options.locale);
+    let catalog = HtmlReportCatalog::new(options.locale)
+        .with_standard_redaction(options.redaction == crate::export::RedactionProfile::Standard);
     let display_time = |value: Option<&DateTime<Utc>>| {
         value
             .map(|value| catalog.format_time(value))
@@ -5479,6 +5520,26 @@ pub fn render_html(
             "<li>已保存的掃描未保留精確的要求目標說明。</li>",
         ));
     }
+    let target_number_note = if options.redaction == crate::export::RedactionProfile::Standard {
+        let mut numbers = report
+            .requested
+            .targets
+            .iter()
+            .filter_map(|target| target.label.as_deref().and_then(asset_alias_number))
+            .filter_map(|number| number.parse::<usize>().ok())
+            .collect::<Vec<_>>();
+        numbers.sort_unstable();
+        if !numbers.is_empty() && numbers.iter().copied().ne(1..=numbers.len()) {
+            catalog.text(
+                "<p>Numbers follow the project's asset list.</p>",
+                "<p>編號依專案的資產清單排列。</p>",
+            )
+        } else {
+            ""
+        }
+    } else {
+        ""
+    };
     // A limit is a policy and the assets it covers. Written one line per
     // holder, twenty-one engines sharing one execution timeout printed that
     // timeout twenty-one times and two targets sharing a port list printed it
@@ -5644,6 +5705,29 @@ pub fn render_html(
                     !header_says_it || dimension.dimension != COMPLETED_COORDINATE_DIMENSION
                 })
                 .map(|dimension| {
+                    let dimension_name = engine_named(&dimension.dimension);
+                    let translated_value = if catalog.locale == ReportLocale::ZhHant {
+                        crate::finding_narrative::tested_value_zh_hant(
+                            &dimension_name,
+                            &dimension.value,
+                        )
+                    } else {
+                        None
+                    };
+                    // These translated, product-authored values put the word
+                    // 資產 before the target ID. An alias already contains it.
+                    // The two passthrough dimensions retain target text as-is.
+                    let asset_noun_already_present = catalog.standard_redaction
+                        && translated_value.is_some()
+                        && !matches!(
+                            dimension_name.as_str(),
+                            "Source audit coverage" | "TCP reachability"
+                        );
+                    let value = replace_target_ids_in_context(
+                        translated_value.as_deref().unwrap_or(&dimension.value),
+                        &target_labels,
+                        asset_noun_already_present,
+                    );
                     format!(
                         concat!("<li>{}{} — {}", "<br><small>{}{}</small></li>"),
                         catalog.strong_label(&html_escape(&match catalog.locale {
@@ -5654,19 +5738,7 @@ pub fn render_html(
                             }
                             _ => readable_dimension(&dimension.dimension),
                         })),
-                        html_escape(&replace_target_ids(
-                            &match catalog.locale {
-                                crate::export::ReportLocale::ZhHant => {
-                                    crate::finding_narrative::tested_value_zh_hant(
-                                        &engine_named(&dimension.dimension),
-                                        &dimension.value,
-                                    )
-                                    .unwrap_or_else(|| dimension.value.clone())
-                                }
-                                _ => dimension.value.clone(),
-                            },
-                            &target_labels,
-                        )),
+                        html_escape(&value),
                         html_escape(&match catalog.locale {
                             crate::export::ReportLocale::ZhHant => {
                                 crate::finding_narrative::tested_observation_zh_hant(
@@ -7756,7 +7828,7 @@ pub fn render_html(
         concat!(
             "<section class=\"report-grid\"><div class=\"report-card\">",
             "<h2>{}</h2>{}",
-            "<h3>{}</h3><ul>{}</ul><h3>{}</h3><ul>{}</ul>",
+            "<h3>{}</h3><ul>{}</ul>{}<h3>{}</h3><ul>{}</ul>",
             "<h3>{}</h3><ul>{}</ul></div>",
             "<div class=\"report-card\"><h2>{}</h2>",
             "<p>{}{}</p>",
@@ -7774,6 +7846,7 @@ pub fn render_html(
         scan_depth_paragraph,
         catalog.text("Targets", "目標"),
         requested_targets,
+        target_number_note,
         catalog.text("Requested checks", "要求的檢查"),
         requested_checks,
         catalog.text("Limits", "限制"),
@@ -8023,7 +8096,12 @@ pub(crate) fn localize_report_markers(
     standard: bool,
 ) -> AppResult<String> {
     if reports.iter().all(|r| r.source_audits.is_empty()) {
-        let localized = localize_redaction_markers(document);
+        let prepared = if standard {
+            document.replace("[redacted location]", "（已遮蔽位置）")
+        } else {
+            document.to_owned()
+        };
+        let localized = localize_redaction_markers(&prepared);
         return Ok(if standard {
             localized.replace("[redacted]", "（已遮蔽）")
         } else {

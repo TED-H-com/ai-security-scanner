@@ -491,6 +491,12 @@ fn ordinary_exports_keep_private_snapshots_of_the_exact_shared_documents() {
         assert_eq!(inspection["locale"], locale);
         assert_eq!(inspection["redaction"], redaction);
         assert_eq!(inspection["contains_sensitive_context"], true);
+        if format == "html" && locale == "zh-Hant" {
+            assert!(
+                !String::from_utf8_lossy(&fs::read(&destination).unwrap()).contains("資產 資產 "),
+                "an asset label must not repeat the surrounding asset noun"
+            );
+        }
         assert_eq!(
             report_version::normalize(
                 &format!("{locale}-{disclosure}.{format}"),

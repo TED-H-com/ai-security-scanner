@@ -4210,7 +4210,10 @@ fn every_integrated_engine_lands_in_one_terminal_report() {
             // Named, not merely removed: a withheld value still says which
             // kind of value it was, on the page as much as in the JSON.
             for (english, chinese) in [
-                ("[redacted location]", "\u{ff08}\u{4f4d}\u{7f6e}\u{ff09}"),
+                (
+                    "[redacted location]",
+                    "\u{ff08}\u{5df2}\u{906e}\u{853d}\u{4f4d}\u{7f6e}\u{ff09}",
+                ),
                 (
                     "[redacted result pointer]",
                     "\u{ff08}\u{7d50}\u{679c}\u{6307}\u{6a19}\u{ff09}",

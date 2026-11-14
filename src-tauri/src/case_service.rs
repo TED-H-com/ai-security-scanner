@@ -32304,9 +32304,7 @@ mod tests {
 
     #[test]
     fn html_finding_card_omits_absent_scanner_remediation_instead_of_inventing_one() {
-        let catalog = HtmlReportCatalog {
-            locale: crate::export::ReportLocale::En,
-        };
+        let catalog = HtmlReportCatalog::new(crate::export::ReportLocale::En);
         let finding = crate::beginner_report::BeginnerFinding {
             source_audit: false,
             finding_id: "finding-1".into(),
@@ -35846,6 +35844,166 @@ mod tests {
         (case, run_id)
     }
 
+    #[test]
+    fn rpt30_chinese_standard_aliases_are_html_only() {
+        let fixture = Fixture::new();
+        let (case, run_id) = failed_gitleaks_on_two_repositories_case(&fixture);
+        let options = ExportOptions {
+            locale: crate::export::ReportLocale::ZhHant,
+            ..ExportOptions::default()
+        };
+        let html = String::from_utf8(html_report_bytes(&case, &run_id, &options).unwrap()).unwrap();
+        let first_layer = html.split("<details").next().unwrap();
+        assert!(first_layer.contains("資產 1"));
+        assert!(!first_layer.contains("Asset 1"));
+        let json = String::from_utf8(
+            crate::report_renderer::render_canonical_json(&case, &run_id, &options).unwrap(),
+        )
+        .unwrap();
+        assert!(json.contains("Asset 1"));
+        assert!(!json.contains("資產 1"));
+    }
+
+    #[test]
+    fn rpt30_real_asset_name_and_quoted_target_text_are_not_translated() {
+        let mut case =
+            case_for_rated_httpx_finding(EngineRunStatus::Completed, None, Some("httpx-task"));
+        case.assets[0].name = "Asset 7".into();
+        let html = html_for_run(
+            &case,
+            "run-httpx",
+            RedactionProfile::None,
+            crate::export::ReportLocale::ZhHant,
+        );
+        assert!(html.contains("Asset 7"));
+        assert!(!html.contains("資產 7"));
+
+        case.findings[0].title = "A target quoted Asset 1 in its output".into();
+        case.finding_observations[0].finding_snapshot = Some(case.findings[0].clone());
+        let html = html_for_run(
+            &case,
+            "run-httpx",
+            RedactionProfile::Standard,
+            crate::export::ReportLocale::ZhHant,
+        );
+        assert!(html.contains("A target quoted Asset 1 in its output"));
+        assert!(!html.contains("A target quoted 資產 1 in its output"));
+    }
+
+    #[test]
+    fn rpt30_chinese_coverage_uses_one_word() {
+        let fixture = Fixture::new();
+        let (case, run_id) = failed_gitleaks_on_two_repositories_case(&fixture);
+        let html = html_for_run(
+            &case,
+            &run_id,
+            RedactionProfile::Standard,
+            crate::export::ReportLocale::ZhHant,
+        );
+        assert!(html.contains("涵蓋缺口"));
+        assert!(!html.contains("覆蓋"));
+    }
+
+    #[test]
+    fn rpt30_target_number_gaps_are_explained_under_targets() {
+        let fixture = Fixture::new();
+        let (mut contiguous, run_id) = failed_gitleaks_on_two_repositories_case(&fixture);
+        let mut original = contiguous.assets.clone();
+        original.sort_by(|a, b| a.id.cmp(&b.id));
+        assert_eq!(original.len(), 2);
+        let mut requested = original[0].clone();
+        requested.id = format!("{}-extra-1", original[0].id);
+        requested.name = "Third requested repository".into();
+        contiguous.assets.push(requested.clone());
+        let run = contiguous
+            .scan_runs
+            .iter_mut()
+            .find(|r| r.id == run_id)
+            .unwrap();
+        run.report_asset_snapshots
+            .push(crate::domain::ReportAssetSnapshot {
+                asset: requested,
+                disposition: crate::domain::ReportAssetDisposition::RequestedForScan,
+            });
+        let mut gapped = contiguous.clone();
+        let mut omitted = original[0].clone();
+        omitted.id = format!("{}-extra-2", original[0].id);
+        omitted.name = "Other repository".into();
+        gapped.assets.push(omitted);
+        let mut no_alias = gapped.clone();
+        no_alias.assets.clear();
+        let report =
+            beginner_report_for_export(&no_alias, &run_id, RedactionProfile::Standard).unwrap();
+        assert!(
+            report
+                .requested
+                .targets
+                .iter()
+                .all(|target| target.label.as_deref() == Some("[redacted target]"))
+        );
+
+        for (locale, targets_heading, next_heading, sentence) in [
+            (
+                crate::export::ReportLocale::En,
+                "<h3>Targets</h3>",
+                "<h3>Requested checks</h3>",
+                "Numbers follow the project's asset list.",
+            ),
+            (
+                crate::export::ReportLocale::ZhHant,
+                "<h3>目標</h3>",
+                "<h3>要求的檢查</h3>",
+                "編號依專案的資產清單排列。",
+            ),
+        ] {
+            for (case, expected_aliases, show) in [
+                (&contiguous, vec!["Asset 1", "Asset 2", "Asset 3"], false),
+                (&gapped, vec!["Asset 1", "Asset 2", "Asset 4"], true),
+            ] {
+                let report =
+                    beginner_report_for_export(case, &run_id, RedactionProfile::Standard).unwrap();
+                let aliases = report
+                    .requested
+                    .targets
+                    .iter()
+                    .map(|t| t.label.as_deref().unwrap())
+                    .collect::<Vec<_>>();
+                assert_eq!(aliases, expected_aliases);
+                let html = html_for_run(case, &run_id, RedactionProfile::Standard, locale);
+                let targets = html
+                    .split_once(targets_heading)
+                    .unwrap()
+                    .1
+                    .split_once(next_heading)
+                    .unwrap()
+                    .0;
+                assert_eq!(targets.contains(sentence), show);
+                assert_eq!(html.matches(sentence).count(), usize::from(show));
+            }
+            let html = html_for_run(&gapped, &run_id, RedactionProfile::None, locale);
+            assert!(!html.contains(sentence));
+            let html = html_for_run(&no_alias, &run_id, RedactionProfile::Standard, locale);
+            assert!(!html.contains(sentence));
+        }
+    }
+
+    #[test]
+    fn rpt30_chinese_standard_single_report_names_redacted_location() {
+        let case =
+            case_for_rated_httpx_finding(EngineRunStatus::Completed, None, Some("httpx-task"));
+        let report =
+            beginner_report_for_export(&case, "run-httpx", RedactionProfile::Standard).unwrap();
+        assert!(report.source_audits.is_empty());
+        let html = html_for_run(
+            &case,
+            "run-httpx",
+            RedactionProfile::Standard,
+            crate::export::ReportLocale::ZhHant,
+        );
+        assert!(html.contains("（已遮蔽位置）"));
+        assert!(!html.contains("[redacted location]"));
+    }
+
     /// A check runs on one asset at a time, so a check that failed on two
     /// repositories is two rows. Each names its repository, and the step
     /// that retries them names the check once, with both. They used to read
@@ -35890,7 +36048,12 @@ mod tests {
                 .collect::<Vec<_>>();
             let mut named_once = assets.clone();
             named_once.sort_unstable();
-            assert_eq!(named_once, ["Asset 1", "Asset 2"], "{locale:?}: {html}");
+            let expected = if locale == crate::export::ReportLocale::ZhHant {
+                ["資產 1", "資產 2"]
+            } else {
+                ["Asset 1", "Asset 2"]
+            };
+            assert_eq!(named_once, expected, "{locale:?}: {html}");
             let steps = &html[html.find(step_heading).expect("the next steps")..];
             let steps = &steps[..steps.find("</ol>").expect("the step list ends")];
             assert!(
@@ -35945,8 +36108,13 @@ mod tests {
             assert_eq!(html.matches(own_step).count(), 1, "{locale:?}: {html}");
 
             let html = render(&two, &two_run, locale);
-            assert!(
+            let asset_pairs = if locale == crate::export::ReportLocale::ZhHant {
+                [" · 資產 1, 資產 2", " · 資產 2, 資產 1"]
+            } else {
                 [" · Asset 1, Asset 2", " · Asset 2, Asset 1"]
+            };
+            assert!(
+                asset_pairs
                     .iter()
                     .any(|assets| html.contains(&format!("{first}{assets}{close}"))),
                 "{locale:?}: {html}"
@@ -37250,12 +37418,8 @@ mod tests {
             "Stored localhost task contract: unsupported. Endpoint observation: unavailable.",
             "Run-bound diagnostic log: unavailable. Redacted diagnostic export: separate.",
         ] {
-            let english = HtmlReportCatalog {
-                locale: crate::export::ReportLocale::En,
-            };
-            let chinese = HtmlReportCatalog {
-                locale: crate::export::ReportLocale::ZhHant,
-            };
+            let english = HtmlReportCatalog::new(crate::export::ReportLocale::En);
+            let chinese = HtmlReportCatalog::new(crate::export::ReportLocale::ZhHant);
             assert_eq!(
                 translated_task_sentence(english, stored),
                 stored,
@@ -37275,7 +37439,7 @@ mod tests {
             crate::export::ReportLocale::ZhHant,
         ] {
             assert_eq!(
-                translated_task_sentence(HtmlReportCatalog { locale }, stored),
+                translated_task_sentence(HtmlReportCatalog::new(locale), stored),
                 stored
             );
         }
@@ -43790,7 +43954,7 @@ mod tests {
         );
         let redacted_zh_section = verification_comparison_section(&redacted_zh);
         assert!(redacted_zh_section.contains("Token file in Asset 1"));
-        assert!(redacted_zh_section.contains("Asset 1：（快照雜湊） → （快照雜湊）"));
+        assert!(redacted_zh_section.contains("資產 1：（快照雜湊） → （快照雜湊）"));
         assert!(!redacted_zh_section.contains(FIX_CHECK_ASSET));
     }
 

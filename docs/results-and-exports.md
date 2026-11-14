@@ -45,6 +45,8 @@ The report uses the app language, English or Traditional Chinese. It follows the
 
 When findings have framework mappings, their references follow the actionable results and their sources appear with the report terms. If no findings are mapped, the framework section is a single sentence.
 
+With sensitive identifiers hidden, asset numbers follow the project's asset list, so a run that includes only some assets may have gaps. Traditional Chinese HTML shows an alias such as `Asset 1` as `資產 1`; JSON keeps `Asset 1`. A combined report uses the same alias for an asset across its selected reports.
+
 To keep the original reports in that same HTML file, turn off **Hide sensitive identifiers** and select **Attach original reports at the end**. The final section offers one ZIP per scanner check. Download and extract the entire ZIP to open its original reports with their images and other supporting files. Tools that did not produce an HTML report may have JSON, XML or logs instead; unfinished checks keep their recorded status. Original files may contain sensitive information.
 
 Keep the HTML when sharing attachments: printing or saving it as a PDF does not include them. The HTML attachment limit is 64 MiB of original files or 10,000 files; use a technical case bundle for larger collections.
