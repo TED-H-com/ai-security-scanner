@@ -161,6 +161,20 @@ test("bootstrap recipes and input changes exercise native bootstrap without inst
   for (const path of CORE_RESOURCE_PATHS) {
     assert.equal(classifyChangedPaths([path]).skill_native, true, `${path}: embedded core resource`);
   }
+  assert.deepEqual(classifyChangedPaths(["scripts/skill/release-bundle.mjs"]), {
+    changed_path_count: 1,
+    docs_only: false,
+    frontend: false,
+    rust_core: false,
+    desktop: false,
+    engine: false,
+    framework: false,
+    release_contract: true,
+    windows_runtime: true,
+    windows_installer: false,
+    skill_bootstrap: true,
+    skill_native: true,
+  });
 });
 
 test("Cloudflare executable inputs and fixtures run native checks; method prose stays in contracts", () => {
@@ -251,6 +265,15 @@ test("ordinary core changes preserve Windows checks while only installer inputs 
   const cli = classifyChangedPaths(["src-tauri/src/bin/cli.rs"]);
   assert.equal(cli.windows_runtime, true);
   assert.equal(cli.desktop, true);
+  const runtimeArchiveClassification = classifyChangedPaths(["scripts/release/runtime-archive.mjs"]);
+  assert.deepEqual(
+    runtimeArchiveClassification,
+    { ...classifyChangedPaths(["scripts/release/generate-runtime-evidence.mjs"]), skill_bootstrap: true },
+  );
+  assert.equal(runtimeArchiveClassification.skill_bootstrap, true);
+  assert.equal(runtimeArchiveClassification.release_contract, true);
+  assert.equal(runtimeArchiveClassification.windows_runtime, true);
+  assert.equal(runtimeArchiveClassification.windows_installer, false);
   for (const path of [
     "src-tauri/windows/nsis/installer.nsi",
     "src-tauri/tauri.conf.json",

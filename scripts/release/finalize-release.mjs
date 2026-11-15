@@ -35,6 +35,7 @@ import {
 import { publishedReleaseAssetName } from "./release-asset-name.mjs";
 import { UPDATER_DOWNLOAD_REPOSITORY } from "../publication-origins.mjs";
 import { incidentScanPackForRelease } from "./incident-scan-pack.mjs";
+import { runtimeArchiveName, verifyRuntimeArchive } from "./runtime-archive.mjs";
 
 const PUBLICATION_MODES = new Set(["commit-bound-qc", "public-github-release"]);
 
@@ -587,6 +588,16 @@ async function regularFiles(directory, root = directory) {
   return files;
 }
 
+const RUNTIME_EVIDENCE_SUFFIXES = ["manifest.json", "cyclonedx.json", "spdx.json", "NOTICES.txt"];
+
+function runtimeReleaseFiles(platform) {
+  const files = RUNTIME_EVIDENCE_SUFFIXES.map((suffix) => `managed-runtime-${platform}.${suffix}`);
+  if (platform === "windows-x86_64") {
+    files.push(runtimeArchiveName(platform));
+  }
+  return files;
+}
+
 async function verifyRuntimeEvidence(directory, platform) {
   const prefix = `managed-runtime-${platform}`;
   const manifestPath = path.join(directory, `${prefix}.manifest.json`);
@@ -650,6 +661,12 @@ async function verifyRuntimeEvidence(directory, platform) {
       ),
     `${prefix} release provenance does not bind its exact manifest identity`,
   );
+  if (platform === "windows-x86_64") {
+    const archivePath = path.join(directory, runtimeArchiveName(platform));
+    const archiveMetadata = await regularFileIfPresent(archivePath);
+    assert(archiveMetadata && archiveMetadata.size > 0, `${prefix} has no runtime archive`);
+    await verifyRuntimeArchive({ archive: archivePath, manifestSha256 });
+  }
   return manifest.components.map((component) => ({ ...component, platform }));
 }
 
@@ -1329,10 +1346,10 @@ async function scopedFinalizeMain() {
       await copySelected(selection.updater.signatureFile);
     }
   }
-  const runtimeSuffixes = ["manifest.json", "cyclonedx.json", "spdx.json", "NOTICES.txt"];
   for (const [platform, records] of includedPlatforms) {
+    const runtimeFiles = runtimeReleaseFiles(platform);
     for (const sidecar of records.sidecars) await copySelected(sidecar.releaseFile);
-    for (const suffix of runtimeSuffixes) await copySelected(`managed-runtime-${platform}.${suffix}`);
+    for (const name of runtimeFiles) await copySelected(name);
     const sourceManifestSha256 = await sha256File(path.join(input, `installers-${platform}.json`));
     const filteredManifestName = `installers-${platform}.json`;
     await writeJsonAtomic(path.join(output, filteredManifestName), {
@@ -1354,7 +1371,7 @@ async function scopedFinalizeMain() {
       ...records.installers.map(({ file }) => file),
       ...records.sidecars.map(({ releaseFile }) => releaseFile),
       ...records.updaters.flatMap(({ payloadFile, signatureFile }) => [payloadFile, signatureFile]),
-      ...runtimeSuffixes.map((suffix) => `managed-runtime-${platform}.${suffix}`),
+      ...runtimeFiles,
     ])].sort();
     const lines = [];
     for (const name of names) lines.push(`${await sha256File(path.join(output, name))}  ${name}`);

@@ -333,6 +333,7 @@ jobs:
           --out target/ci-managed-runtime-evidence
           --platform windows-x86_64
           --expected-manifest-sha256 b530cf8f62196dd54e6b31b815202f565b3abb32593ee79c1ec834ded662edd0
+          --runtime-archive
       - name: Build and stage required Windows sidecars
         run: npm run desktop:prepare-sidecar -- --target x86_64-pc-windows-msvc
       - name: Admit the complete staged runtime through the built CLI

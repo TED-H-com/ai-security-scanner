@@ -531,7 +531,7 @@ async function obtainReleaseBundle(root, entry, deps) {
     const packageFile = join(staging, 'package');
     const bundle = join(staging, 'bundle');
     await mkdir(bundle, { mode: 0o700 });
-    deps.stderr.write(`No Docker, Podman or installed desktop app found. Downloading the scan runtime from the published desktop package (${Math.round(source.bytes / 1e6)} MB, once); its first start also downloads a machine image and can take several minutes.\n`);
+    deps.stderr.write(`No Docker, Podman or installed desktop app found. Downloading the scan runtime from the published release (${Math.round(source.bytes / 1e6)} MB, once); its first start also downloads a machine image and can take several minutes.\n`);
     await downloadReleaseBundle(source, packageFile, { fetch: deps.fetch, signal: controller.signal });
     await extractReleaseBundle(packageFile, source.kind, source.inner_path, bundle, controller.signal);
     await unlink(packageFile);

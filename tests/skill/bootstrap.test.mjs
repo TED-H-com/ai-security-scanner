@@ -15,6 +15,7 @@ import {
   invokeRuntimePreparation, runtimePreparationArguments,
 } from '../../scripts/skill/bootstrap-core.mjs';
 import { RECOGNIZED_MANAGED_RUNTIME_BUNDLES } from '../../scripts/skill/managed-runtime-bundles.mjs';
+import { packRuntimeArchive, runtimeArchiveName } from '../../scripts/release/runtime-archive.mjs';
 import { appPackageFixture, chunkedResponse, packageFixture } from './release-bundle-fixture.mjs';
 
 import { digest, fixture, revision, toolchain } from './bootstrap-fixture.mjs';
@@ -1088,7 +1089,7 @@ test('release runtime is promoted, retried with a pinned manifest, reused, and r
   assert.deepEqual(f.calls[1], { ...f.options, managedRuntimeBundle: final, expectedManagedRuntimeManifestSha256: f.pkg.manifestSha });
   assert.equal(first.runtime_bundle_source, 'downloaded_release');
   assert.deepEqual(first.runtime_bundle, { path: final, manifest_sha256: f.pkg.manifestSha, product_version: '0.6.2', source: { url: f.pkg.source.url, bytes: f.pkg.source.bytes, sha256: f.pkg.source.sha256 }, downloaded: true });
-  assert.equal(f.output(), 'No Docker, Podman or installed desktop app found. Downloading the scan runtime from the published desktop package (0 MB, once); its first start also downloads a machine image and can take several minutes.\n');
+  assert.equal(f.output(), 'No Docker, Podman or installed desktop app found. Downloading the scan runtime from the published release (0 MB, once); its first start also downloads a machine image and can take several minutes.\n');
   assert.deepEqual(await readdir(join(f.options.cacheDir, 'managed-bundles')), [f.pkg.manifestSha]);
   const second = await prepareBootstrap(f.options, f.deps);
   assert.equal(second.runtime_bundle.downloaded, false);
@@ -1118,7 +1119,7 @@ test('macOS release runtime is selected for both supported architectures', async
       if (arch === 'arm64') {
         const publishedDeps = { ...deps, recognizedManagedRuntimeBundles: [{ ...entry, release_source: published.release_source }], fetch: async () => new Response(null, { status: 404 }) };
         await assert.rejects(prepareBootstrap(f.options, publishedDeps), { code: 'runtime_preparation_failed' });
-        assert.match(f.output(), /Downloading the scan runtime from the published desktop package \(144 MB, once\)/);
+        assert.match(f.output(), /Downloading the scan runtime from the published release \(144 MB, once\)/);
       }
       const result = await prepareBootstrap(f.options, deps);
       const final = join(f.options.cacheDir, 'managed-bundles', f.pkg.manifestSha);
@@ -1135,6 +1136,97 @@ test('macOS release runtime is selected for both supported architectures', async
       assert.equal(f.fetches(), 1);
     });
   }
+});
+
+async function windowsRuntimeArchivePackageFixture(t) {
+  const staging = await realpath(await mkdtemp(join(tmpdir(), 'scanner-windows-archive-')));
+  t.after(() => rm(staging, { recursive: true, force: true }));
+  const runtimeDir = join(staging, 'runtime');
+  const files = [
+    { path: 'bin/podman.exe', data: Buffer.from('podman.exe fixture\n'), executable: true },
+    { path: 'bin/gvproxy.exe', data: Buffer.from('gvproxy.exe fixture\n'), executable: true },
+    { path: 'share/notes/readme.txt', data: Buffer.from('windows runtime notes\n'), executable: false },
+  ];
+  for (const file of files) {
+    const target = join(runtimeDir, ...file.path.split('/'));
+    await mkdir(dirname(target), { recursive: true });
+    await writeFile(target, file.data);
+  }
+  const manifestBytes = Buffer.from(`${JSON.stringify({
+    schema_version: '3',
+    bundle_id: 'podman-machine',
+    driver_path: 'bin/podman.exe',
+    files: files.map(file => ({
+      path: file.path,
+      sha256: digest(file.data),
+      size_bytes: file.data.length,
+      executable: file.executable,
+    })),
+  }, null, 2)}\n`);
+  await writeFile(join(runtimeDir, 'manifest.json'), manifestBytes);
+  const packed = await packRuntimeArchive({
+    root: runtimeDir,
+    output: join(staging, runtimeArchiveName('windows-x86_64')),
+  });
+  const bytes = await readFile(packed.file);
+  return {
+    bytes,
+    manifestBytes,
+    files,
+    manifestSha: packed.manifestSha256,
+    source: {
+      kind: 'tar.gz',
+      url: 'https://example.test/managed-runtime-windows-x86_64.tar.gz',
+      bytes: packed.bytes,
+      sha256: packed.sha256,
+      inner_path: 'managed-runtime',
+      extracted_bytes: packed.extractedBytes,
+    },
+  };
+}
+
+test('packed Windows release archive is downloaded, verified, and reused through the bootstrap path', async t => {
+  const pkg = await windowsRuntimeArchivePackageFixture(t);
+  const f = await releaseFixture(t, pkg);
+  const final = join(f.options.cacheDir, 'managed-bundles', pkg.manifestSha);
+  const first = await prepareBootstrap(f.options, f.deps);
+  assert.equal(f.fetches(), 1);
+  assert.equal(first.runtime_bundle_source, 'downloaded_release');
+  assert.deepEqual(first.runtime_bundle, {
+    path: final,
+    manifest_sha256: pkg.manifestSha,
+    product_version: '0.6.2',
+    source: { url: pkg.source.url, bytes: pkg.source.bytes, sha256: pkg.source.sha256 },
+    downloaded: true,
+  });
+  assert.deepEqual(f.calls.at(-1), { ...f.options, managedRuntimeBundle: final, expectedManagedRuntimeManifestSha256: pkg.manifestSha });
+  for (const file of pkg.files) {
+    assert.deepEqual(await readFile(join(final, ...file.path.split('/'))), file.data);
+  }
+  assert.deepEqual(await readFile(join(final, 'manifest.json')), pkg.manifestBytes);
+  assert.equal((await doctorBootstrap(f.options, f.deps)).runtime_sources.release_bundle, 'cached');
+  const second = await prepareBootstrap(f.options, f.deps);
+  assert.equal(second.runtime_bundle_source, 'downloaded_release');
+  assert.equal(second.runtime_bundle.downloaded, false);
+  assert.equal(second.runtime_bundle.path, final);
+  assert.equal(f.fetches(), 1);
+
+  const shippedWindows = RECOGNIZED_MANAGED_RUNTIME_BUNDLES.find(entry => entry.platform === 'win32');
+  assert.ok(shippedWindows);
+  assert.equal(shippedWindows.release_source, null);
+  const windowsDoctorOptions = { ...f.options, cacheDir: join(f.root, 'simulated-windows-cache') };
+  // A simulated win32 prepare cannot run on other hosts because the fixture core is built for the host.
+  const windowsWithArchive = RECOGNIZED_MANAGED_RUNTIME_BUNDLES.map(entry =>
+    entry.platform === 'win32' ? { ...entry, manifest_sha256: pkg.manifestSha, release_source: pkg.source } : entry,
+  );
+  assert.equal(
+    (await doctorBootstrap(windowsDoctorOptions, { ...f.deps, platform: 'win32', arch: 'x64', recognizedManagedRuntimeBundles: windowsWithArchive })).runtime_sources.release_bundle,
+    'downloadable',
+  );
+  assert.equal(
+    (await doctorBootstrap(windowsDoctorOptions, { ...f.deps, platform: 'win32', arch: 'x64', recognizedManagedRuntimeBundles: RECOGNIZED_MANAGED_RUNTIME_BUNDLES })).runtime_sources.release_bundle,
+    'unsupported',
+  );
 });
 
 test('release acquisition failure preserves original core details and maps useful next steps', async t => {

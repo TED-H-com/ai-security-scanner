@@ -10,6 +10,7 @@ import {
   writeJsonAtomic,
   writeTextAtomic,
 } from "./lib.mjs";
+import { packRuntimeArchive, runtimeArchiveName } from "./runtime-archive.mjs";
 
 const MANAGEMENT_CONTRACT_REVISION = "2026-08-29.1";
 const WINDOWS_X86_64_MANIFEST_SHA256 =
@@ -26,6 +27,14 @@ async function main() {
   const output = path.resolve(requireString(args, "out"));
   const platform = requireString(args, "platform");
   const expectedManifestSha256 = args.get("expected-manifest-sha256");
+  const runtimeArchive = args.get("runtime-archive");
+  if (runtimeArchive !== undefined) {
+    assert(runtimeArchive === true, "--runtime-archive is a bare flag and does not accept a value");
+    assert(
+      platform === "windows-x86_64",
+      "--runtime-archive is supported only with --platform windows-x86_64",
+    );
+  }
   const manifest = await readJson(manifestPath);
   assert(manifest.schema_version === "3", "managed runtime evidence requires schema 3");
   assert(
@@ -168,6 +177,16 @@ async function main() {
     assert((await readFile(evidence)).length > 0, `empty runtime evidence: ${evidence}`);
   }
   process.stdout.write(`Generated exact managed runtime evidence for ${platform}.\n`);
+  if (runtimeArchive === true) {
+    const archiveName = runtimeArchiveName(platform);
+    const packed = await packRuntimeArchive({
+      root: bundleRoot,
+      output: path.join(output, archiveName),
+    });
+    process.stdout.write(
+      `Packed ${archiveName}: bytes=${packed.bytes} sha256=${packed.sha256} extracted_bytes=${packed.extractedBytes}\n`,
+    );
+  }
 }
 
 runMain(main);

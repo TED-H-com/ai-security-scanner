@@ -23,6 +23,7 @@ import {
   windowsExternalEvidenceImporterIdentity,
 } from "./windows-external-evidence.mjs";
 import { publishedReleaseAssetName } from "./release-asset-name.mjs";
+import { runtimeArchiveName, verifyRuntimeArchive } from "./runtime-archive.mjs";
 import { PUBLICATION_ORIGINS, UPDATER_DOWNLOAD_REPOSITORY } from "../publication-origins.mjs";
 
 function assert(condition, message) {
@@ -426,6 +427,17 @@ async function main() {
     }
   }
   assert(offeredArtifacts > 0, "finalized release metadata has no offered artifact");
+  // The skill bootstrap later pins this archive and unpacks it on users' computers. Checksums only
+  // prove the bytes are the listed ones, so compare its content with the runtime manifest beside it.
+  const windowsRuntimeArchive = actualByPath.get(runtimeArchiveName("windows-x86_64"));
+  if (windowsRuntimeArchive) {
+    const windowsRuntimeManifest = actualByPath.get("managed-runtime-windows-x86_64.manifest.json");
+    assert(windowsRuntimeManifest, "finalized Windows runtime archive has no runtime manifest beside it");
+    await verifyRuntimeArchive({
+      archive: windowsRuntimeArchive.absolute,
+      manifestSha256: await sha256File(windowsRuntimeManifest.absolute),
+    });
+  }
   assert(
     !hasExternalEvidenceReceipt || verifiedExternalEvidence,
     "protected external-evidence receipt is not bound to an offered Windows NSIS artifact",

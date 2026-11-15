@@ -24,7 +24,7 @@
 - 真實宿主驗收已在一個 Linux 宿主以合成專案完成，從空的固定版本 bootstrap 快取一路到還原；第二個宿主、多資產與 macOS／Windows 宿主仍待完成。
 - 預設 skill 仍使用已發布桌面版，尚未切換。
 - 尚未固定任何發布版本作為預建核心，因此 `prepare` 仍需要 Rust 與原生編譯器。在發布版本帶有相符識別之前，下載路徑僅由測試涵蓋。
-- 在 Linux x86_64 與 macOS 上，沒有其他執行環境時會從已發布的桌面套件下載掃描執行環境；已在一台 Linux 主機上用它啟動受管理環境並備妥 Gitleaks 映像。macOS 下載後的實際啟動尚未驗證，Windows 的自動取得仍待完成。macOS 與 Windows 的 CI 現在也會執行程式庫測試，以及使用測試替身的前景掃描與引擎準備測試；在這兩種系統上執行實際掃描工具仍未驗證。
+- 在 Linux x86_64 與 macOS 上，沒有其他執行環境時會從已發布的桌面套件下載掃描執行環境；已在一台 Linux 主機上用它啟動受管理環境並備妥 Gitleaks 映像。macOS 下載後的實際啟動尚未驗證；Windows 的自動取得要等發布版本附上獨立的執行環境檔案。macOS 與 Windows 的 CI 現在也會執行程式庫測試，以及使用測試替身的前景掃描與引擎準備測試；在這兩種系統上執行實際掃描工具仍未驗證。
 
 以下日期章節保留各階段當時的觀察。[產品規格](product-spec.md)定義產品行為；[遷移計畫](plans/skill-first-cloudflare-migration.md)與[報告及封存契約](specs/report-fidelity-and-archive.md)說明已採納的工作。可用內容請見[發布狀態](release-model.zh-TW.md)。
 
@@ -35,6 +35,8 @@ CI 文件與契約測試目前共 132 項。
 `prepare` 現在可以把已固定發布版本的 CLI 執行檔當作掃描核心。條件是乾淨的 checkout、`release` 設定檔，且建置輸入與該發布版本相同；此時不需要 Rust 或 C 工具鏈。檔案執行前會先核對固定的大小與 SHA-256，執行檔回報的建置識別也必須與固定資料及 checkout 相符。下載或檢查失敗時 `prepare` 會停止；加上 `--build-from-source` 可改為在本機建置。`doctor` 會回報目前適用的核心來源。
 
 固定清單目前是空的，所以每次 `prepare` 仍從原始碼建置。測試以測試用檔案涵蓋下載、驗證、快取重用與拒絕；尚未有實際發布檔案經由這條路徑下載。
+
+發布建置現在會把 bootstrap 的建置輸入摘要與建置配方名稱寫進隨附的 CLI；建出的 CLI 沒有回報這兩項時，建置會停止。這樣發布後的 CLI 才能固定為預建核心。發布建置也會把 Windows 掃描執行環境打包成獨立檔案 `managed-runtime-windows-x86_64.tar.gz`；只有這個檔案與 Windows 執行環境清單相符時，該次發布才會提供 Windows 版本。測試會拿發布端打包出的檔案，走完 bootstrap 的下載、驗證與重用。目前還沒有發布版本包含這兩項變更：尚未固定任何版本，Windows 仍無法自動取得執行環境，也還沒有 Windows 電腦用這個檔案啟動過掃描執行環境。發布之後的步驟見[固定已發布的版本](skill-bootstrap.md#pinning-a-published-release)。
 
 ## 11 月 14 日跨平台檢查與執行環境重用 — 30
 
