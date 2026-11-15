@@ -52,6 +52,8 @@ Workflow 定義以下四條 qualification 路徑，各路徑最終可記為 `not
 
 Finalized QC 集合記錄所提供的 artifacts 及其 qualification evidence、checksums、runtime manifests、notices、SBOM 與限制。Workflow summary 識別 run、artifact 與 source commit；finalization 不會發布任何內容。
 
+Sidecar 建置會在 companion CLI（`ai-security-scanner-cli`）嵌入 checkout 的 bootstrap input digest 與 recipe 名稱。若建置目標可在該建置主機執行，腳本會執行 `--json build-identity` 檢查，只要建置出的 CLI 未回報預期的 digest、recipe、target 與 features 即中止建置。這讓 skill bootstrap 日後可將 pinned release CLI 接受為預先建置的核心。
+
 ## 發布 public candidate
 
 公開發布由產品負責人另外決定。負責人授權後，從 `main` 以 `public_release_candidate: true` 執行 **Release desktop installers**；**Promote frozen desktop release candidate** 再使用該 run summary 中的五個值：
