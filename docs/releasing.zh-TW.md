@@ -50,7 +50,7 @@ Workflow 定義以下四條 qualification 路徑，各路徑最終可記為 `not
 
 各 lane 如實記錄觀察到的安裝、application 與 companion layout、桌面啟動、支援的 managed-runtime operations、runtime／container evidence，以及測試狀態移除。JSON qualification record 將這些觀察綁定 version、source commit 與 artifact digest。安裝檔檢查通過不代表已觀察 runtime 執行或 Windows lifecycle；本次 macOS／Windows 限制已列於上方。
 
-Finalized QC 集合記錄所提供的 artifacts 及其 qualification evidence、checksums、runtime manifests、notices、SBOM 與限制。Workflow summary 識別 run、artifact 與 source commit；finalization 不會發布任何內容。
+Finalized QC 集合記錄所提供的 artifacts 及其 qualification evidence、checksums、runtime manifests、notices、SBOM 與限制。Workflow summary 識別 run、artifact 與 source commit；finalization 不會發布任何內容。Windows 建置路徑亦會將 staged runtime 打包為 `managed-runtime-windows-x86_64.tar.gz`，並以 bootstrap 本身的讀取器進行檢查。Release 釘選後，skill bootstrap 即可在不依賴桌面應用程式的情況下準備 Windows 掃描。
 
 Sidecar 建置會在 companion CLI（`ai-security-scanner-cli`）嵌入 checkout 的 bootstrap input digest 與 recipe 名稱。若建置目標可在該建置主機執行，腳本會執行 `--json build-identity` 檢查，只要建置出的 CLI 未回報預期的 digest、recipe、target 與 features 即中止建置。這讓 skill bootstrap 日後可將 pinned release CLI 接受為預先建置的核心。
 

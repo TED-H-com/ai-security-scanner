@@ -52,7 +52,7 @@ The workflow defines four qualification lanes. A lane can finalize as `not-offer
 
 Each lane records what it actually observed: installation, application and companion layout, desktop startup, supported managed-runtime operations, runtime/container evidence, and removal of test state. Its JSON qualification record binds those observations to the version, source commit and artifact digest. A passing installer check does not imply that runtime execution or Windows lifecycle checks were observed; the current macOS and Windows limitations are listed above.
 
-The finalized QC set records offered artifacts and their qualification evidence, checksums, runtime manifests, notices, SBOMs and limitations. The workflow summary identifies the run, artifact and source commit. Finalization does not publish anything.
+The finalized QC set records offered artifacts and their qualification evidence, checksums, runtime manifests, notices, SBOMs and limitations. The workflow summary identifies the run, artifact and source commit. Finalization does not publish anything. The Windows build lane also packs the staged runtime as `managed-runtime-windows-x86_64.tar.gz` and checks it with the bootstrap's own reader. It lets the skill bootstrap prepare Windows scans without the desktop app once a release is pinned.
 
 The sidecar build embeds the checkout's bootstrap input digest and recipe name in the companion CLI (`ai-security-scanner-cli`). When the built target can run on the build host, the script checks `--json build-identity` and stops the build if the built CLI does not report the expected digest, recipe, target and features. This lets the skill bootstrap later accept a pinned release CLI as a prebuilt core.
 

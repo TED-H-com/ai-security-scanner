@@ -167,6 +167,8 @@ const RELEASE_CONTRACT_PATHS = [
   /^scripts\/release\//,
   // Sidecar release builds read RECIPE and collectInputManifest from these skill modules.
   /^scripts\/skill\/(?:bootstrap-core|input-manifest)\.mjs$/,
+  // The runtime archive packer checks its output with the bootstrap's archive reader.
+  /^scripts\/skill\/release-bundle\.mjs$/,
   /^tests\/release\//,
   /^docs\/incident-pack\.(?:js|json)$/,
   /^\.github\/workflows\/engine-images-local-k8s\.yml$/,
@@ -190,8 +192,9 @@ const WINDOWS_RUNTIME_PATHS = [
   /^src-tauri\/binaries\//,
   /^src-tauri\/(?:Cargo\.toml|app-icon\.svg$|build\.rs|icons\/|tauri\.conf\.json$)/,
   /^src-tauri\/src\/(?:lib\.rs$|startup_failure\.rs$|bootstrap\.rs$|bootstrap\/|container_runtime\.rs$|export_identity\.rs$|gateway_release\.rs$|managed_network\.rs$|managed_runtime\.rs$|product_uninstall\.rs$|publication_origins\.rs$|runtime\.rs$|runtime_health_monitor\.rs$|bin\/(?:bootstrap_broker|cli|egress_gateway)\.rs$)/,
-  /^scripts\/release\/(?:build-sidecar|stage-sidecar|generate-runtime-evidence|validate-windows-nsis-template|windows-nsis-[^/]+-evidence)\.mjs$/,
+  /^scripts\/release\/(?:build-sidecar|stage-sidecar|generate-runtime-evidence|runtime-archive|validate-windows-nsis-template|windows-nsis-[^/]+-evidence)\.mjs$/,
   /^scripts\/release\/qualify-windows[^/]*\.ps1$/,
+  /^scripts\/skill\/release-bundle\.mjs$/,
 ];
 
 // Core/runtime source changes still compile the desktop and test its trust
