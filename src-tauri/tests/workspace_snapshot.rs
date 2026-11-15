@@ -1844,4 +1844,303 @@ mod git_program_guards {
             snapshots[1].manifest.exclusions
         );
     }
+
+    struct ProgramFixture {
+        repository: PathBuf,
+        markers: PathBuf,
+    }
+
+    fn shell_single_quote(path: &Path) -> String {
+        let raw = path
+            .to_str()
+            .expect("temporary fixture paths must be valid UTF-8");
+        format!("'{}'", raw.replace('\'', "'\\''"))
+    }
+
+    fn write_marker_script(script_path: &Path, marker_path: &Path, trailing: &str) {
+        let content = format!(
+            "#!/bin/sh\n: > {}\n{}\n",
+            shell_single_quote(marker_path),
+            trailing
+        );
+        fs::write(script_path, content).unwrap();
+        fs::set_permissions(script_path, fs::Permissions::from_mode(0o755)).unwrap();
+    }
+
+    fn marker_names(markers: &Path) -> Vec<String> {
+        let mut names = fs::read_dir(markers)
+            .unwrap()
+            .map(|entry| entry.unwrap().file_name().to_string_lossy().into_owned())
+            .collect::<Vec<_>>();
+        names.sort_unstable();
+        names
+    }
+
+    fn clear_markers(markers: &Path) {
+        for entry in fs::read_dir(markers).unwrap() {
+            fs::remove_file(entry.unwrap().path()).unwrap();
+        }
+    }
+
+    fn repository_with_configured_programs(root: &Path) -> ProgramFixture {
+        let markers = root.join("markers");
+        let programs = root.join("programs");
+        let hooks = root.join("hooks");
+        let repository = root.join("repository");
+        fs::create_dir_all(&markers).unwrap();
+        fs::create_dir_all(&programs).unwrap();
+        fs::create_dir_all(&hooks).unwrap();
+        fs::create_dir_all(repository.join("src")).unwrap();
+
+        let program_specs = [
+            ("core.fsmonitor", "exit 0"),
+            ("core.pager", "exec /bin/cat"),
+            ("pager.ls-files", "exec /bin/cat"),
+            ("alias.ls-files", "exit 0"),
+            ("core.alternateRefsCommand", "exit 0"),
+            ("credential.helper", "exit 1"),
+            ("core.gitProxy", "exit 1"),
+            ("core.sshCommand", "exit 1"),
+            ("core.editor", "exit 0"),
+            ("diff.external", "exit 0"),
+            ("uploadpack.packObjectsHook", "exit 0"),
+            ("filter-clean", "exec /bin/cat"),
+            ("filter-smudge", "exec /bin/cat"),
+            ("filter-process", "exec /bin/cat"),
+        ];
+        for (name, trailing) in program_specs {
+            write_marker_script(&programs.join(name), &markers.join(name), trailing);
+        }
+
+        for hook in ["post-index-change", "reference-transaction", "pre-auto-gc"] {
+            write_marker_script(
+                &hooks.join(hook),
+                &markers.join(format!("hook-{hook}")),
+                "exit 0",
+            );
+        }
+
+        fs::write(repository.join("README.md"), b"fixture repository\n").unwrap();
+        fs::write(repository.join("src/app.txt"), b"initial app line\n").unwrap();
+        fs::write(repository.join("clean.c1"), b"initial clean line\n").unwrap();
+        fs::write(repository.join("smudge.c2"), b"initial smudge line\n").unwrap();
+        fs::write(repository.join("process.c3"), b"initial process line\n").unwrap();
+        fs::write(
+            repository.join(".gitattributes"),
+            b"*.c1 filter=markerclean\n*.c2 filter=markersmudge\n*.c3 filter=markerprocess\n",
+        )
+        .unwrap();
+        fs::write(repository.join(".gitignore"), b"noise.txt\n").unwrap();
+
+        git_ok(&repository, &["init", "-q"]);
+        git_ok(&repository, &["add", "--force", "."]);
+        git_ok(&repository, &["commit", "-qm", "fixture"]);
+
+        let program_path = |name: &str| programs.join(name).to_str().unwrap().to_owned();
+        let config_entries = [
+            ("core.fsmonitor", program_path("core.fsmonitor")),
+            ("core.hooksPath", hooks.to_str().unwrap().to_owned()),
+            ("core.pager", program_path("core.pager")),
+            ("pager.ls-files", program_path("pager.ls-files")),
+            (
+                "alias.ls-files",
+                format!("!{}", program_path("alias.ls-files")),
+            ),
+            (
+                "core.alternateRefsCommand",
+                program_path("core.alternateRefsCommand"),
+            ),
+            ("credential.helper", program_path("credential.helper")),
+            ("core.gitProxy", program_path("core.gitProxy")),
+            ("core.sshCommand", program_path("core.sshCommand")),
+            ("core.editor", program_path("core.editor")),
+            ("diff.external", program_path("diff.external")),
+            (
+                "uploadpack.packObjectsHook",
+                program_path("uploadpack.packObjectsHook"),
+            ),
+            ("filter.markerclean.clean", program_path("filter-clean")),
+            ("filter.markersmudge.smudge", program_path("filter-smudge")),
+            (
+                "filter.markerprocess.process",
+                program_path("filter-process"),
+            ),
+        ];
+        for (key, value) in config_entries {
+            git_ok(&repository, &["config", key, &value]);
+        }
+
+        for relative in ["src/app.txt", "clean.c1", "process.c3"] {
+            let mut file = OpenOptions::new()
+                .append(true)
+                .open(repository.join(relative))
+                .unwrap();
+            file.write_all(b"appended working-tree line\n").unwrap();
+        }
+        fs::write(repository.join("noise.txt"), b"ignored untracked fixture\n").unwrap();
+
+        let fired = marker_names(&markers);
+        assert!(
+            fired.is_empty(),
+            "building the fixture ran repository-configured programs: {fired:?}"
+        );
+
+        ProgramFixture {
+            repository,
+            markers,
+        }
+    }
+
+    fn control_git(repository: &Path) -> Command {
+        let mut command = Command::new("/usr/bin/git");
+        command
+            .env_clear()
+            .env("LC_ALL", "C")
+            .env("GIT_CONFIG_NOSYSTEM", "1")
+            .env("GIT_CONFIG_GLOBAL", "/dev/null")
+            .env("GIT_TERMINAL_PROMPT", "0")
+            .env("GIT_SSH", "/bin/false")
+            .stdin(Stdio::null())
+            .args(["-c", "user.name=Snapshot Fixture"])
+            .args(["-c", "user.email=fixture@example.invalid"])
+            .arg("-C")
+            .arg(repository);
+        command
+    }
+
+    #[test]
+    fn configured_programs_never_run_during_capture() {
+        if !trusted_git_available() {
+            return;
+        }
+        let (temporary, artifacts, _) = roots();
+        let fixture = repository_with_configured_programs(temporary.path());
+
+        let snapshot = create_workspace_snapshot(
+            &artifacts,
+            "case-configured-programs",
+            "source-configured-programs",
+            &fixture.repository,
+            small_limits(),
+        );
+        let fired = marker_names(&fixture.markers);
+        assert!(
+            fired.is_empty(),
+            "snapshot capture executed repository-configured programs: {fired:?}"
+        );
+
+        let snapshot =
+            snapshot.expect("capture completes without running repository-configured programs");
+        assert_eq!(
+            snapshot_paths(&snapshot),
+            [
+                ".gitattributes",
+                ".gitignore",
+                "README.md",
+                "clean.c1",
+                "process.c3",
+                "smudge.c2",
+                "src/app.txt",
+            ]
+        );
+        assert!(untracked_noise_is_excluded(&snapshot));
+    }
+
+    #[test]
+    fn configured_programs_fixture_is_armed() {
+        if !trusted_git_available() {
+            return;
+        }
+        let temporary = test_temp::tempdir().expect("temporary directory");
+        let fixture = repository_with_configured_programs(temporary.path());
+
+        let run_control = |args: &[&str], stdin_bytes: Option<&[u8]>| -> Output {
+            let mut command = control_git(&fixture.repository);
+            command.args(args);
+            if let Some(bytes) = stdin_bytes {
+                command.stdin(Stdio::piped());
+                let mut child = command
+                    .stdout(Stdio::piped())
+                    .stderr(Stdio::piped())
+                    .spawn()
+                    .unwrap();
+                child.stdin.take().unwrap().write_all(bytes).unwrap();
+                child.wait_with_output().unwrap()
+            } else {
+                command.output().unwrap()
+            }
+        };
+
+        let check_marker = |vector: &str, required_on_other_unix: bool, output: &Output| {
+            if fixture.markers.join(vector).exists() {
+                return;
+            }
+            if cfg!(target_os = "linux") || required_on_other_unix {
+                panic!(
+                    "{vector} control did not create marker; status={}, stdout={:?}, stderr={:?}",
+                    output.status,
+                    String::from_utf8_lossy(&output.stdout),
+                    String::from_utf8_lossy(&output.stderr)
+                );
+            }
+            let version_out = Command::new("/usr/bin/git")
+                .env_clear()
+                .arg("--version")
+                .output()
+                .map(|out| String::from_utf8_lossy(&out.stdout).trim().to_owned())
+                .unwrap_or_else(|_| "unknown".to_owned());
+            eprintln!(
+                "NOTICE Git program guards: {vector} control did not fire with {version_out}"
+            );
+        };
+
+        let status_out = run_control(&["status", "--porcelain"], None);
+        check_marker("core.fsmonitor", true, &status_out);
+        clear_markers(&fixture.markers);
+
+        let diff_quiet_out = run_control(&["diff", "--quiet"], None);
+        check_marker("filter-clean", true, &diff_quiet_out);
+        check_marker("filter-process", false, &diff_quiet_out);
+        clear_markers(&fixture.markers);
+
+        let diff_out = run_control(&["diff"], None);
+        check_marker("diff.external", true, &diff_out);
+        clear_markers(&fixture.markers);
+
+        fs::remove_file(fixture.repository.join("smudge.c2")).unwrap();
+        let smudge_out = run_control(&["checkout", "--", "smudge.c2"], None);
+        check_marker("filter-smudge", false, &smudge_out);
+        clear_markers(&fixture.markers);
+
+        let add_out = run_control(&["add", "src/app.txt"], None);
+        check_marker("hook-post-index-change", false, &add_out);
+        clear_markers(&fixture.markers);
+
+        let ref_out = run_control(&["update-ref", "refs/heads/control", "HEAD"], None);
+        check_marker("hook-reference-transaction", false, &ref_out);
+        clear_markers(&fixture.markers);
+
+        let editor_out = run_control(&["commit", "--amend"], None);
+        check_marker("core.editor", false, &editor_out);
+        clear_markers(&fixture.markers);
+
+        let ssh_out = run_control(&["ls-remote", "ssh://control.invalid/repository"], None);
+        check_marker("core.sshCommand", false, &ssh_out);
+        clear_markers(&fixture.markers);
+
+        let proxy_out = run_control(&["ls-remote", "git://127.0.0.1:1/repository"], None);
+        check_marker("core.gitProxy", false, &proxy_out);
+        clear_markers(&fixture.markers);
+
+        let cred_out = run_control(
+            &["credential", "fill"],
+            Some(b"protocol=https\nhost=control.invalid\n\n"),
+        );
+        check_marker("credential.helper", false, &cred_out);
+        clear_markers(&fixture.markers);
+
+        eprintln!(
+            "NOTICE Git program guards: configured without a control: core.pager, pager.ls-files, alias.ls-files, core.alternateRefsCommand, uploadpack.packObjectsHook, hook-pre-auto-gc"
+        );
+    }
 }
