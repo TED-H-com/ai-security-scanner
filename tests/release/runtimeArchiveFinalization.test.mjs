@@ -10,7 +10,11 @@ import { writeIncidentScanPack } from "../../scripts/release/incident-scan-pack.
 import { PROJECT_ROOT, readJson, sha256, sha256File, writeJsonAtomic, writeTextAtomic } from "../../scripts/release/lib.mjs";
 import { createPreparedReleaseMetadata } from "../../scripts/release/release-metadata.mjs";
 import { packRuntimeArchive, runtimeArchiveName, verifyRuntimeArchive } from "../../scripts/release/runtime-archive.mjs";
-import { createPlatformFixture, createQualificationFixture } from "../../scripts/release/self-test.mjs";
+import {
+  createPlatformFixture,
+  createQualificationFixture,
+  resealFinalizedFixture,
+} from "../../scripts/release/self-test.mjs";
 
 const VERSION = (await readJson(path.join(PROJECT_ROOT, "package.json"))).version;
 const TAG = `v${VERSION}`;
@@ -310,4 +314,35 @@ test("finalization excludes Windows when its runtime archive does not match its 
 
   const verified = run("verify-finalized-release.mjs", verifyArgs(output));
   assert.equal(verified.status, 0, verified.stderr);
+});
+
+test("verification refuses a finalized set whose Windows runtime archive was replaced and resealed", async () => {
+  const input = path.join(temporary, "case-resealed-input");
+  const output = path.join(temporary, "case-resealed-output");
+  await cp(baseInput, input, { recursive: true });
+
+  const finalized = run("finalize-release.mjs", finalizeArgs(input, output));
+  assert.equal(finalized.status, 0, finalized.stderr);
+  const accepted = run("verify-finalized-release.mjs", verifyArgs(output));
+  assert.equal(accepted.status, 0, accepted.stderr);
+
+  // A well-formed archive of a different runtime, with every checksum file regenerated to match it.
+  const outputArchive = path.join(output, ARCHIVE_NAME);
+  const originalSha256 = await sha256File(outputArchive);
+  await createAlternateRuntimeArchive(
+    path.join(output, "managed-runtime-windows-x86_64.manifest.json"),
+    outputArchive,
+  );
+  const replacedSha256 = await sha256File(outputArchive);
+  assert.notEqual(replacedSha256, originalSha256);
+  await resealFinalizedFixture(output);
+  const releaseSums = parseChecksumFile(await readFile(path.join(output, "SHA256SUMS.txt"), "utf8"));
+  assert.deepEqual(
+    releaseSums.find((entry) => entry.name === ARCHIVE_NAME),
+    { sha256: replacedSha256, name: ARCHIVE_NAME },
+  );
+
+  const refused = run("verify-finalized-release.mjs", verifyArgs(output));
+  assert.notEqual(refused.status, 0, refused.stdout);
+  assert.match(refused.stderr, /runtime archive does not match its manifest/u);
 });
