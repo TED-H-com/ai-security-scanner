@@ -26,7 +26,7 @@ export async function main(argv = process.argv.slice(2)) {
   try {
     const options = parseBootstrapArguments(argv);
     if (options.help) {
-      process.stdout.write('Usage: node scripts/skill/bootstrap.mjs doctor|prepare|run --revision FULL40 --cache-dir DIR [--allow-dirty] [--offline] [--capability core|scan] [--profile dev|release] [-- CLI arguments]\nScan preparation: prepare --capability scan --engine ID[,ID] --data-dir DIR [--managed-runtime-bundle DIR] [--release-approved-local-image-directory DIR]\n');
+      process.stdout.write('Usage: node scripts/skill/bootstrap.mjs doctor|prepare|run --revision FULL40 --cache-dir DIR [--allow-dirty] [--offline] [--build-from-source] [--capability core|scan] [--profile dev|release] [-- CLI arguments]\nScan preparation: prepare --capability scan --engine ID[,ID] --data-dir DIR [--managed-runtime-bundle DIR] [--release-approved-local-image-directory DIR]\n');
       return 0;
     }
     if (options.command === 'doctor') {

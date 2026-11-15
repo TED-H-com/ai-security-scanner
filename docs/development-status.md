@@ -12,6 +12,7 @@ These features are implemented in source on this branch and are not in any relea
 
 - [Skill-first execution](skill-bootstrap.md): pinned source bootstrap and preparation of selected scanner engines.
 - [Installed desktop runtime reuse](skill-bootstrap.md): prepare scans without Docker or Podman using a recognized desktop runtime on Linux x86_64, macOS and Windows x64.
+- [Prebuilt core](skill-bootstrap.md#prebuilt-core-from-a-pinned-release): once a release is pinned in source, `prepare` downloads and verifies that release's CLI in place of a local build. No release is pinned yet.
 - [Foreground scans and recovery](foreground-scans.md): run approved checks, read saved status and recover captured results.
 - [Cloudflare source audits](cloudflare-provider.md): host-led preparation, recorded assignments and outputs, checkpoints, validation, sealing, case admission and shared reporting, with explicit termination when an audit will not continue.
 - [Unfinished audit checks](results-and-exports.md#source-audits-that-did-not-finish): blocked preparation and terminated audits appear as not-started or failed check rows in the case, desktop Results and shared report.
@@ -22,11 +23,18 @@ These features are implemented in source on this branch and are not in any relea
 
 - Real-host acceptance has covered one Linux host on a synthetic repository, from an empty pinned-bootstrap cache through restore; a second host, several assets and macOS/Windows hosts remain.
 - The default skill has not switched from the released desktop.
+- No release is pinned as a prebuilt core, so `prepare` still needs Rust and a native compiler. Until a release carries the matching identity, tests alone cover the download path.
 - On Linux x86_64 and macOS, the scan runtime downloads from the published desktop package when no other runtime is available; on one Linux host this started the managed runtime and prepared the Gitleaks image. A start from the macOS download has not been verified, and automatic acquisition on Windows remains unfinished. CI on macOS and Windows now also runs the library tests and the foreground-scan and engine-preparation fixture suites, but real scanner execution on those hosts has not yet been verified.
 
 The dated sections below preserve observations at each milestone. [The product specification](product-spec.md) defines product behavior; [the migration plan](plans/skill-first-cloudflare-migration.md) and [report and archive contract](specs/report-fidelity-and-archive.md) describe the accepted work. See [publication status](release-model.md) for availability.
 
 CI document and contract tests: 132 tests cover the current source boundaries.
+
+## November 14 prebuilt core for the bootstrap — 34
+
+`prepare` can now take the CLI executable of a pinned release as the scanner core. This applies to a clean checkout on the `release` profile whose build inputs equal that release's, and it needs no Rust or C toolchain. The file is checked against its pinned size and SHA-256 before it runs, and its build identity must then match the pin and the checkout. A failed download or check stops `prepare`; `--build-from-source` builds locally instead. `doctor` reports which core source applies.
+
+The pin list is empty, so every `prepare` still builds from source. Tests cover download, verification, cache reuse and refusal with fixture files; no real release file has been downloaded through this path.
 
 ## November 14 cross-platform checks and runtime reuse — 30
 

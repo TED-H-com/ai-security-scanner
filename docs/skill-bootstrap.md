@@ -19,7 +19,7 @@ audit or import findings into a case.
 
 ## Delivery status
 
-This is a development entry, not a newly published skill release. The public desktop operator skill and the new core path have [different publication states](release-model.md). A dirty checkout receipt records actual input hashes but is not a retrievable release revision. Use a committed, accessible, verified pin for a future preview; keep `--allow-dirty` for explicitly selected development work.
+This is a development entry, not a newly published skill release. The public desktop operator skill and the new core path have [different publication states](release-model.md). A dirty checkout receipt records actual input hashes but is not a retrievable release revision. Use a committed, accessible, verified pin for a future preview; keep `--allow-dirty` for explicitly selected development work. No release is pinned as a [prebuilt core](#prebuilt-core-from-a-pinned-release) yet, so `prepare` builds the core from source today.
 
 ## Check and prepare
 
@@ -74,6 +74,47 @@ explicitly selects `--allow-dirty`; its receipt then records the actual source
 digest and development status. This does not make the old HEAD commit an exact
 description of the modified build. Before committing this migration, use that
 explicit development mode to test its source.
+
+## Prebuilt core from a pinned release
+
+`prepare` can use the CLI executable of a published release as the core, so a
+computer without Rust or a C compiler can prepare scans. No release is pinned
+yet: `scripts/skill/prebuilt-cores.mjs` is empty, and `prepare` builds from
+source today.
+
+A prebuilt core applies only when all of these hold:
+
+- the profile is `release` and the checkout is clean (`--allow-dirty` always
+  builds locally);
+- `--build-from-source` is absent;
+- exactly one entry in `scripts/skill/prebuilt-cores.mjs` names this checkout's
+  build-input digest, this platform and this processor architecture.
+
+The download is one HTTPS file. Bootstrap checks its exact size and SHA-256
+against the pin before the file is run. The executable's own build identity
+must then report the pinned release version, target and features, the same
+build-input digest and recipe as this checkout, and Rust 1.98.0. Every later
+`prepare` and `run` checks the cached bytes against the pin again, and `run`
+stops with `core_not_prepared` once the checkout no longer lists that entry.
+
+A failed download, a size or checksum mismatch, an executable that cannot start
+on this computer, or an identity mismatch stops `prepare`. Nothing is published,
+an earlier ready core stays in place, and bootstrap does not switch to a local
+build on its own. Pass `--build-from-source` to build with Rust 1.98.0 and the
+native compiler instead.
+
+With `--offline`, a prebuilt core that is already cached is used. When it is
+not cached, `prepare --offline` builds locally; run `prepare` once without
+`--offline` to download it.
+
+`doctor` reports `core_sources`: `prebuilt_release` is `not_listed`, `cached`,
+`downloadable`, `not_selected` or `cache_entry_refused`, and `local_build` is
+`available` or `unavailable`. When a prebuilt core applies, the Rust and native
+compiler checks carry `"required": false` and no longer decide `ready`.
+`cache_entry_refused` means the cached file failed verification; `prepare`
+never downloads over an existing entry, so choose a new `--cache-dir`. `doctor`
+never downloads. The `prepare` result and receipt name the source in
+`core_source` as `prebuilt_release` or `local_build`.
 
 ## Keep cases separate from build caches
 
@@ -188,6 +229,9 @@ and lockfile, vendored sources, embedded catalogs and policies, recipe, toolchai
 native target, build profile and features. The receipt records the source commit,
 actual input digest, binary digest, compiled identity and build outcome. Runtime
 lock references are recorded separately from readiness.
+
+A prebuilt core has its own key: the pinned release version, features, download
+location, size and checksum take the place of the local toolchain identity.
 
 Git revision is provenance, rather than the sole cache key. A documentation or
 skill wording change can reuse an identical core; changing an embedded input or
