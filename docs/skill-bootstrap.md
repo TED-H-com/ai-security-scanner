@@ -116,6 +116,45 @@ never downloads over an existing entry, so choose a new `--cache-dir`. `doctor`
 never downloads. The `prepare` result and receipt name the source in
 `core_source` as `prebuilt_release` or `local_build`.
 
+### Pinning a published release
+
+Pin a release after its files are public, in a commit that changes none of the
+build inputs listed in `scripts/skill/input-manifest.mjs` (the Cargo manifests
+and lock file, `src-tauri/build.rs`, `src-tauri/src`, the vendored crate and the
+embedded resource files). The checkout's build-input digest then still equals
+the one the release CLI reports.
+
+1. In `scripts/skill/prebuilt-cores.mjs`, add one entry for each platform's
+   release CLI:
+
+   | `platform` | Release file | `targets` | `features` |
+   | --- | --- | --- | --- |
+   | `linux` | `ai-security-scanner-cli-<version>-linux-x86_64` | `x64: 'x86_64-unknown-linux-gnu'` | `['cli']` |
+   | `darwin` | `ai-security-scanner-cli-<version>-macos-universal` | `x64: 'x86_64-apple-darwin'`, `arm64: 'aarch64-apple-darwin'` | `['cli']` |
+   | `win32` | `ai-security-scanner-cli-<version>-windows-x86_64.exe` | `x64: 'x86_64-pc-windows-msvc'` | `['cli', 'installer-runtime-cache']` |
+
+   `product_version` is the release version. `input_sha256` is the `input=`
+   value of the release build log line that starts with
+   `Verified CLI build identity`; the file's own `--json build-identity` reports
+   it as `bootstrap_input_sha256`. `release_source` holds the file's download
+   URL, its exact size in bytes and its SHA-256 from the release's
+   `SHA256SUMS.txt`.
+2. In `scripts/skill/managed-runtime-bundles.mjs`, set the Windows entry's
+   `release_source` to the release's `managed-runtime-windows-x86_64.tar.gz`:
+   `kind: 'tar.gz'`, `inner_path: 'managed-runtime'`, its URL, `bytes`, `sha256`
+   and `extracted_bytes`. The release build log prints the last three in the
+   line that starts with `Packed managed-runtime-windows-x86_64.tar.gz`. The
+   entry's `manifest_sha256` must equal the Windows manifest digest that
+   `.github/workflows/release.yml` expects.
+3. On a computer without Rust, check out the pin commit and run `doctor`
+   (`core_sources.prebuilt_release` is `downloadable`), then `prepare`
+   (`core_source` is `prebuilt_release`). On a Windows computer without Docker,
+   Podman or the desktop app, `prepare --capability scan` then downloads the
+   runtime and reports `runtime_bundle_source` as `downloaded_release`.
+
+A skill must pin that commit, or a later one with the same build inputs. On any
+other revision `prepare` builds from source.
+
 ## Keep cases separate from build caches
 
 Pass an explicit `--data-dir` when forwarding commands that use case or runtime
@@ -197,7 +236,9 @@ On Linux x86_64 and macOS, if no recognized desktop runtime is present, it
 downloads the published desktop package once over HTTPS, checks its pinned
 checksum before reading it, and keeps only the scan runtime under the cache's
 `managed-bundles/` directory; nothing is installed system-wide. `--offline` never
-downloads. Windows stops with a `next_step` when no usable runtime is found.
+downloads. Windows stops with a `next_step` when no usable runtime is found: its
+download needs the standalone runtime file that a release will carry, and no
+published release has it yet (see [pinning](#pinning-a-published-release)).
 Development bundles are produced by the existing versioned
 [`runtime/vendor-managed-runtime.mjs`](../runtime/vendor-managed-runtime.mjs)
 procedure; its Linux helper build requires an existing Docker builder. Windows
