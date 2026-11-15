@@ -538,22 +538,24 @@ test('doctor reports core_sources, marks tools not required when prebuilt applie
   assert.equal(f.prebuiltState.readIdentities, identitiesBefore);
 });
 
-test('supports Windows installer-runtime-cache feature list and macOS universal dual-arch targets', async t => {
-  if (process.platform !== 'win32') {
-    const win = await prebuiltFixture(t, {
-      platform: 'win32',
-      arch: 'x64',
-      targets: { x64: 'x86_64-pc-windows-msvc' },
-      features: ['cli', 'installer-runtime-cache'],
-    });
-    const prepared = await prepareBootstrap(win.releaseOptions, win.noToolchainDeps);
-    assert.ok(prepared.executable.endsWith('.exe'));
-    assert.deepEqual(prepared.receipt.cache_identity.features, ['cli']);
-    assert.deepEqual(prepared.receipt.cache_identity.prebuilt.features, ['cli', 'installer-runtime-cache']);
-    const loaded = await loadPreparedBootstrap(win.releaseOptions, win.noToolchainDeps);
-    assert.equal(loaded.executable, prepared.executable);
-  }
+test('a Windows prebuilt core may report the installer-runtime-cache feature', async t => {
+  const win = await prebuiltFixture(t, {
+    platform: 'win32',
+    arch: 'x64',
+    targets: { x64: 'x86_64-pc-windows-msvc' },
+    features: ['cli', 'installer-runtime-cache'],
+  });
+  const prepared = await prepareBootstrap(win.releaseOptions, win.noToolchainDeps);
+  assert.ok(prepared.executable.endsWith('.exe'));
+  assert.deepEqual(prepared.receipt.cache_identity.features, ['cli']);
+  assert.deepEqual(prepared.receipt.cache_identity.prebuilt.features, ['cli', 'installer-runtime-cache']);
+  const loaded = await loadPreparedBootstrap(win.releaseOptions, win.noToolchainDeps);
+  assert.equal(loaded.executable, prepared.executable);
+});
 
+// A simulated macOS prepare expects a core artifact with a POSIX executable bit, which a Windows
+// host cannot produce; the Linux and macOS lanes run this.
+test('a macOS prebuilt core is selected for both architectures', { skip: process.platform === 'win32' ? 'A Windows host cannot produce a POSIX executable bit' : false }, async t => {
   for (const [arch, target] of [['arm64', 'aarch64-apple-darwin'], ['x64', 'x86_64-apple-darwin']]) {
     const mac = await prebuiltFixture(t, {
       platform: 'darwin',
