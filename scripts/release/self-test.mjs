@@ -21,6 +21,7 @@ import { createReleaseCandidateLock } from "./release-candidate-lock.mjs";
 import { publishedReleaseAssetName } from "./release-asset-name.mjs";
 import { createPreparedReleaseMetadata } from "./release-metadata.mjs";
 import { incidentScanPackForRelease, writeIncidentScanPack } from "./incident-scan-pack.mjs";
+import { runtimeArchiveName } from "./runtime-archive.mjs";
 import { verifyUpdaterSignatures } from "./verify-updater-signatures.mjs";
 import {
   WINDOWS_EXTERNAL_EVIDENCE_RECEIPT_FILE,
@@ -296,6 +297,7 @@ export async function createPlatformFixture(
     output,
     "--platform",
     platform,
+    ...(platform === "windows-x86_64" ? ["--runtime-archive"] : []),
   ]);
   return output;
 }
@@ -345,6 +347,7 @@ export async function resealFinalizedFixture(directory) {
       ...manifest.auxiliaryExecutables.map(({ releaseFile }) => releaseFile),
       ...manifest.updaters.flatMap(({ payloadFile, signatureFile }) => [payloadFile, signatureFile]),
       ...runtimeSuffixes.map((suffix) => `managed-runtime-${manifest.platform}.${suffix}`),
+      ...(manifest.platform === "windows-x86_64" ? [runtimeArchiveName(manifest.platform)] : []),
     ].sort();
     await writeFile(
       path.join(directory, `SHA256SUMS-${manifest.platform}.txt`),
