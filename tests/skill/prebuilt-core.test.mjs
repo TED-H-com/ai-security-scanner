@@ -229,6 +229,9 @@ test('download size, digest, HTTP, and non-HTTPS failures preserve prior ready e
       error => {
         assert.equal(error.code, scenario.code, scenario.name);
         assert.equal(error.exitCode, 4, scenario.name);
+        // Only a failed transfer is worth repeating; a file that differs from its pin is not.
+        if (scenario.code === 'prebuilt_core_download_failed') assert.match(error.message, /run prepare again, or pass --build-from-source/, scenario.name);
+        else assert.doesNotMatch(error.message, /run prepare again/, scenario.name);
         if (!scenario.skipBuildFromSourceMessage) {
           assert.match(error.message, /--build-from-source/, scenario.name);
           assert.match(error.message, new RegExp(RUST_VERSION.replaceAll('.', '\\.')), scenario.name);
@@ -374,8 +377,8 @@ test('--offline uses cached prebuilt, falls back to local build when uncached, a
     prepareBootstrap({ ...h.releaseOptions, offline: true }, missingToolchainDeps),
     error => {
       assert.equal(error.code, 'rust_toolchain_unavailable');
-      assert.match(error.message, /prebuilt/i);
-      assert.match(error.message, /without --offline/);
+      // The download is the shorter way for a beginner, so it leads; the local build follows.
+      assert.match(error.message, /^This checkout has a prebuilt scanner core: run prepare once without --offline to download it\. To build offline instead: .*Rust/);
       return true;
     },
   );
@@ -486,6 +489,7 @@ test('doctor reports core_sources, marks tools not required when prebuilt applie
   const ccCheck = downloadable.checks.find(c => c.name === 'native_compiler_and_linker');
   assert.equal(rustCheck.ready, false);
   assert.equal(rustCheck.required, false);
+  assert.doesNotMatch(rustCheck.reason, /--offline/);
   assert.equal(ccCheck.ready, false);
   assert.equal(ccCheck.required, false);
   await assert.rejects(lstat(f.releaseOptions.cacheDir), { code: 'ENOENT' });
@@ -493,10 +497,12 @@ test('doctor reports core_sources, marks tools not required when prebuilt applie
   const offlineUncached = await doctorBootstrap({ ...f.releaseOptions, offline: true }, missingDeps);
   assert.equal(offlineUncached.ready, false);
   assert.deepEqual(offlineUncached.core_sources, { prebuilt_release: 'not_selected', local_build: 'unavailable' });
+  assert.match(offlineUncached.checks.find(c => c.name === 'rust_toolchain').reason, /^This checkout has a prebuilt scanner core: run prepare once without --offline to download it\./);
 
   const devDoctor = await doctorBootstrap({ ...f.releaseOptions, profile: 'dev' }, missingDeps);
   assert.equal(devDoctor.ready, false);
   assert.deepEqual(devDoctor.core_sources, { prebuilt_release: 'not_selected', local_build: 'unavailable' });
+  assert.doesNotMatch(devDoctor.checks.find(c => c.name === 'rust_toolchain').reason, /--offline/);
 
   const fromSourceDoctor = await doctorBootstrap({ ...f.releaseOptions, buildFromSource: true }, missingDeps);
   assert.equal(fromSourceDoctor.ready, false);

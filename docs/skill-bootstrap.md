@@ -100,8 +100,8 @@ stops with `core_not_prepared` once the checkout no longer lists that entry.
 A failed download, a size or checksum mismatch, an executable that cannot start
 on this computer, or an identity mismatch stops `prepare`. Nothing is published,
 an earlier ready core stays in place, and bootstrap does not switch to a local
-build on its own. Pass `--build-from-source` to build with Rust 1.98.0 and the
-native compiler instead.
+build on its own. Run `prepare` again after a failed download, or pass
+`--build-from-source` to build with Rust 1.98.0 and the native compiler instead.
 
 With `--offline`, a prebuilt core that is already cached is used. When it is
 not cached, `prepare --offline` builds locally; run `prepare` once without

@@ -840,8 +840,12 @@ function prebuiltCoreBuildSpec(entry, manifest, recipeSha256, configuration, dep
   return { key, expected: { key, cacheIdentity, configuration, toolchain, manifest, prebuilt: entry } };
 }
 
-function buildFromSourceHint() {
-  return `Pass --build-from-source (requires Rust ${RUST_VERSION} and a native C compiler and linker).`;
+function buildFromSourceHint(lead = 'Pass') {
+  return `${lead} --build-from-source (requires Rust ${RUST_VERSION} and a native C compiler and linker).`;
+}
+
+function onlinePrepareHint(localBuildMessage) {
+  return `This checkout has a prebuilt scanner core: run prepare once without --offline to download it. To build offline instead: ${localBuildMessage}`;
 }
 
 async function recipeDigest(sourceRoot) {
@@ -1040,7 +1044,7 @@ async function downloadPrebuiltCore(entry, staging, signal, deps) {
     if (signal.aborted) throw new BootstrapError('interrupted', 'Core preparation was interrupted.', signal.reason.exitCode);
     if (error.code === 'size') fail('prebuilt_core_size_mismatch', `The downloaded prebuilt scanner core did not match its pinned size (${source.bytes} bytes) and was discarded. ${buildFromSourceHint()}`);
     if (error.code === 'digest') fail('prebuilt_core_digest_mismatch', `The downloaded prebuilt scanner core did not match its pinned SHA-256 checksum and was discarded. ${buildFromSourceHint()}`);
-    fail('prebuilt_core_download_failed', `Failed to download the prebuilt scanner core (${error.message || 'download failed'}). ${buildFromSourceHint()}`);
+    fail('prebuilt_core_download_failed', `Could not download the prebuilt scanner core (${error.message || 'download failed'}). Check the network connection and run prepare again, ${buildFromSourceHint('or pass')}`);
   }
   if (signal.aborted) throw new BootstrapError('interrupted', 'Core preparation was interrupted.', signal.reason.exitCode);
   const bytes = await regularBytes(downloaded, 1024 * 1024 * 1024);
@@ -1084,7 +1088,7 @@ export async function prepareBootstrap(options, overrides = {}) {
       toolchain = await deps.inspectToolchain(deps);
     } catch (error) {
       if (prebuiltCandidate && error instanceof BootstrapError && ['rust_toolchain_unavailable', 'native_compiler_unavailable'].includes(error.code)) {
-        fail(error.code, `${error.message} This checkout has a prebuilt scanner core; run prepare once without --offline to download it.`, error.exitCode);
+        fail(error.code, onlinePrepareHint(error.message), error.exitCode);
       }
       throw error;
     }
@@ -1324,6 +1328,7 @@ export async function doctorBootstrap(options, overrides = {}) {
     return source;
   });
   let prebuiltApplies = false;
+  let prebuiltNeedsOnlinePrepare = false;
   let prebuiltSourceState = 'not_selected';
   if (sourceChecked && !source.dirty && (options.profile ?? 'release') === 'release' && options.buildFromSource !== true) {
     try {
@@ -1348,6 +1353,7 @@ export async function doctorBootstrap(options, overrides = {}) {
         });
       } else if (options.offline === true) {
         prebuiltSourceState = 'not_selected';
+        prebuiltNeedsOnlinePrepare = true;
       } else {
         prebuiltSourceState = 'downloadable';
         prebuiltApplies = true;
@@ -1369,10 +1375,11 @@ export async function doctorBootstrap(options, overrides = {}) {
     checks.push({ name: 'rust_toolchain', ready: true, ...optionalFields, detail: rustIdentity });
     checks.push({ name: 'native_compiler_and_linker', ready: true, ...optionalFields, detail: { compiler, linker } });
   } catch (error) {
+    const reason = prebuiltNeedsOnlinePrepare ? onlinePrepareHint(error.message) : error.message;
     checks.push(error.rustIdentity
       ? { name: 'rust_toolchain', ready: true, ...optionalFields, detail: error.rustIdentity }
-      : { name: 'rust_toolchain', ready: false, ...optionalFields, reason: error.message });
-    checks.push({ name: 'native_compiler_and_linker', ready: false, ...optionalFields, reason: error.rustIdentity ? error.message : 'Rust toolchain identification must succeed first.' });
+      : { name: 'rust_toolchain', ready: false, ...optionalFields, reason });
+    checks.push({ name: 'native_compiler_and_linker', ready: false, ...optionalFields, reason: error.rustIdentity ? reason : 'Rust toolchain identification must succeed first.' });
   }
   await check('cache', async () => {
     const cacheDir = validateCacheLocation(options.cacheDir, await realpath(deps.sourceRoot));
