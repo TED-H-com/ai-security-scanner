@@ -268,8 +268,9 @@ test("ordinary core changes preserve Windows checks while only installer inputs 
   const runtimeArchiveClassification = classifyChangedPaths(["scripts/release/runtime-archive.mjs"]);
   assert.deepEqual(
     runtimeArchiveClassification,
-    classifyChangedPaths(["scripts/release/generate-runtime-evidence.mjs"]),
+    { ...classifyChangedPaths(["scripts/release/generate-runtime-evidence.mjs"]), skill_bootstrap: true },
   );
+  assert.equal(runtimeArchiveClassification.skill_bootstrap, true);
   assert.equal(runtimeArchiveClassification.release_contract, true);
   assert.equal(runtimeArchiveClassification.windows_runtime, true);
   assert.equal(runtimeArchiveClassification.windows_installer, false);

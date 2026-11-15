@@ -218,6 +218,8 @@ const DOCUMENTATION_PATHS = [
 const SKILL_BOOTSTRAP_PATHS = [
   // The skill suite imports the synthetic host setup refusal contract.
   /^tests\/acceptance\/cloudflare-host\//,
+  // The skill bootstrap test imports the release runtime archive packer.
+  /^scripts\/release\/runtime-archive\.mjs$/,
   /^skills\//,
   /^\.(?:claude|codex)\/skills\/ai-security-scanner\//,
   /^scripts\/skill\//,
