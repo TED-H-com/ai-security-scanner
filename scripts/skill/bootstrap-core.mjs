@@ -9,11 +9,21 @@ import { homedir, hostname } from 'node:os';
 import { fileURLToPath } from 'node:url';
 import { collectInputManifest, stageInputSnapshot } from './input-manifest.mjs';
 import { RECOGNIZED_MANAGED_RUNTIME_BUNDLES } from './managed-runtime-bundles.mjs';
+import { PREBUILT_CORES } from './prebuilt-cores.mjs';
 import { downloadReleaseBundle, extractReleaseBundle, verifyReleaseBundle } from './release-bundle.mjs';
 
 export const RECIPE = 'skill-bootstrap-v1';
 export const RUST_VERSION = '1.98.0';
 export const RECEIPT_SCHEMA = 'ai-security-scanner.bootstrap-receipt/v1';
+const RECIPE_FILES = Object.freeze([
+  'scripts/skill/bootstrap.mjs',
+  'scripts/skill/bootstrap-core.mjs',
+  'scripts/skill/input-manifest.mjs',
+  'scripts/skill/managed-runtime-bundles.mjs',
+  'scripts/skill/prebuilt-cores.mjs',
+  'scripts/skill/release-bundle.mjs',
+]);
+const RUSTC_RELEASE_LINE = new RegExp(`^release: ${RUST_VERSION.replaceAll('.', '\\.')}\\r?$`, 'm');
 const MARKER_SCHEMA = 'ai-security-scanner.bootstrap-cache/v1';
 const MARKER = '.ai-security-scanner-bootstrap.json';
 const RESULT_SCHEMA = 'ai-security-scanner.bootstrap-result/v1';
@@ -161,7 +171,7 @@ export function parseBootstrapArguments(argv) {
   if (argv.length === 1 && ['--help', '-h'].includes(argv[0])) return { help: true };
   const [command, ...args] = argv;
   if (!['doctor', 'prepare', 'run'].includes(command)) fail('invalid_arguments', 'Choose doctor, prepare, or run.', 2);
-  const options = { command, capability: 'core', profile: 'release', allowDirty: false, offline: false, cliArguments: [] };
+  const options = { command, capability: 'core', profile: 'release', allowDirty: false, offline: false, buildFromSource: false, cliArguments: [] };
   const seen = new Set();
   for (let index = 0; index < args.length; index += 1) {
     const argument = args[index];
@@ -174,6 +184,7 @@ export function parseBootstrapArguments(argv) {
     seen.add(argument);
     if (argument === '--allow-dirty') options.allowDirty = true;
     else if (argument === '--offline') options.offline = true;
+    else if (argument === '--build-from-source') options.buildFromSource = true;
     else if (['--revision', '--cache-dir', '--capability', '--profile', '--engine', '--data-dir', '--managed-runtime-bundle', '--release-approved-local-image-directory'].includes(argument)) {
       const value = args[++index];
       if (!value || value.startsWith('--')) fail('invalid_arguments', `Missing value for ${argument}.`, 2);
@@ -229,6 +240,7 @@ function dependencies(overrides) {
     fetch: globalThis.fetch,
     statfs,
     recognizedManagedRuntimeBundles: RECOGNIZED_MANAGED_RUNTIME_BUNDLES,
+    prebuiltCores: PREBUILT_CORES,
     stderr: process.stderr,
     platform: process.platform,
     arch: process.arch,
@@ -608,7 +620,7 @@ async function inspectSource(sourceRoot, revision) {
 
 async function validatePinnedInputs(sourceRoot, revision, manifest) {
   const files = new Map([...manifest.files, ...(manifest.metadataFiles ?? [])].map(file => [file.path, file]));
-  for (const path of ['scripts/skill/bootstrap.mjs', 'scripts/skill/bootstrap-core.mjs', 'scripts/skill/input-manifest.mjs', 'scripts/skill/managed-runtime-bundles.mjs', 'scripts/skill/release-bundle.mjs']) {
+  for (const path of RECIPE_FILES) {
     if (!files.has(path)) files.set(path, { path });
   }
   const gitEnvironment = Object.fromEntries(Object.entries(process.env).filter(([key]) => !key.startsWith('GIT_')));
@@ -675,7 +687,7 @@ async function inspectToolchain({ environment, platform }) {
     rustc = await runCommand('rustc', ['--version', '--verbose'], { env });
     cargo = await runCommand('cargo', ['--version'], { env });
   } catch (error) { if (error.code === 'tool_unavailable') fail('rust_toolchain_unavailable', rustMessage); throw error; }
-  if (rustc.code !== 0 || !new RegExp(`^release: ${RUST_VERSION.replaceAll('.', '\\.')}\\r?$`, 'm').test(rustc.stdout)) {
+  if (rustc.code !== 0 || !RUSTC_RELEASE_LINE.test(rustc.stdout)) {
     fail('rust_toolchain_unavailable', rustMessage);
   }
   if (cargo.code !== 0 || !cargo.stdout.startsWith(`cargo ${RUST_VERSION} `)) fail('rust_toolchain_unavailable', rustMessage);
@@ -738,9 +750,107 @@ function buildConfiguration(options) {
   return { capability: 'core', profile: options.profile ?? 'release', features: ['cli'], binaries: [CORE_BIN] };
 }
 
+const PREBUILT_ARCHES = new Set(['x64', 'arm64', 'ia32', 'arm', 'ppc64', 's390x', 'riscv64', 'loong64']);
+const PREBUILT_ENTRY_KEYS = ['features', 'input_sha256', 'platform', 'product_version', 'release_source', 'targets'];
+const PREBUILT_SOURCE_KEYS = ['bytes', 'sha256', 'url'];
+
+function isPlainObject(value) {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return false;
+  const proto = Object.getPrototypeOf(value);
+  return proto === Object.prototype || proto === null;
+}
+
+export function assertValidPrebuiltCoreEntry(entry) {
+  if (!isPlainObject(entry) || canonical(Object.keys(entry).sort()) !== canonical(PREBUILT_ENTRY_KEYS)) {
+    fail('invalid_prebuilt_core', 'The pinned prebuilt scanner core entry has an unsupported shape.');
+  }
+  if (typeof entry.product_version !== 'string' || !/^[0-9A-Za-z][0-9A-Za-z.+-]{0,63}$/.test(entry.product_version)) {
+    fail('invalid_prebuilt_core', 'The pinned prebuilt scanner core entry has an invalid product_version.');
+  }
+  if (typeof entry.input_sha256 !== 'string' || !SHA256.test(entry.input_sha256)) {
+    fail('invalid_prebuilt_core', 'The pinned prebuilt scanner core entry has an invalid input_sha256.');
+  }
+  if (!['linux', 'darwin', 'win32'].includes(entry.platform)) {
+    fail('invalid_prebuilt_core', 'The pinned prebuilt scanner core entry has an unsupported platform.');
+  }
+  if (!isPlainObject(entry.targets) || Object.keys(entry.targets).length === 0
+    || Object.entries(entry.targets).some(([arch, target]) => !PREBUILT_ARCHES.has(arch) || typeof target !== 'string' || !/^[a-zA-Z0-9_-]{1,64}$/.test(target))) {
+    fail('invalid_prebuilt_core', 'The pinned prebuilt scanner core entry has an invalid targets mapping.');
+  }
+  if (!Array.isArray(entry.features) || entry.features.length === 0
+    || entry.features.some(feature => typeof feature !== 'string' || !/^[a-z0-9-]{1,64}$/.test(feature))
+    || new Set(entry.features).size !== entry.features.length || !entry.features.includes('cli')) {
+    fail('invalid_prebuilt_core', 'The pinned prebuilt scanner core entry has an invalid features list.');
+  }
+  const source = entry.release_source;
+  if (!isPlainObject(source) || canonical(Object.keys(source).sort()) !== canonical(PREBUILT_SOURCE_KEYS)) {
+    fail('invalid_prebuilt_core', 'The pinned prebuilt scanner core entry has an invalid release_source.');
+  }
+  let parsedUrl;
+  try { parsedUrl = typeof source.url === 'string' && source.url.length <= 2048 ? new URL(source.url) : null; } catch { parsedUrl = null; }
+  if (!parsedUrl || parsedUrl.protocol !== 'https:' || parsedUrl.username || parsedUrl.password || !parsedUrl.hostname) {
+    fail('invalid_prebuilt_core', 'The pinned prebuilt scanner core entry must use an HTTPS release_source URL without credentials.');
+  }
+  if (!Number.isSafeInteger(source.bytes) || source.bytes <= 0 || source.bytes > 1024 * 1024 * 1024
+    || typeof source.sha256 !== 'string' || !SHA256.test(source.sha256)) {
+    fail('invalid_prebuilt_core', 'The pinned prebuilt scanner core entry has an invalid release_source size or sha256.');
+  }
+}
+
+function selectPrebuiltCore(prebuiltCores, inputDigest, platform, arch) {
+  if (!Array.isArray(prebuiltCores)) fail('invalid_prebuilt_core', 'The pinned prebuilt core allowlist must be an array.');
+  const matches = [];
+  for (const entry of prebuiltCores) {
+    if (!isPlainObject(entry)) fail('invalid_prebuilt_core', 'The pinned prebuilt core entry must be an object.');
+    if (entry.input_sha256 !== inputDigest || entry.platform !== platform) continue;
+    if (!isPlainObject(entry.targets)) fail('invalid_prebuilt_core', 'The matching prebuilt core entry has an invalid targets mapping.');
+    if (Object.hasOwn(entry.targets, arch)) matches.push(entry);
+  }
+  if (matches.length > 1) fail('ambiguous_prebuilt_core', 'Multiple pinned prebuilt scanner cores match this checkout and platform.');
+  if (matches.length === 0) return null;
+  assertValidPrebuiltCoreEntry(matches[0]);
+  return matches[0];
+}
+
+function prebuiltIdentityRecord(entry) {
+  return {
+    product_version: entry.product_version,
+    features: entry.features,
+    release_source: entry.release_source,
+  };
+}
+
+function prebuiltCoreBuildSpec(entry, manifest, recipeSha256, configuration, deps) {
+  const target = entry.targets[deps.arch];
+  const toolchain = { prebuilt: true, version: RUST_VERSION, target };
+  const cacheIdentity = {
+    input_sha256: manifest.inputDigest,
+    cargo_lock_sha256: manifest.files.find(file => file.path === 'Cargo.lock')?.sha256,
+    recipe: RECIPE,
+    recipe_sha256: recipeSha256,
+    toolchain,
+    platform: deps.platform,
+    architecture: deps.arch,
+    native_environment: {},
+    prebuilt: prebuiltIdentityRecord(entry),
+    ...configuration,
+  };
+  if (!SHA256.test(cacheIdentity.cargo_lock_sha256 ?? '')) fail('invalid_input_manifest', 'Cargo.lock must be part of the controlled source inputs.');
+  const key = hash(canonical(cacheIdentity));
+  return { key, expected: { key, cacheIdentity, configuration, toolchain, manifest, prebuilt: entry } };
+}
+
+function buildFromSourceHint(lead = 'Pass') {
+  return `${lead} --build-from-source (requires Rust ${RUST_VERSION} and a native C compiler and linker).`;
+}
+
+function onlinePrepareHint(localBuildMessage) {
+  return `This checkout has a prebuilt scanner core: run prepare once without --offline to download it. To build offline instead: ${localBuildMessage}`;
+}
+
 async function recipeDigest(sourceRoot) {
   const inputs = [];
-  for (const path of ['scripts/skill/bootstrap.mjs', 'scripts/skill/bootstrap-core.mjs', 'scripts/skill/input-manifest.mjs', 'scripts/skill/managed-runtime-bundles.mjs', 'scripts/skill/release-bundle.mjs']) {
+  for (const path of RECIPE_FILES) {
     inputs.push({ path, sha256: hash(await regularBytes(join(sourceRoot, path), 2 * 1024 * 1024)) });
   }
   return hash(canonical({ version: RECIPE, inputs }));
@@ -767,12 +877,45 @@ async function readBuildIdentity(executable, { environment }) {
 }
 
 function validateIdentity(identity, expected) {
-  if (!identity || identity.schema_version !== 'ai-security-scanner.build-identity/v1' || identity.product !== 'ai-security-scanner'
-    || identity.target !== expected.toolchain.target || identity.rustc_version !== expected.toolchain.rustc_version
-    || canonical(identity.features) !== canonical(expected.configuration.features)
-    || identity.bootstrap_input_sha256 !== expected.manifest.inputDigest || identity.bootstrap_recipe !== RECIPE
-    || !SHA256.test(identity.report_source_sha256 ?? '')) {
+  const baseValid = identity
+    && identity.schema_version === 'ai-security-scanner.build-identity/v1'
+    && identity.product === 'ai-security-scanner'
+    && identity.target === expected.toolchain.target
+    && identity.bootstrap_input_sha256 === expected.manifest.inputDigest
+    && identity.bootstrap_recipe === RECIPE
+    && SHA256.test(identity.report_source_sha256 ?? '');
+  if (expected.prebuilt) {
+    const featuresValid = Array.isArray(identity?.features)
+      && canonical(identity.features) === canonical(expected.prebuilt.features)
+      && expected.configuration.features.every(feature => identity.features.includes(feature));
+    const compilerValid = typeof identity?.rustc_version === 'string' && RUSTC_RELEASE_LINE.test(identity.rustc_version);
+    if (!baseValid || identity.product_version !== expected.prebuilt.product_version || !featuresValid || !compilerValid) {
+      fail('artifact_identity_mismatch', 'The prebuilt core build identity does not match the pinned release, input, target, features, compiler, and recipe.');
+    }
+    return;
+  }
+  if (!baseValid || identity.rustc_version !== expected.toolchain.rustc_version
+    || canonical(identity.features) !== canonical(expected.configuration.features)) {
     fail('artifact_identity_mismatch', 'The core build identity does not match the pinned input, toolchain, features, and recipe.');
+  }
+}
+
+async function readAndValidateEntryIdentity(executable, expected, deps, signal) {
+  if (!expected.prebuilt) {
+    const identity = await deps.readIdentity(executable, { environment: deps.environment });
+    validateIdentity(identity, expected);
+    return identity;
+  }
+  try {
+    const identity = await deps.readIdentity(executable, { environment: deps.environment });
+    validateIdentity(identity, expected);
+    return identity;
+  } catch (error) {
+    if (signal?.aborted) throw new BootstrapError('interrupted', 'Core preparation was interrupted.', signal.reason.exitCode);
+    if (error instanceof BootstrapError && error.code === 'artifact_identity_mismatch') {
+      fail('artifact_identity_mismatch', `${error.message} ${buildFromSourceHint()}`);
+    }
+    fail('artifact_identity_failed', `The prebuilt scanner core could not start on this computer or did not return its read-only build identity. ${buildFromSourceHint()}`);
   }
 }
 
@@ -786,7 +929,7 @@ async function artifactRecord(entry, binary, platform) {
   return { name: binary, path, sha256: hash(bytes), size: bytes.length };
 }
 
-async function verifyEntry(entry, expected, deps) {
+async function verifyEntryFiles(entry, expected, deps) {
   await privateDirectory(entry);
   await privateDirectory(join(entry, 'bin'));
   if (process.platform === 'win32') {
@@ -797,20 +940,29 @@ async function verifyEntry(entry, expected, deps) {
   }
   const receipt = await readJson(join(entry, 'receipt.json'));
   const { receipt_sha256: digest, ...body } = receipt;
+  const expectedCoreSource = expected.prebuilt ? 'prebuilt_release' : 'local_build';
   if (!SHA256.test(digest ?? '') || hash(canonical(body)) !== digest
     || receipt.schema_version !== RECEIPT_SCHEMA || receipt.cache_key !== expected.key
     || canonical(receipt.cache_identity) !== canonical(expected.cacheIdentity)
-    || receipt.build_outcome !== 'success' || !REVISION.test(receipt.source?.revision ?? '')
+    || receipt.build_outcome !== 'success' || receipt.core_source !== expectedCoreSource
+    || !REVISION.test(receipt.source?.revision ?? '')
     || !Array.isArray(receipt.artifacts) || receipt.artifacts.length !== expected.configuration.binaries.length) {
     fail('cache_receipt_mismatch', 'The cache receipt is incomplete, corrupted, or belongs to different build inputs.');
   }
   for (const binary of expected.configuration.binaries) {
     const artifact = await artifactRecord(entry, binary, deps.platform);
+    if (expected.prebuilt && (artifact.size !== expected.prebuilt.release_source.bytes || artifact.sha256 !== expected.prebuilt.release_source.sha256)) {
+      fail('artifact_digest_mismatch', 'The cached prebuilt binary no longer matches its pinned release size or checksum; it was not executed. Choose a new --cache-dir to download it again.');
+    }
     if (canonical(receipt.artifacts.find(record => record.name === binary)) !== canonical(artifact)) fail('artifact_digest_mismatch', 'A cached binary no longer matches its receipt; it was not executed.');
   }
+  return receipt;
+}
+
+async function verifyEntry(entry, expected, deps) {
+  const receipt = await verifyEntryFiles(entry, expected, deps);
   const executable = join(entry, 'bin', `${CORE_BIN}${deps.platform === 'win32' ? '.exe' : ''}`);
-  const identity = await deps.readIdentity(executable, { environment: deps.environment });
-  validateIdentity(identity, expected);
+  const identity = await readAndValidateEntryIdentity(executable, expected, deps);
   if (canonical(identity) !== canonical(receipt.build_identity)) fail('artifact_identity_mismatch', 'The cached binary identity changed since its receipt was recorded.');
   return { receipt, executable };
 }
@@ -859,11 +1011,47 @@ export async function loadPreparedBootstrap(options, overrides = {}) {
   // revision with identical build inputs reuses the entry, exactly as prepare does.
   if (Object.entries(requested).some(([key, value]) => canonical(identity[key]) !== canonical(value))
     || names[0] !== `${prefix}${identity.toolchain?.target}.json`) notPrepared();
-  const expected = { key: pointer.cache_key, cacheIdentity: identity, configuration, toolchain: identity.toolchain, manifest };
+  let prebuilt;
+  if (Object.hasOwn(identity, 'prebuilt') && identity.prebuilt !== undefined) {
+    if (source.dirty || options.buildFromSource === true) notPrepared();
+    try { prebuilt = selectPrebuiltCore(deps.prebuiltCores, manifest.inputDigest, deps.platform, deps.arch); }
+    catch { notPrepared(); }
+    if (!prebuilt
+      || canonical(identity.prebuilt) !== canonical(prebuiltIdentityRecord(prebuilt))
+      || canonical(identity.toolchain) !== canonical({ prebuilt: true, version: RUST_VERSION, target: prebuilt.targets[deps.arch] })
+      || canonical(identity.native_environment) !== canonical({})
+      || hash(canonical(identity)) !== pointer.cache_key) {
+      notPrepared();
+    }
+  }
+  const expected = { key: pointer.cache_key, cacheIdentity: identity, configuration, toolchain: identity.toolchain, manifest, ...(prebuilt ? { prebuilt } : {}) };
   const verified = await verifyEntry(entry, expected, { ...deps, environment: withoutProductSourceOverrides(deps.environment) });
   return { schema_version: RESULT_SCHEMA, cache_hit: true, cache_key: pointer.cache_key, requested_source: source,
     requested_capability: options.capability ?? 'core', entry_directory: entry, receipt_path: join(entry, 'receipt.json'),
     executable: verified.executable, receipt: verified.receipt };
+}
+
+async function downloadPrebuiltCore(entry, staging, signal, deps) {
+  const source = entry.release_source;
+  const downloaded = join(staging, 'download');
+  const sizeLabel = source.bytes >= 1_000_000
+    ? `${Math.round(source.bytes / 1e6)} MB (${source.bytes} bytes)`
+    : `${source.bytes} bytes`;
+  deps.stderr.write(`Downloading prebuilt scanner core for release ${entry.product_version} (${sizeLabel})...\n`);
+  try {
+    await downloadReleaseBundle(source, downloaded, { fetch: deps.fetch, signal });
+  } catch (error) {
+    if (signal.aborted) throw new BootstrapError('interrupted', 'Core preparation was interrupted.', signal.reason.exitCode);
+    if (error.code === 'size') fail('prebuilt_core_size_mismatch', `The downloaded prebuilt scanner core did not match its pinned size (${source.bytes} bytes) and was discarded. ${buildFromSourceHint()}`);
+    if (error.code === 'digest') fail('prebuilt_core_digest_mismatch', `The downloaded prebuilt scanner core did not match its pinned SHA-256 checksum and was discarded. ${buildFromSourceHint()}`);
+    fail('prebuilt_core_download_failed', `Could not download the prebuilt scanner core (${error.message || 'download failed'}). Check the network connection and run prepare again, ${buildFromSourceHint('or pass')}`);
+  }
+  if (signal.aborted) throw new BootstrapError('interrupted', 'Core preparation was interrupted.', signal.reason.exitCode);
+  const bytes = await regularBytes(downloaded, 1024 * 1024 * 1024);
+  if (bytes.length !== source.bytes || hash(bytes) !== source.sha256) {
+    fail('prebuilt_core_digest_mismatch', `The downloaded prebuilt scanner core did not match its pinned size and checksum. ${buildFromSourceHint()}`);
+  }
+  return bytes;
 }
 
 export async function prepareBootstrap(options, overrides = {}) {
@@ -877,30 +1065,58 @@ export async function prepareBootstrap(options, overrides = {}) {
   source.input_dirty = await deps.validatePinnedInputs(sourceRoot, options.revision, manifest);
   source.dirty ||= source.input_dirty;
   if (source.dirty && !options.allowDirty) fail('dirty_source', 'The source checkout differs from the pinned Git tree; use a clean checkout or explicitly choose --allow-dirty for development.', 2);
-  const toolchain = await deps.inspectToolchain(deps);
+  const recipeSha256 = await recipeDigest(sourceRoot);
+  const prebuiltEligible = configuration.profile === 'release' && !source.dirty && options.buildFromSource !== true;
+  const prebuiltCandidate = prebuiltEligible
+    ? selectPrebuiltCore(deps.prebuiltCores, manifest.inputDigest, deps.platform, deps.arch)
+    : null;
+  let usePrebuilt = Boolean(prebuiltCandidate);
+  let prebuiltSpec;
+  if (usePrebuilt) {
+    prebuiltSpec = prebuiltCoreBuildSpec(prebuiltCandidate, manifest, recipeSha256, configuration, deps);
+    if (options.offline === true) {
+      const cacheLocation = validateCacheLocation(options.cacheDir, sourceRoot);
+      if (!(await safeStat(join(cacheLocation, 'entries', prebuiltSpec.key)))) usePrebuilt = false;
+    }
+  }
+  let expected;
+  if (usePrebuilt) {
+    expected = prebuiltSpec.expected;
+  } else {
+    let toolchain;
+    try {
+      toolchain = await deps.inspectToolchain(deps);
+    } catch (error) {
+      if (prebuiltCandidate && error instanceof BootstrapError && ['rust_toolchain_unavailable', 'native_compiler_unavailable'].includes(error.code)) {
+        fail(error.code, onlinePrepareHint(error.message), error.exitCode);
+      }
+      throw error;
+    }
+    const cacheIdentity = {
+      input_sha256: manifest.inputDigest,
+      cargo_lock_sha256: manifest.files.find(file => file.path === 'Cargo.lock')?.sha256,
+      recipe: RECIPE,
+      recipe_sha256: recipeSha256,
+      toolchain,
+      platform: deps.platform,
+      architecture: deps.arch,
+      native_environment: Object.fromEntries(Object.entries(controlledBuildEnvironment(deps.environment)).filter(([key]) => ['INCLUDE', 'LIB', 'LIBPATH', 'VCToolsInstallDir', 'VCINSTALLDIR', 'WindowsSdkDir', 'WindowsSDKVersion', 'UniversalCRTSdkDir', 'UCRTVersion'].includes(key))),
+      ...configuration,
+    };
+    if (!SHA256.test(cacheIdentity.cargo_lock_sha256 ?? '')) fail('invalid_input_manifest', 'Cargo.lock must be part of the controlled source inputs.');
+    const key = hash(canonical(cacheIdentity));
+    expected = { key, cacheIdentity, configuration, toolchain, manifest };
+  }
+  const { key, cacheIdentity, toolchain } = expected;
   const runtime = await runtimeReferences(sourceRoot);
   const root = await initializeCache(options.cacheDir, sourceRoot);
-  await auditCargoConfiguration(root, controlledBuildEnvironment(deps.environment));
-  const cacheIdentity = {
-    input_sha256: manifest.inputDigest,
-    cargo_lock_sha256: manifest.files.find(file => file.path === 'Cargo.lock')?.sha256,
-    recipe: RECIPE,
-    recipe_sha256: await recipeDigest(sourceRoot),
-    toolchain,
-    platform: deps.platform,
-    architecture: deps.arch,
-    native_environment: Object.fromEntries(Object.entries(controlledBuildEnvironment(deps.environment)).filter(([key]) => ['INCLUDE', 'LIB', 'LIBPATH', 'VCToolsInstallDir', 'VCINSTALLDIR', 'WindowsSdkDir', 'WindowsSDKVersion', 'UniversalCRTSdkDir', 'UCRTVersion'].includes(key))),
-    ...configuration,
-  };
-  if (!SHA256.test(cacheIdentity.cargo_lock_sha256 ?? '')) fail('invalid_input_manifest', 'Cargo.lock must be part of the controlled source inputs.');
-  const key = hash(canonical(cacheIdentity));
-  const expected = { key, cacheIdentity, configuration, toolchain, manifest };
+  if (!usePrebuilt) await auditCargoConfiguration(root, controlledBuildEnvironment(deps.environment));
   const verifySourceUnchanged = async () => {
     const freshManifest = await deps.collectInputManifest(sourceRoot);
     const freshSource = await deps.inspectSource(sourceRoot, options.revision);
     const inputDirty = await deps.validatePinnedInputs(sourceRoot, options.revision, freshManifest);
     if (freshManifest.inputDigest !== manifest.inputDigest || await recipeDigest(sourceRoot) !== cacheIdentity.recipe_sha256
-      || freshSource.revision !== source.revision || (!options.allowDirty && inputDirty)) {
+      || freshSource.revision !== source.revision || (!options.allowDirty && inputDirty) || (usePrebuilt && (freshSource.dirty || inputDirty))) {
       fail('source_changed', 'The pinned build inputs or recipe changed during preparation; the result was not published.');
     }
   };
@@ -923,37 +1139,43 @@ export async function prepareBootstrap(options, overrides = {}) {
       await mkdir(candidate, { mode: 0o700 });
       staging = candidate;
       await privateDirectory(staging);
-      const snapshot = join(staging, 'source');
-      await privateDirectory(snapshot, true);
-      await deps.stageInputSnapshot(sourceRoot, snapshot, manifest);
-      const targetDirectory = join(staging, 'target');
-      await privateDirectory(targetDirectory, true);
-      try {
-        await deps.build({ snapshot, targetDirectory, configuration, toolchain, manifest, environment: deps.environment, offline: options.offline === true, signal: controller.signal });
-      } catch (error) {
-        if (!controller.signal.aborted) throw error;
-      }
-      if (controller.signal.aborted) throw new BootstrapError('interrupted', 'Core preparation was interrupted.', controller.signal.reason.exitCode);
       const complete = join(staging, 'entry');
       await privateDirectory(join(complete, 'bin'), true);
-      for (const binary of configuration.binaries) {
-        const name = `${binary}${deps.platform === 'win32' ? '.exe' : ''}`;
-        const built = join(targetDirectory, toolchain.target, configuration.profile === 'release' ? 'release' : 'debug', name);
-        // Cargo may hardlink this public output to target/.../deps. Both paths
-        // belong to this controlled build; the published cache receives bytes
-        // in a new, single-link file and retains strict link checks on reuse.
-        const bytes = await regularBytes(built, 1024 * 1024 * 1024, true);
+      if (usePrebuilt) {
+        const bytes = await downloadPrebuiltCore(prebuiltCandidate, staging, controller.signal, deps);
+        const name = `${CORE_BIN}${deps.platform === 'win32' ? '.exe' : ''}`;
         await writeFile(join(complete, 'bin', name), bytes, { flag: 'wx', mode: 0o700 });
+      } else {
+        const snapshot = join(staging, 'source');
+        await privateDirectory(snapshot, true);
+        await deps.stageInputSnapshot(sourceRoot, snapshot, manifest);
+        const targetDirectory = join(staging, 'target');
+        await privateDirectory(targetDirectory, true);
+        try {
+          await deps.build({ snapshot, targetDirectory, configuration, toolchain, manifest, environment: deps.environment, offline: options.offline === true, signal: controller.signal });
+        } catch (error) {
+          if (!controller.signal.aborted) throw error;
+        }
+        if (controller.signal.aborted) throw new BootstrapError('interrupted', 'Core preparation was interrupted.', controller.signal.reason.exitCode);
+        for (const binary of configuration.binaries) {
+          const name = `${binary}${deps.platform === 'win32' ? '.exe' : ''}`;
+          const built = join(targetDirectory, toolchain.target, configuration.profile === 'release' ? 'release' : 'debug', name);
+          // Cargo may hardlink this public output to target/.../deps. Both paths
+          // belong to this controlled build; the published cache receives bytes
+          // in a new, single-link file and retains strict link checks on reuse.
+          const bytes = await regularBytes(built, 1024 * 1024 * 1024, true);
+          await writeFile(join(complete, 'bin', name), bytes, { flag: 'wx', mode: 0o700 });
+        }
       }
       const executable = join(complete, 'bin', `${CORE_BIN}${deps.platform === 'win32' ? '.exe' : ''}`);
-      const identity = await deps.readIdentity(executable, { environment: deps.environment });
-      validateIdentity(identity, expected);
+      const identity = await readAndValidateEntryIdentity(executable, expected, deps, controller.signal);
       const artifacts = await Promise.all(configuration.binaries.map(binary => artifactRecord(complete, binary, deps.platform)));
       await verifySourceUnchanged();
       const body = {
         schema_version: RECEIPT_SCHEMA,
         cache_key: key,
         cache_identity: cacheIdentity,
+        core_source: usePrebuilt ? 'prebuilt_release' : 'local_build',
         source: { ...source, input_sha256: manifest.inputDigest, development_dirty_allowed: options.allowDirty === true },
         build_identity: identity,
         artifacts,
@@ -974,6 +1196,7 @@ export async function prepareBootstrap(options, overrides = {}) {
       schema_version: RESULT_SCHEMA,
       cache_hit: cacheHit,
       cache_key: key,
+      core_source: verified.receipt.core_source,
       requested_source: source,
       requested_capability: options.capability ?? 'core',
       runtime,
@@ -1055,6 +1278,28 @@ export async function prepareBootstrap(options, overrides = {}) {
   return result;
 }
 
+// Read-only. A cache that is missing or unusable is reported by the doctor's
+// cache check; this only says whether this pin's entry is absent, usable, or
+// present but refused. `prepare` never downloads over an existing entry.
+async function prebuiltCoreCacheState(cacheDir, sourceRoot, entry, manifest, configuration, deps) {
+  let root;
+  let spec;
+  try {
+    root = validateCacheLocation(cacheDir, sourceRoot);
+    if (!(await privateDirectory(root)) || (await readJson(join(root, MARKER))).schema_version !== MARKER_SCHEMA) return { state: 'absent' };
+    spec = prebuiltCoreBuildSpec(entry, manifest, await recipeDigest(sourceRoot), configuration, deps);
+    if (!(await safeStat(join(root, 'entries', spec.key)))) return { state: 'absent' };
+  } catch {
+    return { state: 'absent' };
+  }
+  try {
+    await verifyEntryFiles(join(root, 'entries', spec.key), spec.expected, deps);
+    return { state: 'usable' };
+  } catch (error) {
+    return { state: 'refused', error };
+  }
+}
+
 export async function doctorBootstrap(options, overrides = {}) {
   validateOptions(options);
   const deps = dependencies(overrides);
@@ -1067,23 +1312,74 @@ export async function doctorBootstrap(options, overrides = {}) {
     if (Number(deps.nodeVersion.split('.')[0]) < 24) fail('node_version', 'Node.js 24 or newer is required.');
     return `v${deps.nodeVersion}`;
   });
+  let sourceRoot;
+  let source;
+  let manifest;
+  let sourceChecked = false;
   await check('source', async () => {
-    const source = await deps.inspectSource(await realpath(deps.sourceRoot), options.revision);
-    const manifest = await deps.collectInputManifest(await realpath(deps.sourceRoot));
-    source.input_dirty = await deps.validatePinnedInputs(await realpath(deps.sourceRoot), options.revision, manifest);
+    sourceRoot = await realpath(deps.sourceRoot);
+    source = await deps.inspectSource(sourceRoot, options.revision);
+    manifest = await deps.collectInputManifest(sourceRoot);
+    if (!SHA256.test(manifest.inputDigest ?? '')) fail('invalid_input_manifest', 'The controlled source input manifest has no valid digest.');
+    source.input_dirty = await deps.validatePinnedInputs(sourceRoot, options.revision, manifest);
     source.dirty ||= source.input_dirty;
+    sourceChecked = true;
     if (source.dirty && !options.allowDirty) fail('dirty_source', 'The pinned source has changes; --allow-dirty is development-only.');
     return source;
   });
+  let prebuiltApplies = false;
+  let prebuiltNeedsOnlinePrepare = false;
+  let prebuiltSourceState = 'not_selected';
+  if (sourceChecked && !source.dirty && (options.profile ?? 'release') === 'release' && options.buildFromSource !== true) {
+    try {
+      const entry = selectPrebuiltCore(deps.prebuiltCores, manifest.inputDigest, deps.platform, deps.arch);
+      const cached = entry
+        ? await prebuiltCoreCacheState(options.cacheDir, sourceRoot, entry, manifest, buildConfiguration(options), deps)
+        : undefined;
+      if (!entry) {
+        prebuiltSourceState = 'not_listed';
+      } else if (cached.state === 'usable') {
+        prebuiltSourceState = 'cached';
+        prebuiltApplies = true;
+      } else if (cached.state === 'refused') {
+        // `prepare` selects this entry and refuses it, with or without --offline.
+        prebuiltSourceState = 'cache_entry_refused';
+        prebuiltApplies = true;
+        checks.push({
+          name: 'prebuilt_core',
+          ready: false,
+          reason: `The cached prebuilt scanner core cannot be used: ${cached.error.message} Choose a new --cache-dir, or pass --build-from-source.`,
+          ...(cached.error instanceof BootstrapError ? { error: cached.error.code } : {}),
+        });
+      } else if (options.offline === true) {
+        prebuiltSourceState = 'not_selected';
+        prebuiltNeedsOnlinePrepare = true;
+      } else {
+        prebuiltSourceState = 'downloadable';
+        prebuiltApplies = true;
+      }
+    } catch (error) {
+      checks.push({
+        name: 'prebuilt_core',
+        ready: false,
+        reason: error.message,
+        ...(error instanceof BootstrapError ? { error: error.code } : {}),
+      });
+    }
+  }
+  let localBuildState = 'unavailable';
+  const optionalFields = prebuiltApplies ? { required: false } : {};
   try {
     const { compiler, linker, ...rustIdentity } = await deps.inspectToolchain(deps);
-    checks.push({ name: 'rust_toolchain', ready: true, detail: rustIdentity });
-    checks.push({ name: 'native_compiler_and_linker', ready: true, detail: { compiler, linker } });
+    localBuildState = 'available';
+    checks.push({ name: 'rust_toolchain', ready: true, ...optionalFields, detail: rustIdentity });
+    checks.push({ name: 'native_compiler_and_linker', ready: true, ...optionalFields, detail: { compiler, linker } });
   } catch (error) {
+    const reason = prebuiltNeedsOnlinePrepare ? onlinePrepareHint(error.message) : error.message;
     checks.push(error.rustIdentity
-      ? { name: 'rust_toolchain', ready: true, detail: error.rustIdentity }
-      : { name: 'rust_toolchain', ready: false, reason: error.message });
-    checks.push({ name: 'native_compiler_and_linker', ready: false, reason: error.rustIdentity ? error.message : 'Rust toolchain identification must succeed first.' });
+      ? { name: 'rust_toolchain', ready: true, ...optionalFields, detail: error.rustIdentity }
+      : { name: 'rust_toolchain', ready: false, ...optionalFields, reason });
+    checks.push({ name: 'native_compiler_and_linker', ready: false, ...optionalFields, reason: error.rustIdentity ? reason : 'Rust toolchain identification must succeed first.' });
   }
   await check('cache', async () => {
     const cacheDir = validateCacheLocation(options.cacheDir, await realpath(deps.sourceRoot));
@@ -1093,7 +1389,7 @@ export async function doctorBootstrap(options, overrides = {}) {
     if (process.platform !== 'win32') {
       try { await access(ancestor, constants.W_OK | constants.X_OK); } catch { fail('cache_parent_not_writable', `Cache parent is not writable: ${ancestor}`); }
     }
-    await auditCargoConfiguration(cacheDir, controlledBuildEnvironment(deps.environment));
+    if (!prebuiltApplies) await auditCargoConfiguration(cacheDir, controlledBuildEnvironment(deps.environment));
     const stat = await safeStat(cacheDir);
     if (stat) {
       await privateDirectory(cacheDir);
@@ -1114,8 +1410,12 @@ export async function doctorBootstrap(options, overrides = {}) {
   });
   return {
     schema_version: 'ai-security-scanner.bootstrap-doctor/v1',
-    ready: checks.every(item => item.ready),
+    ready: checks.every(item => item.ready || item.required === false),
     checks,
+    core_sources: {
+      prebuilt_release: prebuiltSourceState,
+      local_build: localBuildState,
+    },
     execution: { native_core: 'build identity is verified during prepare', scanner_runtime: 'not prepared', cloudflare_delegation: 'not assessed', dynamic_sandbox: 'not assessed' },
     ...(options.capability === 'scan' ? { runtime_sources: {
       compatibility_commands_on_path: await compatibilityCommandsOnPath(deps),
@@ -1258,6 +1558,7 @@ export async function runPrepared(result, argv, overrides = {}) {
     configuration: result.receipt.cache_identity,
     toolchain: result.receipt.cache_identity.toolchain,
     manifest: { inputDigest: result.receipt.cache_identity.input_sha256 },
+    ...(result.receipt.cache_identity.prebuilt ? { prebuilt: result.receipt.cache_identity.prebuilt } : {}),
   };
   const verified = await verifyEntry(result.entry_directory, expected, { ...deps, environment: withoutProductSourceOverrides(deps.environment) });
   return invokeCoreCommand(overrides.commandExecutable ?? verified.executable, args, { environment: withoutProductSourceOverrides(deps.environment), parentControl, argvPrefix: overrides.argvPrefix ?? [] });
