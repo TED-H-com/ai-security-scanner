@@ -751,7 +751,7 @@ function buildConfiguration(options) {
 }
 
 const PREBUILT_ARCHES = new Set(['x64', 'arm64', 'ia32', 'arm', 'ppc64', 's390x', 'riscv64', 'loong64']);
-const PREBUILT_ENTRY_KEYS = ['features', 'input_sha256', 'platform', 'product_version', 'release_source', 'targets'];
+const PREBUILT_ENTRY_KEYS = ['features', 'input_sha256', 'platform', 'product_version', 'recipe', 'release_source', 'rust_version', 'targets'];
 const PREBUILT_SOURCE_KEYS = ['bytes', 'sha256', 'url'];
 
 function isPlainObject(value) {
@@ -769,6 +769,12 @@ export function assertValidPrebuiltCoreEntry(entry) {
   }
   if (typeof entry.input_sha256 !== 'string' || !SHA256.test(entry.input_sha256)) {
     fail('invalid_prebuilt_core', 'The pinned prebuilt scanner core entry has an invalid input_sha256.');
+  }
+  if (typeof entry.recipe !== 'string' || !/^[a-z0-9][a-z0-9-]{0,63}$/.test(entry.recipe)) {
+    fail('invalid_prebuilt_core', 'The pinned prebuilt scanner core entry has an invalid recipe.');
+  }
+  if (typeof entry.rust_version !== 'string' || !/^[0-9]{1,4}\.[0-9]{1,4}\.[0-9]{1,4}$/.test(entry.rust_version)) {
+    fail('invalid_prebuilt_core', 'The pinned prebuilt scanner core entry has an invalid rust_version.');
   }
   if (!['linux', 'darwin', 'win32'].includes(entry.platform)) {
     fail('invalid_prebuilt_core', 'The pinned prebuilt scanner core entry has an unsupported platform.');
@@ -803,6 +809,9 @@ function selectPrebuiltCore(prebuiltCores, inputDigest, platform, arch) {
   for (const entry of prebuiltCores) {
     if (!isPlainObject(entry)) fail('invalid_prebuilt_core', 'The pinned prebuilt core entry must be an object.');
     if (entry.input_sha256 !== inputDigest || entry.platform !== platform) continue;
+    // An entry recorded for another recipe name or Rust version stays unused, like one for other build inputs.
+    if ((typeof entry.recipe === 'string' && entry.recipe !== RECIPE)
+      || (typeof entry.rust_version === 'string' && entry.rust_version !== RUST_VERSION)) continue;
     if (!isPlainObject(entry.targets)) fail('invalid_prebuilt_core', 'The matching prebuilt core entry has an invalid targets mapping.');
     if (Object.hasOwn(entry.targets, arch)) matches.push(entry);
   }

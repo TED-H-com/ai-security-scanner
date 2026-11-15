@@ -15,6 +15,10 @@ function makeBinary(identity) {
   return Buffer.from(`#!/usr/bin/env node\n// IDENTITY ${JSON.stringify(identity)}\nprocess.stdout.write(JSON.stringify(${JSON.stringify(identity)}));\n`);
 }
 
+function withoutKey(entry, omitted) {
+  return Object.fromEntries(Object.entries(entry).filter(([key]) => key !== omitted));
+}
+
 async function prebuiltFixture(t, {
   platform = process.platform,
   arch = process.arch,
@@ -43,6 +47,8 @@ async function prebuiltFixture(t, {
   const entry = {
     product_version,
     input_sha256: manifest.inputDigest,
+    recipe: RECIPE,
+    rust_version: RUST_VERSION,
     platform,
     targets,
     features,
@@ -83,6 +89,8 @@ test('shipped PREBUILT_CORES is frozen and every entry passes strict shape valid
   const sample = {
     product_version: '0.0.0-fixture',
     input_sha256: 'a'.repeat(64),
+    recipe: RECIPE,
+    rust_version: RUST_VERSION,
     platform: 'linux',
     targets: { x64: 'x86_64-unknown-linux-gnu' },
     features: ['cli'],
@@ -94,6 +102,12 @@ test('shipped PREBUILT_CORES is frozen and every entry passes strict shape valid
     { ...sample, extra: true },
     { ...sample, product_version: '' },
     { ...sample, input_sha256: 'bad' },
+    withoutKey(sample, 'recipe'),
+    { ...sample, recipe: '' },
+    { ...sample, recipe: 'Skill Bootstrap' },
+    withoutKey(sample, 'rust_version'),
+    { ...sample, rust_version: '1.98' },
+    { ...sample, rust_version: 1.98 },
     { ...sample, platform: 'freebsd' },
     { ...sample, targets: {} },
     { ...sample, targets: { amd64: 'x86_64-unknown-linux-gnu' } },
@@ -395,13 +409,51 @@ test('two matching entries or a malformed entry fail closed without building or 
     [null],
     [{ input_sha256: f.manifest.inputDigest, platform: process.platform, targets: null }],
     [{ ...f.entry, release_source: 'bad' }],
+    [withoutKey(f.entry, 'recipe')],
+    [withoutKey(f.entry, 'rust_version')],
   ]) {
     await assert.rejects(
       prepareBootstrap(f.releaseOptions, { ...f.noToolchainDeps, prebuiltCores: bad }),
       { code: 'invalid_prebuilt_core', exitCode: 4 },
     );
   }
+  assert.equal(f.prebuiltState.fetches, 0);
   await assert.rejects(readdir(f.releaseOptions.cacheDir), { code: 'ENOENT' });
+});
+
+test('an entry recorded for another recipe name or Rust version is ignored like one for other build inputs', async t => {
+  const f = await prebuiltFixture(t);
+  let emptyError;
+  await assert.rejects(
+    prepareBootstrap(f.releaseOptions, { ...f.noToolchainDeps, prebuiltCores: [] }),
+    error => { emptyError = error; return true; },
+  );
+  const emptyDoctor = await doctorBootstrap(f.releaseOptions, { ...f.noToolchainDeps, prebuiltCores: [] });
+
+  const unusedEntries = [
+    { ...f.entry, recipe: 'skill-bootstrap-v0' },
+    { ...f.entry, rust_version: '1.97.0' },
+  ];
+  for (const unused of unusedEntries) {
+    await assert.rejects(
+      prepareBootstrap(f.releaseOptions, { ...f.noToolchainDeps, prebuiltCores: [unused] }),
+      error => {
+        assert.equal(error.code, emptyError.code);
+        assert.equal(error.message, emptyError.message);
+        return true;
+      },
+    );
+    assert.equal(f.prebuiltState.fetches, 0);
+    const doctor = await doctorBootstrap(f.releaseOptions, { ...f.noToolchainDeps, prebuiltCores: [unused] });
+    assert.equal(doctor.core_sources.prebuilt_release, emptyDoctor.core_sources.prebuilt_release);
+  }
+
+  const prepared = await prepareBootstrap(f.releaseOptions, {
+    ...f.noToolchainDeps,
+    prebuiltCores: [...unusedEntries, f.entry],
+  });
+  assert.equal(prepared.core_source, 'prebuilt_release');
+  assert.equal(f.prebuiltState.fetches, 1);
 });
 
 test('loadPreparedBootstrap refuses removed/changed allowlist entry, dirty checkout for prebuilt, and tampered binary bytes before execution', async t => {

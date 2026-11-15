@@ -88,7 +88,8 @@ A prebuilt core applies only when all of these hold:
   builds locally);
 - `--build-from-source` is absent;
 - exactly one entry in `scripts/skill/prebuilt-cores.mjs` names this checkout's
-  build-input digest, this platform and this processor architecture.
+  build-input digest, this platform and this processor architecture, and is
+  recorded for this revision's recipe name and Rust version.
 
 The download is one HTTPS file. Bootstrap checks its exact size and SHA-256
 against the pin before the file is run. The executable's own build identity
@@ -136,9 +137,11 @@ the one the release CLI reports.
    `product_version` is the release version. `input_sha256` is the `input=`
    value of the release build log line that starts with
    `Verified CLI build identity`; the file's own `--json build-identity` reports
-   it as `bootstrap_input_sha256`. `release_source` holds the file's download
-   URL, its exact size in bytes and its SHA-256 from the release's
-   `SHA256SUMS.txt`.
+   it as `bootstrap_input_sha256`. `recipe` is the `recipe=` value of the same
+   log line, and `rust_version` is the Rust version of the release build: the
+   `toolchain:` value in `.github/workflows/release.yml` at the release commit.
+   `release_source` holds the file's download URL, its exact size in bytes and
+   its SHA-256 from the release's `SHA256SUMS.txt`.
 2. In `scripts/skill/managed-runtime-bundles.mjs`, set the Windows entry's
    `release_source` to the release's `managed-runtime-windows-x86_64.tar.gz`:
    `kind: 'tar.gz'`, `inner_path: 'managed-runtime'`, its URL, `bytes`, `sha256`
@@ -153,10 +156,8 @@ the one the release CLI reports.
    runtime and reports `runtime_bundle_source` as `downloaded_release`.
 
 A skill must pin that commit, or a later one that keeps the same build inputs,
-recipe name and Rust version. A revision with different build inputs builds from
-source. One that keeps the inputs but changes the recipe name or the Rust
-version stops `prepare` with `artifact_identity_mismatch`, so remove the entries
-in the commit that makes such a change.
+recipe name and Rust version. A revision that changes any of them ignores the
+entries and builds from source.
 
 ## Keep cases separate from build caches
 
