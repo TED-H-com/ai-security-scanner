@@ -133,7 +133,6 @@ test("skill prompts, metadata, provider methods and sync changes avoid core rebu
 test("bootstrap recipes and input changes exercise native bootstrap without installers", () => {
   for (const path of [
     "scripts/skill/bootstrap.mjs",
-    "scripts/skill/bootstrap-core.mjs",
     "scripts/skill/build-inputs.mjs",
     "tests/skill/bootstrap.test.mjs",
     "scripts/ci/skill-bootstrap-smoke.mjs",
@@ -142,6 +141,18 @@ test("bootstrap recipes and input changes exercise native bootstrap without inst
     assert.equal(result.skill_bootstrap, true, path);
     assert.equal(result.skill_native, true, path);
     for (const boundary of ["rust_core", "desktop", "release_contract", "windows_runtime", "windows_installer"]) {
+      assert.equal(result[boundary], false, `${path}: ${boundary}`);
+    }
+  }
+  for (const path of [
+    "scripts/skill/bootstrap-core.mjs",
+    "scripts/skill/input-manifest.mjs",
+  ]) {
+    const result = classifyChangedPaths([path]);
+    assert.equal(result.skill_bootstrap, true, path);
+    assert.equal(result.skill_native, true, path);
+    assert.equal(result.release_contract, true, path);
+    for (const boundary of ["rust_core", "desktop", "windows_runtime", "windows_installer"]) {
       assert.equal(result[boundary], false, `${path}: ${boundary}`);
     }
   }

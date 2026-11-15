@@ -54,6 +54,8 @@ Each lane records what it actually observed: installation, application and compa
 
 The finalized QC set records offered artifacts and their qualification evidence, checksums, runtime manifests, notices, SBOMs and limitations. The workflow summary identifies the run, artifact and source commit. Finalization does not publish anything.
 
+The sidecar build embeds the checkout's bootstrap input digest and recipe name in the companion CLI (`ai-security-scanner-cli`). When the built target can run on the build host, the script checks `--json build-identity` and stops the build if the built CLI does not report the expected digest, recipe, target and features. This lets the skill bootstrap later accept a pinned release CLI as a prebuilt core.
+
 ## Promote a public candidate
 
 Publication is a separate product-owner decision. When the owner authorizes it, dispatch **Release desktop installers** from `main` with `public_release_candidate: true`. **Promote frozen desktop release candidate** then consumes five values from that run's summary:

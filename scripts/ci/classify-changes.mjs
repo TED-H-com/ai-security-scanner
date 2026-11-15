@@ -165,6 +165,8 @@ const RELEASE_CONTRACT_PATHS = [
   /^vendor\/glib-0\.18\.5\//,
   /^scripts\/verify-vendored-glib\.sh$/,
   /^scripts\/release\//,
+  // Sidecar release builds read RECIPE and collectInputManifest from these skill modules.
+  /^scripts\/skill\/(?:bootstrap-core|input-manifest)\.mjs$/,
   /^tests\/release\//,
   /^docs\/incident-pack\.(?:js|json)$/,
   /^\.github\/workflows\/engine-images-local-k8s\.yml$/,
