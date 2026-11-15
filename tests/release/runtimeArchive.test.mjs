@@ -424,7 +424,83 @@ test("packRuntimeArchive refuses invalid inputs cleanly and replaces existing ar
     const out = path.join(outDir, "managed-runtime-windows-x86_64.tar.gz");
     await assert.rejects(
       packRuntimeArchive({ root: dir, output: out }),
-      (err) => err instanceof Error && err.message.includes("bin/podman.exe"),
+      (err) => err instanceof Error && err.message.includes("size mismatch for bin/podman.exe"),
+    );
+    assert.deepEqual(await readdir(outDir), []);
+  }
+
+  {
+    // Same length, other bytes: only the digest check can refuse this one.
+    const dir = path.join(workspace, "digest-mismatch");
+    const outDir = path.join(workspace, "out-digest");
+    await mkdir(dir, { recursive: true });
+    await mkdir(outDir, { recursive: true });
+    await createRuntimeFixture(dir, baseFiles);
+    await writeFile(path.join(dir, "bin", "podman.exe"), "EXE-BYTES");
+    const out = path.join(outDir, "managed-runtime-windows-x86_64.tar.gz");
+    await assert.rejects(
+      packRuntimeArchive({ root: dir, output: out }),
+      (err) => err instanceof Error && err.message.includes("digest mismatch for bin/podman.exe"),
+    );
+    assert.deepEqual(await readdir(outDir), []);
+  }
+
+  {
+    // Windows unpacks the archive, and there these two names are one file.
+    const dir = path.join(workspace, "case-collision");
+    const outDir = path.join(workspace, "out-case");
+    await mkdir(dir, { recursive: true });
+    await mkdir(outDir, { recursive: true });
+    await createRuntimeFixture(dir, [
+      ...baseFiles,
+      { path: "bin/Helper.exe", content: Buffer.from("upper"), executable: true },
+      { path: "bin/helper.exe", content: Buffer.from("lower"), executable: true },
+    ]);
+    const out = path.join(outDir, "managed-runtime-windows-x86_64.tar.gz");
+    await assert.rejects(
+      packRuntimeArchive({ root: dir, output: out }),
+      (err) =>
+        err instanceof Error &&
+        err.message.includes("differ only by case") &&
+        err.message.includes("bin/Helper.exe") &&
+        err.message.includes("bin/helper.exe"),
+    );
+    assert.deepEqual(await readdir(outDir), []);
+  }
+
+  {
+    const dir = path.join(workspace, "directory-case-collision");
+    const outDir = path.join(workspace, "out-directory-case");
+    await mkdir(dir, { recursive: true });
+    await mkdir(outDir, { recursive: true });
+    await createRuntimeFixture(dir, [
+      ...baseFiles,
+      { path: "Share/extra.txt", content: Buffer.from("extra"), executable: false },
+    ]);
+    const out = path.join(outDir, "managed-runtime-windows-x86_64.tar.gz");
+    await assert.rejects(
+      packRuntimeArchive({ root: dir, output: out }),
+      (err) => err instanceof Error && err.message.includes("differ only by case"),
+    );
+    assert.deepEqual(await readdir(outDir), []);
+  }
+
+  {
+    const dir = path.join(workspace, "file-and-directory");
+    const outDir = path.join(workspace, "out-file-and-directory");
+    await mkdir(dir, { recursive: true });
+    await mkdir(outDir, { recursive: true });
+    await createRuntimeFixture(dir, baseFiles);
+    const manifestPath = path.join(dir, "manifest.json");
+    const manifest = JSON.parse(await readFile(manifestPath, "utf8"));
+    manifest.files.push({ ...manifest.files[1], path: "share/podman" });
+    await writeFile(manifestPath, `${JSON.stringify(manifest, null, 2)}\n`);
+    const out = path.join(outDir, "managed-runtime-windows-x86_64.tar.gz");
+    await assert.rejects(
+      packRuntimeArchive({ root: dir, output: out }),
+      (err) =>
+        err instanceof Error &&
+        err.message.includes("share/podman as both a file and a directory"),
     );
     assert.deepEqual(await readdir(outDir), []);
   }
@@ -520,6 +596,46 @@ test("packRuntimeArchive refuses invalid inputs cleanly and replaces existing ar
     );
     await verifyRuntimeArchive({ archive: out, manifestSha256: fixture.manifestSha256 });
   }
+});
+
+test("packRuntimeArchive packs as many entries as the bootstrap reader accepts and names the limit beyond it", async (t) => {
+  const workspace = await createTempDir(t, "entry-limit");
+  const files = (count) =>
+    Array.from({ length: count }, (_, index) => ({
+      path: `bin/tool-${String(index).padStart(3, "0")}.exe`,
+      content: Buffer.from(`tool ${index}`),
+      executable: true,
+    }));
+
+  // 126 files, the bin directory and manifest.json are 128 entries below managed-runtime/.
+  const atLimit = path.join(workspace, "at-limit");
+  const atLimitOut = path.join(workspace, "out-at-limit");
+  await mkdir(atLimit, { recursive: true });
+  await mkdir(atLimitOut, { recursive: true });
+  const fixture = await createRuntimeFixture(atLimit, files(126));
+  const packed = await packRuntimeArchive({
+    root: atLimit,
+    output: path.join(atLimitOut, "managed-runtime-windows-x86_64.tar.gz"),
+  });
+  await verifyRuntimeArchive({ archive: packed.file, manifestSha256: packed.manifestSha256 });
+  assert.equal(packed.manifestSha256, fixture.manifestSha256);
+
+  const overLimit = path.join(workspace, "over-limit");
+  const overLimitOut = path.join(workspace, "out-over-limit");
+  await mkdir(overLimit, { recursive: true });
+  await mkdir(overLimitOut, { recursive: true });
+  await createRuntimeFixture(overLimit, files(127));
+  await assert.rejects(
+    packRuntimeArchive({
+      root: overLimit,
+      output: path.join(overLimitOut, "managed-runtime-windows-x86_64.tar.gz"),
+    }),
+    (err) =>
+      err instanceof Error &&
+      err.message.includes("would hold 129 entries") &&
+      err.message.includes("at most 128"),
+  );
+  assert.deepEqual(await readdir(overLimitOut), []);
 });
 
 test("generate-runtime-evidence CLI enforces --runtime-archive preconditions and packs verified archive", async (t) => {

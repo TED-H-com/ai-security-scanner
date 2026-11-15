@@ -10,6 +10,9 @@ import { sha256 } from "./lib.mjs";
 const ARCHIVE_ROOT = "managed-runtime";
 const MAX_MANIFEST_BYTES = 262_144;
 const MAX_LISTED_FILES = 127;
+// The bootstrap reader accepts at most this many entries below managed-runtime/: listed files,
+// the directories above them and manifest.json.
+const MAX_ARCHIVE_ENTRIES = 128;
 const MAX_RELATIVE_PATH_BYTES = 255;
 const MAX_RELATIVE_PATH_COMPONENTS = 16;
 const SHA256_HEX = /^[0-9a-f]{64}$/u;
@@ -146,6 +149,20 @@ async function collectRuntimeEntries(root, manifestBytes, recordsByPath) {
     for (let depth = 1; depth < parts.length; depth += 1) {
       listedDirectories.add(parts.slice(0, depth).join("/"));
     }
+  }
+  const entryCount = recordsByPath.size + listedDirectories.size + 1;
+  assert(
+    entryCount <= MAX_ARCHIVE_ENTRIES,
+    `runtime archive would hold ${entryCount} entries (files, directories and manifest.json); the bootstrap reader accepts at most ${MAX_ARCHIVE_ENTRIES}`,
+  );
+  // The archive is unpacked on Windows, where names that differ only by case are one file.
+  const foldedPaths = new Map();
+  for (const listedPath of ["manifest.json", ...recordsByPath.keys(), ...listedDirectories]) {
+    const folded = listedPath.toLowerCase();
+    const other = foldedPaths.get(folded);
+    assert(other !== listedPath, `manifest lists ${listedPath} as both a file and a directory`);
+    assert(other === undefined, `runtime paths differ only by case: ${other} and ${listedPath}`);
+    foldedPaths.set(folded, listedPath);
   }
 
   async function walk(currentDirFs, relativePrefix) {
