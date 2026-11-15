@@ -152,8 +152,11 @@ the one the release CLI reports.
    Podman or the desktop app, `prepare --capability scan` then downloads the
    runtime and reports `runtime_bundle_source` as `downloaded_release`.
 
-A skill must pin that commit, or a later one with the same build inputs. On any
-other revision `prepare` builds from source.
+A skill must pin that commit, or a later one that keeps the same build inputs,
+recipe name and Rust version. A revision with different build inputs builds from
+source. One that keeps the inputs but changes the recipe name or the Rust
+version stops `prepare` with `artifact_identity_mismatch`, so remove the entries
+in the commit that makes such a change.
 
 ## Keep cases separate from build caches
 
