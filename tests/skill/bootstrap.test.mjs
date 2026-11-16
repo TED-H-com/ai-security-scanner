@@ -1213,7 +1213,7 @@ test('packed Windows release archive is downloaded, verified, and reused through
 
   const shippedWindows = RECOGNIZED_MANAGED_RUNTIME_BUNDLES.find(entry => entry.platform === 'win32');
   assert.ok(shippedWindows);
-  assert.equal(shippedWindows.release_source, null);
+  assert.equal(shippedWindows.release_source.kind, 'tar.gz');
   const windowsDoctorOptions = { ...f.options, cacheDir: join(f.root, 'simulated-windows-cache') };
   // A simulated win32 prepare cannot run on other hosts because the fixture core is built for the host.
   const windowsWithArchive = RECOGNIZED_MANAGED_RUNTIME_BUNDLES.map(entry =>
@@ -1225,6 +1225,13 @@ test('packed Windows release archive is downloaded, verified, and reused through
   );
   assert.equal(
     (await doctorBootstrap(windowsDoctorOptions, { ...f.deps, platform: 'win32', arch: 'x64', recognizedManagedRuntimeBundles: RECOGNIZED_MANAGED_RUNTIME_BUNDLES })).runtime_sources.release_bundle,
+    'downloadable',
+  );
+  const windowsWithoutArchive = RECOGNIZED_MANAGED_RUNTIME_BUNDLES.map(entry =>
+    entry.platform === 'win32' ? { ...entry, release_source: null } : entry,
+  );
+  assert.equal(
+    (await doctorBootstrap(windowsDoctorOptions, { ...f.deps, platform: 'win32', arch: 'x64', recognizedManagedRuntimeBundles: windowsWithoutArchive })).runtime_sources.release_bundle,
     'unsupported',
   );
 });

@@ -28,13 +28,18 @@ export const RECOGNIZED_MANAGED_RUNTIME_BUNDLES = Object.freeze([
     }),
   }),
   Object.freeze({
-    platform: 'win32', arch: Object.freeze(['x64']), product_version: '0.6.2',
+    platform: 'win32', arch: Object.freeze(['x64']), product_version: '0.7.0',
     manifest_sha256: 'b530cf8f62196dd54e6b31b815202f565b3abb32593ee79c1ec834ded662edd0',
     installed_paths: Object.freeze([]),
     installed_locations: Object.freeze([
       Object.freeze({ environment: 'LOCALAPPDATA', components: Object.freeze(['ai-security-scanner', 'managed-runtime']) }),
       Object.freeze({ environment: 'ProgramFiles', components: Object.freeze(['ai-security-scanner', 'managed-runtime']) }),
     ]),
-    release_source: null,
+    release_source: Object.freeze({
+      kind: 'tar.gz',
+      url: 'https://github.com/TED-H-com/ai-security-scanner/releases/download/v0.7.0/managed-runtime-windows-x86_64.tar.gz',
+      bytes: 20027651, sha256: '1997f8b626ac117a6720dd4f0ada8988c22a3d70628e1a271cd9c7f0fa405b92',
+      inner_path: 'managed-runtime', extracted_bytes: 51750290,
+    }),
   }),
 ]);

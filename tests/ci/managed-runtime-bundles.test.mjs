@@ -28,9 +28,10 @@ test('recognized desktop runtime manifests match the published installer assets'
     },
   };
   for (const entry of entries) {
-    const matching = publication.publication.assets.filter(asset => asset.name === names[entry.platform]);
+    const entryPublication = JSON.parse(await readFile(new URL(`../../docs/release/v${entry.product_version}-publication.json`, import.meta.url), 'utf8'));
+    const matching = entryPublication.publication.assets.filter(asset => asset.name === names[entry.platform]);
     assert.equal(matching.length, 1, entry.platform);
-    assert.equal(entry.product_version, '0.6.2');
+    assert.equal(`v${entry.product_version}`, entryPublication.publication.release.tag);
     assert.equal(entry.manifest_sha256, matching[0].sha256, entry.platform);
     assert.deepEqual(entry.arch, installed[entry.platform].arch);
     assert.deepEqual(entry.installed_paths, installed[entry.platform].paths);
@@ -57,7 +58,16 @@ test('recognized desktop runtime manifests match the published installer assets'
     kind: 'tar.gz', url: archive.url, bytes: archive.bytes, sha256: archive.sha256,
     inner_path: darwin.installed_paths[0].slice('/Applications/'.length), extracted_bytes: 181947360,
   });
-  assert.equal(entries.find(entry => entry.platform === 'win32').release_source, null);
+  const windows = entries.find(entry => entry.platform === 'win32');
+  const windowsPublication = JSON.parse(await readFile(new URL(`../../docs/release/v${windows.product_version}-publication.json`, import.meta.url), 'utf8'));
+  const windowsArchive = windowsPublication.publication.assets.find(asset => asset.name === 'managed-runtime-windows-x86_64.tar.gz');
+  const windowsRuntime = windowsPublication.runtime_archives.find(archive => archive.file === windowsArchive.name);
+  assert.ok(Object.isFrozen(windows.release_source));
+  assert.equal(windowsRuntime.manifest_sha256, windows.manifest_sha256);
+  assert.deepEqual(windows.release_source, {
+    kind: 'tar.gz', url: windowsArchive.url, bytes: windowsArchive.bytes, sha256: windowsArchive.sha256,
+    inner_path: 'managed-runtime', extracted_bytes: windowsRuntime.extracted_bytes,
+  });
   const tauriConf = JSON.parse(await readFile(new URL('../../src-tauri/tauri.conf.json', import.meta.url), 'utf8'));
   const installerNsi = await readFile(new URL('../../src-tauri/windows/nsis/installer.nsi', import.meta.url), 'utf8');
   assert.ok(installerNsi.includes('StrCpy $INSTDIR "$LOCALAPPDATA\\${PRODUCTNAME}"'));
