@@ -209,7 +209,7 @@ jobs:
           --metadata release-assets/release-metadata.json
 
       - name: Preserve supply-chain evidence
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: release-supply-chain
           path: release-assets
@@ -510,7 +510,7 @@ jobs:
 
       - name: Preserve platform installers
         if: steps.collect_bundles.outcome == 'success'
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: desktop-installers-${{ matrix.platform }}
           path: release-assets
@@ -623,7 +623,7 @@ jobs:
             --release-channel "${RELEASE_CHANNEL}"
 
       - name: Preserve strict platform qualification evidence
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: platform-qualification-${{ matrix.qualification_id }}
           path: qualification-evidence/platform-qualification-${{ matrix.qualification_id }}.json
@@ -711,7 +711,7 @@ jobs:
             --beginner-report $report
 
       - name: Preserve explicitly requested supporting evidence
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: windows-nsis-supporting-data-preservation-${{ matrix.scenario }}
           path: supporting-evidence/
@@ -831,7 +831,7 @@ jobs:
       - name: Preserve immutable public release candidate input
         id: upload_candidate
         if: inputs.public_release_candidate == true
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: release-candidate-input-${{ github.run_id }}-${{ github.run_attempt }}
           path: assembled-input
@@ -871,7 +871,7 @@ jobs:
           --publication-mode "${PUBLICATION_MODE}"
 
       - name: Preserve the finalized release candidate
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: release-finalized
           path: release-assets
