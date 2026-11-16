@@ -529,6 +529,30 @@ const RELEASE_COPY = new Map([
     },
   ],
   [
+    "0.7.0",
+    {
+      updaterNotes: "Saved report snapshots, complete case archives and foreground scan support. 新增報告快照、完整案件封存與前景掃描支援。",
+      releaseNotes: [
+        "Saved reports, portable cases and foreground execution for the existing scanner core.",
+        "",
+        "- Save report snapshots, retrieve their original files offline and replay them with a compatible renderer.",
+        "- Create, verify and restore complete private case archives, including evidence, saved reports and recorded source-audit history, into a new workspace. Existing desktop cases remain compatible.",
+        "- Run approved scans in the foreground, recover captured results and prepare only the selected scanners through the development CLI and pinned bootstrap.",
+        "- Record host-led Cloudflare source audits in the shared report, including unfinished checks and items that still need validation. Improve report wording and Japanese desktop explanations.",
+        "- Release companion CLIs carry the identity needed for a later prebuilt-core pin. A standalone Windows scan-runtime archive supports a later bootstrap pin; publication alone does not change the skill entry.",
+        "- Includes the v0.6.1 repository-scan security update and the v0.6.2 Windows website-scan fix.",
+        "",
+        "The desktop remains the default beginner entry. The complete skill-first journey is still in development; real-host acceptance has covered one Linux host, while a second host, mixed assets and macOS/Windows journeys remain. Installer qualification and signing limits are recorded per artifact below.",
+        "",
+        "### 繁體中文",
+        "",
+        "新增可離線取回與重播的報告快照，以及可驗證、還原到新工作區的完整私人案件封存，保留證據、報告與已記錄的原始碼稽核歷史，並相容既有桌面案件。開發中的 CLI 與釘選 bootstrap 支援前景掃描、結果復原及所選掃描器的準備；Cloudflare 宿主稽核可進入共用報告，包含未完成檢查與待驗證項目。改善報告用詞與日文桌面說明。",
+        "",
+        "各平台 CLI 已帶入後續釘選預建核心所需的識別，Windows 另附獨立掃描執行環境封存；仍需發布後的釘選提交才會啟用下載。桌面版仍是初學者預設入口，完整 skill-first 旅程仍在開發中：目前只有一台 Linux 主機完成實機驗收，第二宿主、多資產及 macOS／Windows 旅程尚待驗證。本版包含 v0.6.1 安全性更新與 v0.6.2 Windows 網站掃描修正。各安裝檔的驗證與簽章狀態列於下方。",
+      ],
+    },
+  ],
+  [
     "1.0.0",
     {
       updaterNotes:
