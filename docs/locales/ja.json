@@ -755,5 +755,15 @@
   "New in v0.6.2:": "v0.6.2 の新機能：",
   "Choose Settings → 日本語 in v0.6.2. Your language choice is saved across restarts.": "v0.6.2 では Settings → 日本語 で切り替えられます。選択した言語は再起動後も保存されます。",
   "tools in v0.6.2": "v0.6.2 のツール",
-  "Page response checks (ZAP) can now start on Windows; includes the v0.6.1 security update.": "Windows で Page response checks (ZAP) を開始できるようになり、v0.6.1 のセキュリティ更新も含まれています。"
+  "Page response checks (ZAP) can now start on Windows; includes the v0.6.1 security update.": "Windows で Page response checks (ZAP) を開始できるようになり、v0.6.1 のセキュリティ更新も含まれています。",
+  "Download desktop v0.7.0": "デスクトップ安定版 v0.7.0 をダウンロード",
+  "Desktop v0.7.0 and its repository skill are available. The new skill-first workflow is in development.": "デスクトップ v0.7.0 と操作用スキルは公開済みです。新しい skill 主体のフローは開発中です。",
+  "Download v0.7.0 stable release": "安定版 v0.7.0 をダウンロード",
+  "v0.7.0 stable release.": "安定版 v0.7.0。",
+  "New in v0.7.0:": "v0.7.0 の新機能：",
+  "Choose Settings → 日本語 in v0.7.0. Your language choice is saved across restarts.": "v0.7.0 では Settings → 日本語 で切り替えられます。選択した言語は再起動後も保存されます。",
+  "tools in v0.7.0": "v0.7.0 のツール",
+  "Saved report snapshots, offline original files and complete private case archives. The core also supports foreground scans and source audits.": "レポートのスナップショット、元ファイルのオフライン取得、完全な非公開案件アーカイブに対応しました。コアはフォアグラウンドスキャンとソース監査もサポートします。",
+  "The v0.7.0 core includes foreground scans, the shared report and portable case restore. The complete skill-first entry is still in development.": "v0.7.0 のコアにはフォアグラウンドスキャン、共通レポート、別の環境での案件復元が含まれています。スキル主体の完全な利用フローは引き続き開発中です。",
+  "The v0.7.0 core includes Cloudflare source audit execution and case/report integration; failed and not-started audit checks appear in the case, desktop Results and shared report.": "v0.7.0 のコアには Cloudflare ソース監査の実行と案件・レポートへの統合が含まれます。失敗・未開始の監査チェックは案件、デスクトップの結果画面、共通レポートに表示されます。"
 }

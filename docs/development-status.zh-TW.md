@@ -2,17 +2,17 @@
 
 [English](development-status.md) · [文件](README.zh-TW.md)
 
-更新：2026-11-14。
+更新：2026-11-16。
 
-**最新發布版本仍是 Linux、macOS、Windows 的 v0.6.2 桌面版**，也是初學者的預設入口。公開的操作 skill 協助安裝應用程式、確認準備狀態、引導在視窗中掃描及保存報告。
+**最新發布版本是 Linux、macOS、Windows 的 v0.7.0 桌面版**，也是初學者的預設入口。公開的操作 skill 協助安裝應用程式、確認準備狀態、引導在視窗中掃描及保存報告。
 
 ## 開發中的新功能
 
-以下功能已在本分支原始碼實作，尚未包含於任何發布版本：
+以下能力已包含於 v0.7.0 核心，完整 skill 主入口仍在開發中：
 
 - [Skill 主流程](skill-bootstrap.md)：固定來源 bootstrap 與所選掃描引擎的準備。
 - [重用已安裝的桌面執行環境](skill-bootstrap.md)：在 Linux x86_64、macOS 與 Windows x64 重用可辨識的桌面執行環境，不需 Docker 或 Podman 即可準備掃描。
-- [預建核心](skill-bootstrap.md#prebuilt-core-from-a-pinned-release)：原始碼固定某個發布版本後，`prepare` 會下載並驗證該版本的 CLI，不必在本機建置。目前尚未固定任何發布版本。
+- [預建核心](skill-bootstrap.md#prebuilt-core-from-a-pinned-release)：乾淨的 checkout 與建置輸入相符時，`prepare` 可在 Linux x86_64、macOS 與 Windows x64 下載並驗證已固定的 v0.7.0 CLI。
 - [前景掃描與復原](foreground-scans.md)：執行已核准的檢查、讀取保存狀態並復原已擷取的結果。
 - [Cloudflare 原始碼稽核](cloudflare-provider.md)：由宿主執行準備、記錄派工與輸出、檢查點、驗證、定稿、案件入案及共用報告整合；不再繼續的稽核可明示終止。
 - [未完成稽核檢查](results-and-exports.zh-TW.md#未開始或未完成的原始碼稽核)：準備受阻與已終止稽核，會在案件、桌面結果與共用報告中列為未開始或失敗的檢查。
@@ -23,12 +23,18 @@
 
 - 真實宿主驗收已在一個 Linux 宿主以合成專案完成，從空的固定版本 bootstrap 快取一路到還原；第二個宿主、多資產與 macOS／Windows 宿主仍待完成。
 - 預設 skill 仍使用已發布桌面版，尚未切換。
-- 尚未固定任何發布版本作為預建核心，因此 `prepare` 仍需要 Rust 與原生編譯器。在發布版本帶有相符識別之前，下載路徑僅由測試涵蓋。
-- 在 Linux x86_64 與 macOS 上，沒有其他執行環境時會從已發布的桌面套件下載掃描執行環境；已在一台 Linux 主機上用它啟動受管理環境並備妥 Gitleaks 映像。macOS 下載後的實際啟動尚未驗證；Windows 的自動取得要等發布版本附上獨立的執行環境檔案。macOS 與 Windows 的 CI 現在也會執行程式庫測試，以及使用測試替身的前景掃描與引擎準備測試；在這兩種系統上執行實際掃描工具仍未驗證。
+- macOS 與 Windows 的預建核心下載及執行仍需實機驗收；本次發布的平台建置與安裝成品檢查已通過。
+- 在 Linux x86_64 與 macOS 上，沒有其他執行環境時會從已發布的桌面套件下載掃描執行環境；已在一台 Linux 主機上用它啟動受管理環境並備妥 Gitleaks 映像。Windows x64 現在已固定獨立執行環境封存的下載來源；macOS 與 Windows 下載後的實際啟動仍待實機驗收。macOS 與 Windows 的 CI 現在也會執行程式庫測試，以及使用測試替身的前景掃描與引擎準備測試；在這兩種系統上執行實際掃描工具仍未驗證。
 
 以下日期章節保留各階段當時的觀察。[產品規格](product-spec.md)定義產品行為；[遷移計畫](plans/skill-first-cloudflare-migration.md)與[報告及封存契約](specs/report-fidelity-and-archive.md)說明已採納的工作。可用內容請見[發布狀態](release-model.zh-TW.md)。
 
 CI 文件與契約測試目前共 132 項。
+
+## 11 月 16 日已發布的預建核心
+
+Linux x86_64、macOS 與 Windows x64 的 v0.7.0 公開 CLI 已完成釘選，Windows 掃描執行環境也有已驗證的獨立下載來源。所有公開發布檔案均與凍結成品相同，來源證明及更新檢查通過，詳見[發布紀錄](release/v0.7.0.md#繁體中文)。
+
+一台 Linux 主機已從乾淨的釘選來源與空的私人快取出發，僅將 Node、Git 放在命令路徑上，即可下載並執行公開核心。再次準備會重用快取，離線準備與執行也通過。Linux 執行檔需要 glibc 2.39 以上，本次使用 glibc 2.43；macOS 與 Windows 的 bootstrap 原生下載仍待實機驗收。[Bootstrap 文件](skill-bootstrap.md#verified-v070-pin)列出已驗證的來源版本。
 
 ## 11 月 14 日 bootstrap 預建核心 — 34
 
@@ -531,7 +537,9 @@ Linux 通過 2,153 項 Rust 測試：1,611 項核心單元、74 項 CLI 單元�
 
 ## 現況
 
-- [v0.6.2 Windows 網站掃描修正](release/v0.6.2.md#繁體中文)為目前 stable／latest，提供 Windows、macOS 與 Linux 安裝版。修正 Windows 上無法啟動「頁面回應檢查（ZAP）」的問題，並包含 v0.6.1 安全性更新；實際驗證狀態見發布紀錄。
+- [v0.7.0 報告保存與案件封存](release/v0.7.0.md#繁體中文)為目前桌面 stable／latest，提供 Windows、macOS 與 Linux 安裝版。包含報告快照、完整案件封存、前景執行與 Cloudflare 原始碼稽核支援；完整 skill 主入口仍在開發中。
+
+- [v0.6.2 Windows 網站掃描修正](release/v0.6.2.md#繁體中文)為較早的正式版。修正 Windows 上無法啟動「頁面回應檢查（ZAP）」的問題，並包含 v0.6.1 安全性更新；實際驗證狀態見發布紀錄。
 
 - [v0.6.1 安全性更新](release/v0.6.1.md#繁體中文)為前一個正式版，提供 Windows、macOS 與 Linux 安裝版。掃描不是自己建立的儲存庫之前，請先更新；變更、公告與實際驗證狀態見發布紀錄。
 
@@ -568,7 +576,7 @@ Linux 通過 2,153 項 Rust 測試：1,611 項核心單元、74 項 CLI 單元�
 ## 維護入口
 
 - [引擎參考](engines/README.zh-TW.md)與[全部映像檔建置更新筆記](engines/image-build-index.md)
-- [發布流程](releasing.zh-TW.md)與[本版發布紀錄](release/v0.6.2.md#繁體中文)
+- [發布流程](releasing.zh-TW.md)與[本版發布紀錄](release/v0.7.0.md#繁體中文)
 - [現行產品檢視](product-audit.md)與[掃描範圍](scanning-scope.zh-TW.md)
 
 掃描只使用明確授權範圍；憑證不透過聊天或指令參數傳遞。版本、發布、簽章與包裝由產品負責人決定。

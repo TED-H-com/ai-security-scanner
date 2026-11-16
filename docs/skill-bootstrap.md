@@ -19,7 +19,7 @@ audit or import findings into a case.
 
 ## Delivery status
 
-This is a development entry, not a newly published skill release. The public desktop operator skill and the new core path have [different publication states](release-model.md). A dirty checkout receipt records actual input hashes but is not a retrievable release revision. Use a committed, accessible, verified pin for a future preview; keep `--allow-dirty` for explicitly selected development work. No release is pinned as a [prebuilt core](#prebuilt-core-from-a-pinned-release) yet, so `prepare` builds the core from source today.
+This is a development entry, not a newly published skill release. The public desktop operator skill and the new core path have [different publication states](release-model.md). A dirty checkout receipt records actual input hashes but is not a retrievable release revision. Use a committed, accessible, verified pin for a future preview; keep `--allow-dirty` for explicitly selected development work. The [prebuilt core](#prebuilt-core-from-a-pinned-release) pins the verified v0.7.0 CLI for Linux x86_64, macOS and Windows x64; a clean checkout with matching build inputs can prepare the core without a Rust or C toolchain.
 
 ## Check and prepare
 
@@ -78,9 +78,11 @@ explicit development mode to test its source.
 ## Prebuilt core from a pinned release
 
 `prepare` can use the CLI executable of a published release as the core, so a
-computer without Rust or a C compiler can prepare scans. No release is pinned
-yet: `scripts/skill/prebuilt-cores.mjs` is empty, and `prepare` builds from
-source today.
+computer without Rust or a C compiler can prepare the core. The verified v0.7.0
+CLI files are pinned in `scripts/skill/prebuilt-cores.mjs` for Linux x86_64,
+macOS (Intel and Apple silicon) and Windows x64. See the [publication record](release/v0.7.0-publication.json)
+for exact public bytes and provenance. The Linux binary requires glibc 2.39 or
+newer; use `--build-from-source` on a host where the binary cannot run.
 
 A prebuilt core applies only when all of these hold:
 
@@ -116,6 +118,25 @@ compiler checks carry `"required": false` and no longer decide `ready`.
 never downloads over an existing entry, so choose a new `--cache-dir`. `doctor`
 never downloads. The `prepare` result and receipt name the source in
 `core_source` as `prebuilt_release` or `local_build`.
+
+### Verified v0.7.0 pin
+
+Use revision `2c63df35f056337451b952f16d864c7e51dd557c`, or a later clean revision
+that retains the same build inputs, recipe and Rust version. This pin uses the
+[verified public v0.7.0 files](release/v0.7.0-publication.json).
+
+On November 16, a Linux x86_64 host with glibc 2.43 started from an empty private
+cache with only Node and Git on `PATH`. `doctor` reported the prebuilt core as
+`downloadable`, local building as `unavailable`, and Rust/native compilers as
+not required. `prepare` downloaded and verified the actual public CLI, then
+`run -- --json build-identity` matched the release version, input digest,
+recipe, target and features. Repeated preparation reused the cached file;
+both offline preparation and offline execution passed.
+
+This acceptance covers acquiring and running the core. It did not prepare
+scanners or contact scan targets. Native bootstrap download acceptance on
+macOS and Windows remains outstanding, including starting the Windows runtime
+from its new standalone archive. The desktop remains the default skill entry.
 
 ### Pinning a published release
 
@@ -240,9 +261,11 @@ On Linux x86_64 and macOS, if no recognized desktop runtime is present, it
 downloads the published desktop package once over HTTPS, checks its pinned
 checksum before reading it, and keeps only the scan runtime under the cache's
 `managed-bundles/` directory; nothing is installed system-wide. `--offline` never
-downloads. Windows stops with a `next_step` when no usable runtime is found: its
-download needs the standalone runtime file that a release will carry, and no
-published release has it yet (see [pinning](#pinning-a-published-release)).
+downloads. Windows x64 downloads the pinned v0.7.0 standalone runtime archive
+and applies the same checks before keeping it in the private cache. Linux and
+macOS retain their verified v0.6.2 runtime-package pins; their manifest digests
+also match the v0.7.0 runtime manifests. Starting a downloaded bundle has been
+verified on one Linux host; macOS and Windows host acceptance remains.
 Development bundles are produced by the existing versioned
 [`runtime/vendor-managed-runtime.mjs`](../runtime/vendor-managed-runtime.mjs)
 procedure; its Linux helper build requires an existing Docker builder. Windows

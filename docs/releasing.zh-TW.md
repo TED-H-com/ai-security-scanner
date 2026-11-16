@@ -8,11 +8,9 @@
 
 ## 目前發布版本
 
-[v0.6.2](https://github.com/TED-H-com/ai-security-scanner/releases/tag/v0.6.2) 是目前的 **stable／latest** 桌面版本，於 2026-11-13 發布，涵蓋 **Linux、macOS、Windows**，修正 Windows 上無法啟動「頁面回應檢查（ZAP）」的問題，並包含 v0.6.1 安全性更新。[候選 43327767705](https://github.com/TED-H-com/ai-security-scanner/actions/runs/43327767705) 建置精確來源 `be27aeab944705b5a60d9636b9dad8ca2e1b4375`；[發布流程 43337698057](https://github.com/TED-H-com/ai-security-scanner/actions/runs/43337698057) 經正常 `release-publication` 核准後發布凍結檔案。全部 49 個公開檔案符合凍結檢查碼，每個檔案的來源證明、更新簽章與舊更新網址轉址也驗證通過。見[交付紀錄](release/v0.6.2.md#繁體中文)。
+[v0.7.0](https://github.com/TED-H-com/ai-security-scanner/releases/tag/v0.7.0) 是目前 **stable／latest** 桌面版，涵蓋 **Linux、macOS、Windows**，新增報告快照、完整私人案件封存與核心的前景執行支援。精確來源、候選與發布流程、實際成品及查核結果，見[交付紀錄](release/v0.7.0.md#繁體中文)與[發布證據](release/v0.7.0-publication.json)。
 
-GitHub 記錄 `prerelease: false`；metadata 記錄 `releaseChannel: stable`、`stableTarget: 0.6.2`。實際安裝檔與更新目標列於交付紀錄。Windows 安裝檔未簽章，macOS 未公證；各成品的真人操作、執行環境、Windows 生命週期與資料保留觀察，保存在[發布查核紀錄](release/v0.6.2-publication.json)。
-
-前一個正式版 [v0.6.1](release/v0.6.1.md) 與更早版本保留原始檔案及觀察。
+Windows 安裝檔未簽章，macOS 未公證；完整 skill 主入口仍在開發中。歷史發布檔案與觀察維持原樣。
 
 ## 版本身分
 

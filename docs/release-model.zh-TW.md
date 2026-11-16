@@ -2,18 +2,18 @@
 
 [English](release-model.md) · [文件](README.zh-TW.md)
 
-Skill 發布狀態查核日期：2026-11-10；桌面發布狀態更新：2026-11-13。以下是 skill 主入口產品的發布建議，尚未宣告新版或選定版本號。
+發布狀態查核日期：2026-11-16。桌面 v0.7.0 已發布，完整 skill 主入口仍在開發中。
 
 ## 目前可取得的內容
 
 | 交付項目 | 已查證狀態 | 使用者得到什麼 |
 | --- | --- | --- |
-| 桌面版 | [v0.6.2 正式版](https://github.com/TED-H-com/ai-security-scanner/releases/tag/v0.6.2)，2026 年 11 月 13 日發布 | Windows、macOS、Linux 安裝檔，以及既有桌面掃描與報告流程。 |
-| 儲存庫操作 skill | [指引已公開](https://github.com/TED-H-com/ai-security-scanner/blob/6e259b497b87fb8aa2ece1f3b512cc29c9ea5af7/.codex/skills/ai-security-scanner/SKILL.md)，另有相同的 Claude Code 版本 | 協助安裝及操作桌面版、解讀結果、匯出報告。可以稱為「已公開的儲存庫 skill」。 |
-| 新的 skill 主流程與 bootstrap | 已有開發實作；查核時尚未發布 skill 新版 | 前景掃描、所選引擎準備、報告保存、案件封存還原，以及 Cloudflare 資料驗證與保存。須明確選擇開發 checkout。 |
+| 桌面版 | [v0.7.0 正式版](https://github.com/TED-H-com/ai-security-scanner/releases/tag/v0.7.0)，2026 年 11 月 16 日發布 | Windows、macOS、Linux 安裝檔，以及既有桌面掃描與報告流程。 |
+| 儲存庫操作 skill | [指引已公開](https://github.com/TED-H-com/ai-security-scanner/blob/main/.codex/skills/ai-security-scanner/SKILL.md)，另有相同的 Claude Code 版本 | 協助安裝及操作桌面版、解讀結果、匯出報告。可以稱為「已公開的儲存庫 skill」。 |
+| 新的 skill 主流程與 bootstrap | 核心已包含於 v0.7.0；完整 skill 主入口尚未發布 | 前景掃描、所選引擎準備、報告保存、案件封存還原，以及 Cloudflare 資料驗證與保存。須明確選擇開發 checkout。 |
 | Plugin 目錄上架 | 儲存庫公開並不能證明已上架 | 屬於另一個分發管道；沒有實際 listing，就不能宣稱已上架或通過平台審核。 |
 
-查核時，公開 main 仍是 [11 月 6 日的文件提交](https://github.com/TED-H-com/ai-security-scanner/commit/6e259b497b87fb8aa2ece1f3b512cc29c9ea5af7)，後續遷移功能仍在未提交的工作目錄。同步本機 skill、測試通過、package 版本號未變，都不會讓新功能自動公開。對外宣布前須重新核對公開 revision。
+[v0.7.0 交付紀錄](release/v0.7.0.md#繁體中文)記錄精確來源、公開檔案與驗證。原始碼公開及核心可下載，本身不代表完整 skill 新手流程已受支援。
 
 ## 建議用「交付內容＋成熟度」命名
 
@@ -32,7 +32,7 @@ OpenAI 官方文件將本機／儲存庫 skill 與透過 plugin 的廣泛分發�
 
 ## 新流程現在適合怎麼發布
 
-建議下一次交付稱為 **Skill 預覽版**：先將來源提交，讓別人能取得實測的精確 revision，再宣布發布。目前仍未發布。可先限於已驗證的 Linux 路徑，清楚列出 runtime 先決條件。[Bootstrap 驗證紀錄](skill-bootstrap.md#november-9-selected-engine-and-real-scan-validation)已有真正 pinned Gitleaks 掃描、秘密值遮蔽、報告交付與封存還原；這能支持有限範圍的預覽，尚不能證明全部掃描器、資產類型與平台。
+下一次 skill 交付可稱為 **Skill 預覽版**，記錄實測的固定入口、支援範圍及先決條件；目前尚未宣布。[Bootstrap 驗證紀錄](skill-bootstrap.md#november-9-selected-engine-and-real-scan-validation)已有 Linux 上的真正 Gitleaks 掃描、秘密值遮蔽、報告交付與封存還原，但尚不能證明全部掃描器、資產類型與平台。
 
 目前 source 已有前景執行／復原、所選引擎映像準備、共用報告快照、合併原始附件，以及既有案件 domain 的完整封存還原。Cloudflare 原始碼稽核可由宿主從準備、定稿、案件入案一路完成並納入共用報告，已入案稽核也會保存在完整封存中。完整能力與證據見[開發狀態](development-status.zh-TW.md)。
 
@@ -43,7 +43,7 @@ OpenAI 官方文件將本機／儲存庫 skill 與透過 plugin 的廣泛分發�
 3. 跑通宣稱支援的混合資產掃描、部分失敗、共用報告、離線取回與新 workspace 還原，並保留桌面資料相容性。
 4. 公開實測的來源身分、入口、支援範圍及變更說明；同步 canonical skill、兩份宿主 skill、文件與網站後，再切換預設入口。
 
-這些是既定產品成果，不是追求測試數量，也不要求較窄範圍的預覽先具備所有平台。版本範圍、號碼與日期由產品負責人決定。目前下載維持 **桌面 v0.6.2：正式版**；新路徑維持 **Skill 主入口：開發中**，直到真正發布預覽。不能重標 v0.6.2 或更動它的 updater，讓使用者誤以為已包含新功能。
+這些是既定產品成果，不是追求測試數量，也不要求較窄範圍的預覽先具備所有平台。版本範圍、號碼與日期由產品負責人決定。目前 **桌面 v0.7.0 為正式版**，**完整 skill 主入口仍在開發中**。舊版本的 tag 與 updater 檔案保留原本身分。
 
 ## 下次交付記錄什麼
 

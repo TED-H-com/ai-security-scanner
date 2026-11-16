@@ -6,13 +6,13 @@
 
 Find security problems in your code, websites and company systems. Get one report that explains what needs attention, why it matters and what to do next.
 
-The current v0.6.2 desktop app selects suitable security tools and brings their results together. You can start with one folder or website, or check several parts of your IT environment at once.
+The current v0.7.0 desktop app selects suitable security tools and brings their results together. You can start with one folder or website, or check several parts of your IT environment at once.
 
-**The latest release is desktop v0.6.2 for Linux, macOS and Windows.** It remains the default for beginners. Its public operator skill helps install the app, check readiness, guide scans in the app window and save reports.
+**The latest release is desktop v0.7.0 for Linux, macOS and Windows.** It remains the default for beginners. Its public operator skill helps install the app, check readiness, guide scans in the app window and save reports.
 
 ## Run your first scan
 
-1. [Download v0.6.2](https://github.com/TED-H-com/ai-security-scanner/releases/tag/v0.6.2) for Windows, macOS or Linux and [follow the install steps](docs/getting-started.md#install). The app prepares its scanning tools; you do not need to install Docker.
+1. [Download v0.7.0](https://github.com/TED-H-com/ai-security-scanner/releases/tag/v0.7.0) for Windows, macOS or Linux and [follow the install steps](docs/getting-started.md#install). The app prepares its scanning tools; you do not need to install Docker.
 2. Open the app and choose **Scan my environment**, **Check a website**, or **Check code or an AI project**. Add the folders, URLs or internal systems you want to check.
 3. Review the listed targets and checks. Confirm that you may scan any network targets, then start the scan in the app window.
 4. When the scan ends, open **Results**. Choose **Save or share report**, then **Save HTML report** to save a report you can open in a browser.
@@ -21,11 +21,11 @@ The first scan may take longer while tools download. Later scans can use those t
 
 ## Languages
 
-Japanese UI support is included in v0.6.2. Choose **Settings → 日本語**; the choice is saved across restarts. Untranslated explanations fall back to English; HTML exports from the Japanese UI are in English. See the [Japanese README](README.ja.md) and [Japanese website](https://ted-h-com.github.io/ai-security-scanner/?lang=ja).
+Japanese UI support is included in v0.7.0. Choose **Settings → 日本語**; the choice is saved across restarts. Untranslated explanations fall back to English; HTML exports from the Japanese UI are in English. See the [Japanese README](README.ja.md) and [Japanese website](https://ted-h-com.github.io/ai-security-scanner/?lang=ja).
 
 ## New in development
 
-These features are implemented in source on this branch and are not in any release:
+The following capabilities are included in the v0.7.0 core. The complete skill-first entry is still in development:
 
 - [Skill-first execution](docs/skill-bootstrap.md): pinned source bootstrap and preparation of selected scanner engines.
 - [Foreground scans and recovery](docs/foreground-scans.md): run approved checks, read saved status and recover captured results.
@@ -38,9 +38,13 @@ These features are implemented in source on this branch and are not in any relea
 
 - Real-host acceptance has covered one Linux host on a synthetic repository, from an empty pinned-bootstrap cache through restore; a second host, several assets and macOS/Windows hosts remain.
 - The default skill has not switched from the released desktop.
-- Automatic managed-bundle acquisition on a machine without the desktop app remains unfinished. CI on macOS and Windows now also runs the library tests and the foreground-scan and engine-preparation fixture suites, but real scanner execution on those hosts has not yet been verified.
+- Runtime downloads are available for Linux x86_64, macOS and Windows x64. Starting the downloaded runtime has been verified on one Linux host; macOS and Windows host acceptance remains. CI on macOS and Windows now also runs the library tests and the foreground-scan and engine-preparation fixture suites, but real scanner execution on those hosts has not yet been verified.
 
 [Development status](docs/development-status.md)
+
+## New in v0.7.0
+
+Save report snapshots, retrieve original files offline and restore complete private case archives. The release also includes foreground scan and Cloudflare source-audit support in the core. The desktop remains the default beginner entry; the complete skill-first journey is still in development. See the [v0.7.0 release record](docs/release/v0.7.0.md).
 
 ## New in v0.6.2
 

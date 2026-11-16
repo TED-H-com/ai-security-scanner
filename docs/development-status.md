@@ -2,17 +2,17 @@
 
 [繁體中文](development-status.zh-TW.md) · [Documentation](README.md)
 
-_Updated 2026-11-14._
+_Updated 2026-11-16._
 
-**The latest release is desktop v0.6.2 for Linux, macOS and Windows.** It remains the default for beginners. Its public operator skill helps install the app, check readiness, guide scans in the app window and save reports.
+**The latest release is desktop v0.7.0 for Linux, macOS and Windows.** It remains the default for beginners. Its public operator skill helps install the app, check readiness, guide scans in the app window and save reports.
 
 ## New in development
 
-These features are implemented in source on this branch and are not in any release:
+These capabilities are included in the v0.7.0 core. The complete skill-first entry remains in development:
 
 - [Skill-first execution](skill-bootstrap.md): pinned source bootstrap and preparation of selected scanner engines.
 - [Installed desktop runtime reuse](skill-bootstrap.md): prepare scans without Docker or Podman using a recognized desktop runtime on Linux x86_64, macOS and Windows x64.
-- [Prebuilt core](skill-bootstrap.md#prebuilt-core-from-a-pinned-release): once a release is pinned in source, `prepare` downloads and verifies that release's CLI in place of a local build. No release is pinned yet.
+- [Prebuilt core](skill-bootstrap.md#prebuilt-core-from-a-pinned-release): `prepare` downloads and verifies the pinned v0.7.0 CLI on Linux x86_64, macOS and Windows x64 when the clean checkout has matching build inputs.
 - [Foreground scans and recovery](foreground-scans.md): run approved checks, read saved status and recover captured results.
 - [Cloudflare source audits](cloudflare-provider.md): host-led preparation, recorded assignments and outputs, checkpoints, validation, sealing, case admission and shared reporting, with explicit termination when an audit will not continue.
 - [Unfinished audit checks](results-and-exports.md#source-audits-that-did-not-finish): blocked preparation and terminated audits appear as not-started or failed check rows in the case, desktop Results and shared report.
@@ -23,12 +23,18 @@ These features are implemented in source on this branch and are not in any relea
 
 - Real-host acceptance has covered one Linux host on a synthetic repository, from an empty pinned-bootstrap cache through restore; a second host, several assets and macOS/Windows hosts remain.
 - The default skill has not switched from the released desktop.
-- No release is pinned as a prebuilt core, so `prepare` still needs Rust and a native compiler. Until a release carries the matching identity, tests alone cover the download path.
-- On Linux x86_64 and macOS, the scan runtime downloads from the published desktop package when no other runtime is available; on one Linux host this started the managed runtime and prepared the Gitleaks image. A start from the macOS download has not been verified, and automatic acquisition on Windows waits for a release that includes the standalone runtime file. CI on macOS and Windows now also runs the library tests and the foreground-scan and engine-preparation fixture suites, but real scanner execution on those hosts has not yet been verified.
+- Native download and execution of the prebuilt core on macOS and Windows still need host acceptance; platform builds and installed-artifact checks passed for this release.
+- On Linux x86_64 and macOS, the scan runtime downloads from the published desktop package when no other runtime is available; on one Linux host this started the managed runtime and prepared the Gitleaks image. Windows x64 now has a pinned standalone runtime archive. Starting from the macOS and Windows downloads still needs host acceptance. CI on macOS and Windows now also runs the library tests and the foreground-scan and engine-preparation fixture suites, but real scanner execution on those hosts has not yet been verified.
 
 The dated sections below preserve observations at each milestone. [The product specification](product-spec.md) defines product behavior; [the migration plan](plans/skill-first-cloudflare-migration.md) and [report and archive contract](specs/report-fidelity-and-archive.md) describe the accepted work. See [publication status](release-model.md) for availability.
 
 CI document and contract tests: 132 tests cover the current source boundaries.
+
+## November 16 published prebuilt core
+
+The v0.7.0 public CLI files are pinned for Linux x86_64, macOS and Windows x64. The Windows scan runtime also has a verified standalone download. All public release files matched the frozen promotion, and their source provenance and updater checks passed; see the [release record](release/v0.7.0.md).
+
+On one Linux host, a clean pinned checkout and an empty private cache downloaded and ran the public core with only Node and Git on the command path. Repeated preparation reused the cache; offline preparation and execution passed. The Linux binary requires glibc 2.39 or newer, and this check used glibc 2.43. Native macOS and Windows bootstrap downloads still need host acceptance. The [bootstrap guide](skill-bootstrap.md#verified-v070-pin) gives the verified revision.
 
 ## November 14 prebuilt core for the bootstrap — 34
 
@@ -1087,7 +1093,9 @@ cargo test --locked -p ai-security-scanner --no-default-features --features cli 
 
 ## At a glance
 
-- [v0.6.2 Windows website scan fix](release/v0.6.2.md) is the current stable/latest release for Windows, macOS and Linux. It fixes starting Page response checks (ZAP) on Windows and includes the v0.6.1 security update; the release record lists the observed verification.
+- [v0.7.0 saved reports and portable cases](release/v0.7.0.md) is the current stable/latest desktop release for Windows, macOS and Linux. It includes report snapshots, complete case archives, foreground execution and Cloudflare source-audit support. The complete skill-first entry remains in development.
+
+- [v0.6.2 Windows website scan fix](release/v0.6.2.md) is an earlier stable release for Windows, macOS and Linux. It fixes starting Page response checks (ZAP) on Windows and includes the v0.6.1 security update; the release record lists the observed verification.
 
 - [v0.6.1 security update](release/v0.6.1.md) is the preceding stable release for Windows, macOS and Linux. Update before scanning a repository you did not create; the release record links the advisory and records the changes and observed verification.
 

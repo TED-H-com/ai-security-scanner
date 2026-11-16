@@ -8,11 +8,9 @@ The product owner selects the version, channel, source commit, supported install
 
 ## Current release
 
-[v0.6.2](https://github.com/TED-H-com/ai-security-scanner/releases/tag/v0.6.2) is the current **stable/latest** desktop release for **Linux, macOS and Windows**, published on 2026-11-13. It fixes starting Page response checks (ZAP) on Windows and includes the v0.6.1 security update. [Candidate 43327767705](https://github.com/TED-H-com/ai-security-scanner/actions/runs/43327767705) built exact source `be27aeab944705b5a60d9636b9dad8ca2e1b4375`; [promotion 43337698057](https://github.com/TED-H-com/ai-security-scanner/actions/runs/43337698057) published the frozen files through normal `release-publication` approval. All 49 public files matched the frozen bytes; every file's source provenance, updater signatures and legacy updater redirects passed verification. See the [delivery record](release/v0.6.2.md).
+[v0.7.0](https://github.com/TED-H-com/ai-security-scanner/releases/tag/v0.7.0) is the current **stable/latest** desktop release for **Linux, macOS and Windows**. It adds saved reports, complete private case archives and foreground execution in the core. See the [delivery record](release/v0.7.0.md) and [publication evidence](release/v0.7.0-publication.json) for the exact source, candidate, promotion, offered files and verification.
 
-GitHub records `prerelease: false`; metadata records `releaseChannel: stable` and `stableTarget: 0.6.2`. The delivery record lists the exact offered installers and updater targets. Windows installers are unsigned and macOS is not notarized. Artifact-specific human-path, managed-runtime, Windows lifecycle and data-preservation observations remain in the [publication record](release/v0.6.2-publication.json).
-
-The previous stable [v0.6.1](release/v0.6.1.md) and earlier releases retain their original files and observations.
+Windows installers are unsigned and macOS is not notarized. The complete skill-first entry remains in development. Earlier releases retain their original files and observations.
 
 ## Release identity
 

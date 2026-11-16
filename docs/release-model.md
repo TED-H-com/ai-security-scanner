@@ -2,22 +2,18 @@
 
 [繁體中文](release-model.zh-TW.md) · [Documentation](README.md)
 
-Skill publication status checked: 2026-11-10; desktop release status updated: 2026-11-13. The terminology below is a recommendation for the
-skill-first product. It does not announce a new release or choose a version.
+Publication status checked: 2026-11-16. Desktop v0.7.0 is published; the complete skill-first entry remains in development.
 
 ## Available today
 
 | Delivery | Verified state | What users get |
 | --- | --- | --- |
-| Desktop | [v0.6.2 stable](https://github.com/TED-H-com/ai-security-scanner/releases/tag/v0.6.2), published November 13, 2026 | Windows, macOS and Linux installers; the existing desktop scan and report path. |
-| Repository operator skill | [Instructions are public](https://github.com/TED-H-com/ai-security-scanner/blob/6e259b497b87fb8aa2ece1f3b512cc29c9ea5af7/.codex/skills/ai-security-scanner/SKILL.md), with a matching Claude Code copy | Helps install and operate the desktop, inspect results and export reports. This is a published repository skill. |
-| New skill-first core and bootstrap | Development implementation; not a published skill release at this check | Foreground scans, selected-engine preparation, saved reports, case archive/restore and Cloudflare validation/retention. Use a deliberately selected development checkout. |
+| Desktop | [v0.7.0 stable](https://github.com/TED-H-com/ai-security-scanner/releases/tag/v0.7.0), published November 16, 2026 | Windows, macOS and Linux installers; the existing desktop scan and report path. |
+| Repository operator skill | [Instructions are public](https://github.com/TED-H-com/ai-security-scanner/blob/main/.codex/skills/ai-security-scanner/SKILL.md), with a matching Claude Code copy | Helps install and operate the desktop, inspect results and export reports. This is a published repository skill. |
+| New skill-first core and bootstrap | Core included in v0.7.0; complete skill-first entry not yet released | Foreground scans, selected-engine preparation, saved reports, case archive/restore and Cloudflare validation/retention. Use a deliberately selected development checkout. |
 | Plugin directory listing | Not established by the repository publication | A separate distribution channel; do not describe the repository skill as a listed or reviewed plugin without a listing. |
 
-The public default branch was [the November 6 documentation commit](https://github.com/TED-H-com/ai-security-scanner/commit/6e259b497b87fb8aa2ece1f3b512cc29c9ea5af7)
-when checked. The newer migration existed as uncommitted working-tree changes.
-Local skill synchronization, passing tests and an unchanged package version do
-not publish those changes. Recheck the public revision before any announcement.
+The [v0.7.0 delivery record](release/v0.7.0.md) identifies the exact released source, files and verification. Source publication and a downloadable core do not by themselves establish a supported skill-first beginner journey.
 
 ## Recommended terminology
 
@@ -46,13 +42,7 @@ and [Plugin architecture](https://developers.openai.com/plugins/concepts/plugins
 
 ## Readiness of the new path
 
-The recommended next delivery is **Skill preview**, after its source is committed
-and made retrievable at the exact verified revision. It is not yet published.
-Start with the verified Linux path and state its runtime prerequisites. The
-[bootstrap evidence](skill-bootstrap.md#november-9-selected-engine-and-real-scan-validation)
-records a real pinned Gitleaks scan, redacted findings, report delivery and
-archive/restore. That supports a bounded preview; it does not establish all
-scanners, all asset types or all operating systems.
+The next skill delivery can be a **Skill preview** with an exact verified entry, supported scope and prerequisites. It has not been announced. The [bootstrap evidence](skill-bootstrap.md#november-9-selected-engine-and-real-scan-validation) records a real pinned Gitleaks scan, redacted findings, report delivery and archive/restore on Linux. That does not establish all scanners, asset types or operating systems.
 
 Current source includes foreground execution/recovery, selected scanner image
 preparation, shared report snapshots, combined original attachments, and complete
@@ -76,10 +66,7 @@ Before calling the complete new skill path stable:
 
 These are the accepted product outcomes, not a requirement to maximize test
 counts or ship every platform before a deliberately narrower preview. The owner
-selects the release scope, version and date. Keep **Desktop v0.6.2 — stable** as
-the current download, and **Skill-first — in development** until an actual
-preview is published. Do not relabel v0.6.2 or alter its updater to imply it
-contains the new work.
+selects the release scope, version and date. **Desktop v0.7.0 is stable**; **the complete skill-first entry remains in development**. Older release tags and updater files retain their original identities.
 
 ## Recording the next delivery
 
