@@ -1,0 +1,246 @@
+{
+  "schema_version": "ai-security-scanner.prebuilt-acceptance/v1",
+  "observed_at": "2026-11-21T13:39:23.921566+00:00",
+  "workflow": {
+    "id": 44909589705,
+    "html_url": "https://github.com/TED-H-com/ai-security-scanner/actions/runs/44909589705",
+    "path": ".github/workflows/skill-prebuilt.yml",
+    "head_sha": "25ac524c93f4f01d27815de173ade7e0b5394c8e",
+    "run_attempt": 1,
+    "event": "pull_request",
+    "status": "completed",
+    "conclusion": "success"
+  },
+  "checkout_revision": "a9f3c7c0cf8b4e797ec8cd0c034401a83ceb5004",
+  "checkout_ref": "refs/pull/132/merge",
+  "checkout_tree_matches_head": true,
+  "tree_sha": "f06fc0ab1a5020a7d218b0005b56e2ca72006a31",
+  "scope": "Public core execution, offline synthetic report replay and runtime bundle download/verification. No runtime startup or security scan.",
+  "hosts": [
+    {
+      "artifact_name": "skill-prebuilt-macos-15",
+      "receipt_sha256": "2ce419b2f938b9456c7525109dc5c020048e8030fab0d84a03e40c8b7ca956b7",
+      "observation": {
+        "schema_version": "ai-security-scanner.prebuilt-native-smoke/v1",
+        "platform": "darwin",
+        "arch": "arm64",
+        "success": true,
+        "fixture_only": true,
+        "target_contact": false,
+        "runtime_started": false,
+        "scanner_execution": false,
+        "toolchain_on_path": false,
+        "compatibility_runtime_on_path": false,
+        "revision": "a9f3c7c0cf8b4e797ec8cd0c034401a83ceb5004",
+        "input_sha256": "04c5ee93a86468a82528985b9e6fdc2f50c2416045c8619b7356191bc2333967",
+        "release_source": {
+          "url": "https://github.com/TED-H-com/ai-security-scanner/releases/download/v0.7.0/ai-security-scanner-cli-0.7.0-macos-universal",
+          "bytes": 70691344,
+          "sha256": "a9be72874c5bd62b9a3248d1354a287e3f0ffd74c5d63349a5ca42fcd53e6ff8"
+        },
+        "identity": {
+          "bootstrap_input_sha256": "04c5ee93a86468a82528985b9e6fdc2f50c2416045c8619b7356191bc2333967",
+          "bootstrap_recipe": "skill-bootstrap-v1",
+          "features": [
+            "cli"
+          ],
+          "product": "ai-security-scanner",
+          "product_version": "0.7.0",
+          "report_source_sha256": "0bad5c798497add9e4bbe6cf0e5650942fea8f6b70174da56ac3fcff0bc0d67f",
+          "rustc_version": "rustc 1.98.0 (88d9e12ae 2026-08-18)\nbinary: rustc\ncommit-hash: 88d9e12ae178fab0fb5cc050a94da85685d449ea\ncommit-date: 2026-08-18\nhost: aarch64-apple-darwin\nrelease: 1.98.0\nLLVM version: 22.1.8",
+          "schema_version": "ai-security-scanner.build-identity/v1",
+          "target": "aarch64-apple-darwin"
+        },
+        "offline_core_reused": true,
+        "cache_reused": true,
+        "report_sha256": {
+          "html": "de8030af5fc7a2ae085e85d58c8e50def12efcab9931d5aa73c836a9c3453c15",
+          "json": "3545591995f1771e18b0cbc82ef9dbfd3dd250e559265b7ec6141f5e7730ed34"
+        },
+        "report_replay_equal": true,
+        "runtime_bundle": {
+          "source": {
+            "kind": "tar.gz",
+            "url": "https://github.com/TED-H-com/ai-security-scanner/releases/download/v0.6.2/ai-security-scanner_0.6.2_universal.app.tar.gz",
+            "bytes": 143685789,
+            "sha256": "a815e381943a853acc7e2a50d3241241ec8d925dfff847ebaea9937ecf4ed56f",
+            "inner_path": "ai-security-scanner.app/Contents/Resources/managed-runtime",
+            "extracted_bytes": 181947360
+          },
+          "manifest_sha256": "470fd782236000a33b18a084379c8c260097cf6c5ea988963e70d4ab90b6a24b",
+          "verified": true
+        },
+        "scratch_removed": true
+      }
+    },
+    {
+      "artifact_name": "skill-prebuilt-macos-15-intel",
+      "receipt_sha256": "935906d32dcb6fedf48b4036afb1dc44c9a67db693f15c12f2e127cf40f38e58",
+      "observation": {
+        "schema_version": "ai-security-scanner.prebuilt-native-smoke/v1",
+        "platform": "darwin",
+        "arch": "x64",
+        "success": true,
+        "fixture_only": true,
+        "target_contact": false,
+        "runtime_started": false,
+        "scanner_execution": false,
+        "toolchain_on_path": false,
+        "compatibility_runtime_on_path": false,
+        "revision": "a9f3c7c0cf8b4e797ec8cd0c034401a83ceb5004",
+        "input_sha256": "04c5ee93a86468a82528985b9e6fdc2f50c2416045c8619b7356191bc2333967",
+        "release_source": {
+          "url": "https://github.com/TED-H-com/ai-security-scanner/releases/download/v0.7.0/ai-security-scanner-cli-0.7.0-macos-universal",
+          "bytes": 70691344,
+          "sha256": "a9be72874c5bd62b9a3248d1354a287e3f0ffd74c5d63349a5ca42fcd53e6ff8"
+        },
+        "identity": {
+          "bootstrap_input_sha256": "04c5ee93a86468a82528985b9e6fdc2f50c2416045c8619b7356191bc2333967",
+          "bootstrap_recipe": "skill-bootstrap-v1",
+          "features": [
+            "cli"
+          ],
+          "product": "ai-security-scanner",
+          "product_version": "0.7.0",
+          "report_source_sha256": "0bad5c798497add9e4bbe6cf0e5650942fea8f6b70174da56ac3fcff0bc0d67f",
+          "rustc_version": "rustc 1.98.0 (88d9e12ae 2026-08-18)\nbinary: rustc\ncommit-hash: 88d9e12ae178fab0fb5cc050a94da85685d449ea\ncommit-date: 2026-08-18\nhost: aarch64-apple-darwin\nrelease: 1.98.0\nLLVM version: 22.1.8",
+          "schema_version": "ai-security-scanner.build-identity/v1",
+          "target": "x86_64-apple-darwin"
+        },
+        "offline_core_reused": true,
+        "cache_reused": true,
+        "report_sha256": {
+          "html": "1e530cca66ce791bef55dd4a29c29fc6319291c03c6d175030e070a34c10e938",
+          "json": "b0fc13398944a419d7666ea1444ddcce12eef7b951c2a3c444753dd18060b65e"
+        },
+        "report_replay_equal": true,
+        "runtime_bundle": {
+          "source": {
+            "kind": "tar.gz",
+            "url": "https://github.com/TED-H-com/ai-security-scanner/releases/download/v0.6.2/ai-security-scanner_0.6.2_universal.app.tar.gz",
+            "bytes": 143685789,
+            "sha256": "a815e381943a853acc7e2a50d3241241ec8d925dfff847ebaea9937ecf4ed56f",
+            "inner_path": "ai-security-scanner.app/Contents/Resources/managed-runtime",
+            "extracted_bytes": 181947360
+          },
+          "manifest_sha256": "470fd782236000a33b18a084379c8c260097cf6c5ea988963e70d4ab90b6a24b",
+          "verified": true
+        },
+        "scratch_removed": true
+      }
+    },
+    {
+      "artifact_name": "skill-prebuilt-ubuntu-24.04",
+      "receipt_sha256": "c9f10f9a75adaa97a4006ff4e0cac828220560c5866b1051542c2552a0ea1e18",
+      "observation": {
+        "schema_version": "ai-security-scanner.prebuilt-native-smoke/v1",
+        "platform": "linux",
+        "arch": "x64",
+        "success": true,
+        "fixture_only": true,
+        "target_contact": false,
+        "runtime_started": false,
+        "scanner_execution": false,
+        "toolchain_on_path": false,
+        "compatibility_runtime_on_path": false,
+        "revision": "a9f3c7c0cf8b4e797ec8cd0c034401a83ceb5004",
+        "input_sha256": "04c5ee93a86468a82528985b9e6fdc2f50c2416045c8619b7356191bc2333967",
+        "release_source": {
+          "url": "https://github.com/TED-H-com/ai-security-scanner/releases/download/v0.7.0/ai-security-scanner-cli-0.7.0-linux-x86_64",
+          "bytes": 40165224,
+          "sha256": "2fee7f9112748c22206dda0a24dcf3da0c81fa37b23d24c50b672a78e0018215"
+        },
+        "identity": {
+          "bootstrap_input_sha256": "04c5ee93a86468a82528985b9e6fdc2f50c2416045c8619b7356191bc2333967",
+          "bootstrap_recipe": "skill-bootstrap-v1",
+          "features": [
+            "cli"
+          ],
+          "product": "ai-security-scanner",
+          "product_version": "0.7.0",
+          "report_source_sha256": "0bad5c798497add9e4bbe6cf0e5650942fea8f6b70174da56ac3fcff0bc0d67f",
+          "rustc_version": "rustc 1.98.0 (88d9e12ae 2026-08-18)\nbinary: rustc\ncommit-hash: 88d9e12ae178fab0fb5cc050a94da85685d449ea\ncommit-date: 2026-08-18\nhost: x86_64-unknown-linux-gnu\nrelease: 1.98.0\nLLVM version: 22.1.8",
+          "schema_version": "ai-security-scanner.build-identity/v1",
+          "target": "x86_64-unknown-linux-gnu"
+        },
+        "offline_core_reused": true,
+        "cache_reused": true,
+        "report_sha256": {
+          "html": "8becb6bebfbec8ad2d207911af5dee0ee9d6e4299d7cbd62471ce31ee2c10425",
+          "json": "13a45fa8c0ac98aa78c8fd0a9f74a5b59a5a16ecdb99f5d08adc11eb2f3f0917"
+        },
+        "report_replay_equal": true,
+        "runtime_bundle": {
+          "source": {
+            "kind": "deb",
+            "url": "https://github.com/TED-H-com/ai-security-scanner/releases/download/v0.6.2/ai-security-scanner_0.6.2_amd64.deb",
+            "bytes": 84427266,
+            "sha256": "d7a579978d811e8b516e5623f9ecfcb83d71aad6f0e2f63af351d73f98183a32",
+            "inner_path": "usr/lib/ai-security-scanner/managed-runtime",
+            "extracted_bytes": 423333863
+          },
+          "manifest_sha256": "d8e495ff77a57e7166821e6207e330a3790b6496ea2023dd367de077490912e5",
+          "verified": true
+        },
+        "scratch_removed": true
+      }
+    },
+    {
+      "artifact_name": "skill-prebuilt-windows-2025",
+      "receipt_sha256": "dbab4beae0ef43b97f98d4cea9dd9241d188e9443acd1e0bd804da75553e2b6c",
+      "observation": {
+        "schema_version": "ai-security-scanner.prebuilt-native-smoke/v1",
+        "platform": "win32",
+        "arch": "x64",
+        "success": true,
+        "fixture_only": true,
+        "target_contact": false,
+        "runtime_started": false,
+        "scanner_execution": false,
+        "toolchain_on_path": false,
+        "compatibility_runtime_on_path": false,
+        "revision": "a9f3c7c0cf8b4e797ec8cd0c034401a83ceb5004",
+        "input_sha256": "04c5ee93a86468a82528985b9e6fdc2f50c2416045c8619b7356191bc2333967",
+        "release_source": {
+          "url": "https://github.com/TED-H-com/ai-security-scanner/releases/download/v0.7.0/ai-security-scanner-cli-0.7.0-windows-x86_64.exe",
+          "bytes": 35261440,
+          "sha256": "a68015c5d4b658f7e557f9160a113aa60199d7adca1aea8f0c2f21389dc43518"
+        },
+        "identity": {
+          "bootstrap_input_sha256": "04c5ee93a86468a82528985b9e6fdc2f50c2416045c8619b7356191bc2333967",
+          "bootstrap_recipe": "skill-bootstrap-v1",
+          "features": [
+            "cli",
+            "installer-runtime-cache"
+          ],
+          "product": "ai-security-scanner",
+          "product_version": "0.7.0",
+          "report_source_sha256": "0bad5c798497add9e4bbe6cf0e5650942fea8f6b70174da56ac3fcff0bc0d67f",
+          "rustc_version": "rustc 1.98.0 (88d9e12ae 2026-08-18)\nbinary: rustc\ncommit-hash: 88d9e12ae178fab0fb5cc050a94da85685d449ea\ncommit-date: 2026-08-18\nhost: x86_64-pc-windows-msvc\nrelease: 1.98.0\nLLVM version: 22.1.8",
+          "schema_version": "ai-security-scanner.build-identity/v1",
+          "target": "x86_64-pc-windows-msvc"
+        },
+        "offline_core_reused": true,
+        "cache_reused": true,
+        "report_sha256": {
+          "html": "f2ff27157647cca0433f76510ab9c7b1bd1438f82913fba67bd747f6b077478b",
+          "json": "3585170638b671623a6647bec7d3f3c928b8856de517924392fa695470d9ddfe"
+        },
+        "report_replay_equal": true,
+        "runtime_bundle": {
+          "source": {
+            "kind": "tar.gz",
+            "url": "https://github.com/TED-H-com/ai-security-scanner/releases/download/v0.7.0/managed-runtime-windows-x86_64.tar.gz",
+            "bytes": 20027651,
+            "sha256": "1997f8b626ac117a6720dd4f0ada8988c22a3d70628e1a271cd9c7f0fa405b92",
+            "inner_path": "managed-runtime",
+            "extracted_bytes": 51750290
+          },
+          "manifest_sha256": "b530cf8f62196dd54e6b31b815202f565b3abb32593ee79c1ec834ded662edd0",
+          "verified": true
+        },
+        "scratch_removed": true
+      }
+    }
+  ]
+}
