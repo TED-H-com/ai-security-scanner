@@ -2,7 +2,7 @@
 
 [English](development-status.md) · [文件](README.zh-TW.md)
 
-更新：2026-11-16。
+更新：2026-11-21。
 
 **最新發布版本是 Linux、macOS、Windows 的 v0.7.0 桌面版**，也是初學者的預設入口。公開的操作 skill 協助安裝應用程式、確認準備狀態、引導在視窗中掃描及保存報告。
 
@@ -23,12 +23,18 @@
 
 - 真實宿主驗收已在一個 Linux 宿主以合成專案完成，從空的固定版本 bootstrap 快取一路到還原；第二個宿主、多資產與 macOS／Windows 宿主仍待完成。
 - 預設 skill 仍使用已發布桌面版，尚未切換。
-- macOS 與 Windows 的預建核心下載及執行仍需實機驗收；本次發布的平台建置與安裝成品檢查已通過。
+- macOS 與 Windows 的完整掃描執行環境準備仍需實機驗收；公開核心下載、離線報告重播與 runtime 套件驗證已在四種原生 CI 配置通過。
 - 在 Linux x86_64 與 macOS 上，沒有其他執行環境時會從已發布的桌面套件下載掃描執行環境；已在一台 Linux 主機上用它啟動受管理環境並備妥 Gitleaks 映像。Windows x64 現在已固定獨立執行環境封存的下載來源；macOS 與 Windows 下載後的實際啟動仍待實機驗收。macOS 與 Windows 的 CI 現在也會執行程式庫測試，以及使用測試替身的前景掃描與引擎準備測試；在這兩種系統上執行實際掃描工具仍未驗證。
 
 以下日期章節保留各階段當時的觀察。[產品規格](product-spec.md)定義產品行為；[遷移計畫](plans/skill-first-cloudflare-migration.md)與[報告及封存契約](specs/report-fidelity-and-archive.md)說明已採納的工作。可用內容請見[發布狀態](release-model.zh-TW.md)。
 
 CI 文件與契約測試目前共 132 項。
+
+## 11 月 21 日原生公開下載驗收
+
+Linux、Apple silicon Mac、Intel Mac 與 Windows 的 CI 主機，均已實際下載並執行公開的 v0.7.0 核心，通過快取重用與離線報告重播。子程序命令路徑沒有 Rust／原生建置工具或 Docker／Podman。各主機也完成已固定的 runtime 套件下載、驗證與暫存工作區清理。
+
+[Bootstrap 文件與證據](skill-bootstrap.md#native-public-download-acceptance)明確區分本次觀察與 runtime 啟動、安全掃描；這項檢查不執行後兩者。完整掃描器準備與 skill 旅程仍是後續驗收工作。
 
 ## 11 月 16 日已發布的預建核心
 

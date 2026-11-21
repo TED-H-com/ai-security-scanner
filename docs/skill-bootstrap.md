@@ -23,11 +23,13 @@ This is a development entry, not a newly published skill release. The public des
 
 ## Check and prepare
 
-Use Node.js 24 and the pinned Rust 1.98.0 toolchain with the native compiler and
-linker required by that platform. Bootstrap checks these prerequisites; it does
-not install system packages or change OS permissions. A Rust dependency download
-may be needed on the first build. `--offline` requires dependencies already in
-the local Cargo cache and fails if anything is missing.
+Use Node.js 24 and Git. A clean checkout with a matching prebuilt pin downloads
+the core without Rust or a native compiler. Source builds require Rust 1.98.0
+and that platform's native compiler and linker. Bootstrap checks prerequisites;
+it does not install system packages or change OS permissions. A first source
+build may download Rust dependencies. An offline source build requires those
+dependencies in the local Cargo cache; an already cached prebuilt core can also
+be prepared and run offline.
 
 Replace `FULL_40_CHARACTER_COMMIT` with the selected commit and the paths with
 new private directories on this computer:
@@ -134,9 +136,28 @@ recipe, target and features. Repeated preparation reused the cached file;
 both offline preparation and offline execution passed.
 
 This acceptance covers acquiring and running the core. It did not prepare
-scanners or contact scan targets. Native bootstrap download acceptance on
-macOS and Windows remains outstanding, including starting the Windows runtime
-from its new standalone archive. The desktop remains the default skill entry.
+scanners or contact scan targets. The desktop remains the default skill entry.
+
+### Native public download acceptance
+
+On November 21, the [public download workflow](https://github.com/TED-H-com/ai-security-scanner/actions/runs/44909589705)
+passed on Linux x86_64, macOS Apple silicon, macOS Intel and Windows x64.
+Each host used a clean checkout and empty cache with Rust, native compilers,
+Docker and Podman absent from the bootstrap child PATH. The pinned public core
+was downloaded and executed, reused online and offline, and used to retrieve
+and replay synthetic HTML/JSON reports after their original workspace was removed.
+The host's pinned runtime bundle also downloaded, extracted and passed manifest
+verification through the production bundle helpers.
+
+Run `node scripts/ci/skill-prebuilt-smoke.mjs` from a clean checkout with matching
+pins to reproduce this bounded check. It removes its temporary workspace and
+writes a receipt to `SKILL_PREBUILT_RESULT` when that environment variable is set.
+The [four-host evidence](verification/skill-prebuilt-2026-11-21.json) records the
+PR head, actual merge checkout, equal source trees, file hashes and outcomes.
+
+These checks do not start a runtime, prepare an engine or execute a security
+scan. Full Windows/macOS runtime preparation through the bootstrap, a second
+agent host and the complete mixed-asset skill journey remain to be verified.
 
 ### Pinning a published release
 

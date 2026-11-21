@@ -2,7 +2,7 @@
 
 [繁體中文](development-status.zh-TW.md) · [Documentation](README.md)
 
-_Updated 2026-11-16._
+_Updated 2026-11-21._
 
 **The latest release is desktop v0.7.0 for Linux, macOS and Windows.** It remains the default for beginners. Its public operator skill helps install the app, check readiness, guide scans in the app window and save reports.
 
@@ -23,12 +23,18 @@ These capabilities are included in the v0.7.0 core. The complete skill-first ent
 
 - Real-host acceptance has covered one Linux host on a synthetic repository, from an empty pinned-bootstrap cache through restore; a second host, several assets and macOS/Windows hosts remain.
 - The default skill has not switched from the released desktop.
-- Native download and execution of the prebuilt core on macOS and Windows still need host acceptance; platform builds and installed-artifact checks passed for this release.
+- Full scanner-runtime preparation on macOS and Windows still needs host acceptance. Public core downloads, offline report replay and runtime-bundle verification have passed on all four native CI configurations.
 - On Linux x86_64 and macOS, the scan runtime downloads from the published desktop package when no other runtime is available; on one Linux host this started the managed runtime and prepared the Gitleaks image. Windows x64 now has a pinned standalone runtime archive. Starting from the macOS and Windows downloads still needs host acceptance. CI on macOS and Windows now also runs the library tests and the foreground-scan and engine-preparation fixture suites, but real scanner execution on those hosts has not yet been verified.
 
 The dated sections below preserve observations at each milestone. [The product specification](product-spec.md) defines product behavior; [the migration plan](plans/skill-first-cloudflare-migration.md) and [report and archive contract](specs/report-fidelity-and-archive.md) describe the accepted work. See [publication status](release-model.md) for availability.
 
 CI document and contract tests: 132 tests cover the current source boundaries.
+
+## November 21 native public downloads
+
+The public v0.7.0 core now has actual download, execution, cache reuse and offline report replay observations from Linux, Apple silicon Mac, Intel Mac and Windows CI hosts. The child command path contains no Rust/native build tools or Docker/Podman. Each host also downloaded and verified its pinned runtime bundle, and removed its temporary workspace.
+
+The [bootstrap guide and evidence](skill-bootstrap.md#native-public-download-acceptance) distinguish these observations from runtime startup or a security scan, neither of which this check performs. Full scanner preparation and the complete skill journey remain separate acceptance work.
 
 ## November 16 published prebuilt core
 
